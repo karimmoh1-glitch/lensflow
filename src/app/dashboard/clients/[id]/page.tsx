@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardBody, Badge, PageHeader, EmptyState } from "@/components/ui";
-import { formatMoney, initials } from "@/lib/utils";
+import { formatMoney, initials, toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { NoteForm } from "./NoteForm";
 
@@ -61,7 +61,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                     <Link key={b.id} href={`/dashboard/bookings/${b.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-black/[0.02]">
                       <div>
                         <div className="text-sm font-medium">{b.service.name}</div>
-                        <div className="text-xs text-ink/45">{format(b.startAt, "MMM d, yyyy")}</div>
+                        <div className="text-xs text-ink/45">{format(toZonedDisplayDate(b.startAt, business.timezone), "MMM d, yyyy")}</div>
                       </div>
                       <Badge tone="neutral">{b.status.replaceAll("_", " ").toLowerCase()}</Badge>
                     </Link>

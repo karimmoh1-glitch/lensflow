@@ -2,12 +2,13 @@
 
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import type { SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { draftReply } from "@/lib/ai";
 import { sendOnChannel } from "@/lib/messaging";
 
-export async function generateDraftAction(conversationId: string): Promise<string> {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function generateDraftAction(conversationId: string, session?: SessionPayload | null): Promise<string> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 
@@ -29,10 +30,10 @@ export async function generateDraftAction(conversationId: string): Promise<strin
   });
 }
 
-export async function sendReplyAction(conversationId: string, body: string, aiDrafted: boolean) {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function sendReplyAction(conversationId: string, body: string, aiDrafted: boolean, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
-  const { business, session } = ctx;
+  const { business, session: ctxSession } = ctx;
 
   const conversation = await prisma.conversation.findFirst({ where: { id: conversationId, businessId: business.id } });
   if (!conversation) throw new Error("not found");
@@ -47,7 +48,7 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
         body,
         aiDrafted,
         status: result.ok ? "SENT" : "FAILED",
-        sentByUserId: session.userId,
+        sentByUserId: ctxSession.userId,
       },
     }),
     prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),

@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/utils";
 import { format } from "date-fns";
 import { BookingActions } from "./BookingActions";
 import { AssignPartner } from "./AssignPartner";
+import { DeliveryPanel } from "./DeliveryPanel";
 
 const LIFECYCLE: { status: string; label: string }[] = [
   { status: "INQUIRY", label: "Inquiry" },
@@ -24,14 +25,23 @@ const LIFECYCLE: { status: string; label: string }[] = [
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
-  const { business } = ctx;
+  const { business, role, membership } = ctx;
   const { id } = await params;
+
+  // Clients use /portal for their own bookings, never this staff-facing detail page —
+  // never trust the URL alone to gate access.
+  if (role === "CLIENT") redirect("/portal");
 
   const booking = await prisma.booking.findFirst({
     where: { id, businessId: business.id },
     include: { client: true, service: true, payments: { orderBy: { createdAt: "desc" } }, questionnaire: true },
   });
   if (!booking) notFound();
+
+  // A partner can only ever see the bookings explicitly assigned to them — the same
+  // least-privilege scoping /partner enforces in its list view, re-checked here since a
+  // partner could otherwise reach any booking by guessing its URL.
+  if (role === "PARTNER" && booking.assignedMembershipId !== membership.id) notFound();
 
   const partners = await prisma.orgMembership.findMany({
     where: { businessId: business.id, role: "PARTNER" },
@@ -119,6 +129,10 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               )}
             </CardBody>
           </Card>
+
+          {(["COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"].includes(booking.status) || booking.deliveryUrl) && (
+            <DeliveryPanel bookingId={booking.id} deliveryUrl={booking.deliveryUrl} deliveryNote={booking.deliveryNote} deliveredAt={booking.deliveredAt} />
+          )}
         </div>
 
         <div>

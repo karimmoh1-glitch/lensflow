@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardBody, Badge, PageHeader, EmptyState } from "@/components/ui";
 import { formatMoney, initials } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { NoteForm } from "./NoteForm";
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
   const { id } = await params;
 

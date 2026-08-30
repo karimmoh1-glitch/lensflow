@@ -1,18 +1,20 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { scoreLead, scoreLabel } from "@/lib/leadScoring";
 import { EmptyState } from "@/components/ui";
 import { formatMoney, cn, initials } from "@/lib/utils";
 import { formatDistanceToNowStrict, subDays } from "date-fns";
 import { ThreadPanel } from "./ThreadPanel";
+import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
 
 type Filter = "all" | "needs_reply" | "cold";
 
 export default async function InboxPage({ searchParams }: { searchParams: Promise<{ c?: string; filter?: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
   const { c: selectedId, filter: filterParam } = await searchParams;
   const filter: Filter = filterParam === "needs_reply" || filterParam === "cold" ? filterParam : "all";
@@ -119,7 +121,8 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-ink/40 mb-1">
-                  <span className="uppercase tracking-wide">{conv.channel}</span>
+                  <ChannelBadge channel={conv.channel} />
+                  <span>{CHANNEL_META[conv.channel].label}</span>
                   <span>·</span>
                   <span>{formatDistanceToNowStrict(conv.lastMessageAt, { addSuffix: true })}</span>
                 </div>

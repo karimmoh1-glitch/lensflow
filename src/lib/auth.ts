@@ -7,6 +7,11 @@ import type { Business, Role } from "@prisma/client";
 const SESSION_COOKIE = "lf_session";
 const secret = () => new TextEncoder().encode(process.env.JWT_SECRET || "dev-only-insecure-secret");
 
+/** Roles that belong on the general staff dashboard (/dashboard/**). PARTNER and CLIENT
+ * have their own dedicated, narrowly-scoped experiences (/partner, /portal) and must
+ * never reach the staff views — even by navigating there directly. */
+export const STAFF_ROLES: Role[] = ["OWNER", "ADMIN", "PHOTOGRAPHER"];
+
 export type SessionPayload = {
   userId: string;
   /** Which organization this session is currently "in." Always re-verified server-side
@@ -47,10 +52,10 @@ export async function clearSessionCookie() {
   store.delete(SESSION_COOKIE);
 }
 
-export async function getSession(): Promise<SessionPayload | null> {
-  const store = await cookies();
-  const token = store.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+/** Verifies a raw session token (cookie or bearer) and extracts the payload. Shared by
+ * both the web cookie session and the mobile bearer-token session — one auth system,
+ * two transports. */
+export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, secret());
     if (typeof payload.userId !== "string") return null;
@@ -61,6 +66,23 @@ export async function getSession(): Promise<SessionPayload | null> {
   } catch {
     return null;
   }
+}
+
+export async function getSession(): Promise<SessionPayload | null> {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+  return verifySessionToken(token);
+}
+
+/** Mobile equivalent of getSession() — reads `Authorization: Bearer <token>` instead of
+ * the httpOnly cookie, since a React Native client can't rely on cookie jars the way a
+ * browser does. Same token format, same secret, same verification — just a different
+ * transport for the same session. */
+export async function getSessionFromRequest(req: Request): Promise<SessionPayload | null> {
+  const header = req.headers.get("authorization");
+  if (!header?.startsWith("Bearer ")) return null;
+  return verifySessionToken(header.slice("Bearer ".length));
 }
 
 /** Switches the session's active organization — only after verifying the user actually
@@ -90,8 +112,8 @@ export async function getUserMemberships(userId: string) {
  * Every server action / route handler that touches tenant data must go through this —
  * never trust a businessId or role passed from the client.
  */
-export async function requireBusiness() {
-  const session = await getSession();
+export async function requireBusiness(session?: SessionPayload | null) {
+  session = session === undefined ? await getSession() : session;
   if (!session) return null;
 
   const memberships = await getUserMemberships(session.userId);
@@ -129,8 +151,8 @@ export function homeRouteFor(role: Role, business: Pick<Business, "onboardingCom
 /** Like requireBusiness(), but additionally enforces the caller's role is in the allowed
  * set. Use for anything an OWNER/ADMIN can do but a PHOTOGRAPHER/PARTNER/CLIENT cannot
  * (team management, invitations, org settings, danger-zone actions). */
-export async function requireRole(allowedRoles: Role[]): Promise<BusinessContext | null> {
-  const ctx = await requireBusiness();
+export async function requireRole(allowedRoles: Role[], session?: SessionPayload | null): Promise<BusinessContext | null> {
+  const ctx = await requireBusiness(session);
   if (!ctx) return null;
   if (!allowedRoles.includes(ctx.role)) return null;
   return ctx;

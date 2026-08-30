@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, getUserMemberships, homeRouteFor } from "@/lib/auth";
 import { generatePasswordResetToken, passwordResetExpiry } from "@/lib/passwordReset";
-import { sendOnChannel } from "@/lib/messaging";
+import { sendOnChannel, messagingIsLive } from "@/lib/messaging";
 import type { Role } from "@prisma/client";
 
 const signupSchema = z.object({
@@ -25,7 +25,7 @@ function slugify(input: string) {
     .slice(0, 40);
 }
 
-async function uniqueHandle(base: string) {
+export async function uniqueHandle(base: string) {
   let handle = slugify(base) || "studio";
   let n = 0;
   while (await prisma.business.findUnique({ where: { handle } })) {
@@ -115,18 +115,26 @@ const forgotPasswordSchema = z.object({
   email: z.string().email("Enter a valid email"),
 });
 
-export type ForgotPasswordState = { sent: boolean; error?: string };
+export type ForgotPasswordState = { sent: boolean; error?: string; devLink?: string };
 
 /**
  * Always reports success regardless of whether the email exists — never leaks account
  * existence to an unauthenticated caller. The actual email only goes out when the account
  * is real.
+ *
+ * No real email provider is configured on this deployment (RESEND_API_KEY unset), so the
+ * reset link would otherwise only ever reach a Vercel function log no one can see — a
+ * "working" button that's actually dead for anyone testing it. Since there's no real email
+ * to protect here, and only for an account that actually exists, the link is returned to
+ * the caller directly instead. Once a real provider is configured (messagingIsLive("EMAIL")
+ * is true) this never happens — the link only ever goes out over email as normal.
  */
 export async function forgotPassword(formData: FormData): Promise<ForgotPasswordState> {
   const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { sent: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  let devLink: string | undefined;
   if (user) {
     const token = generatePasswordResetToken();
     await prisma.passwordResetToken.create({
@@ -139,9 +147,10 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
       subject: "Reset your LensFlow password",
       body: `Hi ${user.name}, reset your password here (this link expires in 1 hour): ${link}`,
     });
+    if (!messagingIsLive("EMAIL")) devLink = link;
   }
 
-  return { sent: true };
+  return { sent: true, devLink };
 }
 
 const resetPasswordSchema = z.object({

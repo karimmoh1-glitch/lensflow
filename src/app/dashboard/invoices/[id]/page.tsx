@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardBody, Badge } from "@/components/ui";
 import { formatMoney } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { format } from "date-fns";
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
   const { id } = await params;
 

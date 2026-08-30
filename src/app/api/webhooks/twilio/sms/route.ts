@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateRequest } from "twilio";
 import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
 
@@ -7,13 +8,26 @@ import { ingestInboundMessage } from "@/server/leadIngestion";
  * business's Twilio phone number. Real, working code: the only thing missing in this
  * environment is an actual Twilio account and number to point at it.
  *
- * Twilio POSTs application/x-www-form-urlencoded with From/To/Body/MessageSid. In
- * production this should also verify the X-Twilio-Signature header against
- * TWILIO_AUTH_TOKEN before trusting the payload — noted here rather than skipped
- * silently, since there's no real number yet to receive a signed request from.
+ * Twilio POSTs application/x-www-form-urlencoded with From/To/Body/MessageSid, signed
+ * with the X-Twilio-Signature header. Verified against TWILIO_AUTH_TOKEN below — without
+ * this, anyone who learns the URL could forge inbound messages into a business's inbox.
  */
 export async function POST(req: Request) {
-  const form = await req.formData();
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  if (!authToken) {
+    return NextResponse.json({ error: "SMS receiving isn't configured on this deployment." }, { status: 501 });
+  }
+
+  const rawBody = await req.text();
+  const form = new URLSearchParams(rawBody);
+  const params = Object.fromEntries(form.entries());
+
+  const signature = req.headers.get("x-twilio-signature") ?? "";
+  const valid = validateRequest(authToken, signature, req.url, params);
+  if (!valid) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+  }
+
   const from = String(form.get("From") ?? "");
   const to = String(form.get("To") ?? "");
   const body = String(form.get("Body") ?? "");

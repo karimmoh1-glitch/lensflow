@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireBusiness, requireRole } from "@/lib/auth";
+import { requireBusiness, requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { createCardCheckout } from "@/lib/payments";
 import { sendOnChannel } from "@/lib/messaging";
@@ -23,8 +23,8 @@ export async function assignPartner(bookingId: string, membershipId: string | nu
   revalidatePath(`/dashboard/bookings/${bookingId}`);
 }
 
-export async function advanceBookingStatus(bookingId: string, status: BookingStatus) {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function advanceBookingStatus(bookingId: string, status: BookingStatus, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 
@@ -118,8 +118,8 @@ async function markPaymentPaidAndAdvanceBooking(paymentId: string, businessId: s
  * (or a card payment) as received. A client or partner must never be able to call this:
  * it would let them mark their own unpaid balance as paid without money changing hands.
  */
-export async function confirmPayment(paymentId: string) {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function confirmPayment(paymentId: string, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   await markPaymentPaidAndAdvanceBooking(paymentId, ctx.business.id);
 }
@@ -137,6 +137,35 @@ export async function completeCardCheckout(paymentId: string) {
   const payment = await prisma.payment.findFirst({ where: { id: paymentId, businessId: ctx.business.id, method: "CARD" } });
   if (!payment) throw new Error("not found");
   await markPaymentPaidAndAdvanceBooking(paymentId, ctx.business.id);
+}
+
+/**
+ * Marks a completed shoot as delivered with a real gallery link (Pixieset, Google Drive,
+ * Dropbox — however this business actually hands off photos). There's no file storage of
+ * our own; this persists a real URL + timestamp against the booking, same as any other
+ * field on it.
+ */
+export async function markDelivered(bookingId: string, url: string, note: string | undefined) {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+  if (!ctx) throw new Error("unauthorized");
+
+  const booking = await prisma.booking.findFirst({ where: { id: bookingId, businessId: ctx.business.id } });
+  if (!booking) throw new Error("not found");
+
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data: {
+      deliveryUrl: url,
+      deliveryNote: note || null,
+      deliveredAt: new Date(),
+      status: booking.status === "CANCELED" ? booking.status : "COMPLETED",
+      completedAt: booking.completedAt ?? new Date(),
+    },
+  });
+
+  revalidatePath(`/dashboard/bookings/${bookingId}`);
+  revalidatePath("/dashboard/bookings");
+  revalidatePath("/portal");
 }
 
 export async function sendQuestionnaire(bookingId: string) {

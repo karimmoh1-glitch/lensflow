@@ -17,8 +17,29 @@ async function hasValidSession(req: NextRequest) {
 
 const PROTECTED_PREFIXES = ["/dashboard", "/onboarding", "/portal", "/partner", "/workspaces"];
 
+// The mobile API is authenticated by bearer token, not cookies, so cross-origin requests
+// carry no ambient credential a browser needs to guard — CORS restrictions here would only
+// ever block a legitimate client (the Expo web preview, a future PWA), never protect
+// anything. Native fetch (iOS/Android) ignores CORS entirely; this only matters for the
+// web target.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname.startsWith("/api/mobile")) {
+    if (req.method === "OPTIONS") {
+      return new NextResponse(null, { status: 204, headers: corsHeaders });
+    }
+    const res = NextResponse.next();
+    for (const [key, value] of Object.entries(corsHeaders)) res.headers.set(key, value);
+    return res;
+  }
+
   const authed = await hasValidSession(req);
 
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
@@ -36,5 +57,14 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/portal/:path*", "/partner/:path*", "/workspaces/:path*", "/login", "/signup"],
+  matcher: [
+    "/dashboard/:path*",
+    "/onboarding/:path*",
+    "/portal/:path*",
+    "/partner/:path*",
+    "/workspaces/:path*",
+    "/login",
+    "/signup",
+    "/api/mobile/:path*",
+  ],
 };

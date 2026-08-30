@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/utils";
 import { format } from "date-fns";
 import { PayButton } from "./PayButton";
 import { PortalMessages } from "./PortalMessages";
+import { ExternalLink } from "lucide-react";
 
 const STATUS_TONE: Record<string, "neutral" | "success" | "warning" | "info" | "danger"> = {
   INQUIRY: "neutral",
@@ -109,12 +110,25 @@ export default async function PortalHomePage() {
           <Card>
             <div className="divide-y divide-border">
               {past.map((b) => (
-                <div key={b.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
-                  <div>
-                    <div className="text-sm font-medium">{b.service.name}</div>
-                    <div className="text-xs text-ink/45">{format(b.startAt, "MMM d, yyyy")}</div>
+                <div key={b.id} className="px-4 py-3.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium">{b.service.name}</div>
+                      <div className="text-xs text-ink/45">{format(b.startAt, "MMM d, yyyy")}</div>
+                    </div>
+                    <Badge tone={STATUS_TONE[b.status] ?? "neutral"}>{b.status.replaceAll("_", " ").toLowerCase()}</Badge>
                   </div>
-                  <Badge tone={STATUS_TONE[b.status] ?? "neutral"}>{b.status.replaceAll("_", " ").toLowerCase()}</Badge>
+                  {b.deliveryUrl && (
+                    <a
+                      href={b.deliveryUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2.5 flex items-center gap-2 text-sm text-accent-text hover:underline bg-accent-soft/50 rounded-lg px-3 py-2"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
+                      View your gallery
+                    </a>
+                  )}
                 </div>
               ))}
             </div>

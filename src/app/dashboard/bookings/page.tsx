@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader, Badge, EmptyState, Card } from "@/components/ui";
 import { formatMoney } from "@/lib/utils";
@@ -22,6 +22,7 @@ const STATUS_TONE: Record<string, "neutral" | "success" | "warning" | "info" | "
 export default async function BookingsPage() {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
 
   const bookings = await prisma.booking.findMany({

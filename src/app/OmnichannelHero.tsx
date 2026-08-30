@@ -25,28 +25,31 @@ type Channel = {
   bg: string;
 };
 
-// Coordinates are percentages within the diagram's viewBox (400 x 300).
+// Arranged as a shallow arc above the card so every connector reads as one clean fan
+// converging on a single point — never crossing behind an icon, never ambiguous.
+const CARD_TOP: [number, number] = [200, 158];
 const CHANNELS: Channel[] = [
-  { key: "instagram", label: "Instagram", icon: CameraGlyph, x: 92, y: 38, bg: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]" },
-  { key: "messages", label: "Messages", icon: MessageSquare, x: 308, y: 38, bg: "bg-[#3B82F6]" },
-  { key: "email", label: "Email", icon: Mail, x: 30, y: 158, bg: "bg-[#4F46E5]" },
-  { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, x: 282, y: 274, bg: "bg-[#25D366]" },
-  { key: "phone", label: "Phone", icon: Phone, x: 372, y: 214, bg: "bg-[#0D9488]" },
+  { key: "instagram", label: "Instagram", icon: CameraGlyph, x: 44, y: 108, bg: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]" },
+  { key: "messages", label: "Messages", icon: MessageSquare, x: 138, y: 52, bg: "bg-[#3B82F6]" },
+  { key: "email", label: "Email", icon: Mail, x: 200, y: 34, bg: "bg-[#4F46E5]" },
+  { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, x: 262, y: 52, bg: "bg-[#25D366]" },
+  { key: "phone", label: "Phone", icon: Phone, x: 356, y: 108, bg: "bg-[#0D9488]" },
 ];
 
-const ARROWS: [number, number, number, number][] = [
-  [200, 56, 200, 116], // instagram + messages -> top of card
-  [58, 158, 138, 160], // email -> left of card
-  [327, 246, 234, 190], // whatsapp + phone -> bottom-right of card
-];
+function connectorPath(x: number, y: number): string {
+  const [cx, cy] = CARD_TOP;
+  const midY = (y + cy) / 2;
+  return `M ${x} ${y + 22} Q ${x} ${midY} ${cx} ${cy}`;
+}
 
 export function OmnichannelHero() {
   const [mounted, setMounted] = useState(false);
-  const reducedMotion = useRef(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    reducedMotion.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion.current) {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setReducedMotion(reduced);
+    if (reduced) {
       setMounted(true);
       return;
     }
@@ -58,23 +61,47 @@ export function OmnichannelHero() {
     <div className="relative w-full h-full">
       {/* Desktop / tablet diagram */}
       <div className="hidden sm:block relative w-full h-full max-w-2xl mx-auto">
+        {/* Soft glow behind the destination card — gives it depth as the "answer" the eye lands on */}
+        <div
+          className="absolute rounded-full bg-accent/10 blur-3xl transition-opacity duration-700"
+          style={{ left: "50%", top: "58%", width: 260, height: 200, transform: "translate(-50%,-50%)", opacity: mounted ? 1 : 0, transitionDelay: "300ms" }}
+          aria-hidden
+        />
+
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 300" fill="none" preserveAspectRatio="xMidYMid meet" aria-hidden>
-          {ARROWS.map(([x1, y1, x2, y2], i) => (
-            <line
-              key={i}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke="currentColor"
-              className="text-ink/15"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeDasharray={180}
-              strokeDashoffset={mounted ? 0 : 180}
-              style={{ transition: `stroke-dashoffset 700ms ease-out ${180 + i * 100}ms` }}
-            />
-          ))}
+          <defs>
+            <linearGradient id="connectorFade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0.06" />
+            </linearGradient>
+          </defs>
+          {CHANNELS.map((c, i) => {
+            const d = connectorPath(c.x, c.y);
+            return (
+              <path
+                key={c.key}
+                id={`connector-${c.key}`}
+                d={d}
+                stroke="url(#connectorFade)"
+                className="text-ink"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                fill="none"
+                pathLength={1}
+                strokeDasharray={1}
+                strokeDashoffset={mounted ? 0 : 1}
+                style={{ transition: `stroke-dashoffset 750ms ease-out ${180 + i * 90}ms` }}
+              />
+            );
+          })}
+          {!reducedMotion &&
+            mounted &&
+            CHANNELS.map((c, i) => (
+              <circle key={`dot-${c.key}`} r="2.5" fill="currentColor" className="text-accent">
+                <animateMotion dur="1.6s" begin={`${0.9 + i * 0.15}s`} fill="freeze" path={connectorPath(c.x, c.y)} />
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.8;1" dur="1.6s" begin={`${0.9 + i * 0.15}s`} fill="freeze" />
+              </circle>
+            ))}
         </svg>
 
         {CHANNELS.map((c, i) => (
@@ -83,16 +110,16 @@ export function OmnichannelHero() {
             className={cn("absolute flex flex-col items-center gap-1.5 transition-all duration-500 ease-out", mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2")}
             style={{ left: `${(c.x / 400) * 100}%`, top: `${(c.y / 300) * 100}%`, transform: "translate(-50%, -50%)", transitionDelay: `${i * 70}ms` }}
           >
-            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-[0_6px_16px_-4px_rgba(16,17,20,0.25)]", c.bg)}>
-              <c.icon className="w-5 h-5" strokeWidth={1.9} />
+            <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-[0_6px_16px_-4px_rgba(16,17,20,0.25)]", c.bg)}>
+              <c.icon className="w-[18px] h-[18px]" strokeWidth={1.9} />
             </div>
             <span className="text-[11px] text-ink/45 font-medium">{c.label}</span>
           </div>
         ))}
 
         <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out"
-          style={{ transitionDelay: "460ms", opacity: mounted ? 1 : 0, transform: `translate(-50%, -50%) scale(${mounted ? 1 : 0.92})` }}
+          className="absolute left-1/2 transition-all duration-500 ease-out"
+          style={{ left: "50%", top: `${(CARD_TOP[1] / 300) * 100 + 22}%`, transform: "translate(-50%, 0)", transitionDelay: "460ms", opacity: mounted ? 1 : 0 }}
         >
           <SummaryCard />
         </div>

@@ -7,7 +7,9 @@ import { ChevronLeft } from "lucide-react";
 import { cn, formatMoney } from "@/lib/utils";
 import { Composer } from "./Composer";
 import { MarkLostButton } from "./MarkLostButton";
+import { LeadBooking } from "./LeadBooking";
 import { scoreLead, scoreLabel } from "@/lib/leadScoring";
+import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
 
 export async function ThreadPanel({ conversationId }: { conversationId: string }) {
   const ctx = await requireBusiness();
@@ -50,10 +52,11 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
           </Link>
           <div className="flex-1 min-w-0">
             <h2 className="font-medium text-sm truncate">{conversation.client?.name ?? conversation.externalHandle ?? "Unknown"}</h2>
-            <p className="text-xs text-ink/45">
-              {conversation.channel}
+            <div className="flex items-center gap-1.5 text-xs text-ink/45">
+              <ChannelBadge channel={conversation.channel} />
+              {CHANNEL_META[conversation.channel].label}
               {conversation.externalHandle ? ` · ${conversation.externalHandle}` : ""}
-            </p>
+            </div>
           </div>
           {scored && (
             <span
@@ -115,8 +118,14 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
           )}
 
           {lead.status !== "BOOKED" && lead.status !== "LOST" && (
-            <div className="mt-6 pt-4 border-t border-border">
+            <div className="mt-6 pt-4 border-t border-border space-y-4">
+              <LeadBooking leadId={lead.id} hasService={Boolean(lead.service)} />
               <MarkLostButton leadId={lead.id} />
+            </div>
+          )}
+          {lead.status === "BOOKED" && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <p className="text-xs text-ink/40">This lead already has a booking.</p>
             </div>
           )}
         </div>

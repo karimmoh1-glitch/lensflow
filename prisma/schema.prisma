@@ -403,6 +403,13 @@ model Booking {
   confirmedAt   DateTime?
   completedAt   DateTime?
 
+  // Delivery — a real link (Pixieset/Drive/Dropbox gallery) + note the photographer sets
+  // once the shoot is edited. No file storage of our own; this is how most working
+  // photographers actually deliver galleries, so it's a real field, not a placeholder.
+  deliveryUrl  String?
+  deliveryNote String?
+  deliveredAt  DateTime?
+
   questionnaire         Questionnaire?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader, Button } from "@/components/ui";
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
   const { month } = await searchParams;
 

@@ -17,7 +17,7 @@ export default function SignupChooserPage() {
               <CardBody className="p-6">
                 <h2 className="font-display text-lg mb-1.5">Create a business</h2>
                 <p className="text-sm text-ink/50">
-                  I run a photography or studio business and want to manage my clients, bookings, and payments.
+                  I'm a freelancer or independent business and want to manage my clients, bookings, and payments.
                 </p>
               </CardBody>
             </Card>

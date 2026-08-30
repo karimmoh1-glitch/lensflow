@@ -6,7 +6,7 @@ import { Button, Input, Label, Card, CardBody, Badge, Textarea, Select } from "@
 import { completeOnboarding, type OnboardingPayload } from "@/app/actions/onboarding";
 import { cn } from "@/lib/utils";
 
-const SPECIALTIES = ["Portrait", "Wedding", "Graduation", "Family", "Event", "Commercial", "Real Estate", "Newborn"];
+const SPECIALTIES = ["Consulting", "Coaching", "Design", "Photography", "Writing", "Web Development", "Event Planning", "Tutoring"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const CHANNELS: { key: string; label: string; blurb: string }[] = [
   { key: "INSTAGRAM", label: "Instagram", blurb: "DMs land in your inbox" },
@@ -16,14 +16,14 @@ const CHANNELS: { key: string; label: string; blurb: string }[] = [
 ];
 
 const DEFAULT_SERVICES: Record<string, { name: string; priceCents: number; durationMins: number }> = {
-  Portrait: { name: "Portrait Session", priceCents: 25000, durationMins: 60 },
-  Wedding: { name: "Wedding", priceCents: 250000, durationMins: 480 },
-  Graduation: { name: "Graduation Session", priceCents: 35000, durationMins: 60 },
-  Family: { name: "Family Session", priceCents: 40000, durationMins: 75 },
-  Event: { name: "Event Coverage", priceCents: 60000, durationMins: 180 },
-  Commercial: { name: "Commercial Shoot", priceCents: 80000, durationMins: 120 },
-  "Real Estate": { name: "Real Estate Shoot", priceCents: 30000, durationMins: 45 },
-  Newborn: { name: "Newborn Session", priceCents: 45000, durationMins: 90 },
+  Consulting: { name: "Consulting Session", priceCents: 25000, durationMins: 60 },
+  Coaching: { name: "Coaching Session", priceCents: 15000, durationMins: 60 },
+  Design: { name: "Design Project", priceCents: 80000, durationMins: 480 },
+  Photography: { name: "Photo Session", priceCents: 25000, durationMins: 60 },
+  Writing: { name: "Writing Project", priceCents: 35000, durationMins: 120 },
+  "Web Development": { name: "Web Project", priceCents: 150000, durationMins: 480 },
+  "Event Planning": { name: "Event Coverage", priceCents: 60000, durationMins: 180 },
+  Tutoring: { name: "Tutoring Session", priceCents: 8000, durationMins: 60 },
 };
 
 function slugify(input: string) {
@@ -38,7 +38,7 @@ export function Wizard({ businessName }: { businessName: string }) {
   const [handle, setHandle] = useState(slugify(businessName));
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [services, setServices] = useState<{ name: string; priceCents: number; durationMins: number }[]>([
-    { name: "Portrait Session", priceCents: 25000, durationMins: 60 },
+    { name: "Consulting Session", priceCents: 25000, durationMins: 60 },
   ]);
   const [workingDays, setWorkingDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [startMin, setStartMin] = useState(9 * 60);
@@ -122,7 +122,7 @@ export function Wizard({ businessName }: { businessName: string }) {
                       setName(e.target.value);
                       setHandle(slugify(e.target.value));
                     }}
-                    placeholder="Alex Rivera Photography"
+                    placeholder="Alex Rivera Consulting"
                   />
                 </div>
                 <div>
@@ -142,7 +142,7 @@ export function Wizard({ businessName }: { businessName: string }) {
 
             {step === 1 && (
               <div className="space-y-4">
-                <h1 className="font-display text-2xl">What do you shoot?</h1>
+                <h1 className="font-display text-2xl">What do you offer?</h1>
                 <p className="text-sm text-ink/50">Pick everything that applies — you can change this later.</p>
                 <div className="flex flex-wrap gap-2">
                   {SPECIALTIES.map((s) => (
@@ -352,7 +352,7 @@ export function Wizard({ businessName }: { businessName: string }) {
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     rows={4}
-                    placeholder="I'm a portrait and event photographer based in..."
+                    placeholder="I help clients with... based in..."
                   />
                 </div>
                 <div>

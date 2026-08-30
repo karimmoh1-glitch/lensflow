@@ -43,19 +43,14 @@ export async function middleware(req: NextRequest) {
   const authed = await hasValidSession(req);
 
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
   if (isProtected && !authed) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
-  // /login always renders the real form, even for an already-authenticated visitor —
-  // no silent bounce into whatever session happens to be active (the demo account,
-  // a stale test login, etc). Submitting it re-authenticates and routes normally.
-  // /signup still redirects an authed visitor straight to their dashboard, since
-  // "create a business" while already in one is never the intent.
-  if (pathname === "/signup" && authed) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
+  // Neither /login nor /signup ever auto-redirects an already-authenticated visitor
+  // away to their dashboard — clicking "Log in" or "Start Free" always shows the real
+  // page, regardless of whatever session (demo, stale test login, etc) happens to be
+  // active. Submitting either form re-authenticates and routes normally from there.
   return NextResponse.next();
 }
 

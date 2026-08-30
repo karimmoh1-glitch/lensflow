@@ -83,7 +83,7 @@ export default function JoinBusinessSignupPage() {
                       setQuery(e.target.value);
                       setHasSearched(false);
                     }}
-                    placeholder="Rivera Photography"
+                    placeholder="Rivera Consulting"
                     autoFocus
                   />
                 </div>

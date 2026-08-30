@@ -23,9 +23,10 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="min-h-[calc(100dvh-76px)] flex flex-col items-center justify-center px-6 py-10">
         <div className="text-center max-w-2xl mx-auto shrink-0">
-          <h1 className="font-display text-[clamp(1.75rem,4vw,3rem)] leading-[1.12] text-ink">Run your photography studio in one place.</h1>
+          <h1 className="font-display text-[clamp(1.75rem,4vw,3rem)] leading-[1.12] text-ink">Turn every message into an organized business.</h1>
           <p className="mt-3 text-sm md:text-base text-ink/55 max-w-lg mx-auto">
-            Customers reach you everywhere. LensFlow brings it all into one inbox — and turns it into bookings.
+            Clients reach you everywhere. LensFlow brings every message into one inbox, sorted by what it actually needs — and turns it
+            into work.
           </p>
           <div className="mt-5">
             <LinkButton href="/signup" size="lg">
@@ -58,7 +59,7 @@ export default function LandingPage() {
       <section className="max-w-lg mx-auto px-6 py-20 text-center">
         <p className="font-display text-2xl md:text-3xl text-ink mb-6">Nothing falls through the cracks.</p>
         <LinkButton href="/signup" size="lg">
-          Create your studio
+          Create your workspace
         </LinkButton>
       </section>
     </main>

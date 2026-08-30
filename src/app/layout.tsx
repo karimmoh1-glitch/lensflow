@@ -6,8 +6,8 @@ const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap
 const display = Playfair_Display({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "LensFlow — The operating system for your photography business",
-  description: "Leads, bookings, payments, and follow-ups — all in one place.",
+  title: "LensFlow — The operating system for independent businesses",
+  description: "Every message organized, sorted by what it needs — leads, bookings, payments, and follow-ups, all in one place.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

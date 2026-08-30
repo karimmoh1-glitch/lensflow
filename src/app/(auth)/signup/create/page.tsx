@@ -44,19 +44,19 @@ export default function CreateBusinessSignupPage() {
             </div>
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" placeholder="alex@studio.com" required />
+              <Input id="email" name="email" type="email" placeholder="alex@business.com" required />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
               <Input id="password" name="password" type="password" placeholder="At least 8 characters" required />
             </div>
             <div>
-              <Label htmlFor="businessName">Business / Studio name</Label>
-              <Input id="businessName" name="businessName" placeholder="Rivera Photography" required />
+              <Label htmlFor="businessName">Business name</Label>
+              <Input id="businessName" name="businessName" placeholder="Rivera Consulting" required />
             </div>
             <div>
-              <Label htmlFor="businessType">Business type (optional)</Label>
-              <Input id="businessType" name="businessType" placeholder="Wedding photography" />
+              <Label htmlFor="businessType">What you do (optional)</Label>
+              <Input id="businessType" name="businessType" placeholder="e.g. consulting, design, coaching, photography" />
             </div>
             <div>
               <Label htmlFor="phone">Phone number (optional)</Label>

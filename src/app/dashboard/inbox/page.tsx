@@ -8,6 +8,7 @@ import { formatMoney, cn, initials } from "@/lib/utils";
 import { formatDistanceToNowStrict, subDays } from "date-fns";
 import { ThreadPanel } from "./ThreadPanel";
 import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
+import { AutoGmailSync } from "./AutoGmailSync";
 
 type Filter = "all" | "needs_reply" | "cold";
 
@@ -19,15 +20,19 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const { c: selectedId, filter: filterParam } = await searchParams;
   const filter: Filter = filterParam === "needs_reply" || filterParam === "cold" ? filterParam : "all";
 
-  const conversations = await prisma.conversation.findMany({
-    where: { businessId: business.id, archived: false },
-    include: {
-      client: true,
-      lead: { include: { service: true } },
-      messages: { orderBy: { createdAt: "desc" }, take: 1 },
-    },
-    orderBy: { lastMessageAt: "desc" },
-  });
+  const [conversations, gmailIntegration] = await Promise.all([
+    prisma.conversation.findMany({
+      where: { businessId: business.id, archived: false },
+      include: {
+        client: true,
+        lead: { include: { service: true } },
+        messages: { orderBy: { createdAt: "desc" }, take: 1 },
+      },
+      orderBy: { lastMessageAt: "desc" },
+    }),
+    prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "EMAIL" } } }),
+  ]);
+  const gmailConnected = Boolean(gmailIntegration?.refreshToken);
 
   const coldCutoff = subDays(new Date(), 3);
   const rows = conversations
@@ -54,6 +59,16 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       if (filter === "needs_reply") return r.needsReply;
       if (filter === "cold") return r.isCold;
       return true;
+    })
+    // Priority order: whatever needs a reply comes first (that's the actual work),
+    // hottest leads first within that, then everything else by how recently it moved —
+    // so opening the inbox always shows what actually needs attention at the top,
+    // not just whatever happened to arrive most recently.
+    .sort((a, b) => {
+      if (a.needsReply !== b.needsReply) return a.needsReply ? -1 : 1;
+      const scoreDiff = (b.score ?? -1) - (a.score ?? -1);
+      if (scoreDiff !== 0) return scoreDiff;
+      return b.conv.lastMessageAt.getTime() - a.conv.lastMessageAt.getTime();
     });
 
   const needsReplyCount = conversations.filter((c) => c.lead && !c.lead.respondedAt).length;
@@ -65,6 +80,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="flex h-screen">
+      {gmailConnected && <AutoGmailSync />}
       <div className={cn("w-full md:w-[340px] shrink-0 border-r border-border flex-col bg-white", selectedId ? "hidden md:flex" : "flex")}>
         <div className="px-5 pt-4 pb-3 border-b border-border">
           <h1 className="font-display text-section-title text-ink mb-3">Inbox</h1>

@@ -101,15 +101,45 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
       {lead && (
         <div className="hidden lg:block w-72 shrink-0 border-l border-border bg-white px-5 py-5 overflow-y-auto scrollbar-thin">
           <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-3">Lead details</div>
-          <dl className="space-y-3 text-sm">
-            <Field label="Name" value={lead.extractedName} />
-            <Field label="Service" value={lead.service?.name} />
-            <Field label="Requested date" value={lead.requestedDateText} />
-            <Field label="Location" value={lead.requestedLocation} />
-            <Field label="Budget" value={lead.budgetCents ? formatMoney(lead.budgetCents) : null} />
-            <Field label="Intent" value={lead.intent !== "UNKNOWN" ? lead.intent : null} />
-            <Field label="Estimated value" value={lead.estimatedValueCents ? formatMoney(lead.estimatedValueCents) : null} />
-          </dl>
+          {(() => {
+            const fields = [
+              { label: "Name", value: lead.extractedName },
+              { label: "Service", value: lead.service?.name ?? null },
+              { label: "Requested date", value: lead.requestedDateText },
+              { label: "Location", value: lead.requestedLocation },
+              { label: "Budget", value: lead.budgetCents ? formatMoney(lead.budgetCents) : null },
+              { label: "Estimated value", value: lead.estimatedValueCents ? formatMoney(lead.estimatedValueCents) : null },
+            ].filter((f) => f.value);
+            if (fields.length === 0 && lead.intent === "UNKNOWN") {
+              return <p className="text-xs text-ink/40 italic">Still gathering details from the conversation.</p>;
+            }
+            return (
+              <dl className="space-y-3 text-sm">
+                {fields.map((f) => (
+                  <Field key={f.label} label={f.label} value={f.value} />
+                ))}
+                {lead.intent !== "UNKNOWN" && (
+                  <div>
+                    <dt className="text-xs text-ink/40">Intent</dt>
+                    <dd className="mt-0.5">
+                      <span
+                        className={cn(
+                          "inline-block text-xs font-medium px-1.5 py-0.5 rounded",
+                          lead.intent === "HIGH"
+                            ? "bg-accent-soft text-accent-text"
+                            : lead.intent === "MEDIUM"
+                              ? "bg-warning-soft text-warning-text"
+                              : "bg-black/[0.05] text-ink/55"
+                        )}
+                      >
+                        {lead.intent}
+                      </span>
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            );
+          })()}
 
           {scored && scored.reasons.length > 0 && (
             <>

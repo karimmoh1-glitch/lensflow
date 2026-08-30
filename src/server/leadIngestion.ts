@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { extractLeadInfo } from "@/lib/ai";
 import { scoreLead } from "@/lib/leadScoring";
+import { cleanEmailBody } from "@/lib/emailText";
 import type { ChannelType } from "@prisma/client";
 
 /**
@@ -14,7 +15,11 @@ import type { ChannelType } from "@prisma/client";
  * appends to their existing open conversation instead of forking a new one — real
  * email threads (and real customers texting twice) would otherwise fracture into
  * duplicate conversations with duplicate leads, which is exactly the failure mode
- * this function exists to prevent.
+ * this function exists to prevent. Every new message also re-runs extraction and
+ * merges any newly-revealed fields into the lead (a first message with no date
+ * followed by "Saturday works" should update the lead, not leave it stale) — a field
+ * already known is never overwritten back to unknown just because a later message
+ * didn't repeat it.
  */
 export async function ingestInboundMessage(params: {
   businessId: string;
@@ -28,7 +33,8 @@ export async function ingestInboundMessage(params: {
    * used to skip re-ingesting a webhook delivery Resend retries after a timeout. */
   providerMessageId?: string;
 }) {
-  const { businessId, channel, senderName, senderHandle, body, clientEmail, clientPhone, providerMessageId } = params;
+  const { businessId, channel, senderName, senderHandle, clientEmail, clientPhone, providerMessageId } = params;
+  const body = channel === "EMAIL" ? cleanEmailBody(params.body) : params.body;
 
   // Idempotency: a webhook can legitimately be redelivered (provider retry after a slow
   // response, a duplicate event). If we've already stored this exact provider message,
@@ -59,6 +65,12 @@ export async function ingestInboundMessage(params: {
     orderBy: { lastMessageAt: "desc" },
   });
 
+  const services = await prisma.service.findMany({ where: { businessId, active: true } });
+  const extracted = await extractLeadInfo(body);
+  const matchedService = extracted.serviceHint
+    ? services.find((s) => s.name.toLowerCase().includes(extracted.serviceHint!.toLowerCase()))
+    : null;
+
   if (existingConversation) {
     await prisma.message.create({
       data: { conversationId: existingConversation.id, direction: "INBOUND", body, providerMessageId },
@@ -66,9 +78,41 @@ export async function ingestInboundMessage(params: {
     await prisma.conversation.update({ where: { id: existingConversation.id }, data: { lastMessageAt: new Date() } });
 
     if (existingConversation.lead) {
+      const lead = existingConversation.lead;
+      // Merge: a newly-extracted field wins; otherwise keep whatever was already known.
+      const mergedName = extracted.name ?? lead.extractedName;
+      const mergedServiceId = matchedService?.id ?? lead.serviceId;
+      const mergedDateText = extracted.dateText ?? lead.requestedDateText;
+      const mergedLocation = extracted.location ?? lead.requestedLocation;
+      const mergedBudgetCents = extracted.budgetCents ?? lead.budgetCents;
+      const mergedIntent = extracted.intent !== "UNKNOWN" ? extracted.intent : lead.intent;
+      const mergedServicePrice = matchedService?.priceCents ?? services.find((s) => s.id === mergedServiceId)?.priceCents;
+
+      const { score, reasons } = scoreLead({
+        intent: mergedIntent,
+        hasRequestedDate: Boolean(mergedDateText),
+        requestedDate: lead.requestedDate,
+        serviceValueCents: mergedServicePrice ?? lead.estimatedValueCents,
+        hoursSinceLastInbound: 0,
+        hasRespondedYet: false,
+        fieldsKnownCount: [mergedName, mergedServiceId, mergedDateText, mergedLocation, mergedBudgetCents].filter(Boolean).length,
+      });
+
       await prisma.lead.update({
-        where: { id: existingConversation.lead.id },
-        data: { lastInboundAt: new Date(), respondedAt: null },
+        where: { id: lead.id },
+        data: {
+          extractedName: mergedName,
+          serviceId: mergedServiceId,
+          requestedDateText: mergedDateText,
+          requestedLocation: mergedLocation,
+          budgetCents: mergedBudgetCents,
+          intent: mergedIntent,
+          score,
+          scoreReasons: reasons,
+          estimatedValueCents: mergedServicePrice ?? lead.estimatedValueCents,
+          lastInboundAt: new Date(),
+          respondedAt: null,
+        },
       });
     }
 
@@ -84,12 +128,6 @@ export async function ingestInboundMessage(params: {
   });
 
   await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body, providerMessageId } });
-
-  const extracted = await extractLeadInfo(body);
-  const services = await prisma.service.findMany({ where: { businessId, active: true } });
-  const matchedService = extracted.serviceHint
-    ? services.find((s) => s.name.toLowerCase().includes(extracted.serviceHint!.toLowerCase()))
-    : null;
 
   const { score, reasons } = scoreLead({
     intent: extracted.intent,

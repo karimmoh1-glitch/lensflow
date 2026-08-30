@@ -9,6 +9,7 @@ async function main() {
   console.log("Demo workspace ready.");
   console.log(`  Owner:        ${result.owner.email} / ${result.owner.password}`);
   console.log(`  Photographer: ${result.photographer.email} / ${result.photographer.password}`);
+  console.log(`  Admin:        ${result.admin.email} / ${result.admin.password}`);
   console.log(`  Partner:      ${result.partner.email} / ${result.partner.password}`);
   console.log(`  Client:       ${result.client.email} / ${result.client.password}`);
   console.log(`  Booking page: ${result.bookingPage}`);

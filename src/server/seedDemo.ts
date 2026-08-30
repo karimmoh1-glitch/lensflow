@@ -14,7 +14,17 @@ const PASSWORD = "demo1234";
 export async function seedDemoWorkspace(prisma: PrismaClient) {
   await prisma.business.deleteMany({ where: { handle: { in: ["alex-photo", "wedding-collective"] } } });
   await prisma.user.deleteMany({
-    where: { email: { in: ["alex@demo.lensflow.app", "sarah.kim@demo.lensflow.app", "jordan.lee@demo.lensflow.app", "priya.p@example.com"] } },
+    where: {
+      email: {
+        in: [
+          "alex@demo.lensflow.app",
+          "sarah.kim@demo.lensflow.app",
+          "morgan.blake@demo.lensflow.app",
+          "jordan.lee@demo.lensflow.app",
+          "priya.p@example.com",
+        ],
+      },
+    },
   });
 
   const passwordHash = await bcrypt.hash(PASSWORD, 10);
@@ -45,6 +55,12 @@ export async function seedDemoWorkspace(prisma: PrismaClient) {
 
   const partnerUser = await prisma.user.create({ data: { name: "Jordan Lee", email: "jordan.lee@demo.lensflow.app", passwordHash } });
   const partnerMembership = await prisma.orgMembership.create({ data: { userId: partnerUser.id, businessId: business.id, role: "PARTNER" } });
+
+  // Org-level ADMIN — same permission tier as OWNER within this business (can manage
+  // team/settings/invitations), just not the org's original creator. This is NOT a
+  // cross-organization platform superadmin — LensFlow has no such role or panel.
+  const adminUser = await prisma.user.create({ data: { name: "Morgan Blake", email: "morgan.blake@demo.lensflow.app", passwordHash } });
+  await prisma.orgMembership.create({ data: { userId: adminUser.id, businessId: business.id, role: "ADMIN" } });
 
   const otherBusiness = await prisma.business.create({
     data: { name: "Wedding Collective", handle: "wedding-collective", onboardingComplete: true, timezone: "America/Chicago" },
@@ -364,6 +380,7 @@ export async function seedDemoWorkspace(prisma: PrismaClient) {
   return {
     owner: { email: owner.email, password: PASSWORD },
     photographer: { email: photographer.email, password: PASSWORD },
+    admin: { email: adminUser.email, password: PASSWORD },
     partner: { email: partnerUser.email, password: PASSWORD },
     client: { email: priyaUser.email, password: PASSWORD },
     bookingPage: `/book/${business.handle}`,

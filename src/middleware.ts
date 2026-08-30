@@ -48,9 +48,12 @@ export async function middleware(req: NextRequest) {
   if (isProtected && !authed) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
-  // Role-aware redirect (client vs partner vs photographer) happens server-side in
-  // dashboard/layout.tsx — the edge runtime here can't reach the database.
-  if ((pathname === "/login" || pathname === "/signup") && authed) {
+  // /login always renders the real form, even for an already-authenticated visitor —
+  // no silent bounce into whatever session happens to be active (the demo account,
+  // a stale test login, etc). Submitting it re-authenticates and routes normally.
+  // /signup still redirects an authed visitor straight to their dashboard, since
+  // "create a business" while already in one is never the intent.
+  if (pathname === "/signup" && authed) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
   return NextResponse.next();

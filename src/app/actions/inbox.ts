@@ -6,6 +6,8 @@ import type { SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { draftReply } from "@/lib/ai";
 import { sendOnChannel } from "@/lib/messaging";
+import { getValidAccessToken, sendGmailMessage } from "@/lib/google";
+import type { SendResult } from "@/lib/channels/types";
 
 export async function generateDraftAction(conversationId: string, session?: SessionPayload | null): Promise<string> {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
@@ -43,6 +45,7 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
   // their mail client, not just in ours.
   let replyTo: string | undefined;
   let headers: Record<string, string> | undefined;
+  let lastInboundMessageId: string | undefined;
   if (conversation.channel === "EMAIL") {
     const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;
     if (inboundDomain) replyTo = `${business.handle}@${inboundDomain}`;
@@ -51,19 +54,50 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
       where: { conversationId, direction: "INBOUND", providerMessageId: { not: null } },
       orderBy: { createdAt: "desc" },
     });
-    if (lastInbound?.providerMessageId) {
-      headers = { "In-Reply-To": lastInbound.providerMessageId, References: lastInbound.providerMessageId };
+    lastInboundMessageId = lastInbound?.providerMessageId ?? undefined;
+    if (lastInboundMessageId) {
+      headers = { "In-Reply-To": lastInboundMessageId, References: lastInboundMessageId };
     }
   }
 
-  const result = await sendOnChannel({
-    channel: conversation.channel,
-    to: conversation.externalHandle,
-    body,
-    fromName: business.name,
-    replyTo,
-    headers,
-  });
+  // A connected Gmail account (per-business, real OAuth) takes priority over the
+  // platform-wide Resend path for customer replies specifically — transactional system
+  // email (invitations, password resets) never goes through a business's personal
+  // Gmail, only their own customer conversations do.
+  let result: SendResult;
+  const gmailIntegration =
+    conversation.channel === "EMAIL" && conversation.externalHandle
+      ? await prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "EMAIL" } } })
+      : null;
+
+  if (gmailIntegration?.refreshToken && conversation.externalHandle) {
+    try {
+      const accessToken = await getValidAccessToken(gmailIntegration);
+      const sent = await sendGmailMessage({
+        accessToken,
+        fromEmail: gmailIntegration.externalAccount!,
+        fromName: business.name,
+        to: conversation.externalHandle,
+        subject: "Re: your inquiry",
+        body,
+        inReplyTo: lastInboundMessageId,
+        references: lastInboundMessageId,
+      });
+      result = { ok: true, simulated: false, providerMessageId: sent.id };
+    } catch (err) {
+      console.error("[inbox] gmail send failed", err);
+      result = { ok: false, error: err instanceof Error ? err.message : "Gmail send failed" };
+    }
+  } else {
+    result = await sendOnChannel({
+      channel: conversation.channel,
+      to: conversation.externalHandle,
+      body,
+      fromName: business.name,
+      replyTo,
+      headers,
+    });
+  }
 
   // Only ever marked SENT once the provider actually confirms it — a failed send keeps
   // the draft text intact (the caller still has it) and the message row records exactly

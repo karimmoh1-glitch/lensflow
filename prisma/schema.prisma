@@ -685,6 +685,14 @@ model Integration {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
+  // Real OAuth tokens for a per-business connection (currently Gmail) — set only after
+  // the owner completes Google's actual consent screen, never fabricated. accessToken
+  // is short-lived and refreshed on demand via refreshToken; tokenExpiresAt tracks when
+  // that refresh is due.
+  accessToken    String?
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+
   @@unique([businessId, provider])
 }
 

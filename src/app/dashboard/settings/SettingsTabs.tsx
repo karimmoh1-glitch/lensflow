@@ -12,14 +12,16 @@ export function SettingsTabs({
   availability,
   payments,
   connections,
+  initialTab,
 }: {
   profile: ReactNode;
   services: ReactNode;
   availability: ReactNode;
   payments: ReactNode;
   connections: ReactNode;
+  initialTab?: Tab;
 }) {
-  const [tab, setTab] = useState<Tab>("Profile");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "Profile");
   const content: Record<Tab, ReactNode> = { Profile: profile, Services: services, Availability: availability, Payments: payments, Connections: connections };
 
   return (

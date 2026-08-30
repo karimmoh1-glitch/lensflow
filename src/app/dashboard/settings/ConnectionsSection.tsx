@@ -5,6 +5,8 @@ import { aiEnabled } from "@/lib/ai";
 import { getAllChannelAdapters } from "@/lib/channels/registry";
 import { IntegrationToggle } from "../integrations/IntegrationToggle";
 import { SimulateInbound } from "../integrations/SimulateInbound";
+import { GoogleConnectButton, GmailConnectedControls } from "./GmailControls";
+import { googleOAuthConfigured } from "@/lib/google";
 import type { Business, IntegrationProvider } from "@prisma/client";
 import Link from "next/link";
 
@@ -48,18 +50,44 @@ function Row({
   );
 }
 
-export async function ConnectionsSection({ business }: { business: Business }) {
+export async function ConnectionsSection({
+  business,
+  googleConnected,
+  googleError,
+}: {
+  business: Business;
+  googleConnected?: boolean;
+  googleError?: string;
+}) {
   const integrations = await prisma.integration.findMany({ where: { businessId: business.id } });
   const byProvider = new Map(integrations.map((i) => [i.provider, i]));
   const adapters = getAllChannelAdapters();
+  const gmailIntegration = byProvider.get("EMAIL");
+  const gmailConnected = Boolean(gmailIntegration?.refreshToken);
 
-  const anyLive = adapters.some((a) => a.capabilities().live) || stripeIsLive;
+  const anyLive = adapters.some((a) => a.capabilities().live) || stripeIsLive || gmailConnected;
+
+  const GOOGLE_ERROR_COPY: Record<string, string> = {
+    denied: "Google sign-in was cancelled before it finished.",
+    no_refresh_token: "Google didn't return a long-lived connection. Try connecting again — if it keeps happening, revoke LensFlow's access at myaccount.google.com/permissions and reconnect.",
+    expired: "That connection attempt expired. Try again.",
+    error: "Something went wrong connecting to Google. Try again.",
+  };
 
   const zelleConfigured = business.paymentMethods.includes("zelle") && !!business.zelleHandle;
   const bankConfigured = business.paymentMethods.includes("bank_transfer") && !!business.bankInstructions;
 
   return (
     <div className="space-y-8">
+      {googleConnected && (
+        <p className="text-sm text-success bg-success/10 rounded-md px-3.5 py-2.5">
+          Gmail connected — {gmailIntegration?.externalAccount}. New messages will show up in your Inbox once you hit "Check for new
+          emails," and replies now send from your real Gmail account.
+        </p>
+      )}
+      {googleError && (
+        <p className="text-sm text-danger bg-danger/10 rounded-md px-3.5 py-2.5">{GOOGLE_ERROR_COPY[googleError] ?? GOOGLE_ERROR_COPY.error}</p>
+      )}
       {!aiEnabled && (
         <p className="text-sm text-ink/50 bg-black/[0.03] rounded-md px-3.5 py-2.5">
           No AI provider key is configured — lead extraction, reply drafts, and the copilot run on a rule-based fallback instead of a
@@ -83,21 +111,36 @@ export async function ConnectionsSection({ business }: { business: Business }) {
               // there's no toggle to show, only the honest "needs setup" state.
               const canDemo = caps.canSend || caps.canReceive;
 
-              // Email has no per-business toggle at all: it's one platform-wide Resend
-              // account, not a per-business OAuth connection, so every business is either
-              // genuinely live or genuinely not — never a fake per-business "Connect" state.
-              const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;
-              const emailAddress = inboundDomain ? `${business.handle}@${inboundDomain}` : null;
-              const emailBadge = caps.live
-                ? ({ tone: "success", label: "✓ Email Connected" } as const)
-                : caps.canSend
-                  ? ({ tone: "warning", label: "Configuration required" } as const)
-                  : ({ tone: "neutral", label: "Needs setup" } as const);
-              const emailNote = caps.live
-                ? `${emailAddress} — incoming email lands in your Inbox, replies go straight to the customer.`
-                : caps.canSend
-                  ? "Sending is ready. One more step is needed before incoming email reaches your inbox — ask your administrator to finish setup."
-                  : "Connect your business email to send and receive messages right from your LensFlow inbox.";
+              // Email's real state now comes from a per-business Gmail OAuth connection
+              // first (each photographer connects their own inbox), falling back to the
+              // platform-wide Resend path if that's configured instead. Never a fake
+              // per-business "Connect" toggle — the badge always reflects one of these
+              // two genuinely-checkable states, or neither.
+              let emailBadge: { tone: "success" | "warning" | "neutral"; label: string };
+              let emailNote: React.ReactNode;
+              let emailAction: React.ReactNode;
+
+              if (gmailConnected) {
+                emailBadge = { tone: "success", label: "✓ Gmail Connected" };
+                emailNote = `${gmailIntegration!.externalAccount} — incoming email lands in your Inbox, replies send from this account.`;
+                emailAction = <GmailConnectedControls />;
+              } else if (googleOAuthConfigured()) {
+                emailBadge = { tone: "neutral", label: "Needs setup" };
+                emailNote = "Connect your Gmail account to send and receive messages right from your LensFlow inbox.";
+                emailAction = <GoogleConnectButton />;
+              } else if (caps.live) {
+                emailBadge = { tone: "success", label: "✓ Email Connected" };
+                emailNote = "Sending and receiving live.";
+                emailAction = undefined;
+              } else if (caps.canSend) {
+                emailBadge = { tone: "warning", label: "Configuration required" };
+                emailNote = "Sending is ready. One more step is needed before incoming email reaches your inbox.";
+                emailAction = undefined;
+              } else {
+                emailBadge = { tone: "neutral", label: "Needs setup" };
+                emailNote = "Connect your business email to send and receive messages right from your LensFlow inbox.";
+                emailAction = undefined;
+              }
 
               const badge = isEmail ? emailBadge : caps.live
                 ? ({ tone: "success", label: "✓ Connected" } as const)
@@ -124,7 +167,13 @@ export async function ConnectionsSection({ business }: { business: Business }) {
                     )
                   }
                   badge={badge}
-                  action={!isWebsite && !isEmail && canDemo ? <IntegrationToggle provider={provider} connected={status !== "NOT_CONNECTED"} /> : undefined}
+                  action={
+                    isEmail
+                      ? emailAction
+                      : !isWebsite && canDemo
+                        ? <IntegrationToggle provider={provider} connected={status !== "NOT_CONNECTED"} />
+                        : undefined
+                  }
                 />
               );
             })}

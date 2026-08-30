@@ -1,0 +1,673 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Tenancy & identity
+// ─────────────────────────────────────────────────────────────────────────
+
+model Business {
+  id         String   @id @default(cuid())
+  name       String
+  handle     String   @unique // used in public booking URL: /book/[handle]
+  specialties String[] @default([])
+  businessType String? // free-text category captured at signup, e.g. "Wedding photography"
+  phone      String?
+  bio        String?
+  logoUrl    String?
+  timezone   String   @default("America/New_York")
+  currency   String   @default("usd")
+
+  // Booking policy
+  depositPercent   Int   @default(30) // % of service price required to confirm a booking
+  bufferMinutes    Int   @default(30) // gap enforced between bookings
+  bookingLeadHours Int   @default(24) // minimum notice required to book
+  paymentMethods   String[] @default([]) // "card" | "zelle" | "bank_transfer"
+  zelleHandle      String?
+  bankInstructions String?
+
+  // Inbound routing for real channel webhooks — set once a business connects a real
+  // SMS number; email inbound routes by handle@inbound domain instead, no field needed.
+  twilioPhoneNumber String? @unique
+
+  onboardingStep     Int     @default(0)
+  onboardingComplete Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orgMemberships OrgMembership[]
+  invitations    Invitation[]
+  services       Service[]
+  availabilities Availability[]
+  blockedDates   BlockedDate[]
+  clients        Client[]
+  leads          Lead[]
+  conversations  Conversation[]
+  bookings       Booking[]
+  payments       Payment[]
+  invoices       Invoice[]
+  automations    Automation[]
+  automationRuns AutomationExecution[]
+  integrations   Integration[]
+  membershipPlans MembershipPlan[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+}
+
+// A user's role within a specific organization — see OrgMembership. Never trust a role
+// passed from the client; every access check re-derives it from the database.
+enum Role {
+  OWNER        // created the organization; full access, cannot be removed by others
+  ADMIN        // full operational access, can manage team/settings/invitations
+  PHOTOGRAPHER // manages bookings, clients, payments within the org
+  PARTNER      // limited access to explicitly assigned bookings only
+  CLIENT       // access to only their own bookings/payments/files within this org
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orgMemberships     OrgMembership[]
+  invitationsSent    Invitation[]         @relation("InvitedBy")
+  clientProfile      Client?
+  sentMessages       Message[]            @relation("SentByUser")
+  notes              ClientNote[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+// The tenancy join table: one row per (user, organization) pair. A user may belong to
+// multiple organizations (e.g. a partner working with several studios); every backend
+// query is scoped through the active membership resolved in lib/auth.ts, never a raw id
+// from the client.
+model OrgMembership {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId String
+  business   Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  role       Role
+  status     MembershipStatus  @default(ACTIVE)
+  createdAt  DateTime          @default(now())
+
+  assignedBookings Booking[] @relation("AssignedPartner")
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+// A secure, single-use invitation to join an organization with a specific role.
+// The token is a random opaque string (never a database id) so it can't be guessed.
+model Invitation {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  email      String
+  role       Role
+  token      String   @unique
+
+  // For CLIENT invitations, pre-links to the CRM record so accepting the invite attaches
+  // the new account to the right client — never left for the client to figure out.
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  invitedByUserId String?
+  invitedBy       User?   @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+
+  status     InvitationStatus @default(PENDING)
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([businessId, status])
+  @@index([email])
+}
+
+// A single-use, short-lived token for the "forgot password" flow. Same shape/rationale
+// as Invitation.token — a random opaque string, never a database id.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Services & availability
+// ─────────────────────────────────────────────────────────────────────────
+
+model Service {
+  id            String   @id @default(cuid())
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  priceCents    Int
+  durationMins  Int      @default(60)
+  active        Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings Booking[]
+  leads    Lead[]
+
+  @@index([businessId])
+}
+
+model Availability {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  weekday    Int // 0=Sunday .. 6=Saturday
+  startMin   Int // minutes from midnight, local business timezone
+  endMin     Int
+
+  @@index([businessId])
+}
+
+model BlockedDate {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  date       DateTime // whole day blocked
+  reason     String?
+
+  @@index([businessId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Clients & leads
+// ─────────────────────────────────────────────────────────────────────────
+
+model Client {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  email      String?
+  phone      String?
+  instagram  String?
+  notesText  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Set once the client accepts an invitation and creates a login — before that, this is
+  // just a CRM record with no portal access.
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  leads         Lead[]
+  conversations Conversation[]
+  bookings      Booking[]
+  payments      Payment[]
+  invoices      Invoice[]
+  notes         ClientNote[]
+  subscriptions Subscription[]
+  invitations   Invitation[]
+  referredById  String?
+  referredBy    Client?  @relation("Referrals", fields: [referredById], references: [id])
+  referrals     Client[] @relation("Referrals")
+
+  @@index([businessId])
+}
+
+model ClientNote {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([clientId])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  BOOKED
+  COLD
+  LOST
+}
+
+enum LeadIntent {
+  UNKNOWN
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Lead {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  clientId   String?
+  client     Client?  @relation(fields: [clientId], references: [id])
+  conversationId String? @unique
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+
+  // AI-extracted structured fields — null means "unknown", never invented
+  extractedName     String?
+  serviceId         String?
+  service           Service? @relation(fields: [serviceId], references: [id])
+  requestedDateText String? // raw text like "June 14" before resolution
+  requestedDate     DateTime?
+  requestedLocation String?
+  budgetCents       Int?
+  intent            LeadIntent @default(UNKNOWN)
+
+  score       Int        @default(0) // 0-100, explainable — see lib/leadScoring.ts
+  scoreReasons String[]  @default([])
+  estimatedValueCents Int @default(0)
+  status      LeadStatus @default(NEW)
+
+  lastInboundAt DateTime?
+  respondedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId, status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Omnichannel inbox
+// ─────────────────────────────────────────────────────────────────────────
+
+enum ChannelType {
+  INSTAGRAM
+  EMAIL
+  SMS
+  WHATSAPP
+  WEBSITE
+  PHONE
+}
+
+model Conversation {
+  id         String      @id @default(cuid())
+  businessId String
+  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  clientId   String?
+  client     Client?     @relation(fields: [clientId], references: [id])
+  channel    ChannelType
+  externalHandle String? // e.g. @sarah.jpg on Instagram, phone number, email address
+  subject    String?
+  lastMessageAt DateTime @default(now())
+  archived   Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+
+  messages Message[]
+  lead     Lead?
+  bookings Booking[]
+
+  @@index([businessId, lastMessageAt])
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  DRAFT
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model Message {
+  id             String           @id @default(cuid())
+  conversationId String
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  direction      MessageDirection
+  body           String
+  aiDrafted      Boolean          @default(false)
+  status         MessageStatus    @default(SENT)
+  sentByUserId   String?
+  sentByUser     User?            @relation("SentByUser", fields: [sentByUserId], references: [id])
+  createdAt      DateTime         @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Bookings
+// ─────────────────────────────────────────────────────────────────────────
+
+enum BookingStatus {
+  INQUIRY
+  BOOKED
+  DEPOSIT_PAID
+  CONFIRMED
+  QUESTIONNAIRE_COMPLETE
+  UPCOMING
+  COMPLETED
+  BALANCE_PAID
+  FOLLOWED_UP
+  CANCELED
+}
+
+model Booking {
+  id             String        @id @default(cuid())
+  businessId     String
+  business       Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client        @relation(fields: [clientId], references: [id])
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  serviceId      String
+  service        Service       @relation(fields: [serviceId], references: [id])
+
+  // Least-privilege partner access: a partner only sees bookings explicitly assigned to them.
+  assignedMembershipId String?
+  assignedMembership    OrgMembership? @relation("AssignedPartner", fields: [assignedMembershipId], references: [id])
+
+  startAt  DateTime
+  endAt    DateTime
+  location String?
+
+  status        BookingStatus @default(INQUIRY)
+  totalCents    Int
+  depositCents  Int
+  confirmedAt   DateTime?
+  completedAt   DateTime?
+
+  questionnaire         Questionnaire?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+  invoice  Invoice?
+  reminders Reminder[]
+
+  @@index([businessId, startAt])
+  @@index([businessId, status])
+}
+
+model Questionnaire {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  answers   Json     @default("{}")
+  completedAt DateTime?
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Payments & invoicing
+// ─────────────────────────────────────────────────────────────────────────
+
+enum PaymentMethodType {
+  CARD
+  APPLE_PAY
+  ZELLE
+  BANK_TRANSFER
+}
+
+enum PaymentPurpose {
+  DEPOSIT
+  BALANCE
+  FULL
+  SUBSCRIPTION
+}
+
+enum PaymentStatus {
+  AWAITING_CONFIRMATION
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id         String            @id @default(cuid())
+  businessId String
+  business   Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bookingId  String?
+  booking    Booking?          @relation(fields: [bookingId], references: [id])
+  clientId   String
+  client     Client            @relation(fields: [clientId], references: [id])
+  method     PaymentMethodType
+  purpose    PaymentPurpose
+  amountCents Int
+  status     PaymentStatus     @default(AWAITING_CONFIRMATION)
+  reference  String? // Zelle/bank memo reference shown to customer
+  stripePaymentIntentId String?
+  confirmedAt DateTime?
+  createdAt  DateTime          @default(now())
+
+  @@index([businessId, status])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  businessId    String
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bookingId     String?       @unique
+  booking       Booking?      @relation(fields: [bookingId], references: [id])
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+  number        String        @unique
+  subtotalCents Int
+  discountCents Int           @default(0)
+  totalCents    Int
+  status        InvoiceStatus @default(DRAFT)
+  dueDate       DateTime?
+  sentAt        DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@index([businessId, status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Subscriptions / memberships
+// ─────────────────────────────────────────────────────────────────────────
+
+model MembershipPlan {
+  id            String   @id @default(cuid())
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name          String
+  priceCents    Int
+  intervalMonths Int     @default(1)
+  sessionsPerInterval Int @default(1)
+  perks         String[] @default([])
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  subscriptions Subscription[]
+
+  @@index([businessId])
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Subscription {
+  id              String             @id @default(cuid())
+  clientId        String
+  client          Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  planId          String
+  plan            MembershipPlan     @relation(fields: [planId], references: [id])
+  status          SubscriptionStatus @default(ACTIVE)
+  sessionsRemaining Int              @default(0)
+  currentPeriodEnd DateTime
+  createdAt       DateTime           @default(now())
+
+  @@index([clientId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Automations
+// ─────────────────────────────────────────────────────────────────────────
+
+enum AutomationTrigger {
+  BOOKING_CREATED
+  DEPOSIT_PAID
+  DAYS_BEFORE_SHOOT
+  SHOOT_COMPLETED
+  PAYMENT_DUE_SOON
+  PAYMENT_OVERDUE
+  LEAD_INACTIVE
+}
+
+enum AutomationAction {
+  SEND_CONFIRMATION
+  SEND_QUESTIONNAIRE
+  SEND_REMINDER
+  SEND_THANK_YOU
+  SEND_PAYMENT_REMINDER
+  SEND_FOLLOW_UP
+}
+
+model Automation {
+  id          String            @id @default(cuid())
+  businessId  String
+  business    Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name        String
+  trigger     AutomationTrigger
+  offsetHours Int               @default(0) // e.g. 24 for "24 hours before/after"
+  action      AutomationAction
+  messageTemplate String
+  enabled     Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+
+  runs AutomationExecution[]
+
+  @@index([businessId])
+}
+
+model AutomationExecution {
+  id           String     @id @default(cuid())
+  businessId   String
+  business     Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  automationId String
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  targetType   String // "booking" | "lead" | "payment"
+  targetId     String
+  ranAt        DateTime   @default(now())
+  result       String // "sent" | "skipped" | "failed"
+
+  @@index([businessId, automationId])
+}
+
+model Reminder {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kind      String // "shoot" | "payment" | "questionnaire"
+  dueAt     DateTime
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Integrations
+// ─────────────────────────────────────────────────────────────────────────
+
+enum IntegrationProvider {
+  INSTAGRAM
+  EMAIL
+  SMS
+  WHATSAPP
+  PHONE
+  WEBSITE
+  CALENDAR
+  STRIPE
+}
+
+enum IntegrationStatus {
+  NOT_CONNECTED
+  CONNECTED
+  ERROR
+  DEMO
+}
+
+model Integration {
+  id           String              @id @default(cuid())
+  businessId   String
+  business     Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  provider     IntegrationProvider
+  status       IntegrationStatus   @default(NOT_CONNECTED)
+  externalAccount String?
+  lastSyncedAt DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([businessId, provider])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// System
+// ─────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([businessId, createdAt])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  title      String
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([businessId, read])
+}

@@ -65,6 +65,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Could not retrieve email content" }, { status: 502 });
     }
 
+    // Bulk mail (newsletters, notifications) reliably carries List-Unsubscribe/List-Id —
+    // a genuine customer inquiry never does. Route those into the inbox's junk pile
+    // would just be noise; skip ingesting them as a "lead" entirely.
+    if (full.headers?.["list-unsubscribe"] || full.headers?.["list-id"] || /\bbulk\b/i.test(full.headers?.["precedence"] ?? "")) {
+      return NextResponse.json({ ok: true });
+    }
+
     const body = full.text || event.data.subject || "(no content)";
     const fromEmail = event.data.from;
     // The retrieve API's bare `from` is just the address; the raw header carries the

@@ -36,6 +36,15 @@ export function cleanEmailBody(raw: string): string {
   });
   text = lines.join("\n");
 
+  // A genuine inquiry basically never contains a 60+ character URL — that's a
+  // marketing/tracking link (utm params, opaque base64 blobs, etc). Shrink it down to
+  // just the domain instead of letting it dominate the screen; the destination is still
+  // obvious, the noise isn't.
+  text = text.replace(/https?:\/\/\S{40,}/g, (url) => {
+    const domain = url.match(/^https?:\/\/(?:www\.)?([^/?#]+)/)?.[1];
+    return domain ? `[${domain} link]` : "[link]";
+  });
+
   // Collapse 3+ blank lines down to one, trim edges.
   text = text.replace(/\n{3,}/g, "\n\n").trim();
 

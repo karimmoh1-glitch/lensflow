@@ -180,7 +180,10 @@ export type FetchedGmailMessage = {
  * is a heavier setup than a hackathon-scoped OAuth connection can assume exists; this
  * is the honest, immediately-workable alternative, triggered on demand or by a cron. */
 export async function listRecentGmailMessages(accessToken: string, maxResults = 15): Promise<FetchedGmailMessage[]> {
-  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${maxResults}&q=${encodeURIComponent("in:inbox")}`, {
+  // category:primary leans on Gmail's own classifier to exclude promotions/social/updates
+  // tabs — the same signal the Gmail web UI uses to keep newsletters out of the main
+  // inbox view. Real customer inquiries land in Primary; a Redfin listing alert doesn't.
+  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${maxResults}&q=${encodeURIComponent("in:inbox category:primary")}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!listRes.ok) throw new Error(`Gmail list failed: ${listRes.status} ${await listRes.text()}`);
@@ -196,6 +199,14 @@ export async function listRecentGmailMessages(accessToken: string, maxResults = 
     const data = await res.json();
     const headers: { name: string; value: string }[] = data.payload?.headers ?? [];
     const header = (name: string) => headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
+
+    // Belt-and-suspenders on top of category:primary: List-Unsubscribe/List-Id are
+    // near-universal on bulk mail (Gmail and other major providers require it of bulk
+    // senders) and never appear on a person's actual inquiry — a reliable, cheap filter
+    // that doesn't depend on Gmail's tab classification being enabled for this account.
+    if (header("List-Unsubscribe") || header("List-Id") || /\bbulk\b/i.test(header("Precedence") ?? "")) {
+      continue;
+    }
 
     const fromHeader = header("From") ?? "";
     const displayMatch = fromHeader.match(/^"?([^"<]+?)"?\s*<(.+)>$/);

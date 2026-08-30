@@ -1,6 +1,35 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+/** Read-only lookup: find which business/client a piece of junk landed under, by a
+ * substring match on the message body or client name/email — so a specific record can
+ * be targeted for removal without guessing. Same auth as the delete below. */
+export async function GET(req: Request) {
+  const secret = process.env.SEED_SECRET;
+  if (!secret) return NextResponse.json({ error: "SEED_SECRET is not configured on this deployment." }, { status: 501 });
+  if (req.headers.get("x-seed-secret") !== secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const q = new URL(req.url).searchParams.get("q");
+  if (!q) return NextResponse.json({ error: "Pass ?q=<search text>" }, { status: 400 });
+
+  const messages = await prisma.message.findMany({
+    where: { body: { contains: q, mode: "insensitive" } },
+    include: { conversation: { include: { client: true, business: true } } },
+    take: 10,
+  });
+
+  return NextResponse.json({
+    matches: messages.map((m) => ({
+      messageId: m.id,
+      businessName: m.conversation.business.name,
+      businessHandle: m.conversation.business.handle,
+      clientName: m.conversation.client?.name,
+      clientEmail: m.conversation.client?.email,
+      snippet: m.body.slice(0, 120),
+    })),
+  });
+}
+
 /**
  * One-off cleanup tool: deletes a client (and their conversations/messages/leads/
  * bookings/payments) by exact email, for wiping out junk that slipped into a

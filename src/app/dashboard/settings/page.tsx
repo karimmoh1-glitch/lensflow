@@ -31,7 +31,7 @@ export default async function SettingsPage() {
           <AvailabilityEditor initialWindows={availability.map((a) => ({ weekday: a.weekday, startMin: a.startMin, endMin: a.endMin }))} />
         }
         payments={<PaymentSettingsForm business={business} />}
-        connections={<ConnectionsSection businessId={business.id} handle={business.handle} />}
+        connections={<ConnectionsSection business={business} />}
       />
     </div>
   );

@@ -11,6 +11,7 @@ import { sendOnChannel } from "@/lib/messaging";
 const inviteSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Enter a valid email"),
+  phone: z.string().optional(),
 });
 
 export async function inviteClient(formData: FormData): Promise<{ error?: string; link?: string }> {
@@ -18,13 +19,17 @@ export async function inviteClient(formData: FormData): Promise<{ error?: string
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
 
-  const parsed = inviteSchema.safeParse({ name: formData.get("name"), email: formData.get("email") });
+  const parsed = inviteSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    phone: formData.get("phone") || undefined,
+  });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  const { name, email } = parsed.data;
+  const { name, email, phone } = parsed.data;
 
   const client =
     (await prisma.client.findFirst({ where: { businessId: business.id, email } })) ??
-    (await prisma.client.create({ data: { businessId: business.id, name, email } }));
+    (await prisma.client.create({ data: { businessId: business.id, name, email, phone } }));
 
   await prisma.invitation.updateMany({
     where: { businessId: business.id, clientId: client.id, status: "PENDING" },

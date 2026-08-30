@@ -300,8 +300,8 @@ export function Wizard({ businessName }: { businessName: string }) {
               <div className="space-y-3">
                 <h1 className="font-display text-2xl">Connect your channels</h1>
                 <p className="text-sm text-ink/50">
-                  Full OAuth setup happens later in Settings. For now we'll mark these as connected in demo mode so you can see the inbox
-                  in action.
+                  Real OAuth setup happens later in Settings → Connections, where each channel explains exactly what it needs. Turn these
+                  on now to see the inbox work end-to-end with simulated messages in the meantime — nothing here claims a real connection.
                 </p>
                 {CHANNELS.map((c) => (
                   <button
@@ -316,8 +316,8 @@ export function Wizard({ businessName }: { businessName: string }) {
                       <div className="font-medium text-sm">{c.label}</div>
                       <div className="text-xs text-ink/45">{c.blurb}</div>
                     </div>
-                    <Badge tone={connectedChannels.includes(c.key) ? "success" : "neutral"}>
-                      {connectedChannels.includes(c.key) ? "Connected" : "Connect"}
+                    <Badge tone={connectedChannels.includes(c.key) ? "warning" : "neutral"}>
+                      {connectedChannels.includes(c.key) ? "Demo mode" : "Enable demo"}
                     </Badge>
                   </button>
                 ))}
@@ -327,14 +327,17 @@ export function Wizard({ businessName }: { businessName: string }) {
             {step === 6 && (
               <div className="space-y-3">
                 <h1 className="font-display text-2xl">Connect your calendar</h1>
-                <p className="text-sm text-ink/50">Keep bookings in sync with your existing calendar.</p>
+                <p className="text-sm text-ink/50">
+                  Keep bookings in sync with your existing calendar. Real Google/Apple Calendar sync isn't built yet — enabling this just
+                  reserves the setting so it's ready when it is.
+                </p>
                 <button
                   type="button"
                   onClick={() => setCalendarConnected((c) => !c)}
                   className="w-full flex items-center justify-between rounded-lg border border-border px-4 py-3 text-left hover:border-ink/20"
                 >
                   <div className="font-medium text-sm">Google / Apple Calendar</div>
-                  <Badge tone={calendarConnected ? "success" : "neutral"}>{calendarConnected ? "Connected" : "Connect"}</Badge>
+                  <Badge tone={calendarConnected ? "warning" : "neutral"}>{calendarConnected ? "Demo mode" : "Enable demo"}</Badge>
                 </button>
               </div>
             )}

@@ -5,7 +5,7 @@ import { aiEnabled } from "@/lib/ai";
 import { getAllChannelAdapters } from "@/lib/channels/registry";
 import { IntegrationToggle } from "../integrations/IntegrationToggle";
 import { SimulateInbound } from "../integrations/SimulateInbound";
-import type { IntegrationProvider } from "@prisma/client";
+import type { Business, IntegrationProvider } from "@prisma/client";
 import Link from "next/link";
 
 const CHANNEL_LABEL: Record<string, string> = {
@@ -17,12 +17,46 @@ const CHANNEL_LABEL: Record<string, string> = {
   WEBSITE: "Website lead form",
 };
 
-export async function ConnectionsSection({ businessId, handle }: { businessId: string; handle: string }) {
-  const integrations = await prisma.integration.findMany({ where: { businessId } });
+const CALENDAR_PROVIDERS = [
+  { key: "google", label: "Google Calendar", note: "Requires Google Cloud OAuth credentials and the Calendar API — not built yet." },
+  { key: "microsoft", label: "Microsoft Calendar", note: "Requires a Microsoft Entra app registration and Graph API access — not built yet." },
+  { key: "apple", label: "Apple Calendar", note: "Requires CalDAV support — not built yet." },
+];
+
+function Row({
+  label,
+  note,
+  badge,
+  action,
+}: {
+  label: string;
+  note: React.ReactNode;
+  badge: { tone: "success" | "warning" | "neutral"; label: string };
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+      <div className="min-w-0">
+        <div className="text-sm font-medium">{label}</div>
+        <div className="text-xs text-ink/50 mt-0.5">{note}</div>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <Badge tone={badge.tone}>{badge.label}</Badge>
+        {action}
+      </div>
+    </div>
+  );
+}
+
+export async function ConnectionsSection({ business }: { business: Business }) {
+  const integrations = await prisma.integration.findMany({ where: { businessId: business.id } });
   const byProvider = new Map(integrations.map((i) => [i.provider, i]));
   const adapters = getAllChannelAdapters();
 
   const anyLive = adapters.some((a) => a.capabilities().live) || stripeIsLive;
+
+  const zelleConfigured = business.paymentMethods.includes("zelle") && !!business.zelleHandle;
+  const bankConfigured = business.paymentMethods.includes("bank_transfer") && !!business.bankInstructions;
 
   return (
     <div className="space-y-8">
@@ -34,6 +68,7 @@ export async function ConnectionsSection({ businessId, handle }: { businessId: s
       )}
 
       <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Communication</h3>
         <Card>
           <div className="divide-y divide-border">
             {adapters.map((adapter) => {
@@ -42,31 +77,76 @@ export async function ConnectionsSection({ businessId, handle }: { businessId: s
               const integration = byProvider.get(provider);
               const status = integration?.status ?? "NOT_CONNECTED";
               const isWebsite = adapter.channel === "WEBSITE";
+              // Instagram/WhatsApp/Phone have no demo capability at all (no real send or
+              // receive path exists yet) — toggling them wouldn't demonstrate anything, so
+              // there's no toggle to show, only the honest "needs setup" state.
+              const canDemo = caps.canSend || caps.canReceive;
+
+              const badge = caps.live
+                ? ({ tone: "success", label: "✓ Connected" } as const)
+                : status !== "NOT_CONNECTED" && canDemo
+                  ? ({ tone: "warning", label: "Demo mode" } as const)
+                  : ({ tone: "neutral", label: "Needs setup" } as const);
 
               return (
-                <div key={adapter.channel} className="flex items-center justify-between gap-4 px-4 py-3.5">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">{CHANNEL_LABEL[adapter.channel]}</div>
-                    <div className="text-xs text-ink/50 mt-0.5">{caps.setupNote}</div>
-                    {isWebsite && (
-                      <Link href={`/embed/${handle}`} target="_blank" className="text-xs text-accent-text hover:underline mt-1 inline-block">
-                        View embeddable form →
-                      </Link>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    {caps.live ? (
-                      <Badge tone="success">Live</Badge>
-                    ) : status !== "NOT_CONNECTED" && caps.canReceive ? (
-                      <Badge tone="warning">Demo mode</Badge>
-                    ) : !caps.canSend && !caps.canReceive ? (
-                      <Badge tone="neutral">Needs setup</Badge>
-                    ) : null}
-                    {!isWebsite && <IntegrationToggle provider={provider} connected={status !== "NOT_CONNECTED"} />}
-                  </div>
-                </div>
+                <Row
+                  key={adapter.channel}
+                  label={CHANNEL_LABEL[adapter.channel]}
+                  note={
+                    isWebsite ? (
+                      <>
+                        {caps.setupNote}{" "}
+                        <Link href={`/embed/${business.handle}`} target="_blank" className="text-accent-text hover:underline">
+                          View embeddable form →
+                        </Link>
+                      </>
+                    ) : (
+                      caps.setupNote
+                    )
+                  }
+                  badge={badge}
+                  action={!isWebsite && canDemo ? <IntegrationToggle provider={provider} connected={status !== "NOT_CONNECTED"} /> : undefined}
+                />
               );
             })}
+          </div>
+        </Card>
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Calendar</h3>
+        <Card>
+          <div className="divide-y divide-border">
+            {CALENDAR_PROVIDERS.map((c) => (
+              <Row key={c.key} label={c.label} note={c.note} badge={{ tone: "neutral", label: "Needs setup" }} />
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Payments</h3>
+        <Card>
+          <div className="divide-y divide-border">
+            <Row
+              label="Stripe"
+              note={stripeIsLive ? "Real card checkout is live." : "Add STRIPE_SECRET_KEY to accept real card payments — falls back to a simulated checkout until then."}
+              badge={stripeIsLive ? { tone: "success", label: "✓ Connected" } : { tone: "neutral", label: "Needs setup" }}
+            />
+            <Row
+              label="Zelle"
+              note={
+                zelleConfigured
+                  ? `Payments sent to ${business.zelleHandle}. You confirm each one manually once received.`
+                  : "Not a real-time connection — Zelle has no API. Set your handle in the Payments tab, then confirm each payment manually when it arrives."
+              }
+              badge={zelleConfigured ? { tone: "warning", label: "Tracked manually" } : { tone: "neutral", label: "Needs setup" }}
+            />
+            <Row
+              label="Bank transfer"
+              note={bankConfigured ? "Instructions are set — confirm each transfer manually once received." : "Add your bank instructions in the Payments tab."}
+              badge={bankConfigured ? { tone: "warning", label: "Tracked manually" } : { tone: "neutral", label: "Needs setup" }}
+            />
           </div>
         </Card>
         {!anyLive && (

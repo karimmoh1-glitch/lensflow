@@ -6,6 +6,7 @@ import { initials } from "@/lib/utils";
 import { format } from "date-fns";
 import { PartnerInviteForm } from "./PartnerInviteForm";
 import { InvitationRow } from "./InvitationRow";
+import { MemberActions } from "./MemberActions";
 
 const ROLE_LABEL: Record<string, string> = { OWNER: "Owner", ADMIN: "Admin", PHOTOGRAPHER: "Photographer", PARTNER: "Partner", CLIENT: "Client" };
 
@@ -17,7 +18,7 @@ export default async function TeamPage() {
   const [members, invitations] = await Promise.all([
     prisma.orgMembership.findMany({
       where: { businessId: business.id, role: { in: ["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"] } },
-      include: { user: true },
+      include: { user: true, assignedBookings: { where: { status: { notIn: ["CANCELED", "COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"] } } } },
       orderBy: { createdAt: "asc" },
     }),
     prisma.invitation.findMany({
@@ -40,10 +41,18 @@ export default async function TeamPage() {
                   {initials(m.user.name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{m.user.name}</div>
-                  <div className="text-xs text-ink/45 truncate">{m.user.email}</div>
+                  <div className="text-sm font-medium truncate">
+                    {m.user.name}
+                    {m.status === "SUSPENDED" && <span className="text-danger-text font-normal"> · Deactivated</span>}
+                  </div>
+                  <div className="text-xs text-ink/45 truncate">
+                    {m.user.email}
+                    {m.role === "PARTNER" &&
+                      ` · ${m.assignedBookings.length} upcoming ${m.assignedBookings.length === 1 ? "project" : "projects"}`}
+                  </div>
                 </div>
                 <Badge tone={m.role === "OWNER" ? "accent" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
+                <MemberActions membershipId={m.id} role={m.role} status={m.status} />
               </div>
             ))}
           </div>

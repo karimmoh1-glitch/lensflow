@@ -65,6 +65,10 @@ export function InviteClientButton() {
                       <Label htmlFor="client-email">Email</Label>
                       <Input id="client-email" name="email" type="email" placeholder="sarah@example.com" required />
                     </div>
+                    <div>
+                      <Label htmlFor="client-phone">Phone (optional)</Label>
+                      <Input id="client-phone" name="phone" type="tel" placeholder="(555) 123-4567" />
+                    </div>
                     {error && <p className="text-sm text-danger">{error}</p>}
                     <Button type="submit" className="w-full" disabled={pending}>
                       {pending ? "Sending…" : "Invite client"}

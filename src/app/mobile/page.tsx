@@ -3,7 +3,7 @@ import { LinkButton } from "@/components/ui";
 
 export const metadata = {
   title: "LensFlow — On your phone",
-  description: "Leads, bookings, payments, and delivery — manage your studio from your phone. No app to download.",
+  description: "Leads, bookings, payments, and delivery — manage your business from your phone. No app to download.",
 };
 
 // Public, no-auth landing page — the destination for the "scan to try LensFlow on your
@@ -22,7 +22,7 @@ export default function MobilePage() {
 
         <h1 className="font-display text-3xl leading-[1.15] text-ink mb-3">LensFlow is on your phone.</h1>
         <p className="text-[15px] text-ink/55 leading-[22px] mb-10">
-          Leads, bookings, payments, and delivery — run your whole studio from wherever the shoot takes you. No app to
+          Leads, bookings, payments, and delivery — run your whole business from wherever you're working. No app to
           download, nothing to install.
         </p>
 

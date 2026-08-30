@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession, getUserMemberships } from "@/lib/auth";
+import { getSession, getUserMemberships, homeRouteFor } from "@/lib/auth";
 import { switchWorkspace } from "@/app/actions/workspace";
 import { Card, CardBody } from "@/components/ui";
 import { initials } from "@/lib/utils";
@@ -28,8 +28,13 @@ export default async function WorkspacesPage() {
   }
 
   if (memberships.length === 1) {
+    // Next.js forbids setting a cookie from a Server Component's render, even when the
+    // call is routed through a nested "use server" function — so we can't call
+    // switchWorkspace() here. Redirecting without setting activeBusinessId is safe:
+    // requireBusiness() already auto-selects it on the next request when there's only
+    // one membership to choose from.
     const m = memberships[0];
-    await switchWorkspace(m.businessId);
+    redirect(homeRouteFor(m.role, m.business));
   }
 
   return (

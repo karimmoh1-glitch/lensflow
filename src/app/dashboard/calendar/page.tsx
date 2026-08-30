@@ -15,7 +15,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, toZonedDisplayDate } from "@/lib/utils";
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const ctx = await requireBusiness();
@@ -39,7 +39,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   const byDay = new Map<string, typeof bookings>();
   for (const b of bookings) {
-    const key = format(b.startAt, "yyyy-MM-dd");
+    const key = format(toZonedDisplayDate(b.startAt, business.timezone), "yyyy-MM-dd");
     byDay.set(key, [...(byDay.get(key) ?? []), b]);
   }
 
@@ -106,9 +106,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                       key={b.id}
                       href={`/dashboard/bookings/${b.id}`}
                       className="block truncate text-[11px] rounded bg-accent-soft text-accent-text px-1.5 py-0.5 hover:bg-accent/20"
-                      title={`${format(b.startAt, "h:mm a")} ${b.service.name} — ${b.client.name}`}
+                      title={`${format(toZonedDisplayDate(b.startAt, business.timezone), "h:mm a")} ${b.service.name} — ${b.client.name}`}
                     >
-                      {format(b.startAt, "h:mma")} {b.client.name}
+                      {format(toZonedDisplayDate(b.startAt, business.timezone), "h:mma")} {b.client.name}
                     </Link>
                   ))}
                   {dayBookings.length > 3 && <div className="text-[11px] text-ink/40">+{dayBookings.length - 3} more</div>}
@@ -135,7 +135,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                   {dayBookings.map((b) => (
                     <Link key={b.id} href={`/dashboard/bookings/${b.id}`} className="flex items-center justify-between text-sm">
                       <span>
-                        {format(b.startAt, "h:mm a")} — {b.client.name}
+                        {format(toZonedDisplayDate(b.startAt, business.timezone), "h:mm a")} — {b.client.name}
                       </span>
                       <span className="text-ink/40 text-xs">{b.service.name}</span>
                     </Link>

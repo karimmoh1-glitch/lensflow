@@ -4,7 +4,7 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { MapPin } from "lucide-react";
 import { Badge, Card, CardBody, PageHeader } from "@/components/ui";
-import { formatMoney } from "@/lib/utils";
+import { formatMoney, toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { BookingActions } from "./BookingActions";
 import { AssignPartner } from "./AssignPartner";
@@ -54,7 +54,10 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title={`${booking.client.name} — ${booking.service.name}`} description={format(booking.startAt, "EEEE, MMMM d, yyyy · h:mm a")} />
+      <PageHeader
+        title={`${booking.client.name} — ${booking.service.name}`}
+        description={format(toZonedDisplayDate(booking.startAt, business.timezone), "EEEE, MMMM d, yyyy · h:mm a")}
+      />
 
       {booking.status !== "CANCELED" && (
         <div className="flex items-center mb-8 overflow-x-auto scrollbar-thin pb-2">

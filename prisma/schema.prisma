@@ -389,7 +389,15 @@ model Message {
   sentByUser     User?            @relation("SentByUser", fields: [sentByUserId], references: [id])
   createdAt      DateTime         @default(now())
 
+  // The email provider's own message id (Resend's `id` on send, `message_id` on
+  // receive) — used for two real things, not decoration: (1) deduping a webhook Resend
+  // retries after a timeout, so the same inbound email never gets ingested twice, and
+  // (2) setting In-Reply-To/References on our outbound sends so the customer's mail
+  // client threads the conversation correctly on their end too.
+  providerMessageId String?
+
   @@index([conversationId, createdAt])
+  @@index([providerMessageId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────

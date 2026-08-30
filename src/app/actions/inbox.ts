@@ -38,8 +38,36 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
   const conversation = await prisma.conversation.findFirst({ where: { id: conversationId, businessId: business.id } });
   if (!conversation) throw new Error("not found");
 
-  const result = await sendOnChannel({ channel: conversation.channel, to: conversation.externalHandle, body });
+  // For email specifically: Reply-To routes the customer's reply back through our own
+  // webhook instead of nowhere, and threading headers keep it in the same thread in
+  // their mail client, not just in ours.
+  let replyTo: string | undefined;
+  let headers: Record<string, string> | undefined;
+  if (conversation.channel === "EMAIL") {
+    const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;
+    if (inboundDomain) replyTo = `${business.handle}@${inboundDomain}`;
 
+    const lastInbound = await prisma.message.findFirst({
+      where: { conversationId, direction: "INBOUND", providerMessageId: { not: null } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (lastInbound?.providerMessageId) {
+      headers = { "In-Reply-To": lastInbound.providerMessageId, References: lastInbound.providerMessageId };
+    }
+  }
+
+  const result = await sendOnChannel({
+    channel: conversation.channel,
+    to: conversation.externalHandle,
+    body,
+    fromName: business.name,
+    replyTo,
+    headers,
+  });
+
+  // Only ever marked SENT once the provider actually confirms it — a failed send keeps
+  // the draft text intact (the caller still has it) and the message row records exactly
+  // what went wrong instead of silently pretending it went out.
   await prisma.$transaction([
     prisma.message.create({
       data: {
@@ -49,10 +77,11 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
         aiDrafted,
         status: result.ok ? "SENT" : "FAILED",
         sentByUserId: ctxSession.userId,
+        providerMessageId: result.ok ? result.providerMessageId : undefined,
       },
     }),
     prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
-    prisma.lead.updateMany({ where: { conversationId }, data: { respondedAt: new Date(), status: "CONTACTED" } }),
+    ...(result.ok ? [prisma.lead.updateMany({ where: { conversationId }, data: { respondedAt: new Date(), status: "CONTACTED" as const } })] : []),
   ]);
 
   revalidatePath("/dashboard/inbox");

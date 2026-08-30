@@ -77,12 +77,17 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
               <div
                 className={cn(
                   "rounded-2xl px-4 py-2.5 text-sm",
-                  m.direction === "OUTBOUND" ? "bg-ink text-white rounded-br-sm" : "bg-black/[0.05] text-ink rounded-bl-sm"
+                  m.status === "FAILED"
+                    ? "bg-danger-soft text-danger-text rounded-br-sm border border-danger/30"
+                    : m.direction === "OUTBOUND"
+                      ? "bg-ink text-white rounded-br-sm"
+                      : "bg-black/[0.05] text-ink rounded-bl-sm"
                 )}
               >
                 {m.body}
               </div>
               <div className={cn("text-[11px] text-ink/35 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
+                {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
                 {m.aiDrafted && "AI drafted · "}
                 {format(m.createdAt, "MMM d, h:mm a")}
               </div>

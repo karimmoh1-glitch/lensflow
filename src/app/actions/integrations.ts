@@ -36,6 +36,7 @@ export async function simulateInboundMessage(params: { channel: ChannelType; sen
     senderName: params.senderName,
     senderHandle: params.handle,
     body: params.body,
+    clientEmail: params.channel === "EMAIL" ? params.handle : undefined,
   });
 
   redirect(`/dashboard/inbox?c=${conversation.id}`);

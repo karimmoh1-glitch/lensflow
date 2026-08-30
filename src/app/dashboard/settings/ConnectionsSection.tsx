@@ -77,12 +77,29 @@ export async function ConnectionsSection({ business }: { business: Business }) {
               const integration = byProvider.get(provider);
               const status = integration?.status ?? "NOT_CONNECTED";
               const isWebsite = adapter.channel === "WEBSITE";
+              const isEmail = adapter.channel === "EMAIL";
               // Instagram/WhatsApp/Phone have no demo capability at all (no real send or
               // receive path exists yet) — toggling them wouldn't demonstrate anything, so
               // there's no toggle to show, only the honest "needs setup" state.
               const canDemo = caps.canSend || caps.canReceive;
 
-              const badge = caps.live
+              // Email has no per-business toggle at all: it's one platform-wide Resend
+              // account, not a per-business OAuth connection, so every business is either
+              // genuinely live or genuinely not — never a fake per-business "Connect" state.
+              const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;
+              const emailAddress = inboundDomain ? `${business.handle}@${inboundDomain}` : null;
+              const emailBadge = caps.live
+                ? ({ tone: "success", label: "✓ Email Connected" } as const)
+                : caps.canSend
+                  ? ({ tone: "warning", label: "Configuration required" } as const)
+                  : ({ tone: "neutral", label: "Needs setup" } as const);
+              const emailNote = caps.live
+                ? `${emailAddress} — incoming email lands in your Inbox, replies go straight to the customer.`
+                : caps.canSend
+                  ? "Sending is ready. One more step is needed before incoming email reaches your inbox — ask your administrator to finish setup."
+                  : "Connect your business email to send and receive messages right from your LensFlow inbox.";
+
+              const badge = isEmail ? emailBadge : caps.live
                 ? ({ tone: "success", label: "✓ Connected" } as const)
                 : status !== "NOT_CONNECTED" && canDemo
                   ? ({ tone: "warning", label: "Demo mode" } as const)
@@ -100,12 +117,14 @@ export async function ConnectionsSection({ business }: { business: Business }) {
                           View embeddable form →
                         </Link>
                       </>
+                    ) : isEmail ? (
+                      emailNote
                     ) : (
                       caps.setupNote
                     )
                   }
                   badge={badge}
-                  action={!isWebsite && canDemo ? <IntegrationToggle provider={provider} connected={status !== "NOT_CONNECTED"} /> : undefined}
+                  action={!isWebsite && !isEmail && canDemo ? <IntegrationToggle provider={provider} connected={status !== "NOT_CONNECTED"} /> : undefined}
                 />
               );
             })}

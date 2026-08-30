@@ -23,3 +23,21 @@ export async function setMembershipStatus(membershipId: string, active: boolean)
 
   revalidatePath("/dashboard/team");
 }
+
+/**
+ * Owner-controlled toggle for a partner's inbox scope. Off by default: a partner sees
+ * only conversations tied to clients from bookings assigned to them. On: they see every
+ * business conversation. Never automatic — the owner explicitly grants it per partner.
+ */
+export async function setPartnerConversationAccess(membershipId: string, canViewAll: boolean) {
+  const ctx = await requireRole(["OWNER", "ADMIN"]);
+  if (!ctx) throw new Error("unauthorized");
+
+  const membership = await prisma.orgMembership.findFirst({ where: { id: membershipId, businessId: ctx.business.id } });
+  if (!membership) throw new Error("not found");
+  if (membership.role !== "PARTNER") throw new Error("Only partners have a conversation-access setting.");
+
+  await prisma.orgMembership.update({ where: { id: membershipId }, data: { canViewAllConversations: canViewAll } });
+
+  revalidatePath("/dashboard/team");
+}

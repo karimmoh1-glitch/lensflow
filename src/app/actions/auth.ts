@@ -93,6 +93,10 @@ export async function login(formData: FormData): Promise<FormState> {
 
   const memberships = await getUserMemberships(user.id);
   if (memberships.length === 0) {
+    const pendingRequest = await prisma.joinRequest.findFirst({ where: { userId: user.id, status: "PENDING" } });
+    if (pendingRequest) {
+      return { error: "Your request to join is still waiting on the owner's approval. We'll let you in as soon as it's accepted." };
+    }
     return { error: "This account isn't part of any organization yet." };
   }
 

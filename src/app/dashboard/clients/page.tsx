@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { PageHeader, EmptyState, Card, Badge } from "@/components/ui";
 import { formatMoney, initials } from "@/lib/utils";
 import { InviteClientButton } from "./InviteClientButton";
+import { PromotePartnerButton } from "./PromotePartnerButton";
 
 export default async function ClientsPage() {
   const ctx = await requireBusiness();
@@ -12,11 +13,19 @@ export default async function ClientsPage() {
   if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
 
-  const clients = await prisma.client.findMany({
-    where: { businessId: business.id },
-    include: { bookings: true, payments: { where: { status: "PAID" } }, subscriptions: { where: { status: "ACTIVE" } } },
-    orderBy: { createdAt: "desc" },
-  });
+  const [clients, clientMemberships] = await Promise.all([
+    prisma.client.findMany({
+      where: { businessId: business.id },
+      include: { bookings: true, payments: { where: { status: "PAID" } }, subscriptions: { where: { status: "ACTIVE" } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.orgMembership.findMany({
+      where: { businessId: business.id, role: "CLIENT" },
+      select: { id: true, userId: true },
+    }),
+  ]);
+  const clientMembershipByUserId = new Map(clientMemberships.map((m) => [m.userId, m.id]));
+  const canPromote = ctx.role === "OWNER" || ctx.role === "ADMIN";
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
@@ -49,6 +58,9 @@ export default async function ClientsPage() {
                       <div className="text-sm font-medium">{formatMoney(ltv)}</div>
                       <div className="text-xs text-ink/40">{c.bookings.length} booking{c.bookings.length !== 1 && "s"}</div>
                     </div>
+                    {canPromote && c.userId && clientMembershipByUserId.has(c.userId) && (
+                      <PromotePartnerButton membershipId={clientMembershipByUserId.get(c.userId)!} name={c.name} />
+                    )}
                   </div>
                 </Link>
               );

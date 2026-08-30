@@ -58,6 +58,7 @@ model Business {
   membershipPlans MembershipPlan[]
   auditLogs      AuditLog[]
   notifications  Notification[]
+  joinRequests   JoinRequest[]
 }
 
 // A user's role within a specific organization — see OrgMembership. Never trust a role
@@ -90,6 +91,7 @@ model User {
   sentMessages       Message[]            @relation("SentByUser")
   notes              ClientNote[]
   passwordResetTokens PasswordResetToken[]
+  joinRequests       JoinRequest[]
 }
 
 // The tenancy join table: one row per (user, organization) pair. A user may belong to
@@ -105,6 +107,11 @@ model OrgMembership {
   role       Role
   status     MembershipStatus  @default(ACTIVE)
   createdAt  DateTime          @default(now())
+
+  // Owner-controlled partner permission: by default a partner only sees conversations
+  // tied to clients from bookings assigned to them. When true, they see every business
+  // conversation. Irrelevant for non-PARTNER roles, which already see everything.
+  canViewAllConversations Boolean @default(false)
 
   assignedBookings Booking[] @relation("AssignedPartner")
 
@@ -158,6 +165,30 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+enum JoinRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// A request from a user to join an existing business, made from the public "Join a
+// business" signup path. Never grants membership on its own — an owner/admin must
+// accept it, and accepting always lands the requester as a CLIENT (never a partner or
+// staff role). See promoteToPartner for the only path from there to elevated access.
+model JoinRequest {
+  id         String            @id @default(cuid())
+  businessId String
+  business   Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     JoinRequestStatus @default(PENDING)
+  createdAt  DateTime          @default(now())
+  decidedAt  DateTime?
+
+  @@unique([userId, businessId])
+  @@index([businessId, status])
 }
 
 // ─────────────────────────────────────────────────────────────────────────

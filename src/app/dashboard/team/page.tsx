@@ -7,6 +7,8 @@ import { format } from "date-fns";
 import { PartnerInviteForm } from "./PartnerInviteForm";
 import { InvitationRow } from "./InvitationRow";
 import { MemberActions } from "./MemberActions";
+import { JoinRequestRow } from "./JoinRequestRow";
+import { ConversationAccessToggle } from "./ConversationAccessToggle";
 
 const ROLE_LABEL: Record<string, string> = { OWNER: "Owner", ADMIN: "Admin", PHOTOGRAPHER: "Photographer", PARTNER: "Partner", CLIENT: "Client" };
 
@@ -15,7 +17,7 @@ export default async function TeamPage() {
   if (!ctx) redirect("/dashboard");
   const { business } = ctx;
 
-  const [members, invitations] = await Promise.all([
+  const [members, invitations, joinRequests] = await Promise.all([
     prisma.orgMembership.findMany({
       where: { businessId: business.id, role: { in: ["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"] } },
       include: { user: true, assignedBookings: { where: { status: { notIn: ["CANCELED", "COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"] } } } },
@@ -24,6 +26,11 @@ export default async function TeamPage() {
     prisma.invitation.findMany({
       where: { businessId: business.id, role: { in: ["ADMIN", "PHOTOGRAPHER", "PARTNER"] } },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.joinRequest.findMany({
+      where: { businessId: business.id, status: "PENDING" },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
     }),
   ]);
 
@@ -51,6 +58,7 @@ export default async function TeamPage() {
                       ` · ${m.assignedBookings.length} upcoming ${m.assignedBookings.length === 1 ? "project" : "projects"}`}
                   </div>
                 </div>
+                {m.role === "PARTNER" && <ConversationAccessToggle membershipId={m.id} canViewAll={m.canViewAllConversations} />}
                 <Badge tone={m.role === "OWNER" ? "accent" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
                 <MemberActions membershipId={m.id} role={m.role} status={m.status} />
               </div>
@@ -58,6 +66,19 @@ export default async function TeamPage() {
           </div>
         </Card>
       </div>
+
+      {joinRequests.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-sm font-medium text-ink mb-2.5">Join requests</h2>
+          <Card>
+            <div className="divide-y divide-border">
+              {joinRequests.map((r) => (
+                <JoinRequestRow key={r.id} id={r.id} name={r.user.name} email={r.user.email} />
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
 
       <div className="mb-10">
         <h2 className="text-sm font-medium text-ink mb-2.5">Invite a partner</h2>

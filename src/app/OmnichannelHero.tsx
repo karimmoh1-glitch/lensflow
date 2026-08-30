@@ -63,7 +63,7 @@ export function OmnichannelHero() {
       <div className="hidden sm:block relative w-full h-full max-w-2xl mx-auto">
         {/* Soft glow behind the destination card — gives it depth as the "answer" the eye lands on */}
         <div
-          className="absolute rounded-full bg-accent/10 blur-3xl transition-opacity duration-700"
+          className={cn("absolute rounded-full bg-accent/10 blur-3xl transition-opacity duration-700", mounted && !reducedMotion && "animate-pulse")}
           style={{ left: "50%", top: "58%", width: 260, height: 200, transform: "translate(-50%,-50%)", opacity: mounted ? 1 : 0, transitionDelay: "300ms" }}
           aria-hidden
         />
@@ -94,12 +94,16 @@ export function OmnichannelHero() {
               />
             );
           })}
+          {/* Light pulses keep traveling toward the card for as long as the hero is
+              visible — repeatCount="indefinite" rather than the one-shot fill="freeze"
+              this used before, staggered per channel so they read as a steady stream
+              rather than everything blinking in sync. */}
           {!reducedMotion &&
             mounted &&
             CHANNELS.map((c, i) => (
               <circle key={`dot-${c.key}`} r="2.5" fill="currentColor" className="text-accent">
-                <animateMotion dur="1.6s" begin={`${0.9 + i * 0.15}s`} fill="freeze" path={connectorPath(c.x, c.y)} />
-                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.8;1" dur="1.6s" begin={`${0.9 + i * 0.15}s`} fill="freeze" />
+                <animateMotion dur="2.6s" begin={`${0.9 + i * 0.4}s`} repeatCount="indefinite" path={connectorPath(c.x, c.y)} />
+                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.55;0.62;1" dur="2.6s" begin={`${0.9 + i * 0.4}s`} repeatCount="indefinite" />
               </circle>
             ))}
         </svg>

@@ -52,10 +52,11 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
           </Link>
           <div className="flex-1 min-w-0">
             <h2 className="font-medium text-sm truncate">{conversation.client?.name ?? conversation.externalHandle ?? "Unknown"}</h2>
-            <div className="flex items-center gap-1.5 text-xs text-ink/45">
+            <div className="flex items-center gap-1.5 text-xs text-ink/45 truncate">
               <ChannelBadge channel={conversation.channel} />
               {CHANNEL_META[conversation.channel].label}
               {conversation.externalHandle ? ` · ${conversation.externalHandle}` : ""}
+              {conversation.subject ? ` · ${conversation.subject}` : ""}
             </div>
           </div>
           {scored && (

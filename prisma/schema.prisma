@@ -396,6 +396,11 @@ model Message {
   // client threads the conversation correctly on their end too.
   providerMessageId String?
 
+  // Original pre-normalization content (whichever of text/html the provider handed
+  // over), kept only so a real parsing problem can be diagnosed after the fact —
+  // never rendered anywhere in the conversation UI, only `body` is.
+  rawBody String?
+
   @@index([conversationId, createdAt])
   @@index([providerMessageId])
 }

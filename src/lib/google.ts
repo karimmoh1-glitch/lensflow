@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/db";
+import { normalizeEmailContent } from "./emailNormalize";
 import type { Integration } from "@prisma/client";
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -213,31 +214,44 @@ export async function listRecentGmailMessages(accessToken: string, maxResults = 
     const fromEmail = displayMatch?.[2]?.trim() ?? fromHeader.trim();
     const fromName = displayMatch?.[1]?.trim();
 
+    const { text, html } = extractBodyParts(data.payload);
+
     results.push({
       id: data.id,
       from: fromEmail,
       fromName,
       subject: header("Subject") ?? "(no subject)",
-      body: extractPlainTextBody(data.payload) ?? "(no content)",
+      body: normalizeEmailContent({ text, html }),
       messageIdHeader: header("Message-ID") ?? undefined,
     });
   }
   return results;
 }
 
-function extractPlainTextBody(payload: any): string | null {
-  if (!payload) return null;
-  if (payload.mimeType === "text/plain" && payload.body?.data) return decodeBase64Url(payload.body.data);
-  if (payload.parts) {
-    const plain = payload.parts.find((p: any) => p.mimeType === "text/plain");
-    if (plain?.body?.data) return decodeBase64Url(plain.body.data);
-    for (const part of payload.parts) {
-      const nested = extractPlainTextBody(part);
-      if (nested) return nested;
+/** Walks Gmail's MIME part tree and pulls out the text/plain and text/html parts
+ * separately (a multipart/alternative message carries both — normalizeEmailContent
+ * decides which to actually use). Never returns raw markup as if it were the "text"
+ * part; that was the bug that let unrendered HTML leak into the inbox. */
+function extractBodyParts(payload: any): { text: string | null; html: string | null } {
+  let text: string | null = null;
+  let html: string | null = null;
+
+  function walk(node: any) {
+    if (!node) return;
+    if (node.mimeType === "text/plain" && node.body?.data && !text) {
+      text = decodeBase64Url(node.body.data);
+    } else if (node.mimeType === "text/html" && node.body?.data && !html) {
+      html = decodeBase64Url(node.body.data);
+    } else if (node.parts) {
+      for (const part of node.parts) walk(part);
+    } else if (!node.mimeType?.startsWith("multipart/") && node.body?.data && !text && !html) {
+      // Single-part message with no explicit mimeType match (rare) — treat as text.
+      text = decodeBase64Url(node.body.data);
     }
   }
-  if (payload.body?.data) return decodeBase64Url(payload.body.data);
-  return null;
+
+  walk(payload);
+  return { text, html };
 }
 
 function decodeBase64Url(data: string): string {

@@ -27,13 +27,17 @@ export async function ingestInboundMessage(params: {
   senderName: string;
   senderHandle: string;
   body: string;
+  subject?: string;
   clientEmail?: string;
   clientPhone?: string;
   /** The provider's own id for this specific message (Resend's `message_id`, etc.) —
    * used to skip re-ingesting a webhook delivery Resend retries after a timeout. */
   providerMessageId?: string;
+  /** Original pre-normalization content, kept only for internal debugging — never
+   * rendered anywhere in the conversation UI. */
+  rawBody?: string;
 }) {
-  const { businessId, channel, senderName, senderHandle, clientEmail, clientPhone, providerMessageId } = params;
+  const { businessId, channel, senderName, senderHandle, subject, clientEmail, clientPhone, providerMessageId, rawBody } = params;
   const body = channel === "EMAIL" ? cleanEmailBody(params.body) : params.body;
 
   // Idempotency: a webhook can legitimately be redelivered (provider retry after a slow
@@ -73,9 +77,12 @@ export async function ingestInboundMessage(params: {
 
   if (existingConversation) {
     await prisma.message.create({
-      data: { conversationId: existingConversation.id, direction: "INBOUND", body, providerMessageId },
+      data: { conversationId: existingConversation.id, direction: "INBOUND", body, providerMessageId, rawBody },
     });
-    await prisma.conversation.update({ where: { id: existingConversation.id }, data: { lastMessageAt: new Date() } });
+    await prisma.conversation.update({
+      where: { id: existingConversation.id },
+      data: { lastMessageAt: new Date(), subject: existingConversation.subject ?? subject },
+    });
 
     if (existingConversation.lead) {
       const lead = existingConversation.lead;
@@ -124,10 +131,10 @@ export async function ingestInboundMessage(params: {
   }
 
   const conversation = await prisma.conversation.create({
-    data: { businessId, clientId: client.id, channel, externalHandle: senderHandle, lastMessageAt: new Date() },
+    data: { businessId, clientId: client.id, channel, externalHandle: senderHandle, subject, lastMessageAt: new Date() },
   });
 
-  await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body, providerMessageId } });
+  await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body, providerMessageId, rawBody } });
 
   const { score, reasons } = scoreLead({
     intent: extracted.intent,

@@ -11,14 +11,16 @@ import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
 import { AutoGmailSync } from "./AutoGmailSync";
 
 type Filter = "all" | "needs_reply" | "cold";
+type Sort = "priority" | "newest" | "oldest";
 
-export default async function InboxPage({ searchParams }: { searchParams: Promise<{ c?: string; filter?: string }> }) {
+export default async function InboxPage({ searchParams }: { searchParams: Promise<{ c?: string; filter?: string; sort?: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
   if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
-  const { c: selectedId, filter: filterParam } = await searchParams;
+  const { c: selectedId, filter: filterParam, sort: sortParam } = await searchParams;
   const filter: Filter = filterParam === "needs_reply" || filterParam === "cold" ? filterParam : "all";
+  const sort: Sort = sortParam === "newest" || sortParam === "oldest" ? sortParam : "priority";
 
   const [conversations, gmailIntegration] = await Promise.all([
     prisma.conversation.findMany({
@@ -60,11 +62,15 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       if (filter === "cold") return r.isCold;
       return true;
     })
-    // Priority order: whatever needs a reply comes first (that's the actual work),
-    // hottest leads first within that, then everything else by how recently it moved —
-    // so opening the inbox always shows what actually needs attention at the top,
-    // not just whatever happened to arrive most recently.
     .sort((a, b) => {
+      if (sort === "newest") return b.conv.lastMessageAt.getTime() - a.conv.lastMessageAt.getTime();
+      if (sort === "oldest") return a.conv.lastMessageAt.getTime() - b.conv.lastMessageAt.getTime();
+      // Priority (default): whatever needs a reply comes first (that's the actual
+      // work), hottest lead first within that — using the same scoreLead() signals
+      // (intent, urgency of the requested date, deal value, response staleness) that
+      // already drive "Going cold," not a second competing ranking — then everything
+      // else by how recently it moved, so the order is always explainable from what's
+      // already shown on the row (the score badge + "Needs reply").
       if (a.needsReply !== b.needsReply) return a.needsReply ? -1 : 1;
       const scoreDiff = (b.score ?? -1) - (a.score ?? -1);
       if (scoreDiff !== 0) return scoreDiff;
@@ -84,10 +90,21 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       <div className={cn("w-full md:w-[340px] shrink-0 border-r border-border flex-col bg-white", selectedId ? "hidden md:flex" : "flex")}>
         <div className="px-5 pt-4 pb-3 border-b border-border">
           <h1 className="font-display text-section-title text-ink mb-3">Inbox</h1>
-          <div className="flex items-center gap-1 text-xs">
-            <FilterChip href="/dashboard/inbox" active={filter === "all"} label="All" count={conversations.length} />
-            <FilterChip href="/dashboard/inbox?filter=needs_reply" active={filter === "needs_reply"} label="Needs reply" count={needsReplyCount} />
-            <FilterChip href="/dashboard/inbox?filter=cold" active={filter === "cold"} label="Going cold" count={coldCount} />
+          <div className="flex items-center gap-1 text-xs mb-2">
+            <FilterChip href={buildInboxHref(undefined, sort)} active={filter === "all"} label="All" count={conversations.length} />
+            <FilterChip
+              href={buildInboxHref("needs_reply", sort)}
+              active={filter === "needs_reply"}
+              label="Needs reply"
+              count={needsReplyCount}
+            />
+            <FilterChip href={buildInboxHref("cold", sort)} active={filter === "cold"} label="Going cold" count={coldCount} />
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-ink/40">
+            <span className="font-medium">Sort by</span>
+            <SortChip href={buildInboxHref(filter, "priority")} active={sort === "priority"} label="Priority" />
+            <SortChip href={buildInboxHref(filter, "newest")} active={sort === "newest"} label="Newest" />
+            <SortChip href={buildInboxHref(filter, "oldest")} active={sort === "oldest"} label="Oldest" />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin">
@@ -105,9 +122,14 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
               />
             </div>
           )}
-          {rows.map(({ conv, lead, score }) => {
+          {rows.map(({ conv, lead, score, needsReply }) => {
             const isActive = active?.id === conv.id;
             const temp = score !== null ? scoreLabel(score) : null;
+            const metaBits = [
+              needsReply && "Needs reply",
+              lead?.estimatedValueCents ? formatMoney(lead.estimatedValueCents) : null,
+              lead?.requestedDateText ? `Requested ${lead.requestedDateText}` : null,
+            ].filter(Boolean) as string[];
             return (
               <Link
                 key={conv.id}
@@ -143,9 +165,16 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                   <span>{formatDistanceToNowStrict(conv.lastMessageAt, { addSuffix: true })}</span>
                 </div>
                 <p className="text-xs text-ink/55 line-clamp-2">{conv.messages[0]?.body}</p>
-                {lead?.estimatedValueCents ? (
-                  <div className="text-xs text-ink/40 mt-1">{formatMoney(lead.estimatedValueCents)} potential</div>
-                ) : null}
+                {metaBits.length > 0 && (
+                  <div className="flex items-center gap-1 text-xs mt-1">
+                    {metaBits.map((bit, i) => (
+                      <span key={bit} className={cn(i === 0 && needsReply ? "text-accent-text font-medium" : "text-ink/40")}>
+                        {i > 0 && <span className="text-ink/25 mr-1">•</span>}
+                        {bit}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </Link>
             );
           })}
@@ -160,6 +189,22 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         )}
       </div>
     </div>
+  );
+}
+
+function buildInboxHref(filter: Filter | undefined, sort: Sort): string {
+  const params = new URLSearchParams();
+  if (filter && filter !== "all") params.set("filter", filter);
+  if (sort !== "priority") params.set("sort", sort);
+  const qs = params.toString();
+  return qs ? `/dashboard/inbox?${qs}` : "/dashboard/inbox";
+}
+
+function SortChip({ href, active, label }: { href: string; active: boolean; label: string }) {
+  return (
+    <Link href={href} className={cn("px-2 py-0.5 rounded-full transition-colors", active ? "bg-ink/10 text-ink font-medium" : "hover:text-ink/60")}>
+      {label}
+    </Link>
   );
 }
 

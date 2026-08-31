@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
+import { normalizeEmailContent } from "@/lib/emailNormalize";
 
 /**
  * Resend's inbound-email webhook — real, not a placeholder. To activate: verify a
@@ -72,7 +73,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    const body = full.text || event.data.subject || "(no content)";
+    // Prefer the real text part; fall back to converting the HTML part to readable
+    // text (not the subject line) when there's no plain-text alternative — losing the
+    // actual message content to "just show the subject" was the previous behavior.
+    const body = normalizeEmailContent({ text: full.text, html: full.html });
     const fromEmail = event.data.from;
     // The retrieve API's bare `from` is just the address; the raw header carries the
     // display name when the sender's client set one ("Sarah Johnson <sarah@gmail.com>").
@@ -86,8 +90,10 @@ export async function POST(req: Request) {
       senderName: fromName,
       senderHandle: fromEmail,
       body,
+      subject: event.data.subject || undefined,
       clientEmail: fromEmail,
       providerMessageId: full.message_id || event.data.email_id,
+      rawBody: (full.html || full.text || "").slice(0, 8000) || undefined,
     });
 
     return NextResponse.json({ ok: true });

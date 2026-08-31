@@ -57,6 +57,7 @@ export async function syncGmailNow(): Promise<SyncGmailResult> {
         senderName: m.fromName || m.from.split("@")[0],
         senderHandle: m.from,
         body: m.body,
+        subject: m.subject,
         clientEmail: m.from,
         providerMessageId: m.messageIdHeader || m.id,
       });

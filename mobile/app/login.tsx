@@ -30,7 +30,7 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <Screen>
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: spacing.xl }} keyboardShouldPersistTaps="handled">
-          <Text style={{ fontSize: 24, fontWeight: "700", color: colors.ink, marginBottom: 4 }}>LensFlow</Text>
+          <Text style={{ fontSize: 24, fontWeight: "700", color: colors.ink, marginBottom: 4 }}>Daythread</Text>
           <Text style={{ fontSize: 15, color: colors.inkSoft, marginBottom: spacing.xl }}>Welcome back.</Text>
 
           <Field label="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} placeholder="alex@studio.com" />

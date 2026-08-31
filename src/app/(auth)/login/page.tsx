@@ -35,7 +35,7 @@ function LoginForm() {
       <Card className="w-full max-w-sm">
         <CardBody className="p-8">
           <Link href="/" className="font-display text-lg">
-            LensFlow
+            Daythread
           </Link>
           <h1 className="font-display text-2xl mt-4 mb-6">Welcome back</h1>
 

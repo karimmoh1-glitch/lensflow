@@ -65,7 +65,7 @@ export default function JoinBusinessSignupPage() {
             ← Back
           </Link>
           <Link href="/" className="font-display text-lg block">
-            LensFlow
+            Daythread
           </Link>
 
           {!selected ? (
@@ -131,7 +131,7 @@ export default function JoinBusinessSignupPage() {
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" name="password" type="password" placeholder="At least 8 characters" required />
                 </div>
-                <p className="text-xs text-ink/40">Already have a LensFlow account? Enter its email and password instead.</p>
+                <p className="text-xs text-ink/40">Already have a Daythread account? Enter its email and password instead.</p>
 
                 {error && <p className="text-sm text-danger">{error}</p>}
 

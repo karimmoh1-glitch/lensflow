@@ -117,7 +117,7 @@ export default async function PartnerInboxPage({ searchParams }: { searchParams:
               ))}
             </div>
             <div className="px-4 md:px-6 py-3 border-t border-border bg-white text-xs text-ink/40">
-              Only the studio owner or admin can reply from LensFlow.
+              Only the studio owner or admin can reply from Daythread.
             </div>
           </div>
         ) : (

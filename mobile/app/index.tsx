@@ -10,7 +10,7 @@ export default function Index() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.paper, alignItems: "center", justifyContent: "center", gap: spacing.md }}>
         <ActivityIndicator color={colors.ink} />
-        <Text style={{ color: colors.inkSoft, fontSize: 15 }}>LensFlow</Text>
+        <Text style={{ color: colors.inkSoft, fontSize: 15 }}>Daythread</Text>
       </View>
     );
   }

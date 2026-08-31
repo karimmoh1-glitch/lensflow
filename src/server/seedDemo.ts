@@ -58,7 +58,7 @@ export async function seedDemoWorkspace(prisma: PrismaClient) {
 
   // Org-level ADMIN — same permission tier as OWNER within this business (can manage
   // team/settings/invitations), just not the org's original creator. This is NOT a
-  // cross-organization platform superadmin — LensFlow has no such role or panel.
+  // cross-organization platform superadmin — Daythread has no such role or panel.
   const adminUser = await prisma.user.create({ data: { name: "Morgan Blake", email: "morgan.blake@demo.lensflow.app", passwordHash } });
   await prisma.orgMembership.create({ data: { userId: adminUser.id, businessId: business.id, role: "ADMIN" } });
 

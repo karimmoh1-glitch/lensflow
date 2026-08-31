@@ -8,7 +8,7 @@ const resend = apiKey ? new Resend(apiKey) : null;
 
 /**
  * Real, not simulated, once both env vars are set — there is no per-business OAuth
- * step for email the way there would be for Instagram. LensFlow holds one Resend
+ * step for email the way there would be for Instagram. Daythread holds one Resend
  * account; every business's inbound address is `<handle>@RESEND_INBOUND_DOMAIN`
  * (see /api/webhooks/email for the receiving side, which routes purely off that
  * local-part, so it never needs to know the domain itself).

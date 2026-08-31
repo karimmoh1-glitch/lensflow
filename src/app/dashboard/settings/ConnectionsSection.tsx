@@ -69,7 +69,7 @@ export async function ConnectionsSection({
 
   const GOOGLE_ERROR_COPY: Record<string, string> = {
     denied: "Google sign-in was cancelled before it finished.",
-    no_refresh_token: "Google didn't return a long-lived connection. Try connecting again — if it keeps happening, revoke LensFlow's access at myaccount.google.com/permissions and reconnect.",
+    no_refresh_token: "Google didn't return a long-lived connection. Try connecting again — if it keeps happening, revoke Daythread's access at myaccount.google.com/permissions and reconnect.",
     expired: "That connection attempt expired. Try again.",
     error: "Something went wrong connecting to Google. Try again.",
   };
@@ -126,7 +126,7 @@ export async function ConnectionsSection({
                 emailAction = <GmailConnectedControls />;
               } else if (googleOAuthConfigured()) {
                 emailBadge = { tone: "neutral", label: "Needs setup" };
-                emailNote = "Connect your Gmail account to send and receive messages right from your LensFlow inbox.";
+                emailNote = "Connect your Gmail account to send and receive messages right from your Daythread inbox.";
                 emailAction = <GoogleConnectButton />;
               } else if (caps.live) {
                 emailBadge = { tone: "success", label: "✓ Email Connected" };
@@ -138,7 +138,7 @@ export async function ConnectionsSection({
                 emailAction = undefined;
               } else {
                 emailBadge = { tone: "neutral", label: "Needs setup" };
-                emailNote = "Connect your business email to send and receive messages right from your LensFlow inbox.";
+                emailNote = "Connect your business email to send and receive messages right from your Daythread inbox.";
                 emailAction = undefined;
               }
 

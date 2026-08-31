@@ -128,7 +128,7 @@ export function Wizard({ businessName }: { businessName: string }) {
                 <div>
                   <Label htmlFor="handle">Your booking page URL</Label>
                   <div className="flex items-center rounded-lg border border-border overflow-hidden">
-                    <span className="bg-black/5 px-3 py-2 text-sm text-ink/50">lensflow.app/book/</span>
+                    <span className="bg-black/5 px-3 py-2 text-sm text-ink/50">daythread.app/book/</span>
                     <input
                       id="handle"
                       value={handle}

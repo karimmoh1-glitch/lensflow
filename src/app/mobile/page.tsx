@@ -2,17 +2,17 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui";
 
 export const metadata = {
-  title: "LensFlow — On your phone",
+  title: "Daythread — On your phone",
   description: "Leads, bookings, payments, and delivery — manage your business from your phone. No app to download.",
 };
 
-// Public, no-auth landing page — the destination for the "scan to try LensFlow on your
+// Public, no-auth landing page — the destination for the "scan to try Daythread on your
 // phone" QR code. Must load instantly and never require a session.
 export default function MobilePage() {
   return (
     <main className="min-h-screen bg-paper flex flex-col">
       <nav className="flex items-center justify-center px-6 py-8">
-        <span className="font-display text-xl text-ink">LensFlow</span>
+        <span className="font-display text-xl text-ink">Daythread</span>
       </nav>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-16 text-center max-w-sm mx-auto w-full">
@@ -20,7 +20,7 @@ export default function MobilePage() {
           <PhoneIcon />
         </div>
 
-        <h1 className="font-display text-3xl leading-[1.15] text-ink mb-3">LensFlow is on your phone.</h1>
+        <h1 className="font-display text-3xl leading-[1.15] text-ink mb-3">Daythread is on your phone.</h1>
         <p className="text-[15px] text-ink/55 leading-[22px] mb-10">
           Leads, bookings, payments, and delivery — run your whole business from wherever you're working. No app to
           download, nothing to install.
@@ -28,7 +28,7 @@ export default function MobilePage() {
 
         <div className="w-full flex flex-col gap-3">
           <LinkButton href="/demo" size="lg" variant="secondary" className="w-full !h-12 !text-[15px]">
-            Open LensFlow
+            Open Daythread
           </LinkButton>
           <LinkButton href="/login" size="lg" variant="outline" className="w-full !h-12 !text-[15px]">
             Try it in your browser
@@ -40,7 +40,7 @@ export default function MobilePage() {
 
       <footer className="px-6 py-6 text-center">
         <Link href="/" className="text-xs text-ink/35 hover:text-ink/55">
-          lensflow.app
+          daythread.app
         </Link>
       </footer>
     </main>

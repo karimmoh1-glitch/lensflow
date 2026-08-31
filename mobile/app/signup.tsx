@@ -34,7 +34,7 @@ export default function SignupScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <Screen>
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: spacing.xl }} keyboardShouldPersistTaps="handled">
-          <Text style={{ fontSize: 24, fontWeight: "700", color: colors.ink, marginBottom: 4 }}>LensFlow</Text>
+          <Text style={{ fontSize: 24, fontWeight: "700", color: colors.ink, marginBottom: 4 }}>Daythread</Text>
           <Text style={{ fontSize: 15, color: colors.inkSoft, marginBottom: spacing.xl }}>Start running your business in one place.</Text>
 
           <Field label="Full name" value={name} onChangeText={setName} placeholder="Alex Rivera" />

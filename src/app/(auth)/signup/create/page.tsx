@@ -32,7 +32,7 @@ export default function CreateBusinessSignupPage() {
             ← Back
           </Link>
           <Link href="/" className="font-display text-lg block">
-            LensFlow
+            Daythread
           </Link>
           <h1 className="font-display text-2xl mt-4 mb-1">Create your business</h1>
           <p className="text-sm text-ink/50 mb-6">Free to start. No credit card required. You'll be the owner.</p>

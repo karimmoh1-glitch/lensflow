@@ -9,7 +9,7 @@ export class ApiError extends Error {
 }
 
 /**
- * Every screen goes through this — same LensFlow backend/database the web dashboard uses,
+ * Every screen goes through this — same Daythread backend/database the web dashboard uses,
  * just over a bearer token instead of a cookie. Throws ApiError on any non-2xx so screens
  * can show the real backend message rather than a generic "something went wrong."
  */

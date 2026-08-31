@@ -9,7 +9,7 @@ export default function LandingPage() {
   return (
     <main className="bg-paper">
       <nav className="sticky top-0 z-30 bg-paper/90 backdrop-blur-sm w-full flex items-center justify-between px-6 py-5">
-        <span className="font-display text-xl">LensFlow</span>
+        <span className="font-display text-xl">Daythread</span>
         <div className="flex items-center gap-5">
           <Link href="/login" className="text-sm font-medium text-ink/70 hover:text-ink">
             Log in
@@ -25,7 +25,7 @@ export default function LandingPage() {
         <div className="text-center max-w-2xl mx-auto shrink-0">
           <h1 className="font-display text-[clamp(1.75rem,4vw,3rem)] leading-[1.12] text-ink">Turn every message into an organized business.</h1>
           <p className="mt-3 text-sm md:text-base text-ink/55 max-w-lg mx-auto">
-            Clients reach you everywhere. LensFlow brings every message into one inbox, sorted by what it actually needs — and turns it
+            Clients reach you everywhere. Daythread brings every message into one inbox, sorted by what it actually needs — and turns it
             into work.
           </p>
           <div className="mt-5">

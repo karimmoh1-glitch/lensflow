@@ -132,7 +132,7 @@ export function AppShell({
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-white flex-col">
         <div className="px-5 py-5 border-b border-border">
           <Link href="/dashboard" className="font-display text-lg text-ink">
-            LensFlow
+            Daythread
           </Link>
           <div className="text-xs text-ink/45 mt-0.5 truncate">{businessName}</div>
         </div>
@@ -149,7 +149,7 @@ export function AppShell({
         >
           <Menu className="w-5 h-5" strokeWidth={2} />
         </button>
-        <span className="text-sm font-medium text-ink">{current?.label ?? "LensFlow"}</span>
+        <span className="text-sm font-medium text-ink">{current?.label ?? "Daythread"}</span>
         <div className="w-9 h-9 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-semibold">
           {initials(businessName)}
         </div>
@@ -161,7 +161,7 @@ export function AppShell({
           <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
           <div className="absolute inset-y-0 left-0 w-64 bg-white flex flex-col shadow-popover">
             <div className="flex items-center justify-between px-5 py-5 border-b border-border">
-              <span className="font-display text-lg text-ink">LensFlow</span>
+              <span className="font-display text-lg text-ink">Daythread</span>
               <button
                 aria-label="Close navigation"
                 onClick={() => setMobileOpen(false)}

@@ -148,7 +148,7 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
     await sendOnChannel({
       channel: "EMAIL",
       to: user.email,
-      subject: "Reset your LensFlow password",
+      subject: "Reset your Daythread password",
       body: `Hi ${user.name}, reset your password here (this link expires in 1 hour): ${link}`,
     });
     if (!messagingIsLive("EMAIL")) devLink = link;

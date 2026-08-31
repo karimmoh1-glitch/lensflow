@@ -49,7 +49,7 @@ export async function requestToJoin(businessId: string, formData: FormData): Pro
     });
     if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
     if (!(await verifyPassword(parsed.data.password, existingUser.passwordHash))) {
-      return { error: "That email already has a LensFlow account, but the password is incorrect." };
+      return { error: "That email already has a Daythread account, but the password is incorrect." };
     }
     userId = existingUser.id;
   } else {

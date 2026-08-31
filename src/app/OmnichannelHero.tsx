@@ -149,7 +149,7 @@ function SummaryCard({ compact }: { compact?: boolean }) {
   return (
     <div className={cn("rounded-2xl border border-border bg-white shadow-popover overflow-hidden", compact ? "w-64" : "w-72")}>
       <div className="px-4 py-3 border-b border-border">
-        <span className="font-display text-sm text-ink">LensFlow</span>
+        <span className="font-display text-sm text-ink">Daythread</span>
       </div>
       <div className="p-4 space-y-2.5">
         <SummaryRow label="New leads" value="12" tone="accent" />

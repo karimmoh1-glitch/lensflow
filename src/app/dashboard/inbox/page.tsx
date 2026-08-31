@@ -9,6 +9,7 @@ import { formatDistanceToNowStrict, subDays } from "date-fns";
 import { ThreadPanel } from "./ThreadPanel";
 import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
 import { AutoGmailSync } from "./AutoGmailSync";
+import { DeleteConversationButton } from "./DeleteConversationButton";
 
 type Filter = "all" | "needs_reply" | "cold";
 type Sort = "priority" | "newest" | "oldest";
@@ -134,7 +135,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
               <Link
                 key={conv.id}
                 href={`/dashboard/inbox?c=${conv.id}`}
-                className={cn("block px-5 py-3.5 border-b border-border hover:bg-black/[0.02]", isActive && "bg-accent-soft/50")}
+                className={cn("group block px-5 py-3.5 border-b border-border hover:bg-black/[0.02]", isActive && "bg-accent-soft/50")}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-7 h-7 rounded-full bg-black/[0.05] flex items-center justify-center text-[10px] font-semibold shrink-0">
@@ -157,6 +158,9 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                       {score}
                     </span>
                   )}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <DeleteConversationButton conversationId={conv.id} />
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-ink/40 mb-1">
                   <ChannelBadge channel={conv.channel} />

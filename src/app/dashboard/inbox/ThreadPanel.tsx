@@ -7,6 +7,7 @@ import { ChevronLeft } from "lucide-react";
 import { cn, formatMoney } from "@/lib/utils";
 import { Composer } from "./Composer";
 import { MarkLostButton } from "./MarkLostButton";
+import { DeleteConversationButton } from "./DeleteConversationButton";
 import { LeadBooking } from "./LeadBooking";
 import { scoreLead, scoreLabel } from "@/lib/leadScoring";
 import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
@@ -70,6 +71,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
               {scored.score}/100
             </span>
           )}
+          <DeleteConversationButton conversationId={conversation.id} />
         </div>
 
         <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-6 py-6 space-y-4">

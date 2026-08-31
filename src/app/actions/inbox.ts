@@ -130,3 +130,23 @@ export async function markLeadLost(leadId: string) {
   revalidatePath("/dashboard/inbox");
   revalidatePath("/dashboard");
 }
+
+/**
+ * "Delete" from the inbox — sets the existing archived flag rather than actually
+ * destroying the conversation. Messages, the associated lead, and any booking/payment
+ * history all stay intact (bookings/payments are queried from their own tables, not
+ * through the conversation, so nothing else breaks); it just stops showing up in the
+ * default Inbox view. A real hard-delete of customer correspondence is the kind of
+ * irreversible action that shouldn't be one click away.
+ */
+export async function deleteConversation(conversationId: string) {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+  if (!ctx) throw new Error("unauthorized");
+  const result = await prisma.conversation.updateMany({
+    where: { id: conversationId, businessId: ctx.business.id },
+    data: { archived: true },
+  });
+  if (result.count === 0) throw new Error("not found");
+  revalidatePath("/dashboard/inbox");
+  revalidatePath("/dashboard");
+}

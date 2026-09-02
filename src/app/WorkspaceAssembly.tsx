@@ -1,6 +1,7 @@
 "use client";
 
 import { Users, CalendarClock, Calendar, Inbox, Mail, MessageCircle, CreditCard, ListChecks, Zap, Sparkles, type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useActiveStep, StoryStep, StoryLayout } from "./ScrollStory";
 
 function InstagramGlyph({ className }: { className?: string }) {
@@ -13,7 +14,7 @@ function InstagramGlyph({ className }: { className?: string }) {
   );
 }
 
-type Module = { key: string; label: string; icon: LucideIcon | typeof InstagramGlyph };
+type Module = { key: string; label: string; icon: LucideIcon | typeof InstagramGlyph; tone: string };
 
 const GROUPS: { eyebrow: string; title: string; body: string; modules: Module[] }[] = [
   {
@@ -21,9 +22,9 @@ const GROUPS: { eyebrow: string; title: string; body: string; modules: Module[] 
     title: "The basics every business needs.",
     body: "Clients, bookings, and a calendar — the foundation, on by default.",
     modules: [
-      { key: "clients", label: "Clients", icon: Users },
-      { key: "bookings", label: "Bookings", icon: CalendarClock },
-      { key: "calendar", label: "Calendar", icon: Calendar },
+      { key: "clients", label: "Clients", icon: Users, tone: "bg-accent-soft text-accent-text" },
+      { key: "bookings", label: "Bookings", icon: CalendarClock, tone: "bg-info-soft text-info-text" },
+      { key: "calendar", label: "Calendar", icon: Calendar, tone: "bg-success-soft text-success-text" },
     ],
   },
   {
@@ -31,10 +32,10 @@ const GROUPS: { eyebrow: string; title: string; body: string; modules: Module[] 
     title: "Turn on the channels you actually use.",
     body: "Inbox, Gmail, SMS, Instagram — connect only what your business runs on.",
     modules: [
-      { key: "inbox", label: "Inbox", icon: Inbox },
-      { key: "gmail", label: "Gmail", icon: Mail },
-      { key: "sms", label: "SMS", icon: MessageCircle },
-      { key: "instagram", label: "Instagram", icon: InstagramGlyph },
+      { key: "inbox", label: "Inbox", icon: Inbox, tone: "bg-signal-soft text-signal-text" },
+      { key: "gmail", label: "Gmail", icon: Mail, tone: "bg-danger-soft text-danger-text" },
+      { key: "sms", label: "SMS", icon: MessageCircle, tone: "bg-success-soft text-success-text" },
+      { key: "instagram", label: "Instagram", icon: InstagramGlyph, tone: "bg-accent-soft text-accent-text" },
     ],
   },
   {
@@ -42,10 +43,10 @@ const GROUPS: { eyebrow: string; title: string; body: string; modules: Module[] 
     title: "Payments, tasks, and a copilot when you're ready.",
     body: "Nothing here is mandatory. Your workspace only has what you turned on.",
     modules: [
-      { key: "payments", label: "Payments", icon: CreditCard },
-      { key: "tasks", label: "Tasks", icon: ListChecks },
-      { key: "automations", label: "Automations", icon: Zap },
-      { key: "ai", label: "AI Copilot", icon: Sparkles },
+      { key: "payments", label: "Payments", icon: CreditCard, tone: "bg-warning-soft text-warning-text" },
+      { key: "tasks", label: "Tasks", icon: ListChecks, tone: "bg-info-soft text-info-text" },
+      { key: "automations", label: "Automations", icon: Zap, tone: "bg-signal-soft text-signal-text" },
+      { key: "ai", label: "AI Copilot", icon: Sparkles, tone: "bg-signal-soft text-signal-text" },
     ],
   },
 ];
@@ -83,7 +84,9 @@ function WorkspaceCard({ modules }: { modules: Module[] }) {
             className="flex flex-col items-center gap-1.5 rounded-xl border border-border py-3 animate-[fadeUp_0.4s_ease-out_backwards]"
             style={{ animationDelay: `${(i % 4) * 60}ms` }}
           >
-            <m.icon className="w-4 h-4 text-ink/60" />
+            <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center", m.tone)}>
+              <m.icon className="w-3.5 h-3.5" />
+            </div>
             <span className="text-[10px] font-medium text-ink/55 text-center leading-tight">{m.label}</span>
           </div>
         ))}

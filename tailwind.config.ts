@@ -20,6 +20,15 @@ const config: Config = {
           DEFAULT: "#1C1A17", // marketing-only: card/panel surface on midnight
           border: "rgba(250,250,249,0.08)", // marketing-only: hairline border on dark surfaces
         },
+        // Daythread's second signature color — reserved for "the system is working" moments:
+        // data entering the product, AI, connection/motion energy. Terracotta stays the warm,
+        // human, primary-action color; violet is the intelligence/motion color. Two colors,
+        // used with intent, is what makes a brand recognizable — not a bigger palette.
+        signal: {
+          DEFAULT: "#6D5AE6",
+          soft: "#EEEBFC",
+          text: "#5642C9",
+        },
         success: { DEFAULT: "#1E8E5A", soft: "#E3F5EC", text: "#166B44" },
         warning: { DEFAULT: "#B0740B", soft: "#FBF0DA", text: "#8A5B08" },
         danger: { DEFAULT: "#C22E2E", soft: "#FBE7E7", text: "#9E2424" },

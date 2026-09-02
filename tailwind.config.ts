@@ -10,13 +10,16 @@ const config: Config = {
         paper: "#FAFAF9",
         border: "rgba(16, 17, 20, 0.08)",
         accent: {
-          DEFAULT: "#C75A32", // brand — used sparingly (primary actions, active states)
+          DEFAULT: "#C75A32", // brand — used sparingly and precisely (never as a gradient)
           text: "#A8481F", // AA-safe on white for links/emphasis text
           soft: "#F7E7DE", // tinted backgrounds
-          deep: "#8A3D1F", // marketing-only: dark-section accents, gradient anchor
+          deep: "#8A3D1F", // marketing-only: dark-section accents
         },
-        gold: { DEFAULT: "#E8A33D", soft: "#FCEFDA" }, // marketing-only: pairs with accent for gradients
-        midnight: "#15130F", // marketing-only: warm near-black for dark sections
+        midnight: "#0E0D0B", // marketing-only: true near-black canvas for dark sections
+        graphite: {
+          DEFAULT: "#1C1A17", // marketing-only: card/panel surface on midnight
+          border: "rgba(250,250,249,0.08)", // marketing-only: hairline border on dark surfaces
+        },
         success: { DEFAULT: "#1E8E5A", soft: "#E3F5EC", text: "#166B44" },
         warning: { DEFAULT: "#B0740B", soft: "#FBF0DA", text: "#8A5B08" },
         danger: { DEFAULT: "#C22E2E", soft: "#FBE7E7", text: "#9E2424" },

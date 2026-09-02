@@ -27,7 +27,7 @@ export const PLANS: Record<
     priceCents: 0,
     maxTeamSeats: 1,
     smsEnabled: false,
-    tagline: "Everything a solo photographer needs to get organized.",
+    tagline: "Everything a solo freelancer needs to get organized.",
     features: [
       "Unlimited clients & bookings",
       "Unified email + website inbox",
@@ -42,7 +42,7 @@ export const PLANS: Record<
     priceCents: 2900,
     maxTeamSeats: 5,
     smsEnabled: true,
-    tagline: "For a growing studio juggling more clients and a small team.",
+    tagline: "For a growing business juggling more clients and a small team.",
     features: [
       "Everything in Free",
       "AI-powered lead scoring & reply drafts",

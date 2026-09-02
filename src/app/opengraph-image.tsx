@@ -19,8 +19,24 @@ export default function OpengraphImage() {
           padding: "80px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 40 }}>
-          <div style={{ width: 14, height: 14, borderRadius: 999, backgroundColor: "#C75A32", display: "flex" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 13,
+              background: "linear-gradient(135deg, #C75A32 0%, #E8A33D 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <path d="M8 24C12.5 24 12.5 16 16 16C19.5 16 19.5 8 24 8" stroke="#FAFAF9" strokeWidth="2.6" strokeLinecap="round" />
+              <circle cx="8" cy="24" r="2" fill="#FAFAF9" />
+              <circle cx="24" cy="8" r="2" fill="#FAFAF9" />
+            </svg>
+          </div>
           <div style={{ fontSize: 32, color: "#101114", fontWeight: 600, letterSpacing: "-0.01em", display: "flex" }}>Daythread</div>
         </div>
         <div style={{ fontSize: 64, color: "#101114", fontWeight: 600, lineHeight: 1.15, letterSpacing: "-0.02em", maxWidth: 920, display: "flex" }}>

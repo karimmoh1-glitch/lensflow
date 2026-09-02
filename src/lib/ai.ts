@@ -18,7 +18,7 @@ export type ExtractedLead = {
   intent: "UNKNOWN" | "LOW" | "MEDIUM" | "HIGH";
 };
 
-const EXTRACTION_SYSTEM_PROMPT = `You extract structured lead information from a photography client's inbound message.
+const EXTRACTION_SYSTEM_PROMPT = `You extract structured lead information from a service business's inbound client message.
 Return ONLY fields you can directly infer from the text. If a field is not mentioned, use null — never guess or invent.
 "intent" reflects how ready-to-book the sender sounds: HIGH (asking to book / confirm a date), MEDIUM (asking pricing/availability), LOW (browsing / vague), UNKNOWN (can't tell).`;
 
@@ -120,7 +120,7 @@ export async function draftReply(ctx: ReplyContext): Promise<string> {
         messages: [
           {
             role: "system",
-            content: `You are drafting a short, warm, professional reply on behalf of ${ctx.businessName}, a photography business. Keep it under 80 words. Only quote prices/services from the list given. Sign off naturally, no placeholders like [Your Name]. A deposit of ${ctx.depositPercent}% is required to hold a date if relevant.\n\nServices:\n${servicesList}`,
+            content: `You are drafting a short, warm, professional reply on behalf of ${ctx.businessName}, an independent service business. Keep it under 80 words. Only quote prices/services from the list given. Sign off naturally, no placeholders like [Your Name]. A deposit of ${ctx.depositPercent}% is required to hold a date if relevant.\n\nServices:\n${servicesList}`,
           },
           { role: "user", content: `Customer${ctx.customerName ? ` (${ctx.customerName})` : ""} wrote: """${ctx.customerMessage}"""` },
         ],
@@ -161,7 +161,7 @@ export async function summarizeCopilotAnswer(question: string, facts: string): P
           {
             role: "system",
             content:
-              "You are a photography studio's business copilot. Answer the owner's question using ONLY the facts provided. Be concise and direct — a few sentences or a short list. Never invent numbers or names not present in the facts.",
+              "You are an independent business's copilot. Answer the owner's question using ONLY the facts provided. Be concise and direct — a few sentences or a short list. Never invent numbers or names not present in the facts.",
           },
           { role: "user", content: `Question: ${question}\n\nFacts:\n${facts}` },
         ],

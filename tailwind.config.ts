@@ -13,7 +13,10 @@ const config: Config = {
           DEFAULT: "#C75A32", // brand — used sparingly (primary actions, active states)
           text: "#A8481F", // AA-safe on white for links/emphasis text
           soft: "#F7E7DE", // tinted backgrounds
+          deep: "#8A3D1F", // marketing-only: dark-section accents, gradient anchor
         },
+        gold: { DEFAULT: "#E8A33D", soft: "#FCEFDA" }, // marketing-only: pairs with accent for gradients
+        midnight: "#15130F", // marketing-only: warm near-black for dark sections
         success: { DEFAULT: "#1E8E5A", soft: "#E3F5EC", text: "#166B44" },
         warning: { DEFAULT: "#B0740B", soft: "#FBF0DA", text: "#8A5B08" },
         danger: { DEFAULT: "#C22E2E", soft: "#FBE7E7", text: "#9E2424" },

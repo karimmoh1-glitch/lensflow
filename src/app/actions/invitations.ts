@@ -7,6 +7,7 @@ import { requireRole, hashPassword, verifyPassword, setSessionCookie, homeRouteF
 import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
 import { revalidatePath } from "next/cache";
 import { sendOnChannel } from "@/lib/messaging";
+import { canAddTeamSeat, planLimits } from "@/lib/billing";
 
 const inviteSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -78,6 +79,17 @@ export async function invitePartner(formData: FormData): Promise<{ error?: strin
   const parsed = partnerInviteSchema.safeParse({ name: formData.get("name"), email: formData.get("email") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, email } = parsed.data;
+
+  // A seat is anyone on the team side of the org (staff + partners) — clients don't count.
+  // Pending invitations count too, so a burst of invites can't be accepted past the cap.
+  const [activeSeats, pendingPartnerInvites] = await Promise.all([
+    prisma.orgMembership.count({ where: { businessId: business.id, role: { not: "CLIENT" }, status: "ACTIVE" } }),
+    prisma.invitation.count({ where: { businessId: business.id, role: "PARTNER", status: "PENDING" } }),
+  ]);
+  if (!canAddTeamSeat(business, activeSeats + pendingPartnerInvites)) {
+    const limit = planLimits(business).maxTeamSeats;
+    return { error: `Your plan is limited to ${limit} team seat${limit === 1 ? "" : "s"}. Upgrade in Billing to invite more people.` };
+  }
 
   await prisma.invitation.updateMany({
     where: { businessId: business.id, email, role: "PARTNER", status: "PENDING" },

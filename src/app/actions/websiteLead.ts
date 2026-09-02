@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { scoreLead } from "@/lib/leadScoring";
 import { sendOnChannel } from "@/lib/messaging";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 const leadFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -25,6 +26,11 @@ export async function submitWebsiteLead(
   handle: string,
   input: WebsiteLeadInput
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const ip = await getClientIp();
+  if (!rateLimit(`website-lead:${ip}`, { limit: 15, windowMs: 60 * 60 * 1000 }).ok) {
+    return { ok: false, error: "Too many submissions. Please try again later." };
+  }
+
   const parsed = leadFormSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, email, phone, serviceId, preferredDate, message } = parsed.data;

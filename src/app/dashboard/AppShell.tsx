@@ -14,6 +14,7 @@ import {
   Zap,
   Sparkles,
   Settings as SettingsIcon,
+  Receipt,
   ExternalLink,
   LogOut,
   Menu,
@@ -36,6 +37,7 @@ const BASE_NAV: { href: string; label: string; icon: LucideIcon; roles?: Role[] 
   { href: "/dashboard/automations", label: "Automations", icon: Zap },
   { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles },
   { href: "/dashboard/team", label: "Team", icon: UserCog, roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/billing", label: "Billing", icon: Receipt, roles: ["OWNER", "ADMIN"] },
   { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, roles: ["OWNER", "ADMIN"] },
 ];
 

@@ -42,6 +42,8 @@ export async function POST(req: Request) {
     return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });
   }
 
+  const messageSid = String(form.get("MessageSid") ?? "");
+
   await ingestInboundMessage({
     businessId: business.id,
     channel: "SMS",
@@ -49,6 +51,7 @@ export async function POST(req: Request) {
     senderHandle: from,
     body,
     clientPhone: from,
+    providerMessageId: messageSid || undefined,
   });
 
   return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });

@@ -4,6 +4,7 @@ import { OmnichannelHero } from "./OmnichannelHero";
 import { FragmentedChannels } from "./FragmentedChannels";
 import { LandingWorkflowStory } from "./LandingWorkflowStory";
 import { LandingMobileStory } from "./LandingMobileStory";
+import { PricingSection } from "./PricingSection";
 
 export default function LandingPage() {
   return (
@@ -54,6 +55,9 @@ export default function LandingPage() {
       <section className="py-12 md:py-16 bg-white border-y border-border">
         <LandingMobileStory />
       </section>
+
+      {/* Pricing */}
+      <PricingSection />
 
       {/* Final CTA */}
       <section className="max-w-lg mx-auto px-6 py-20 text-center">

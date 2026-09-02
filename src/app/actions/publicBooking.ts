@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getAvailableSlots, isSlotStillAvailable } from "@/lib/availability";
 import { createCardCheckout } from "@/lib/payments";
 import { addMinutes } from "date-fns";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function getSlotsForDate(handle: string, dateISO: string, serviceId: string) {
   const business = await prisma.business.findUnique({ where: { handle } });
@@ -24,6 +25,11 @@ export async function createPublicBooking(params: {
   location: string;
   notes: string;
 }) {
+  const ip = await getClientIp();
+  if (!rateLimit(`public-booking:${ip}`, { limit: 10, windowMs: 60 * 60 * 1000 }).ok) {
+    throw new Error("Too many booking attempts. Please wait a few minutes and try again.");
+  }
+
   const business = await prisma.business.findUnique({ where: { handle: params.handle } });
   if (!business) throw new Error("Business not found");
   const service = await prisma.service.findFirst({ where: { id: params.serviceId, businessId: business.id } });

@@ -7,8 +7,8 @@ import { AutomationToggle } from "./AutomationToggle";
 const TRIGGER_LABEL: Record<string, string> = {
   BOOKING_CREATED: "When a booking is created",
   DEPOSIT_PAID: "When a deposit is paid",
-  DAYS_BEFORE_SHOOT: "Before the shoot",
-  SHOOT_COMPLETED: "After the shoot",
+  DAYS_BEFORE_SHOOT: "Before the booking",
+  SHOOT_COMPLETED: "After the booking",
   PAYMENT_DUE_SOON: "Before a payment is due",
   PAYMENT_OVERDUE: "When a payment is overdue",
   LEAD_INACTIVE: "When a lead goes quiet",

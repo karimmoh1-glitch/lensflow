@@ -7,7 +7,7 @@ const STEPS = [
   { eyebrow: "The lead", title: "A real inquiry comes in", body: "Daythread reads it and extracts what's actually there — never a guess." },
   { eyebrow: "The booking", title: "One tap to confirm", body: "Client, service, date, and price — prefilled from the conversation." },
   { eyebrow: "The payment", title: "Deposits, tracked", body: "One clear record of what's paid and what's still owed." },
-  { eyebrow: "The project", title: "From shoot to delivered", body: "Every booking moves through the same visible pipeline." },
+  { eyebrow: "The project", title: "From booked to delivered", body: "Every booking moves through the same visible pipeline." },
 ];
 
 export function LandingWorkflowStory() {

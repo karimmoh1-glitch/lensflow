@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" placeholder="alex@studio.com" required />
+                  <Input id="email" name="email" type="email" placeholder="alex@business.com" required />
                 </div>
                 {error && <p className="text-sm text-danger">{error}</p>}
                 <Button type="submit" className="w-full" disabled={pending}>

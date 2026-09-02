@@ -84,7 +84,7 @@ export function BookingActions({
         )}
         {status === "UPCOMING" && (
           <Button size="sm" className="w-full" onClick={() => doAdvance("COMPLETED")} disabled={pending}>
-            Mark shoot completed
+            Mark completed
           </Button>
         )}
         {status === "BALANCE_PAID" && (

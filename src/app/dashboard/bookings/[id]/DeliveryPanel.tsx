@@ -31,7 +31,7 @@ export function DeliveryPanel({
         await markDelivered(bookingId, url, note || undefined);
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Enter a valid gallery URL.");
+        setError(e instanceof Error ? e.message : "Enter a valid delivery URL.");
       }
     });
   }
@@ -63,14 +63,14 @@ export function DeliveryPanel({
           </div>
         ) : (
           <div className="space-y-2.5">
-            <p className="text-xs text-ink/50">Paste the gallery link once photos are edited — Pixieset, Google Drive, Dropbox, whatever you use.</p>
+            <p className="text-xs text-ink/50">Paste the delivery link once the work is ready — Google Drive, Dropbox, Pixieset, whatever you use.</p>
             <div>
-              <Label htmlFor="deliveryUrl">Gallery URL</Label>
+              <Label htmlFor="deliveryUrl">Delivery URL</Label>
               <Input id="deliveryUrl" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://drive.google.com/…" />
             </div>
             <div>
               <Label htmlFor="deliveryNote">Note (optional)</Label>
-              <Input id="deliveryNote" value={note} onChange={(e) => setNote(e.target.value)} placeholder="32 edited photos, high-res + web" />
+              <Input id="deliveryNote" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Final files, high-res + web" />
             </div>
             {error && <p className="text-xs text-danger">{error}</p>}
             <Button size="sm" className="w-full" onClick={submit} disabled={pending || !url}>

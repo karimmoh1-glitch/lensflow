@@ -24,7 +24,7 @@ export function ScreenInboxNewLead() {
         </div>
         {[
           ["Mike Smith", "Email", "Thanks, that sounds great!"],
-          ["Jessica Nguyen", "SMS", "Do you shoot weddings?"],
+          ["Jessica Nguyen", "SMS", "Do you have availability next week?"],
         ].map(([name, ch, msg]) => (
           <div key={name} className="flex items-center gap-3 px-5 py-3.5">
             <div className="w-9 h-9 rounded-full bg-black/[0.05] text-ink/50 flex items-center justify-center text-[11px] font-semibold shrink-0">

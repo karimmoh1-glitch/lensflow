@@ -41,7 +41,7 @@ export function PaymentSettingsForm({ business }: { business: Business }) {
         {paymentMethods.includes("zelle") && (
           <div>
             <Label>Zelle destination</Label>
-            <Input value={zelleHandle} onChange={(e) => setZelleHandle(e.target.value)} placeholder="you@studio.com or (555) 555-5555" />
+            <Input value={zelleHandle} onChange={(e) => setZelleHandle(e.target.value)} placeholder="you@business.com or (555) 555-5555" />
           </div>
         )}
         {paymentMethods.includes("bank_transfer") && (

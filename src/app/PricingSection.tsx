@@ -20,8 +20,16 @@ export function PricingSection() {
           return (
             <div
               key={key}
-              className={cn("rounded-xl border p-6 bg-white flex flex-col", isPro ? "border-ink shadow-sm" : "border-border")}
+              className={cn(
+                "relative rounded-xl border p-6 bg-white flex flex-col",
+                isPro ? "border-signal shadow-[0_4px_24px_-8px_rgba(109,90,230,0.25)]" : "border-border"
+              )}
             >
+              {isPro && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold uppercase tracking-wide text-white bg-signal rounded-full px-2.5 py-1">
+                  Most popular
+                </span>
+              )}
               <h3 className="font-display text-lg text-ink">{plan.name}</h3>
               <p className="mt-1 text-2xl font-semibold text-ink">
                 {plan.priceCents === 0 ? "Free" : formatMoney(plan.priceCents)}

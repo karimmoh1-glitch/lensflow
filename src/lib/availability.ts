@@ -1,7 +1,24 @@
 import { prisma } from "@/lib/db";
-import { addMinutes, isSameDay, startOfDay } from "date-fns";
+import { addMinutes, isSameDay } from "date-fns";
 
 export type Slot = { start: Date; end: Date };
+
+/**
+ * Converts a "wall clock" time in a given IANA timezone to the correct UTC Date — no
+ * extra dependency needed, just the Intl API. This matters because the server (Vercel,
+ * UTC) and a business's configured timezone (e.g. America/Chicago) are almost never the
+ * same: naive date math that ignores this silently computes "9am" in the server's zone
+ * instead of the business's, which is wrong by however many hours separate them.
+ */
+function zonedTimeToUtc(year: number, month: number, date: number, minutesFromMidnight: number, timeZone: string): Date {
+  const hours = Math.floor(minutesFromMidnight / 60);
+  const minutes = minutesFromMidnight % 60;
+  const utcGuess = new Date(Date.UTC(year, month, date, hours, minutes));
+  const asIfUtc = new Date(utcGuess.toLocaleString("en-US", { timeZone: "UTC" }));
+  const asIfZoned = new Date(utcGuess.toLocaleString("en-US", { timeZone }));
+  const offsetMs = asIfUtc.getTime() - asIfZoned.getTime();
+  return new Date(utcGuess.getTime() + offsetMs);
+}
 
 /**
  * Computes real bookable slots for a given day: intersects the business's weekly
@@ -11,6 +28,12 @@ export type Slot = { start: Date; end: Date };
 export async function getAvailableSlots(businessId: string, day: Date, durationMins: number): Promise<Slot[]> {
   const business = await prisma.business.findUniqueOrThrow({ where: { id: businessId } });
   const weekday = day.getDay();
+  const year = day.getFullYear();
+  const month = day.getMonth();
+  const date = day.getDate();
+
+  const dayStartUtc = zonedTimeToUtc(year, month, date, 0, business.timezone);
+  const dayEndUtc = zonedTimeToUtc(year, month, date, 24 * 60, business.timezone);
 
   const [windows, blocked, existingBookings] = await Promise.all([
     prisma.availability.findMany({ where: { businessId, weekday } }),
@@ -19,7 +42,7 @@ export async function getAvailableSlots(businessId: string, day: Date, durationM
       where: {
         businessId,
         status: { notIn: ["CANCELED"] },
-        startAt: { gte: startOfDay(day), lt: addMinutes(startOfDay(day), 24 * 60) },
+        startAt: { gte: dayStartUtc, lt: dayEndUtc },
       },
       select: { startAt: true, endAt: true },
     }),
@@ -34,9 +57,8 @@ export async function getAvailableSlots(businessId: string, day: Date, durationM
 
   const slots: Slot[] = [];
   for (const window of windows) {
-    const dayStart = startOfDay(day);
-    let cursor = addMinutes(dayStart, window.startMin);
-    const windowEnd = addMinutes(dayStart, window.endMin);
+    let cursor = zonedTimeToUtc(year, month, date, window.startMin, business.timezone);
+    const windowEnd = zonedTimeToUtc(year, month, date, window.endMin, business.timezone);
 
     while (addMinutes(cursor, durationMins) <= windowEnd) {
       const slotStart = cursor;

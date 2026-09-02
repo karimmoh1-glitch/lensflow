@@ -15,9 +15,20 @@ export type OutboundMessage = {
   to: string | null;
   body: string;
   subject?: string;
+  /** Display name to send as (e.g. the business name) — the address itself stays
+   * whatever the adapter/provider allows sending from. */
+  fromName?: string;
+  /** Where the recipient's reply should actually land — for email this is the
+   * business's real inbound routing address, so hitting "Reply" in Gmail comes back
+   * through the webhook instead of nowhere. */
+  replyTo?: string;
+  /** Raw provider headers, e.g. In-Reply-To / References for email threading. */
+  headers?: Record<string, string>;
 };
 
-export type SendResult = { ok: true; simulated: boolean } | { ok: false; error: string };
+export type SendResult =
+  | { ok: true; simulated: boolean; providerMessageId?: string }
+  | { ok: false; error: string };
 
 /** One normalized shape for a message arriving from any channel — the unified inbox never
  * needs to know which platform a message came from beyond this. */

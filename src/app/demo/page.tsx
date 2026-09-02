@@ -1,17 +1,17 @@
 import { Card, CardBody, Button } from "@/components/ui";
 import { loginAsDemo } from "@/app/actions/auth";
 
-export const metadata = { title: "LensFlow demo" };
+export const metadata = { title: "Daythread demo" };
 
 export default function DemoPage() {
   return (
     <main className="min-h-screen bg-paper flex items-center justify-center px-6">
       <Card className="w-full max-w-sm">
         <CardBody className="p-8 text-center">
-          <span className="font-display text-lg block mb-4">LensFlow</span>
+          <span className="font-display text-lg block mb-4">Daythread</span>
           <h1 className="font-display text-xl mb-2">Live product demo</h1>
           <p className="text-sm text-ink/55 mb-6">
-            You'll be signed in as a real photography studio with real bookings, leads, and payments already in progress — not a
+            You'll be signed in as a real independent business with real bookings, leads, and payments already in progress — not a
             scripted walkthrough.
           </p>
           <form action={loginAsDemo}>

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader, Card, Badge } from "@/components/ui";
 import { AutomationToggle } from "./AutomationToggle";
@@ -26,6 +26,7 @@ const ACTION_LABEL: Record<string, string> = {
 export default async function AutomationsPage() {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
 
   const automations = await prisma.automation.findMany({ where: { businessId: business.id }, orderBy: { createdAt: "asc" } });

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { PageHeader, Badge, EmptyState, Card } from "@/components/ui";
+import { PageHeader, Badge, EmptyState, Card, CardBody } from "@/components/ui";
 import { formatMoney } from "@/lib/utils";
 import { format } from "date-fns";
 import { ConfirmPaymentButton } from "./ConfirmPaymentButton";
@@ -10,6 +10,7 @@ import { ConfirmPaymentButton } from "./ConfirmPaymentButton";
 export default async function PaymentsPage() {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
 
   const payments = await prisma.payment.findMany({
@@ -20,10 +21,33 @@ export default async function PaymentsPage() {
 
   const awaiting = payments.filter((p) => p.status === "AWAITING_CONFIRMATION");
   const collected = payments.filter((p) => p.status === "PAID").reduce((s, p) => s + p.amountCents, 0);
+  const pendingCents = awaiting.reduce((s, p) => s + p.amountCents, 0);
+  const failedCents = payments.filter((p) => p.status === "FAILED").reduce((s, p) => s + p.amountCents, 0);
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title="All payments" description={`${formatMoney(collected)} collected all-time`} />
+      <PageHeader title="All payments" />
+
+      <div className="grid grid-cols-3 gap-3 mb-8">
+        <Card>
+          <CardBody>
+            <div className="text-xs font-medium text-ink/40 mb-1">Collected</div>
+            <div className="text-xl font-display text-success-text">{formatMoney(collected)}</div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <div className="text-xs font-medium text-ink/40 mb-1">Pending</div>
+            <div className="text-xl font-display text-warning-text">{formatMoney(pendingCents)}</div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <div className="text-xs font-medium text-ink/40 mb-1">Failed</div>
+            <div className="text-xl font-display text-danger-text">{formatMoney(failedCents)}</div>
+          </CardBody>
+        </Card>
+      </div>
 
       {awaiting.length > 0 && (
         <div className="mb-8">

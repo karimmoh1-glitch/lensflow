@@ -6,6 +6,9 @@ import { initials } from "@/lib/utils";
 import { format } from "date-fns";
 import { PartnerInviteForm } from "./PartnerInviteForm";
 import { InvitationRow } from "./InvitationRow";
+import { MemberActions } from "./MemberActions";
+import { JoinRequestRow } from "./JoinRequestRow";
+import { ConversationAccessToggle } from "./ConversationAccessToggle";
 
 const ROLE_LABEL: Record<string, string> = { OWNER: "Owner", ADMIN: "Admin", PHOTOGRAPHER: "Photographer", PARTNER: "Partner", CLIENT: "Client" };
 
@@ -14,15 +17,20 @@ export default async function TeamPage() {
   if (!ctx) redirect("/dashboard");
   const { business } = ctx;
 
-  const [members, invitations] = await Promise.all([
+  const [members, invitations, joinRequests] = await Promise.all([
     prisma.orgMembership.findMany({
       where: { businessId: business.id, role: { in: ["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"] } },
-      include: { user: true },
+      include: { user: true, assignedBookings: { where: { status: { notIn: ["CANCELED", "COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"] } } } },
       orderBy: { createdAt: "asc" },
     }),
     prisma.invitation.findMany({
       where: { businessId: business.id, role: { in: ["ADMIN", "PHOTOGRAPHER", "PARTNER"] } },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.joinRequest.findMany({
+      where: { businessId: business.id, status: "PENDING" },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
     }),
   ]);
 
@@ -35,20 +43,46 @@ export default async function TeamPage() {
         <Card>
           <div className="divide-y divide-border">
             {members.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 px-4 py-3.5">
-                <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
-                  {initials(m.user.name)}
+              <div key={m.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-4 py-3.5">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
+                    {initials(m.user.name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {m.user.name}
+                      {m.status === "SUSPENDED" && <span className="text-danger-text font-normal"> · Deactivated</span>}
+                    </div>
+                    <div className="text-xs text-ink/45 truncate">
+                      {m.user.email}
+                      {m.role === "PARTNER" &&
+                        ` · ${m.assignedBookings.length} upcoming ${m.assignedBookings.length === 1 ? "project" : "projects"}`}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{m.user.name}</div>
-                  <div className="text-xs text-ink/45 truncate">{m.user.email}</div>
+                <div className="flex items-center gap-3 pl-11 sm:pl-0 shrink-0">
+                  {m.role === "PARTNER" && <ConversationAccessToggle membershipId={m.id} canViewAll={m.canViewAllConversations} />}
+                  <Badge tone={m.role === "OWNER" ? "accent" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
+                  <MemberActions membershipId={m.id} role={m.role} status={m.status} />
                 </div>
-                <Badge tone={m.role === "OWNER" ? "accent" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
               </div>
             ))}
           </div>
         </Card>
       </div>
+
+      {joinRequests.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-sm font-medium text-ink mb-2.5">Join requests</h2>
+          <Card>
+            <div className="divide-y divide-border">
+              {joinRequests.map((r) => (
+                <JoinRequestRow key={r.id} id={r.id} name={r.user.name} email={r.user.email} />
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
 
       <div className="mb-10">
         <h2 className="text-sm font-medium text-ink mb-2.5">Invite a partner</h2>

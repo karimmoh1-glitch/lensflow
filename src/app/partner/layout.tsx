@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSession, requireBusiness } from "@/lib/auth";
 import { logout } from "@/app/actions/auth";
 import { initials } from "@/lib/utils";
@@ -27,6 +28,14 @@ export default async function PartnerLayout({ children }: { children: React.Reac
             <div className="text-[11px] text-ink/40 leading-tight">Partner access</div>
           </div>
         </div>
+        <nav className="hidden sm:flex items-center gap-5 text-sm">
+          <Link href="/partner" className="text-ink/60 hover:text-ink">
+            My work
+          </Link>
+          <Link href="/partner/inbox" className="text-ink/60 hover:text-ink">
+            Conversations
+          </Link>
+        </nav>
         <form action={logout}>
           <button className="text-xs text-ink/45 hover:text-ink/70">Log out</button>
         </form>

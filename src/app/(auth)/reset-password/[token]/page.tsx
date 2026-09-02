@@ -24,7 +24,7 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
       <Card className="w-full max-w-sm">
         <CardBody className="p-8">
           <Link href="/" className="font-display text-lg">
-            LensFlow
+            Daythread
           </Link>
           <h1 className="font-display text-2xl mt-4 mb-1">Choose a new password</h1>
           <p className="text-sm text-ink/50 mb-6">Enter a new password for your account.</p>

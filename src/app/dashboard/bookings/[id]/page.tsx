@@ -4,10 +4,11 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { MapPin } from "lucide-react";
 import { Badge, Card, CardBody, PageHeader } from "@/components/ui";
-import { formatMoney } from "@/lib/utils";
+import { formatMoney, toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { BookingActions } from "./BookingActions";
 import { AssignPartner } from "./AssignPartner";
+import { DeliveryPanel } from "./DeliveryPanel";
 
 const LIFECYCLE: { status: string; label: string }[] = [
   { status: "INQUIRY", label: "Inquiry" },
@@ -24,14 +25,23 @@ const LIFECYCLE: { status: string; label: string }[] = [
 export default async function BookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
-  const { business } = ctx;
+  const { business, role, membership } = ctx;
   const { id } = await params;
+
+  // Clients use /portal for their own bookings, never this staff-facing detail page —
+  // never trust the URL alone to gate access.
+  if (role === "CLIENT") redirect("/portal");
 
   const booking = await prisma.booking.findFirst({
     where: { id, businessId: business.id },
     include: { client: true, service: true, payments: { orderBy: { createdAt: "desc" } }, questionnaire: true },
   });
   if (!booking) notFound();
+
+  // A partner can only ever see the bookings explicitly assigned to them — the same
+  // least-privilege scoping /partner enforces in its list view, re-checked here since a
+  // partner could otherwise reach any booking by guessing its URL.
+  if (role === "PARTNER" && booking.assignedMembershipId !== membership.id) notFound();
 
   const partners = await prisma.orgMembership.findMany({
     where: { businessId: business.id, role: "PARTNER" },
@@ -44,7 +54,10 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title={`${booking.client.name} — ${booking.service.name}`} description={format(booking.startAt, "EEEE, MMMM d, yyyy · h:mm a")} />
+      <PageHeader
+        title={`${booking.client.name} — ${booking.service.name}`}
+        description={format(toZonedDisplayDate(booking.startAt, business.timezone), "EEEE, MMMM d, yyyy · h:mm a")}
+      />
 
       {booking.status !== "CANCELED" && (
         <div className="flex items-center mb-8 overflow-x-auto scrollbar-thin pb-2">
@@ -119,6 +132,10 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               )}
             </CardBody>
           </Card>
+
+          {(["COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"].includes(booking.status) || booking.deliveryUrl) && (
+            <DeliveryPanel bookingId={booking.id} deliveryUrl={booking.deliveryUrl} deliveryNote={booking.deliveryNote} deliveredAt={booking.deliveredAt} />
+          )}
         </div>
 
         <div>

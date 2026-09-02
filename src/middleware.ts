@@ -17,24 +17,52 @@ async function hasValidSession(req: NextRequest) {
 
 const PROTECTED_PREFIXES = ["/dashboard", "/onboarding", "/portal", "/partner", "/workspaces"];
 
+// The mobile API is authenticated by bearer token, not cookies, so cross-origin requests
+// carry no ambient credential a browser needs to guard — CORS restrictions here would only
+// ever block a legitimate client (the Expo web preview, a future PWA), never protect
+// anything. Native fetch (iOS/Android) ignores CORS entirely; this only matters for the
+// web target.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (pathname.startsWith("/api/mobile")) {
+    if (req.method === "OPTIONS") {
+      return new NextResponse(null, { status: 204, headers: corsHeaders });
+    }
+    const res = NextResponse.next();
+    for (const [key, value] of Object.entries(corsHeaders)) res.headers.set(key, value);
+    return res;
+  }
+
   const authed = await hasValidSession(req);
 
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
-  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
 
   if (isProtected && !authed) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
-  // Role-aware redirect (client vs partner vs photographer) happens server-side in
-  // dashboard/layout.tsx — the edge runtime here can't reach the database.
-  if ((pathname === "/login" || pathname === "/signup") && authed) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
+  // Neither /login nor /signup ever auto-redirects an already-authenticated visitor
+  // away to their dashboard — clicking "Log in" or "Start Free" always shows the real
+  // page, regardless of whatever session (demo, stale test login, etc) happens to be
+  // active. Submitting either form re-authenticates and routes normally from there.
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/portal/:path*", "/partner/:path*", "/workspaces/:path*", "/login", "/signup"],
+  matcher: [
+    "/dashboard/:path*",
+    "/onboarding/:path*",
+    "/portal/:path*",
+    "/partner/:path*",
+    "/workspaces/:path*",
+    "/login",
+    "/signup",
+    "/api/mobile/:path*",
+  ],
 };

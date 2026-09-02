@@ -38,6 +38,17 @@ model Business {
   onboardingStep     Int     @default(0)
   onboardingComplete Boolean @default(false)
 
+  // Daythread's own subscription — this business paying US for the platform. Distinct
+  // from MembershipPlan/Subscription below, which is a photographer's own client paying
+  // THEM for a recurring package. Source of truth is always Stripe via the webhook
+  // handler (see src/app/api/webhooks/stripe) — never set these from a client request.
+  planTier             PlanTier      @default(FREE)
+  billingStatus        BillingStatus?
+  stripeCustomerId     String?       @unique
+  stripeSubscriptionId String?       @unique
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean       @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -58,6 +69,25 @@ model Business {
   membershipPlans MembershipPlan[]
   auditLogs      AuditLog[]
   notifications  Notification[]
+  joinRequests   JoinRequest[]
+}
+
+enum PlanTier {
+  FREE
+  PRO
+  BUSINESS
+}
+
+// Mirrors Stripe subscription statuses we actually branch on. Distinct from
+// SubscriptionStatus below (that one is for a photographer's own client memberships).
+enum BillingStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
 }
 
 // A user's role within a specific organization — see OrgMembership. Never trust a role
@@ -90,6 +120,7 @@ model User {
   sentMessages       Message[]            @relation("SentByUser")
   notes              ClientNote[]
   passwordResetTokens PasswordResetToken[]
+  joinRequests       JoinRequest[]
 }
 
 // The tenancy join table: one row per (user, organization) pair. A user may belong to
@@ -105,6 +136,11 @@ model OrgMembership {
   role       Role
   status     MembershipStatus  @default(ACTIVE)
   createdAt  DateTime          @default(now())
+
+  // Owner-controlled partner permission: by default a partner only sees conversations
+  // tied to clients from bookings assigned to them. When true, they see every business
+  // conversation. Irrelevant for non-PARTNER roles, which already see everything.
+  canViewAllConversations Boolean @default(false)
 
   assignedBookings Booking[] @relation("AssignedPartner")
 
@@ -158,6 +194,30 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+enum JoinRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// A request from a user to join an existing business, made from the public "Join a
+// business" signup path. Never grants membership on its own — an owner/admin must
+// accept it, and accepting always lands the requester as a CLIENT (never a partner or
+// staff role). See promoteToPartner for the only path from there to elevated access.
+model JoinRequest {
+  id         String            @id @default(cuid())
+  businessId String
+  business   Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     JoinRequestStatus @default(PENDING)
+  createdAt  DateTime          @default(now())
+  decidedAt  DateTime?
+
+  @@unique([userId, businessId])
+  @@index([businessId, status])
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -358,7 +418,20 @@ model Message {
   sentByUser     User?            @relation("SentByUser", fields: [sentByUserId], references: [id])
   createdAt      DateTime         @default(now())
 
+  // The email provider's own message id (Resend's `id` on send, `message_id` on
+  // receive) — used for two real things, not decoration: (1) deduping a webhook Resend
+  // retries after a timeout, so the same inbound email never gets ingested twice, and
+  // (2) setting In-Reply-To/References on our outbound sends so the customer's mail
+  // client threads the conversation correctly on their end too.
+  providerMessageId String?
+
+  // Original pre-normalization content (whichever of text/html the provider handed
+  // over), kept only so a real parsing problem can be diagnosed after the fact —
+  // never rendered anywhere in the conversation UI, only `body` is.
+  rawBody String?
+
   @@index([conversationId, createdAt])
+  @@index([providerMessageId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -402,6 +475,13 @@ model Booking {
   depositCents  Int
   confirmedAt   DateTime?
   completedAt   DateTime?
+
+  // Delivery — a real link (Pixieset/Drive/Dropbox gallery) + note the photographer sets
+  // once the shoot is edited. No file storage of our own; this is how most working
+  // photographers actually deliver galleries, so it's a real field, not a placeholder.
+  deliveryUrl  String?
+  deliveryNote String?
+  deliveredAt  DateTime?
 
   questionnaire         Questionnaire?
   createdAt DateTime @default(now())
@@ -639,6 +719,14 @@ model Integration {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
+  // Real OAuth tokens for a per-business connection (currently Gmail) — set only after
+  // the owner completes Google's actual consent screen, never fabricated. accessToken
+  // is short-lived and refreshed on demand via refreshToken; tokenExpiresAt tracks when
+  // that refresh is due.
+  accessToken    String?
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+
   @@unique([businessId, provider])
 }
 
@@ -670,4 +758,17 @@ model Notification {
   createdAt  DateTime @default(now())
 
   @@index([businessId, read])
+}
+
+/// Guards every webhook handler (Stripe today, others later) against double-processing —
+/// a provider can and will redeliver the same event after a timeout or on retry. Insert
+/// happens first, inside the same transaction as the state change it guards: if the event
+/// id is already present, the unique constraint fails and the handler no-ops.
+model WebhookEvent {
+  id         String   @id @default(cuid())
+  provider   String // "stripe", etc.
+  eventId    String
+  receivedAt DateTime @default(now())
+
+  @@unique([provider, eventId])
 }

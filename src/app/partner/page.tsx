@@ -3,6 +3,7 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader, Card, Badge, EmptyState } from "@/components/ui";
 import { format, isToday } from "date-fns";
+import { toZonedDisplayDate } from "@/lib/utils";
 
 const STATUS_TONE: Record<string, "neutral" | "success" | "warning" | "info" | "danger"> = {
   INQUIRY: "neutral",
@@ -45,17 +46,17 @@ export default async function PartnerHomePage() {
           {todayBookings.length > 0 && (
             <div className="mb-8">
               <h2 className="text-sm font-medium text-ink mb-2.5">Today</h2>
-              <BookingList bookings={todayBookings} />
+              <BookingList bookings={todayBookings} timezone={business.timezone} />
             </div>
           )}
           <div className="mb-8">
             <h2 className="text-sm font-medium text-ink mb-2.5">Upcoming</h2>
-            {upcoming.length === 0 ? <EmptyState title="Nothing else upcoming" /> : <BookingList bookings={upcoming} />}
+            {upcoming.length === 0 ? <EmptyState title="Nothing else upcoming" /> : <BookingList bookings={upcoming} timezone={business.timezone} />}
           </div>
           {past.length > 0 && (
             <div>
               <h2 className="text-sm font-medium text-ink mb-2.5">Past</h2>
-              <BookingList bookings={past} />
+              <BookingList bookings={past} timezone={business.timezone} />
             </div>
           )}
         </>
@@ -66,8 +67,10 @@ export default async function PartnerHomePage() {
 
 function BookingList({
   bookings,
+  timezone,
 }: {
   bookings: { id: string; startAt: Date; status: string; location: string | null; service: { name: string }; client: { name: string } }[];
+  timezone: string;
 }) {
   return (
     <Card>
@@ -79,7 +82,7 @@ function BookingList({
                 {b.service.name} — {b.client.name}
               </div>
               <div className="text-xs text-ink/45">
-                {format(b.startAt, "EEE, MMM d 'at' h:mm a")}
+                {format(toZonedDisplayDate(b.startAt, timezone), "EEE, MMM d 'at' h:mm a")}
                 {b.location && ` · ${b.location}`}
               </div>
             </div>

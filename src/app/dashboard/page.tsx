@@ -1,15 +1,16 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { getTodayBrief, buildBriefText } from "@/server/dashboardData";
 import { Card, Badge, EmptyState } from "@/components/ui";
-import { formatMoney, cn } from "@/lib/utils";
+import { formatMoney, cn, toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { FixMyDayButton } from "./FixMyDayButton";
 
 export default async function TodayPage() {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business, user } = ctx;
 
   const brief = await getTodayBrief(business.id);
@@ -47,14 +48,14 @@ export default async function TodayPage() {
           {brief.todaysBookings.length === 0 ? (
             <EmptyState title="Nothing on the calendar today" description="Enjoy the quiet, or reach out to a warm lead." />
           ) : (
-            <BookingList bookings={brief.todaysBookings} timeFormat="h:mm a" />
+            <BookingList bookings={brief.todaysBookings} timeFormat="h:mm a" timezone={business.timezone} />
           )}
 
           <SectionLabel className="mt-8">Upcoming</SectionLabel>
           {brief.upcoming.length === 0 ? (
             <EmptyState title="No upcoming bookings yet" />
           ) : (
-            <BookingList bookings={brief.upcoming} timeFormat="MMM d, h:mm a" linked />
+            <BookingList bookings={brief.upcoming} timeFormat="MMM d, h:mm a" timezone={business.timezone} linked />
           )}
         </div>
 
@@ -112,10 +113,12 @@ function SectionLabel({ children, className }: { children: React.ReactNode; clas
 function BookingList({
   bookings,
   timeFormat,
+  timezone,
   linked,
 }: {
   bookings: { id: string; startAt: Date; status: string; service: { name: string }; client: { name: string } }[];
   timeFormat: string;
+  timezone: string;
   linked?: boolean;
 }) {
   return (
@@ -126,7 +129,7 @@ function BookingList({
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
                 <div className="text-sm font-medium truncate">
-                  {format(b.startAt, timeFormat)} — {b.service.name}
+                  {format(toZonedDisplayDate(b.startAt, timezone), timeFormat)} — {b.service.name}
                 </div>
                 <div className="text-xs text-ink/45">{b.client.name}</div>
               </div>

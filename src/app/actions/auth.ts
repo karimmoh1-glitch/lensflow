@@ -5,8 +5,11 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, getUserMemberships, homeRouteFor } from "@/lib/auth";
 import { generatePasswordResetToken, passwordResetExpiry } from "@/lib/passwordReset";
-import { sendOnChannel } from "@/lib/messaging";
+import { sendOnChannel, messagingIsLive } from "@/lib/messaging";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import type { Role } from "@prisma/client";
+
+const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
 
 const signupSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -25,7 +28,7 @@ function slugify(input: string) {
     .slice(0, 40);
 }
 
-async function uniqueHandle(base: string) {
+export async function uniqueHandle(base: string) {
   let handle = slugify(base) || "studio";
   let n = 0;
   while (await prisma.business.findUnique({ where: { handle } })) {
@@ -38,6 +41,11 @@ async function uniqueHandle(base: string) {
 export type FormState = { error?: string; duplicateEmail?: boolean } | undefined;
 
 export async function signup(formData: FormData): Promise<FormState> {
+  const ip = await getClientIp();
+  if (!rateLimit(`signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok) {
+    return { error: TOO_MANY_ATTEMPTS };
+  }
+
   const parsed = signupSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -86,6 +94,13 @@ export async function login(formData: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
+  const ip = await getClientIp();
+  // Two buckets: per-IP guards against a single attacker trying many accounts; per-email
+  // guards a specific account against brute force spread across rotating IPs.
+  const ipOk = rateLimit(`login:ip:${ip}`, { limit: 20, windowMs: 10 * 60 * 1000 }).ok;
+  const emailOk = rateLimit(`login:email:${parsed.data.email}`, { limit: 8, windowMs: 10 * 60 * 1000 }).ok;
+  if (!ipOk || !emailOk) return { error: TOO_MANY_ATTEMPTS };
+
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
     return { error: "Incorrect email or password" };
@@ -93,6 +108,10 @@ export async function login(formData: FormData): Promise<FormState> {
 
   const memberships = await getUserMemberships(user.id);
   if (memberships.length === 0) {
+    const pendingRequest = await prisma.joinRequest.findFirst({ where: { userId: user.id, status: "PENDING" } });
+    if (pendingRequest) {
+      return { error: "Your request to join is still waiting on the owner's approval. We'll let you in as soon as it's accepted." };
+    }
     return { error: "This account isn't part of any organization yet." };
   }
 
@@ -115,18 +134,31 @@ const forgotPasswordSchema = z.object({
   email: z.string().email("Enter a valid email"),
 });
 
-export type ForgotPasswordState = { sent: boolean; error?: string };
+export type ForgotPasswordState = { sent: boolean; error?: string; devLink?: string };
 
 /**
  * Always reports success regardless of whether the email exists — never leaks account
  * existence to an unauthenticated caller. The actual email only goes out when the account
  * is real.
+ *
+ * No real email provider is configured on this deployment (RESEND_API_KEY unset), so the
+ * reset link would otherwise only ever reach a Vercel function log no one can see — a
+ * "working" button that's actually dead for anyone testing it. Since there's no real email
+ * to protect here, and only for an account that actually exists, the link is returned to
+ * the caller directly instead. Once a real provider is configured (messagingIsLive("EMAIL")
+ * is true) this never happens — the link only ever goes out over email as normal.
  */
 export async function forgotPassword(formData: FormData): Promise<ForgotPasswordState> {
   const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { sent: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
+  const ip = await getClientIp();
+  if (!rateLimit(`forgot-password:${ip}`, { limit: 6, windowMs: 60 * 60 * 1000 }).ok) {
+    return { sent: false, error: TOO_MANY_ATTEMPTS };
+  }
+
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  let devLink: string | undefined;
   if (user) {
     const token = generatePasswordResetToken();
     await prisma.passwordResetToken.create({
@@ -136,12 +168,13 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
     await sendOnChannel({
       channel: "EMAIL",
       to: user.email,
-      subject: "Reset your LensFlow password",
+      subject: "Reset your Daythread password",
       body: `Hi ${user.name}, reset your password here (this link expires in 1 hour): ${link}`,
     });
+    if (!messagingIsLive("EMAIL")) devLink = link;
   }
 
-  return { sent: true };
+  return { sent: true, devLink };
 }
 
 const resetPasswordSchema = z.object({
@@ -153,6 +186,11 @@ export type ResetPasswordState = { error?: string } | undefined;
 export async function resetPassword(token: string, formData: FormData): Promise<ResetPasswordState> {
   const parsed = resetPasswordSchema.safeParse({ password: formData.get("password") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const ip = await getClientIp();
+  if (!rateLimit(`reset-password:${ip}`, { limit: 10, windowMs: 60 * 60 * 1000 }).ok) {
+    return { error: TOO_MANY_ATTEMPTS };
+  }
 
   const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
   if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {

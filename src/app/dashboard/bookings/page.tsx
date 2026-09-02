@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader, Badge, EmptyState, Card } from "@/components/ui";
-import { formatMoney } from "@/lib/utils";
+import { formatMoney, toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
 
 const STATUS_TONE: Record<string, "neutral" | "success" | "warning" | "info" | "danger"> = {
@@ -22,6 +22,7 @@ const STATUS_TONE: Record<string, "neutral" | "success" | "warning" | "info" | "
 export default async function BookingsPage() {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
+  if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
 
   const bookings = await prisma.booking.findMany({
@@ -51,7 +52,7 @@ export default async function BookingsPage() {
                       </Badge>
                     </div>
                     <div className="text-xs text-ink/45 truncate">
-                      {b.service.name} · {format(b.startAt, "MMM d, yyyy · h:mm a")}
+                      {b.service.name} · {format(toZonedDisplayDate(b.startAt, business.timezone), "MMM d, yyyy · h:mm a")}
                     </div>
                   </div>
                   <div className="text-right shrink-0">

@@ -8,6 +8,7 @@ import { Button, Input, Label, Card, CardBody } from "@/components/ui";
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [devLink, setDevLink] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -20,6 +21,7 @@ export default function ForgotPasswordPage() {
         setError(result.error);
       } else {
         setSent(true);
+        setDevLink(result.devLink ?? null);
       }
     });
   }
@@ -29,7 +31,7 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-sm">
         <CardBody className="p-8">
           <Link href="/" className="font-display text-lg">
-            LensFlow
+            Daythread
           </Link>
           <h1 className="font-display text-2xl mt-4 mb-1">Reset your password</h1>
 
@@ -38,6 +40,16 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-ink/60 mt-4">
                 If an account exists for that email, we&apos;ve sent a link to reset your password. It expires in 1 hour.
               </p>
+              {devLink && (
+                <div className="mt-4 rounded-lg bg-warning-soft border border-warning/30 px-3.5 py-3">
+                  <p className="text-xs font-medium text-warning-text mb-1.5">
+                    No email provider is configured on this deployment, so here&apos;s your link directly:
+                  </p>
+                  <a href={devLink} className="text-xs text-accent-text underline break-all">
+                    {devLink}
+                  </a>
+                </div>
+              )}
               <p className="mt-6 text-sm text-center text-ink/50">
                 <Link href="/login" className="text-accent-text font-medium">
                   Back to log in

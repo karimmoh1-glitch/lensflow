@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const PROJECT_STAGES = ["Booked", "Shoot", "Editing", "Review", "Ready", "Delivered"];
+const PROJECT_STAGES = ["Booked", "In progress", "Editing", "Review", "Ready", "Delivered"];
 
 export function WorkflowCard({ step }: { step: number }) {
   return (

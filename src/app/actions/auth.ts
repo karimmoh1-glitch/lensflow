@@ -15,7 +15,7 @@ const signupSchema = z.object({
   name: z.string().min(1, "Full name is required"),
   email: z.string().email("Enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  businessName: z.string().min(1, "Business / studio name is required"),
+  businessName: z.string().min(1, "Business name is required"),
   businessType: z.string().optional(),
   phone: z.string().optional(),
 });
@@ -29,7 +29,7 @@ function slugify(input: string) {
 }
 
 export async function uniqueHandle(base: string) {
-  let handle = slugify(base) || "studio";
+  let handle = slugify(base) || "business";
   let n = 0;
   while (await prisma.business.findUnique({ where: { handle } })) {
     n += 1;

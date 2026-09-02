@@ -189,7 +189,7 @@ export async function sendQuestionnaire(bookingId: string) {
     await sendOnChannel({
       channel: booking.conversation.channel,
       to: booking.conversation.externalHandle,
-      body: `Hi ${booking.client.name}! Ahead of your ${booking.service.name} session, please fill out this quick questionnaire so we can make the most of your shoot.`,
+      body: `Hi ${booking.client.name}! Ahead of your ${booking.service.name} session, please fill out this quick questionnaire so we can make the most of it.`,
     });
   }
 

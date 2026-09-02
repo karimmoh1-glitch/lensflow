@@ -36,7 +36,7 @@ export async function submitWebsiteLead(
   const { name, email, phone, serviceId, preferredDate, message } = parsed.data;
 
   const business = await prisma.business.findUnique({ where: { handle } });
-  if (!business) return { ok: false, error: "This studio isn't accepting inquiries right now." };
+  if (!business) return { ok: false, error: "This business isn't accepting inquiries right now." };
 
   const service = serviceId ? await prisma.service.findFirst({ where: { id: serviceId, businessId: business.id } }) : null;
 

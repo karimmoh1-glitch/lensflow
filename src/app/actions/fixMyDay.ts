@@ -48,7 +48,7 @@ export async function runFixMyDay(): Promise<FixMyDayItem[]> {
   for (const b of unconfirmedSoon) {
     items.push({
       id: `confirm-${b.id}`,
-      title: `${b.client.name} hasn't confirmed their upcoming shoot`,
+      title: `${b.client.name} hasn't confirmed their upcoming booking`,
       href: `/dashboard/bookings/${b.id}`,
       actionLabel: "Review booking",
     });
@@ -75,7 +75,7 @@ export async function runFixMyDay(): Promise<FixMyDayItem[]> {
   for (const b of missingQuestionnaire) {
     items.push({
       id: `quest-${b.id}`,
-      title: `${b.client.name}'s upcoming shoot is missing a questionnaire`,
+      title: `${b.client.name}'s upcoming booking is missing a questionnaire`,
       href: `/dashboard/bookings/${b.id}`,
       actionLabel: "Send questionnaire",
     });

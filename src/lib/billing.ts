@@ -57,7 +57,7 @@ export const PLANS: Record<
     priceCents: 7900,
     maxTeamSeats: Infinity,
     smsEnabled: true,
-    tagline: "For studios with a full team and higher booking volume.",
+    tagline: "For businesses with a full team and higher booking volume.",
     features: ["Everything in Pro", "Unlimited team seats", "Priority support"],
   },
 };

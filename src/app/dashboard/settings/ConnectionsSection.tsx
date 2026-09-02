@@ -37,7 +37,7 @@ function Row({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 px-4 py-3.5">
       <div className="min-w-0">
         <div className="text-sm font-medium">{label}</div>
         <div className="text-xs text-ink/50 mt-0.5">{note}</div>

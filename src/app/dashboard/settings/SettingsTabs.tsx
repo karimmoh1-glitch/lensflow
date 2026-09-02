@@ -26,13 +26,13 @@ export function SettingsTabs({
 
   return (
     <div>
-      <div className="flex items-center gap-1 border-b border-border mb-6 -mt-1">
+      <div className="flex items-center gap-1 border-b border-border mb-6 -mt-1 overflow-x-auto scrollbar-thin">
         {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              "px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+              "px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 whitespace-nowrap",
               tab === t ? "border-ink text-ink" : "border-transparent text-ink/45 hover:text-ink/70"
             )}
           >

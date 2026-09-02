@@ -43,24 +43,28 @@ export default async function TeamPage() {
         <Card>
           <div className="divide-y divide-border">
             {members.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 px-4 py-3.5">
-                <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
-                  {initials(m.user.name)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {m.user.name}
-                    {m.status === "SUSPENDED" && <span className="text-danger-text font-normal"> · Deactivated</span>}
+              <div key={m.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-4 py-3.5">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
+                    {initials(m.user.name)}
                   </div>
-                  <div className="text-xs text-ink/45 truncate">
-                    {m.user.email}
-                    {m.role === "PARTNER" &&
-                      ` · ${m.assignedBookings.length} upcoming ${m.assignedBookings.length === 1 ? "project" : "projects"}`}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {m.user.name}
+                      {m.status === "SUSPENDED" && <span className="text-danger-text font-normal"> · Deactivated</span>}
+                    </div>
+                    <div className="text-xs text-ink/45 truncate">
+                      {m.user.email}
+                      {m.role === "PARTNER" &&
+                        ` · ${m.assignedBookings.length} upcoming ${m.assignedBookings.length === 1 ? "project" : "projects"}`}
+                    </div>
                   </div>
                 </div>
-                {m.role === "PARTNER" && <ConversationAccessToggle membershipId={m.id} canViewAll={m.canViewAllConversations} />}
-                <Badge tone={m.role === "OWNER" ? "accent" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
-                <MemberActions membershipId={m.id} role={m.role} status={m.status} />
+                <div className="flex items-center gap-3 pl-11 sm:pl-0 shrink-0">
+                  {m.role === "PARTNER" && <ConversationAccessToggle membershipId={m.id} canViewAll={m.canViewAllConversations} />}
+                  <Badge tone={m.role === "OWNER" ? "accent" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
+                  <MemberActions membershipId={m.id} role={m.role} status={m.status} />
+                </div>
               </div>
             ))}
           </div>

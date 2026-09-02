@@ -10,7 +10,7 @@ import { MemberActions } from "./MemberActions";
 import { JoinRequestRow } from "./JoinRequestRow";
 import { ConversationAccessToggle } from "./ConversationAccessToggle";
 
-const ROLE_LABEL: Record<string, string> = { OWNER: "Owner", ADMIN: "Admin", PHOTOGRAPHER: "Photographer", PARTNER: "Partner", CLIENT: "Client" };
+const ROLE_LABEL: Record<string, string> = { OWNER: "Owner", ADMIN: "Admin", PHOTOGRAPHER: "Team member", PARTNER: "Partner", CLIENT: "Client" };
 
 export default async function TeamPage() {
   const ctx = await requireRole(["OWNER", "ADMIN"]);
@@ -36,7 +36,7 @@ export default async function TeamPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title="Team" description="Photographers and partners with access to this studio." />
+      <PageHeader title="Team" description="Your team and partners with access to this business." />
 
       <div className="mb-10">
         <h2 className="text-sm font-medium text-ink mb-2.5">Members</h2>

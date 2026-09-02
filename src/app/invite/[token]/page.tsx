@@ -13,7 +13,7 @@ const ROLE_COPY: Record<string, { title: string; body: string }> = {
     title: "You've been invited to join the team",
     body: "You'll get access to the bookings and projects assigned to you.",
   },
-  ADMIN: { title: "You've been invited to join the team", body: "You'll have full access to manage this studio." },
+  ADMIN: { title: "You've been invited to join the team", body: "You'll have full access to manage this business." },
   PHOTOGRAPHER: { title: "You've been invited to join the team", body: "You'll be able to manage bookings, clients, and payments." },
 };
 
@@ -25,7 +25,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   if (invitation.status !== "PENDING") {
     const message: Record<string, string> = {
       ACCEPTED: "This invitation has already been used.",
-      EXPIRED: "This invitation has expired. Ask the studio to send you a new one.",
+      EXPIRED: "This invitation has expired. Ask them to send you a new one.",
       REVOKED: "This invitation has been revoked.",
       INVALID: "This invitation link isn't valid.",
     };

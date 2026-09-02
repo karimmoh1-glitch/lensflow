@@ -126,7 +126,7 @@ export default async function PortalHomePage() {
                       className="mt-2.5 flex items-center gap-2 text-sm text-accent-text hover:underline bg-accent-soft/50 rounded-lg px-3 py-2"
                     >
                       <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
-                      View your gallery
+                      View your delivery
                     </a>
                   )}
                 </div>

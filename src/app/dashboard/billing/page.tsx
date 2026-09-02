@@ -30,7 +30,7 @@ export default async function BillingPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title="Billing" description="What your studio pays for Daythread." />
+      <PageHeader title="Billing" description="What your business pays for Daythread." />
 
       {!subscriptionBillingIsLive && (
         <p className="text-sm text-ink/50 bg-black/[0.03] rounded-md px-3.5 py-2.5 mb-6">

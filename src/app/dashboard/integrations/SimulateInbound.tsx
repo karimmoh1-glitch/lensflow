@@ -9,7 +9,7 @@ export function SimulateInbound() {
   const [channel, setChannel] = useState<ChannelType>("INSTAGRAM");
   const [senderName, setSenderName] = useState("Jamie Chen");
   const [handle, setHandle] = useState("@jamie.chen");
-  const [body, setBody] = useState("Hi! Do you have any openings for a graduation shoot on June 14th? Excited to work with you!");
+  const [body, setBody] = useState("Hi! Do you have any openings next Tuesday? Excited to work with you!");
   const [pending, startTransition] = useTransition();
 
   return (

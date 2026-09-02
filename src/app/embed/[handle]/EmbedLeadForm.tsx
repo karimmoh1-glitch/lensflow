@@ -71,7 +71,7 @@ export function EmbedLeadForm({ handle, services }: { handle: string; services: 
       </div>
       <div>
         <Label htmlFor="message">Message</Label>
-        <Textarea id="message" name="message" rows={3} required placeholder="Tell us about your shoot…" />
+        <Textarea id="message" name="message" rows={3} required placeholder="Tell us what you need…" />
       </div>
       {error && <p className="text-sm text-danger">{error}</p>}
       <Button type="submit" className="w-full" disabled={pending}>

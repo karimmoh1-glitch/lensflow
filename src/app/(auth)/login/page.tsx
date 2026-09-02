@@ -48,7 +48,7 @@ function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" placeholder="alex@studio.com" required />
+              <Input id="email" name="email" type="email" placeholder="alex@business.com" required />
             </div>
             <div>
               <div className="flex items-center justify-between">

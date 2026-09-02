@@ -40,7 +40,7 @@ export default async function PartnerHomePage() {
       <PageHeader title="Your assigned work" description={`At ${business.name}`} />
 
       {bookings.length === 0 ? (
-        <EmptyState title="Nothing assigned yet" description="Bookings the studio assigns to you will show up here." />
+        <EmptyState title="Nothing assigned yet" description="Bookings assigned to you will show up here." />
       ) : (
         <>
           {todayBookings.length > 0 && (

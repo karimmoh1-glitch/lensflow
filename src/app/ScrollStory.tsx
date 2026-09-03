@@ -46,7 +46,7 @@ export function StoryStep({
       }}
     >
       <div className="text-xs font-medium text-accent-text mb-2">{eyebrow}</div>
-      <h3 className="font-display text-2xl md:text-3xl text-ink mb-2">{title}</h3>
+      <h3 className="font-sans font-black text-2xl md:text-3xl tracking-tight text-ink mb-2">{title}</h3>
       <p className="text-sm text-ink/55 max-w-xs">{body}</p>
     </div>
   );

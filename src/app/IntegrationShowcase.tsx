@@ -129,8 +129,8 @@ export function IntegrationShowcase() {
     <div ref={containerRef} className="max-w-5xl mx-auto px-6">
       <div className="text-center max-w-lg mx-auto mb-14">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-text mb-3">How it works</div>
-        <h2 className="font-display text-3xl md:text-[2.5rem] leading-[1.1] text-ink">
-          Chaos comes in. <span className="text-signal-text">Work</span> comes out.
+        <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink">
+          Chaos comes in. <span className="text-accent-text">Work</span> comes out.
         </h2>
         <p className="mt-4 text-ink/55 text-sm md:text-base max-w-md mx-auto">
           Your business already lives across Instagram, email, and text. Daythread is where it becomes organized.

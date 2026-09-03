@@ -22,7 +22,7 @@ export function LandingMobileStory() {
   return (
     <div>
       <div className="text-center mb-4">
-        <h2 className="font-display text-2xl md:text-3xl text-ink">Run it from your phone.</h2>
+        <h2 className="font-sans font-black text-2xl md:text-3xl tracking-tight text-ink">Run it from your phone.</h2>
       </div>
       <StoryLayout visual={<PhoneFrame className="scale-[0.85] md:scale-100"><ActiveScreen /></PhoneFrame>}>
         {STEPS.map((s, i) => (

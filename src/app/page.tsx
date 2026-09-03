@@ -14,16 +14,19 @@ export default function LandingPage() {
     <main className="bg-paper overflow-x-hidden">
       <Navbar />
 
-      {/* Hero — confidence from scale and restraint, with one precise touch of atmosphere
-          anchored behind the product visual, not smeared across the whole section. */}
+      {/* Hero — bold black sans headline, coral glow, gradient badge, full-pill buttons. */}
       <section className="relative flex flex-col items-center px-6 pt-16 md:pt-24 pb-10 overflow-hidden">
         <div
-          className="absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2 w-[520px] h-[320px] rounded-full opacity-[0.14] blur-3xl pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #C75A32 0%, transparent 72%)" }}
+          className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-[560px] h-[360px] rounded-full opacity-[0.18] blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(ellipse, #F0524D 0%, transparent 72%)" }}
           aria-hidden
         />
         <div className="relative text-center max-w-2xl mx-auto shrink-0">
-          <h1 className="font-display text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.03] tracking-tight text-ink">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 mb-6 text-xs font-semibold text-ink/70 shadow-xs">
+            <span className="w-4 h-4 rounded-full shrink-0" style={{ background: "linear-gradient(135deg, #6D5AE6 0%, #3B82F6 100%)" }} />
+            The business OS for people who run their own thing
+          </div>
+          <h1 className="font-sans font-black text-[clamp(2.75rem,7vw,5rem)] leading-[0.98] tracking-tight text-ink">
             One thread for
             <br />
             your whole business.
@@ -32,10 +35,10 @@ export default function LandingPage() {
             Every message, booking, and payment — organized automatically, the moment it happens.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
-            <LinkButton href="/signup" size="lg">
+            <LinkButton href="/signup" size="lg" className="rounded-full font-bold">
               Start Free
             </LinkButton>
-            <LinkButton href="/demo" size="lg" variant="outline">
+            <LinkButton href="/demo" size="lg" variant="outline" className="rounded-full font-bold">
               See live demo
             </LinkButton>
           </div>
@@ -58,8 +61,8 @@ export default function LandingPage() {
       {/* Interactive product showcase */}
       <section className="py-20 md:py-28 bg-white border-y border-border">
         <div className="text-center max-w-lg mx-auto mb-10 px-6">
-          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40 mb-3">See it in action</div>
-          <h2 className="font-display text-3xl md:text-[2.5rem] leading-[1.1] text-ink">The product is the pitch.</h2>
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text mb-3">See it in action</div>
+          <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink">The product is the pitch.</h2>
         </div>
         <FeatureExplorer />
       </section>
@@ -79,19 +82,23 @@ export default function LandingPage() {
         <PricingSection />
       </section>
 
-      {/* Final CTA — bookends the hero's warm glow with the signal color that ran through
-          the integrations story, closing the "chaos → organized" arc. */}
+      {/* Final CTA — coral + violet-blue + green, the same energy the hero opened with. */}
       <section className="relative bg-midnight text-paper py-28 md:py-36 px-6 overflow-hidden">
         <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full opacity-[0.18] blur-3xl pointer-events-none"
+          className="absolute left-[30%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full opacity-[0.22] blur-3xl pointer-events-none"
           style={{ background: "radial-gradient(circle, #6D5AE6 0%, transparent 72%)" }}
+          aria-hidden
+        />
+        <div
+          className="absolute left-[70%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] rounded-full opacity-[0.16] blur-3xl pointer-events-none"
+          style={{ background: "radial-gradient(circle, #13CC78 0%, transparent 72%)" }}
           aria-hidden
         />
         <div className="relative max-w-lg mx-auto text-center">
           <LogoMark className="w-8 h-8 mx-auto mb-8 text-paper" />
-          <p className="font-display text-3xl md:text-[2.75rem] leading-[1.1] mb-4">Your business, in one thread.</p>
+          <p className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight mb-4">Your business, in one thread.</p>
           <p className="text-paper/50 text-sm md:text-base mb-9">Free to start. No credit card required.</p>
-          <LinkButton href="/signup" size="lg" variant="secondary">
+          <LinkButton href="/signup" size="lg" variant="secondary" className="rounded-full font-bold">
             Start Free
           </LinkButton>
         </div>

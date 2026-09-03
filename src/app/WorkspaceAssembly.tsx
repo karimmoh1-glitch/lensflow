@@ -59,7 +59,7 @@ export function WorkspaceAssembly() {
     <div>
       <div className="text-center max-w-lg mx-auto mb-4 px-6">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40 mb-3">Modular by design</div>
-        <h2 className="font-display text-3xl md:text-[2.5rem] leading-[1.1] text-ink">You choose what you need.</h2>
+        <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink">You choose what you need.</h2>
       </div>
       <StoryLayout visual={<WorkspaceCard modules={visibleModules} />}>
         {GROUPS.map((g, i) => (

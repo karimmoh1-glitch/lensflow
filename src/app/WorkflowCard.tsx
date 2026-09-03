@@ -7,11 +7,12 @@ const PROJECT_STAGES = ["Booked", "In progress", "Editing", "Review", "Ready", "
 
 export function WorkflowCard({ step }: { step: number }) {
   return (
-    <div className="w-72 rounded-2xl border border-border bg-white shadow-popover overflow-hidden">
-      <div className="px-4 py-3 border-b border-border">
+    <div className="w-80 sm:w-96 rounded-2xl border border-border bg-white shadow-popover overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-border flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
         <span className="font-display text-sm text-ink">Daythread</span>
       </div>
-      <div key={step} className="p-4 min-h-[168px] flex flex-col justify-center animate-[fadeUp_0.35s_ease-out]">
+      <div key={step} className="p-6 min-h-[220px] flex flex-col justify-center animate-[fadeUp_0.35s_ease-out]">
         {step === 0 && (
           <div>
             <div className="flex items-center justify-between mb-2.5">

@@ -143,7 +143,7 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
           className="absolute left-1/2"
           style={{
             left: "50%",
-            top: `${(CARD_TOP[1] / 300) * 100 + 14}%`,
+            top: `${(CARD_TOP[1] / 300) * 100}%`,
             transition: `transform 600ms ${POP} 620ms, opacity 350ms ease-out 620ms`,
             transform: mounted ? "translate(-50%, 0) scale(1)" : "translate(-50%, 12px) scale(0.55)",
             opacity: mounted ? 1 : 0,
@@ -190,28 +190,52 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
   );
 }
 
+// The same three people who reappear in the "Chaos comes in" section below — one
+// continuous story instead of throwaway placeholder rows, so the hero's payoff and the
+// section that explains it feel like one product, not two disconnected mockups.
+const INBOX_PREVIEW = [
+  { name: "Sarah Johnson", msg: "Are you available June 14?", icon: CameraGlyph, bg: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]" },
+  { name: "Priya Patel", msg: "Following up on pricing for a September date", icon: Mail, bg: "bg-[#4F46E5]" },
+  { name: "(512) 555-0148", msg: "Do you have anything open next week?", icon: MessageCircle, bg: "bg-[#2FC26E]" },
+];
+
 function SummaryCard({ compact }: { compact?: boolean }) {
   return (
-    <div className={cn("rounded-2xl border border-border bg-white shadow-popover overflow-hidden", compact ? "w-64" : "w-72")}>
-      <div className="px-4 py-3 border-b border-border">
+    <div className={cn("rounded-2xl border border-border bg-white shadow-popover overflow-hidden", compact ? "w-72" : "w-[336px]")}>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+        <span className="w-1.5 h-1.5 rounded-full bg-signal shrink-0" />
         <span className="font-display text-sm text-ink">Daythread</span>
+        <span className="ml-auto text-[10px] font-medium text-ink/40">3 new</span>
       </div>
-      <div className="p-4 space-y-2.5">
-        <SummaryRow label="New leads" value="12" tone="accent" />
-        <SummaryRow label="Bookings this week" value="4" />
-        <SummaryRow label="Outstanding" value="$1,240" tone="warning" />
+      <div className="divide-y divide-border">
+        {INBOX_PREVIEW.map((row) => (
+          <div key={row.name} className="flex items-center gap-2.5 px-4 py-2.5">
+            <div className={cn("w-7 h-7 rounded-full flex items-center justify-center shrink-0", row.bg)}>
+              <row.icon className="w-3.5 h-3.5 text-white" strokeWidth={2} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium text-ink truncate">{row.name}</div>
+              <div className="text-[11px] text-ink/45 truncate">{row.msg}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between px-4 py-2.5 bg-paper/70 border-t border-border">
+        <SummaryStat label="New leads" value="12" tone="accent" />
+        <SummaryStat label="Bookings" value="4" />
+        <SummaryStat label="Outstanding" value="$1,240" tone="warning" />
       </div>
     </div>
   );
 }
 
-function SummaryRow({ label, value, tone }: { label: string; value: string; tone?: "accent" | "warning" }) {
+function SummaryStat({ label, value, tone }: { label: string; value: string; tone?: "accent" | "warning" }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-xs text-ink/50">{label}</span>
-      <span className={cn("text-sm font-display", tone === "accent" ? "text-accent-text" : tone === "warning" ? "text-warning-text" : "text-ink")}>
+    <div>
+      <div className="text-[9px] uppercase tracking-wide text-ink/35">{label}</div>
+      <div className={cn("text-xs font-display", tone === "accent" ? "text-accent-text" : tone === "warning" ? "text-warning-text" : "text-ink")}>
         {value}
-      </span>
+      </div>
     </div>
   );
 }

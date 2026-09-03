@@ -23,7 +23,7 @@ export default function LandingPage() {
           aria-hidden
         />
         <HeroIntro />
-        <div className="relative w-full h-[340px] md:h-[390px] mt-14 md:mt-20">
+        <div className="relative w-full h-[340px] md:h-[480px] mt-14 md:mt-20">
           <HeroVisual />
         </div>
       </section>

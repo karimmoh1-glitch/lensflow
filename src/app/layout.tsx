@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const display = Playfair_Display({ subsets: ["latin"], variable: "--font-display", display: "swap" });
+// One type family, deliberately. Inter is the most generic SaaS body font there is, and
+// Playfair Display as the wordmark read as a wedding-photography studio — exactly the
+// vertical the product is NOT limited to. Manrope is geometric but warm, and carries
+// weights 500–800 well enough to do both the body and the display job; both CSS
+// variables point at it so every existing font-display/font-sans site moves together.
+const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const display = Manrope({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread-app.vercel.app";
 const TITLE = "Daythread — The operating system for independent businesses";

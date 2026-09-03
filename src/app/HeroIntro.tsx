@@ -51,9 +51,9 @@ export function HeroIntro() {
 
       <HeadlineBeat delay={140}>
         <h1 className="font-sans font-black text-[clamp(2.75rem,7vw,5rem)] leading-[0.98] tracking-tight text-ink">
-          One thread for
+          Your business,
           <br />
-          your whole business.
+          finally on one thread.
         </h1>
       </HeadlineBeat>
 

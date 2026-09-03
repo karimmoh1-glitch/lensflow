@@ -51,7 +51,11 @@ export default async function PartnerHomePage() {
           )}
           <div className="mb-8">
             <h2 className="text-sm font-medium text-ink mb-2.5">Upcoming</h2>
-            {upcoming.length === 0 ? <EmptyState title="Nothing else upcoming" /> : <BookingList bookings={upcoming} timezone={business.timezone} />}
+            {upcoming.length === 0 ? (
+              <EmptyState title="Nothing else upcoming" description="Bookings assigned to you further out will show up here." />
+            ) : (
+              <BookingList bookings={upcoming} timezone={business.timezone} />
+            )}
           </div>
           {past.length > 0 && (
             <div>

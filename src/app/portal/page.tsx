@@ -86,7 +86,7 @@ export default async function PortalHomePage() {
       <div className="mb-8">
         <h2 className="text-sm font-medium text-ink mb-2.5">Upcoming</h2>
         {upcoming.length === 0 ? (
-          <EmptyState title="Nothing upcoming" />
+          <EmptyState title="Nothing upcoming" description="Once a booking is confirmed, it'll show up here with the date and payment status." />
         ) : (
           <Card>
             <div className="divide-y divide-border">

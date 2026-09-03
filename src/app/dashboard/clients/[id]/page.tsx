@@ -53,7 +53,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           <section>
             <h2 className="font-display text-lg mb-3">Bookings</h2>
             {client.bookings.length === 0 ? (
-              <EmptyState title="No bookings yet" />
+              <EmptyState title="No bookings yet" description="Booked from the inbox or their booking page, it'll show up here with payment status." />
             ) : (
               <Card>
                 <div className="divide-y divide-border">

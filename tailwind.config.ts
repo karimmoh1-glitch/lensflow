@@ -10,11 +10,12 @@ const config: Config = {
         paper: "#FAFAF9",
         border: "rgba(16, 17, 20, 0.08)",
         accent: {
-          DEFAULT: "#C75A32", // brand — used sparingly and precisely (never as a gradient)
-          text: "#A8481F", // AA-safe on white for links/emphasis text
-          soft: "#F7E7DE", // tinted backgrounds
-          deep: "#8A3D1F", // marketing-only: dark-section accents
+          DEFAULT: "#F0524D", // brand — bold coral-red, used everywhere: buttons, badges, emphasis
+          text: "#C13530", // AA-safe on white for links/emphasis text
+          soft: "#FCE6E5", // tinted backgrounds
+          deep: "#A32925", // marketing-only: dark-section accents
         },
+        spark: "#13CC78", // marketing-only: second energetic accent (feature highlights, stats)
         midnight: "#0E0D0B", // marketing-only: true near-black canvas for dark sections
         graphite: {
           DEFAULT: "#1C1A17", // marketing-only: card/panel surface on midnight

@@ -15,13 +15,18 @@ import type { SendResult } from "@/lib/channels/types";
  * runs for every inbound message regardless of plan. Free's own feature list promises a
  * working "unified email + website inbox," so gating basic lead intake would break a
  * capability Free is supposed to have; gating the AI-drafted-reply button doesn't. */
-export async function generateDraftAction(conversationId: string, session?: SessionPayload | null): Promise<string> {
+export async function generateDraftAction(
+  conversationId: string,
+  session?: SessionPayload | null
+): Promise<{ text?: string; error?: string }> {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 
+  // Returned, not thrown: a thrown server-action error is a 500 whose message production
+  // replaces with a generic one, so the upgrade prompt would never reach the user.
   if (!aiEntitled(business)) {
-    throw new Error("AI-drafted replies are available on the Pro plan and above. Upgrade from Billing to use this.");
+    return { error: "AI-drafted replies are available on the Pro plan and above. Upgrade from Billing to use this." };
   }
 
   const conversation = await prisma.conversation.findFirst({
@@ -33,13 +38,14 @@ export async function generateDraftAction(conversationId: string, session?: Sess
   const lastInbound = conversation.messages[0];
   const services = await prisma.service.findMany({ where: { businessId: business.id, active: true }, orderBy: { sortOrder: "asc" } });
 
-  return draftReply({
+  const text = await draftReply({
     businessName: business.name,
     services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })),
     customerMessage: lastInbound?.body ?? "",
     customerName: conversation.client?.name,
     depositPercent: business.depositPercent,
   });
+  return { text };
 }
 
 export async function sendReplyAction(conversationId: string, body: string, aiDrafted: boolean, session?: SessionPayload | null) {

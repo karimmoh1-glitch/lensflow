@@ -61,8 +61,13 @@ export function WorkspaceAssembly() {
   const showingPreview = previewableActive.some((m) => m.preview === previewing);
 
   return (
-    <div className="max-w-5xl mx-auto px-6">
-      <div className="text-center max-w-lg mx-auto mb-10">
+    <div className="relative max-w-5xl mx-auto px-6">
+      <div
+        className="absolute left-1/2 top-0 -translate-x-1/2 w-[560px] h-[320px] rounded-full opacity-[0.13] blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, #13CC78 0%, transparent 70%)" }}
+        aria-hidden
+      />
+      <div className="relative text-center max-w-lg mx-auto mb-10">
         <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40 mb-3">Modular by design</div>
         <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink mb-3">You choose what you need.</h2>
         <p className="text-sm md:text-base text-ink/55 max-w-sm mx-auto">

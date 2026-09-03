@@ -28,8 +28,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How it works — the defining visual moment: channels converging into Daythread */}
-      <section className="py-16 md:py-24 bg-white border-y border-border overflow-hidden">
+      {/* How it works — the flagship visual moment: four real channels converging into a
+          substantial, reactive Daythread workspace. Gets more room and its own atmosphere
+          than the sections around it on purpose — this is the section meant to be remembered. */}
+      <section className="py-20 md:py-32 bg-white border-y border-border overflow-hidden">
         <IntegrationShowcase />
       </section>
 

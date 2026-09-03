@@ -24,7 +24,15 @@ export function LandingMobileStory() {
       <div className="text-center mb-4">
         <h2 className="font-sans font-black text-2xl md:text-3xl tracking-tight text-ink">Run it from your phone.</h2>
       </div>
-      <StoryLayout visual={<PhoneFrame className="scale-[0.85] md:scale-100"><ActiveScreen /></PhoneFrame>}>
+      <StoryLayout
+        visual={
+          <PhoneFrame className="scale-[0.85] md:scale-100">
+            <div key={active} className="h-full animate-[fadeUp_0.4s_ease-out]">
+              <ActiveScreen />
+            </div>
+          </PhoneFrame>
+        }
+      >
         {STEPS.map((s, i) => (
           <StoryStep key={s.title} index={i} refs={refs} eyebrow={s.eyebrow} title={s.title} body={s.body} />
         ))}

@@ -9,7 +9,7 @@ export function ScreenInboxNewLead() {
         <h1 className="font-display text-xl text-ink">Inbox</h1>
       </div>
       <div className="flex-1 overflow-hidden divide-y divide-border">
-        <div className="flex items-center gap-3 px-5 py-3.5 bg-accent-soft/40">
+        <div className="flex items-center gap-3 px-5 py-3.5 bg-accent-soft/40 animate-[pulseHighlight_1.3s_ease-out]">
           <div className="w-9 h-9 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-semibold shrink-0">
             SJ
           </div>
@@ -137,7 +137,7 @@ export function ScreenDeliveryNotification() {
     <div className="h-full flex flex-col bg-black/[0.02]">
       <div className="px-5 pt-3 shrink-0">
         <div className="text-[11px] text-ink/35 mb-2">Notifications</div>
-        <div className="rounded-xl bg-white border border-border shadow-xs p-3.5 flex gap-3">
+        <div className="rounded-xl bg-white border border-border shadow-xs p-3.5 flex gap-3 animate-[fadeUp_0.45s_ease-out]">
           <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center shrink-0">
             <Bell className="w-4 h-4" strokeWidth={2} />
           </div>

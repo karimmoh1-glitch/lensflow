@@ -40,7 +40,7 @@ export function DeliveryPanel({
     <Card>
       <CardBody>
         <div className="flex items-center justify-between mb-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Delivery</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">Delivery</div>
           {deliveryUrl ? <Badge tone="success">Delivered</Badge> : <Badge tone="neutral">Not delivered</Badge>}
         </div>
 
@@ -63,7 +63,7 @@ export function DeliveryPanel({
           </div>
         ) : (
           <div className="space-y-2.5">
-            <p className="text-xs text-ink/50">Paste the delivery link once the work is ready — Google Drive, Dropbox, Pixieset, whatever you use.</p>
+            <p className="text-xs text-ink/70">Paste the delivery link once the work is ready — Google Drive, Dropbox, whatever you use.</p>
             <div>
               <Label htmlFor="deliveryUrl">Delivery URL</Label>
               <Input id="deliveryUrl" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://drive.google.com/…" />

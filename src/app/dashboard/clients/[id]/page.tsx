@@ -38,12 +38,12 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         </div>
         <div>
           <h1 className="font-display text-2xl">{client.name}</h1>
-          <p className="text-sm text-ink/50">
+          <p className="text-sm text-ink/70">
             {[client.email, client.phone, client.instagram].filter(Boolean).join(" · ") || "No contact info"}
           </p>
         </div>
         <div className="ml-auto text-right">
-          <div className="text-xs text-ink/40">Lifetime value</div>
+          <div className="text-xs text-ink/60">Lifetime value</div>
           <div className="font-display text-2xl">{formatMoney(ltv)}</div>
         </div>
       </div>
@@ -61,7 +61,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                     <Link key={b.id} href={`/dashboard/bookings/${b.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-black/[0.02]">
                       <div>
                         <div className="text-sm font-medium">{b.service.name}</div>
-                        <div className="text-xs text-ink/45">{format(toZonedDisplayDate(b.startAt, business.timezone), "MMM d, yyyy")}</div>
+                        <div className="text-xs text-ink/65">{format(toZonedDisplayDate(b.startAt, business.timezone), "MMM d, yyyy")}</div>
                       </div>
                       <Badge tone="neutral">{b.status.replaceAll("_", " ").toLowerCase()}</Badge>
                     </Link>
@@ -80,7 +80,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                     <div key={s.id} className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-medium">{s.plan.name}</div>
-                        <div className="text-xs text-ink/45">
+                        <div className="text-xs text-ink/65">
                           {s.sessionsRemaining} session{s.sessionsRemaining !== 1 && "s"} remaining · renews {format(s.currentPeriodEnd, "MMM d")}
                         </div>
                       </div>
@@ -100,7 +100,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                 <Card key={n.id}>
                   <CardBody className="py-3">
                     <p className="text-sm">{n.body}</p>
-                    <p className="text-xs text-ink/40 mt-1">
+                    <p className="text-xs text-ink/60 mt-1">
                       {n.author?.name ?? "Team"} · {format(n.createdAt, "MMM d, yyyy")}
                     </p>
                   </CardBody>
@@ -113,14 +113,14 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <div className="space-y-4">
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Payment history</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Payment history</div>
               {client.payments.length === 0 ? (
-                <p className="text-xs text-ink/40">No payments yet</p>
+                <p className="text-xs text-ink/60">No payments yet</p>
               ) : (
                 <div className="space-y-1.5">
                   {client.payments.slice(0, 6).map((p) => (
                     <div key={p.id} className="flex justify-between text-xs">
-                      <span className="text-ink/55">{format(p.createdAt, "MMM d")}</span>
+                      <span className="text-ink/75">{format(p.createdAt, "MMM d")}</span>
                       <span className="font-medium">{formatMoney(p.amountCents)}</span>
                     </div>
                   ))}
@@ -132,7 +132,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           {client.referrals.length > 0 && (
             <Card>
               <CardBody>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Referrals</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Referrals</div>
                 {client.referrals.map((r) => (
                   <div key={r.id} className="text-sm">
                     {r.name}

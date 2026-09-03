@@ -28,7 +28,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-start justify-between mb-8">
             <div>
               <h1 className="font-display text-2xl">{business.name}</h1>
-              <p className="text-xs text-ink/45 mt-1">Invoice {invoice.number}</p>
+              <p className="text-xs text-ink/65 mt-1">Invoice {invoice.number}</p>
             </div>
             <Badge tone={remainingCents === 0 ? "success" : invoice.status === "OVERDUE" ? "danger" : "warning"}>
               {remainingCents === 0 ? "paid" : invoice.status.toLowerCase()}
@@ -37,16 +37,16 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
           <div className="grid grid-cols-2 gap-6 mb-8 text-sm">
             <div>
-              <div className="text-xs text-ink/40 mb-1">Billed to</div>
+              <div className="text-xs text-ink/60 mb-1">Billed to</div>
               <div className="font-medium">{invoice.client.name}</div>
-              {invoice.client.email && <div className="text-ink/50">{invoice.client.email}</div>}
+              {invoice.client.email && <div className="text-ink/70">{invoice.client.email}</div>}
             </div>
             <div className="text-right">
-              <div className="text-xs text-ink/40 mb-1">Date</div>
+              <div className="text-xs text-ink/60 mb-1">Date</div>
               <div>{format(invoice.createdAt, "MMM d, yyyy")}</div>
               {invoice.dueDate && (
                 <>
-                  <div className="text-xs text-ink/40 mb-1 mt-2">Due</div>
+                  <div className="text-xs text-ink/60 mb-1 mt-2">Due</div>
                   <div>{format(invoice.dueDate, "MMM d, yyyy")}</div>
                 </>
               )}
@@ -62,7 +62,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
           <div className="space-y-1.5 text-sm">
             {invoice.discountCents > 0 && (
-              <div className="flex justify-between text-ink/55">
+              <div className="flex justify-between text-ink/75">
                 <span>Discount</span>
                 <span>-{formatMoney(invoice.discountCents)}</span>
               </div>

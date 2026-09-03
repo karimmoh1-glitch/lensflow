@@ -39,7 +39,7 @@ export function InvitationRow({
     <div className="flex items-center gap-3 px-4 py-3 text-sm">
       <div className="flex-1 min-w-0">
         <div className="font-medium truncate">{email}</div>
-        <div className="text-xs text-ink/45">
+        <div className="text-xs text-ink/65">
           {role} · sent {createdAt}
         </div>
       </div>

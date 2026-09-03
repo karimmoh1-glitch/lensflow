@@ -9,7 +9,7 @@ export function ConversationAccessToggle({ membershipId, canViewAll }: { members
   const router = useRouter();
 
   return (
-    <label className="flex items-center gap-1.5 text-xs text-ink/45 shrink-0 cursor-pointer select-none">
+    <label className="flex items-center gap-1.5 text-xs text-ink/65 shrink-0 cursor-pointer select-none">
       <input
         type="checkbox"
         checked={canViewAll}

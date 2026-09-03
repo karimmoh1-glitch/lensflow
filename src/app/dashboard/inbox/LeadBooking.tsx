@@ -55,7 +55,7 @@ export function LeadBooking({ leadId, hasService }: { leadId: string; hasService
 
   return (
     <div className="space-y-3">
-      <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Pick a day</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">Pick a day</div>
       <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1">
         {NEXT_DAYS.map((day) => {
           const active = selectedDay && isSameDay(day, selectedDay);
@@ -68,7 +68,7 @@ export function LeadBooking({ leadId, hasService }: { leadId: string; hasService
                 active ? "bg-ink text-white border-ink" : "bg-white text-ink border-border hover:border-ink/30"
               )}
             >
-              <span className={cn("text-[10px] font-medium", active ? "text-white/60" : "text-ink/40")}>{format(day, "EEE")}</span>
+              <span className={cn("text-[10px] font-medium", active ? "text-white/60" : "text-ink/60")}>{format(day, "EEE")}</span>
               <span className="text-sm font-semibold mt-0.5">{format(day, "d")}</span>
             </button>
           );
@@ -78,10 +78,10 @@ export function LeadBooking({ leadId, hasService }: { leadId: string; hasService
       {error && <p className="text-xs text-danger">{error}</p>}
 
       {pending && !slots ? (
-        <p className="text-xs text-ink/40">Loading times…</p>
+        <p className="text-xs text-ink/60">Loading times…</p>
       ) : slots ? (
         slots.length === 0 ? (
-          <p className="text-xs text-ink/40">No open slots this day.</p>
+          <p className="text-xs text-ink/60">No open slots this day.</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {slots.map((slot) => (

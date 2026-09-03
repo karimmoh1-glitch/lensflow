@@ -27,7 +27,7 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
             Daythread
           </Link>
           <h1 className="font-display text-2xl mt-4 mb-1">Choose a new password</h1>
-          <p className="text-sm text-ink/50 mb-6">Enter a new password for your account.</p>
+          <p className="text-sm text-ink/70 mb-6">Enter a new password for your account.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

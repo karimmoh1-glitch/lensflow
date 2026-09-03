@@ -70,7 +70,7 @@ function LoginForm() {
             </Button>
           </form>
 
-          <p className="mt-6 text-sm text-center text-ink/50">
+          <p className="mt-6 text-sm text-center text-ink/70">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-accent-text font-medium">
               Start free

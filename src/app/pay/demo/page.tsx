@@ -24,8 +24,8 @@ export default async function DemoPaymentPage({
             Simulated checkout
           </Badge>
           <div className="font-display text-3xl mb-1">${(amountCents / 100).toFixed(2)}</div>
-          <p className="text-sm text-ink/50 mb-6">{description}</p>
-          <p className="text-xs text-ink/40 mb-6">
+          <p className="text-sm text-ink/70 mb-6">{description}</p>
+          <p className="text-xs text-ink/60 mb-6">
             No Stripe key is configured for this workspace, so this is a simulated checkout — no real card is charged.
           </p>
           <form action={pay}>

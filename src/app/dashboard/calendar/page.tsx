@@ -55,7 +55,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             <Link
               href={`?month=${prevMonth}`}
               aria-label="Previous month"
-              className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/45 hover:text-ink hover:bg-black/[0.05] transition-colors"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/65 hover:text-ink hover:bg-black/[0.05] transition-colors"
             >
               <ChevronLeft className="w-4 h-4" strokeWidth={2} />
             </Link>
@@ -67,7 +67,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             <Link
               href={`?month=${nextMonth}`}
               aria-label="Next month"
-              className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/45 hover:text-ink hover:bg-black/[0.05] transition-colors"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/65 hover:text-ink hover:bg-black/[0.05] transition-colors"
             >
               <ChevronRight className="w-4 h-4" strokeWidth={2} />
             </Link>
@@ -77,7 +77,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
       {/* Month grid — desktop/tablet */}
       <div className="hidden md:block">
-        <div className="grid grid-cols-7 text-xs font-semibold text-ink/40 mb-2">
+        <div className="grid grid-cols-7 text-xs font-semibold text-ink/60 mb-2">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
             <div key={d} className="px-2 py-1">
               {d}
@@ -111,7 +111,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                       {format(toZonedDisplayDate(b.startAt, business.timezone), "h:mma")} {b.client.name}
                     </Link>
                   ))}
-                  {dayBookings.length > 3 && <div className="text-[11px] text-ink/40">+{dayBookings.length - 3} more</div>}
+                  {dayBookings.length > 3 && <div className="text-[11px] text-ink/60">+{dayBookings.length - 3} more</div>}
                 </div>
               </div>
             );
@@ -127,7 +127,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             const dayBookings = byDay.get(format(day, "yyyy-MM-dd")) ?? [];
             return (
               <div key={day.toISOString()} className="py-3">
-                <div className={cn("text-xs font-medium mb-2", isToday(day) ? "text-accent-text" : "text-ink/45")}>
+                <div className={cn("text-xs font-medium mb-2", isToday(day) ? "text-accent-text" : "text-ink/65")}>
                   {format(day, "EEE, MMM d")}
                   {isToday(day) && " · Today"}
                 </div>
@@ -137,7 +137,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                       <span>
                         {format(toZonedDisplayDate(b.startAt, business.timezone), "h:mm a")} — {b.client.name}
                       </span>
-                      <span className="text-ink/40 text-xs">{b.service.name}</span>
+                      <span className="text-ink/60 text-xs">{b.service.name}</span>
                     </Link>
                   ))}
                 </div>
@@ -145,7 +145,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             );
           })}
         {days.every((day) => (byDay.get(format(day, "yyyy-MM-dd"))?.length ?? 0) === 0) && (
-          <p className="py-8 text-center text-sm text-ink/40">No bookings this month.</p>
+          <p className="py-8 text-center text-sm text-ink/60">No bookings this month.</p>
         )}
       </div>
     </div>

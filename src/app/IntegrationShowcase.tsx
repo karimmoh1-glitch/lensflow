@@ -226,7 +226,7 @@ export function IntegrationShowcase() {
         <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink">
           Chaos comes in. <span className="text-accent-text">Work</span> comes out.
         </h2>
-        <p className="mt-4 text-ink/55 text-sm md:text-base max-w-md mx-auto">
+        <p className="mt-4 text-ink/75 text-sm md:text-base max-w-md mx-auto">
           Instagram, Messenger, Gmail, and SMS — every channel your clients already use, flowing into one organized workspace.
         </p>
       </div>
@@ -269,7 +269,7 @@ export function IntegrationShowcase() {
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-sm font-medium text-ink truncate">{c.sender}</span>
                   </div>
-                  <div className="text-[11px] text-ink/40 mb-0.5">{c.meta}</div>
+                  <div className="text-[11px] text-ink/60 mb-0.5">{c.meta}</div>
                   <div className="text-xs text-ink/60 truncate">{c.text}</div>
                 </div>
               </button>
@@ -347,7 +347,7 @@ export function IntegrationShowcase() {
           <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
             <span className={cn("w-2 h-2 rounded-full bg-signal shrink-0", !reducedMotion && justArrived && "animate-ping")} />
             <span className="font-display text-sm text-ink">Daythread</span>
-            <span key={arrived.size} className={cn("ml-auto text-[11px] text-ink/40", !reducedMotion && justArrived && "animate-[fadeUp_0.3s_ease-out]")}>
+            <span key={arrived.size} className={cn("ml-auto text-[11px] text-ink/60", !reducedMotion && justArrived && "animate-[fadeUp_0.3s_ease-out]")}>
               {arrived.size} conversation{arrived.size === 1 ? "" : "s"}
             </span>
           </div>
@@ -361,7 +361,7 @@ export function IntegrationShowcase() {
           >
             <span className="text-[11px] font-medium text-signal-text">${totalValue.toLocaleString()} in potential bookings</span>
             <span className="text-[11px] text-ink/30">·</span>
-            <span className="text-[11px] text-ink/45">organized automatically</span>
+            <span className="text-[11px] text-ink/65">organized automatically</span>
           </div>
 
           <div className="divide-y divide-border min-h-[300px] flex flex-col">
@@ -384,7 +384,7 @@ export function IntegrationShowcase() {
                       <span className="text-sm font-medium text-ink truncate">{c.sender}</span>
                       <span className={cn("text-[10px] font-medium rounded-full px-1.5 py-0.5 shrink-0", TONE_CLASSES[c.resultTone])}>{c.resultTag}</span>
                     </div>
-                    <div className="text-xs text-ink/45 truncate">{c.text}</div>
+                    <div className="text-xs text-ink/65 truncate">{c.text}</div>
                   </div>
                   <span className="text-xs font-display text-ink/70 shrink-0">${c.value.toLocaleString()}</span>
                 </div>
@@ -395,7 +395,7 @@ export function IntegrationShowcase() {
                 <div className="w-11 h-11 rounded-2xl bg-signal-soft flex items-center justify-center">
                   <span className="w-2.5 h-2.5 rounded-full bg-signal" />
                 </div>
-                <p className="text-sm text-ink/50 text-center">Your workspace, ready to organize itself.</p>
+                <p className="text-sm text-ink/70 text-center">Your workspace, ready to organize itself.</p>
                 <div className="w-full space-y-2 mt-1">
                   {[0, 1, 2].map((i) => (
                     <div key={i} className="h-9 rounded-lg bg-black/[0.03]" />
@@ -427,7 +427,7 @@ export function IntegrationShowcase() {
                 >
                   <c.glyph className="w-[18px] h-[18px]" />
                 </div>
-                <span className="text-[10px] font-medium text-ink/50 truncate max-w-full">{c.label}</span>
+                <span className="text-[10px] font-medium text-ink/70 truncate max-w-full">{c.label}</span>
               </button>
             );
           })}
@@ -442,7 +442,7 @@ export function IntegrationShowcase() {
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
             <span className={cn("w-1.5 h-1.5 rounded-full bg-signal shrink-0", !reducedMotion && justArrived && "animate-ping")} />
             <span className="font-display text-sm text-ink">Daythread</span>
-            <span className="ml-auto text-[11px] text-ink/40">{arrived.size} conversation{arrived.size === 1 ? "" : "s"}</span>
+            <span className="ml-auto text-[11px] text-ink/60">{arrived.size} conversation{arrived.size === 1 ? "" : "s"}</span>
           </div>
           <div className={cn("px-4 border-b border-border bg-signal-soft/50 overflow-hidden transition-all duration-500", arrived.size > 0 ? "py-2 opacity-100" : "py-0 opacity-0")}>
             <span className="text-[11px] font-medium text-signal-text">${totalValue.toLocaleString()} in potential bookings</span>
@@ -466,14 +466,14 @@ export function IntegrationShowcase() {
                       <span className="text-xs font-medium text-ink truncate">{c.sender}</span>
                       <span className={cn("text-[9px] font-medium rounded-full px-1.5 py-0.5 shrink-0", TONE_CLASSES[c.resultTone])}>{c.resultTag}</span>
                     </div>
-                    <div className="text-[11px] text-ink/45 truncate">{c.text}</div>
+                    <div className="text-[11px] text-ink/65 truncate">{c.text}</div>
                   </div>
                 </div>
               );
             })}
             {arrived.size === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 py-8">
-                <p className="text-xs text-ink/50 text-center">Your workspace, ready to organize itself.</p>
+                <p className="text-xs text-ink/70 text-center">Your workspace, ready to organize itself.</p>
                 <div className="w-full space-y-1.5 mt-1">
                   {[0, 1].map((i) => (
                     <div key={i} className="h-7 rounded-lg bg-black/[0.03]" />

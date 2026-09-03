@@ -68,9 +68,9 @@ export function WorkspaceAssembly() {
         aria-hidden
       />
       <div className="relative text-center max-w-lg mx-auto mb-10">
-        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40 mb-3">Modular by design</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60 mb-3">Modular by design</div>
         <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink mb-3">You choose what you need.</h2>
-        <p className="text-sm md:text-base text-ink/55 max-w-sm mx-auto">
+        <p className="text-sm md:text-base text-ink/75 max-w-sm mx-auto">
           Click what your business actually uses. Daythread becomes your workspace — nothing more, nothing less.
         </p>
       </div>
@@ -126,7 +126,7 @@ export function WorkspaceAssembly() {
                       onClick={() => m.preview && setPreviewing(m.preview)}
                       className={cn(
                         "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left transition-all duration-200 animate-[fadeUp_0.3s_cubic-bezier(0.34,1.3,0.64,1)_backwards]",
-                        isPreviewing ? "bg-ink text-white" : m.preview ? "text-ink/60 hover:bg-black/[0.04]" : "text-ink/40 cursor-default"
+                        isPreviewing ? "bg-ink text-white" : m.preview ? "text-ink/60 hover:bg-black/[0.04]" : "text-ink/60 cursor-default"
                       )}
                     >
                       <m.icon className="w-3 h-3 shrink-0" />

@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const PROJECT_STAGES = ["Booked", "In progress", "Editing", "Review", "Ready", "Delivered"];
+const PROJECT_STAGES = ["Booked", "In progress", "Review", "Ready", "Delivered"];
 
 export function WorkflowCard({ step }: { step: number }) {
   return (
@@ -23,7 +23,7 @@ export function WorkflowCard({ step }: { step: number }) {
               </span>
             </div>
             <div className="text-sm font-medium text-ink mb-0.5">Sarah Johnson</div>
-            <div className="text-[11px] text-ink/40 mb-2">Instagram</div>
+            <div className="text-[11px] text-ink/60 mb-2">Instagram</div>
             <p className="text-xs text-ink/60 italic">&quot;Are you available June 14?&quot;</p>
           </div>
         )}
@@ -31,9 +31,9 @@ export function WorkflowCard({ step }: { step: number }) {
           <div>
             <span className="text-[10px] font-semibold uppercase tracking-wide text-info-text bg-info-soft rounded-full px-2 py-0.5">Booked</span>
             <div className="text-sm font-medium text-ink mt-2 mb-0.5">Sarah Johnson</div>
-            <div className="text-[11px] text-ink/40 mb-3">Graduation Session · June 14</div>
+            <div className="text-[11px] text-ink/60 mb-3">Strategy Session · June 14</div>
             <div className="flex items-center justify-between rounded-lg bg-black/[0.03] px-3 py-2">
-              <span className="text-xs text-ink/55">Total</span>
+              <span className="text-xs text-ink/75">Total</span>
               <span className="text-sm font-display text-ink">$350</span>
             </div>
           </div>
@@ -47,25 +47,25 @@ export function WorkflowCard({ step }: { step: number }) {
               <span className="text-xs font-medium text-ink">Deposit received</span>
             </div>
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="text-ink/50">Paid</span>
+              <span className="text-ink/70">Paid</span>
               <span className="font-medium text-success">$105</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-ink/50">Remaining</span>
+              <span className="text-ink/70">Remaining</span>
               <span className="font-medium text-ink">$245</span>
             </div>
           </div>
         )}
         {step === 3 && (
           <div>
-            <div className="text-xs font-medium text-ink mb-3">Graduation Session — Sarah Johnson</div>
+            <div className="text-xs font-medium text-ink mb-3">Strategy Session — Sarah Johnson</div>
             <div className="space-y-1.5">
               {PROJECT_STAGES.map((stage, i) => (
                 <div key={stage} className="flex items-center gap-2">
-                  <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", i <= 4 ? "bg-ink" : "bg-black/10")}>
-                    {i <= 4 && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                  <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", i <= 3 ? "bg-ink" : "bg-black/10")}>
+                    {i <= 3 && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
                   </div>
-                  <span className={cn("text-xs", i === 4 ? "text-ink font-medium" : i < 4 ? "text-ink/40" : "text-ink/30")}>{stage}</span>
+                  <span className={cn("text-xs", i === 3 ? "text-ink font-medium" : i < 3 ? "text-ink/60" : "text-ink/30")}>{stage}</span>
                 </div>
               ))}
             </div>

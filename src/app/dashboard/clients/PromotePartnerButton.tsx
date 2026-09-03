@@ -19,7 +19,7 @@ export function PromotePartnerButton({ membershipId, name }: { membershipId: str
           e.stopPropagation();
         }}
       >
-        <span className="text-xs text-ink/50">Make {name} a partner?</span>
+        <span className="text-xs text-ink/70">Make {name} a partner?</span>
         <Button size="sm" variant="outline" onClick={() => setConfirming(false)}>
           Cancel
         </Button>

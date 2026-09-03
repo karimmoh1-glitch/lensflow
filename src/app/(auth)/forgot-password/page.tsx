@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
                   </a>
                 </div>
               )}
-              <p className="mt-6 text-sm text-center text-ink/50">
+              <p className="mt-6 text-sm text-center text-ink/70">
                 <Link href="/login" className="text-accent-text font-medium">
                   Back to log in
                 </Link>
@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
             </>
           ) : (
             <>
-              <p className="text-sm text-ink/50 mb-6">Enter your email and we&apos;ll send you a reset link.</p>
+              <p className="text-sm text-ink/70 mb-6">Enter your email and we&apos;ll send you a reset link.</p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="email">Email</Label>
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
                   {pending ? "Sending…" : "Send reset link"}
                 </Button>
               </form>
-              <p className="mt-6 text-sm text-center text-ink/50">
+              <p className="mt-6 text-sm text-center text-ink/70">
                 <Link href="/login" className="text-accent-text font-medium">
                   Back to log in
                 </Link>

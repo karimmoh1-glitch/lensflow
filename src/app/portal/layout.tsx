@@ -25,7 +25,7 @@ export default async function PortalLayout({ children }: { children: React.React
           <span className="font-display text-base text-ink">{business.name}</span>
         </div>
         <form action={logout}>
-          <button className="text-xs text-ink/45 hover:text-ink/70">Log out</button>
+          <button className="text-xs text-ink/65 hover:text-ink/70">Log out</button>
         </form>
       </header>
       <main>{children}</main>

@@ -17,7 +17,7 @@ export function MarkLostButton({ leadId }: { leadId: string }) {
           router.refresh();
         })
       }
-      className="text-xs text-ink/40 hover:text-danger transition-colors"
+      className="text-xs text-ink/60 hover:text-danger transition-colors"
     >
       Mark as lost
     </button>

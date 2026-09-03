@@ -51,13 +51,13 @@ export default async function BookingsPage() {
                         {b.status.replaceAll("_", " ").toLowerCase()}
                       </Badge>
                     </div>
-                    <div className="text-xs text-ink/45 truncate">
+                    <div className="text-xs text-ink/65 truncate">
                       {b.service.name} · {format(toZonedDisplayDate(b.startAt, business.timezone), "MMM d, yyyy · h:mm a")}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-sm font-medium">{formatMoney(b.totalCents)}</div>
-                    <div className="text-xs text-ink/40">{formatMoney(paidCents)} paid</div>
+                    <div className="text-xs text-ink/60">{formatMoney(paidCents)} paid</div>
                   </div>
                   <Badge tone={STATUS_TONE[b.status] ?? "neutral"} className="hidden sm:inline-flex">
                     {b.status.replaceAll("_", " ").toLowerCase()}

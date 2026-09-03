@@ -53,7 +53,7 @@ export default async function TeamPage() {
                       {m.user.name}
                       {m.status === "SUSPENDED" && <span className="text-danger-text font-normal"> · Deactivated</span>}
                     </div>
-                    <div className="text-xs text-ink/45 truncate">
+                    <div className="text-xs text-ink/65 truncate">
                       {m.user.email}
                       {m.role === "PARTNER" &&
                         ` · ${m.assignedBookings.length} upcoming ${m.assignedBookings.length === 1 ? "project" : "projects"}`}

@@ -31,19 +31,19 @@ export default async function PaymentsPage() {
       <div className="grid grid-cols-3 gap-3 mb-8">
         <Card>
           <CardBody>
-            <div className="text-xs font-medium text-ink/40 mb-1">Collected</div>
+            <div className="text-xs font-medium text-ink/60 mb-1">Collected</div>
             <div className="text-xl font-display text-success-text">{formatMoney(collected)}</div>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <div className="text-xs font-medium text-ink/40 mb-1">Pending</div>
+            <div className="text-xs font-medium text-ink/60 mb-1">Pending</div>
             <div className="text-xl font-display text-warning-text">{formatMoney(pendingCents)}</div>
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <div className="text-xs font-medium text-ink/40 mb-1">Failed</div>
+            <div className="text-xs font-medium text-ink/60 mb-1">Failed</div>
             <div className="text-xl font-display text-danger-text">{formatMoney(failedCents)}</div>
           </CardBody>
         </Card>
@@ -60,7 +60,7 @@ export default async function PaymentsPage() {
                     <div className="text-sm font-medium truncate">
                       {p.client.name} · {formatMoney(p.amountCents)}
                     </div>
-                    <div className="text-xs text-ink/45 truncate">
+                    <div className="text-xs text-ink/65 truncate">
                       {p.method.toLowerCase().replace("_", " ")} · {p.purpose.toLowerCase()}
                       {p.reference && ` · ref ${p.reference}`} · {format(p.createdAt, "MMM d")}
                     </div>
@@ -85,7 +85,7 @@ export default async function PaymentsPage() {
                   <Link href={p.bookingId ? `/dashboard/bookings/${p.bookingId}` : "#"} className="text-sm font-medium hover:underline block truncate">
                     {p.client.name} · {formatMoney(p.amountCents)}
                   </Link>
-                  <div className="text-xs text-ink/45 truncate">
+                  <div className="text-xs text-ink/65 truncate">
                     {p.booking?.service.name ?? "—"} · {p.method.toLowerCase().replace("_", " ")} · {format(p.createdAt, "MMM d, yyyy")}
                   </div>
                 </div>

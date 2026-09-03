@@ -39,7 +39,7 @@ export function AssignPartner({
             </option>
           ))}
         </Select>
-        <p className="text-xs text-ink/40 mt-1.5">Only the assigned partner can see this booking in their portal.</p>
+        <p className="text-xs text-ink/60 mt-1.5">Only the assigned partner can see this booking in their portal.</p>
       </CardBody>
     </Card>
   );

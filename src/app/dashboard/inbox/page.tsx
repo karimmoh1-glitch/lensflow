@@ -101,7 +101,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
             />
             <FilterChip href={buildInboxHref("cold", sort)} active={filter === "cold"} label="Going cold" count={coldCount} />
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-ink/40">
+          <div className="flex items-center gap-1.5 text-[11px] text-ink/60">
             <span className="font-medium">Sort by</span>
             <SortChip href={buildInboxHref(filter, "priority")} active={sort === "priority"} label="Priority" />
             <SortChip href={buildInboxHref(filter, "newest")} active={sort === "newest"} label="Newest" />
@@ -162,17 +162,17 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                     <DeleteConversationButton conversationId={conv.id} />
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-ink/40 mb-1">
+                <div className="flex items-center gap-1.5 text-xs text-ink/60 mb-1">
                   <ChannelBadge channel={conv.channel} />
                   <span>{CHANNEL_META[conv.channel].label}</span>
                   <span>·</span>
                   <span>{formatDistanceToNowStrict(conv.lastMessageAt, { addSuffix: true })}</span>
                 </div>
-                <p className="text-xs text-ink/55 line-clamp-2">{conv.messages[0]?.body}</p>
+                <p className="text-xs text-ink/75 line-clamp-2">{conv.messages[0]?.body}</p>
                 {metaBits.length > 0 && (
                   <div className="flex items-center gap-1 text-xs mt-1">
                     {metaBits.map((bit, i) => (
-                      <span key={bit} className={cn(i === 0 && needsReply ? "text-accent-text font-medium" : "text-ink/40")}>
+                      <span key={bit} className={cn(i === 0 && needsReply ? "text-accent-text font-medium" : "text-ink/60")}>
                         {i > 0 && <span className="text-ink/25 mr-1">•</span>}
                         {bit}
                       </span>
@@ -189,7 +189,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         {active ? (
           <ThreadPanel conversationId={active.id} />
         ) : (
-          <div className="hidden md:flex flex-1 items-center justify-center text-ink/40 text-sm">Select a conversation</div>
+          <div className="hidden md:flex flex-1 items-center justify-center text-ink/60 text-sm">Select a conversation</div>
         )}
       </div>
     </div>
@@ -218,7 +218,7 @@ function FilterChip({ href, active, label, count }: { href: string; active: bool
       href={href}
       className={cn(
         "px-2.5 py-1 rounded-full font-medium transition-colors",
-        active ? "bg-ink text-white" : "text-ink/50 hover:bg-black/[0.05]"
+        active ? "bg-ink text-white" : "text-ink/70 hover:bg-black/[0.05]"
       )}
     >
       {label}

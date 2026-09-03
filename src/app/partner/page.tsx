@@ -81,7 +81,7 @@ function BookingList({
               <div className="text-sm font-medium truncate">
                 {b.service.name} — {b.client.name}
               </div>
-              <div className="text-xs text-ink/45">
+              <div className="text-xs text-ink/65">
                 {format(toZonedDisplayDate(b.startAt, timezone), "EEE, MMM d 'at' h:mm a")}
                 {b.location && ` · ${b.location}`}
               </div>

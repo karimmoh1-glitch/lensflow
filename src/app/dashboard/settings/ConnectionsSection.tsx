@@ -40,7 +40,7 @@ function Row({
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 px-4 py-3.5">
       <div className="min-w-0">
         <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-ink/50 mt-0.5">{note}</div>
+        <div className="text-xs text-ink/70 mt-0.5">{note}</div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <Badge tone={badge.tone}>{badge.label}</Badge>
@@ -89,14 +89,14 @@ export async function ConnectionsSection({
         <p className="text-sm text-danger bg-danger/10 rounded-md px-3.5 py-2.5">{GOOGLE_ERROR_COPY[googleError] ?? GOOGLE_ERROR_COPY.error}</p>
       )}
       {!aiEnabled && (
-        <p className="text-sm text-ink/50 bg-black/[0.03] rounded-md px-3.5 py-2.5">
+        <p className="text-sm text-ink/70 bg-black/[0.03] rounded-md px-3.5 py-2.5">
           No AI provider key is configured — lead extraction, reply drafts, and the copilot run on a rule-based fallback instead of a
           language model. Add <code className="text-xs bg-black/[0.05] px-1 rounded">OPENAI_API_KEY</code> to enable full AI.
         </p>
       )}
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Communication</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Communication</h3>
         <Card>
           <div className="divide-y divide-border">
             {adapters.map((adapter) => {
@@ -182,7 +182,7 @@ export async function ConnectionsSection({
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Calendar</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Calendar</h3>
         <Card>
           <div className="divide-y divide-border">
             {CALENDAR_PROVIDERS.map((c) => (
@@ -193,7 +193,7 @@ export async function ConnectionsSection({
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Payments</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Payments</h3>
         <Card>
           <div className="divide-y divide-border">
             <Row
@@ -218,7 +218,7 @@ export async function ConnectionsSection({
           </div>
         </Card>
         {!anyLive && (
-          <p className="text-xs text-ink/40 mt-2">
+          <p className="text-xs text-ink/60 mt-2">
             Every channel above is in demo mode until real credentials are added — outbound messages log to the console instead of
             sending, and nothing is ever shown as &quot;Connected&quot; unless it actually is.
           </p>
@@ -227,7 +227,7 @@ export async function ConnectionsSection({
 
       <div>
         <h3 className="text-sm font-medium text-ink mb-1">Simulate an inbound message</h3>
-        <p className="text-xs text-ink/45 mb-3">See lead extraction, scoring, and inbox routing run end-to-end without a live connection.</p>
+        <p className="text-xs text-ink/65 mb-3">See lead extraction, scoring, and inbox routing run end-to-end without a live connection.</p>
         <SimulateInbound />
       </div>
     </div>

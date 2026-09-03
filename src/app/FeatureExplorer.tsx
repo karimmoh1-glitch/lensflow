@@ -20,18 +20,23 @@ export function FeatureExplorer() {
 
   return (
     <div className="max-w-4xl mx-auto px-6">
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+      <div role="tablist" aria-label="Product areas" className="flex flex-wrap items-center justify-center gap-2 mb-8">
         {TABS.map((t) => {
           const isActive = t.key === active;
           return (
             <button
               key={t.key}
+              role="tab"
+              id={`feature-tab-${t.key}`}
+              aria-selected={isActive}
+              aria-controls={`feature-panel-${t.key}`}
               onClick={() => setActive(t.key)}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95",
+                "flex items-center gap-1.5 rounded-full px-4 py-2.5 sm:py-2 text-sm font-medium transition-all duration-200 active:scale-95",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-1",
                 isActive
                   ? "bg-ink text-paper shadow-sm scale-[1.03]"
-                  : "bg-white text-ink/55 border border-border hover:text-ink hover:border-ink/20 hover:scale-[1.03]"
+                  : "bg-white text-ink/75 border border-border hover:text-ink hover:border-ink/20 hover:scale-[1.03]"
               )}
             >
               <t.icon className="w-3.5 h-3.5" strokeWidth={2} />
@@ -41,7 +46,7 @@ export function FeatureExplorer() {
         })}
       </div>
 
-      <div className="grid md:grid-cols-[1fr_1.2fr] gap-8 items-center">
+      <div className="grid md:grid-cols-[1fr_1.2fr] gap-8 items-center" role="tabpanel" id={`feature-panel-${active}`} aria-labelledby={`feature-tab-${active}`}>
         <div key={`${active}-copy`} className="animate-[fadeUp_0.4s_ease-out]">
           <div className="text-xs font-semibold uppercase tracking-wide text-accent-text mb-2">{activeTab.label}</div>
           <p className="font-display text-2xl md:text-[1.75rem] leading-snug text-ink">{activeTab.blurb}</p>
@@ -79,7 +84,7 @@ export function FeatureMockup({ tab }: { tab: TabKey }) {
               <Avatar initials={c.initials} tone={c.tone} />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-ink">{c.name}</div>
-                <div className="text-xs text-ink/45">{c.meta}</div>
+                <div className="text-xs text-ink/65">{c.meta}</div>
               </div>
             </div>
           ))}
@@ -93,14 +98,14 @@ export function FeatureMockup({ tab }: { tab: TabKey }) {
     return (
       <MockCard>
         <div className="p-5">
-          <div className="text-sm font-medium text-ink mb-1">Wedding — Sarah Johnson</div>
-          <div className="text-xs text-ink/45 mb-4">June 14 · $2,400</div>
+          <div className="text-sm font-medium text-ink mb-1">Strategy Session — Sarah Johnson</div>
+          <div className="text-xs text-ink/65 mb-4">June 14 · $2,400</div>
           <div className="flex items-center">
             {stages.map((s, i) => (
               <div key={s} className="flex items-center flex-1 last:flex-none">
                 <div className="flex flex-col items-center gap-1.5">
                   <div className={cn("w-3 h-3 rounded-full shrink-0", i <= 2 ? "bg-accent" : "bg-black/10")} />
-                  <span className="text-[10px] text-ink/45 whitespace-nowrap">{s}</span>
+                  <span className="text-[10px] text-ink/65 whitespace-nowrap">{s}</span>
                 </div>
                 {i < stages.length - 1 && <div className={cn("h-px flex-1 mx-1.5 mb-4", i < 2 ? "bg-accent" : "bg-black/10")} />}
               </div>
@@ -129,7 +134,7 @@ export function FeatureMockup({ tab }: { tab: TabKey }) {
                   <span className="text-sm font-medium text-ink">{m.name}</span>
                   <span className="text-[10px] text-ink/35">· {m.channel}</span>
                 </div>
-                <div className="text-xs text-ink/45 truncate">{m.msg}</div>
+                <div className="text-xs text-ink/65 truncate">{m.msg}</div>
               </div>
             </div>
           ))}
@@ -146,7 +151,7 @@ export function FeatureMockup({ tab }: { tab: TabKey }) {
         <div className="p-5 grid grid-cols-5 gap-2">
           {days.map((d) => (
             <div key={d} className="flex flex-col gap-1.5">
-              <div className="text-[10px] font-medium text-ink/45 text-center mb-1">{d}</div>
+              <div className="text-[10px] font-medium text-ink/65 text-center mb-1">{d}</div>
               {[0, 1, 2, 3].map((slot) => (
                 <div
                   key={slot}
@@ -171,7 +176,7 @@ export function FeatureMockup({ tab }: { tab: TabKey }) {
           <div key={p.label} className="flex items-center justify-between px-4 py-3.5">
             <div>
               <div className="text-sm font-medium text-ink">{p.label}</div>
-              <div className="text-xs text-ink/45">{p.amount}</div>
+              <div className="text-xs text-ink/65">{p.amount}</div>
             </div>
             <span
               className={cn(

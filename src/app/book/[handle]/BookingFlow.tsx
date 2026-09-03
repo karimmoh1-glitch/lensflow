@@ -66,13 +66,13 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
         <CardBody className="text-center py-10">
           <CheckCircle2 className="w-9 h-9 text-success mx-auto mb-3" strokeWidth={1.75} />
           <h2 className="font-display text-2xl mb-2">You&apos;re booked!</h2>
-          <p className="text-sm text-ink/55 mb-6">
+          <p className="text-sm text-ink/75 mb-6">
             {service?.name} on {slot && format(new Date(slot.start), "EEEE, MMMM d 'at' h:mm a")}
           </p>
 
           {result.depositCents > 0 && (
             <div className="rounded-xl border border-border p-5 text-left max-w-sm mx-auto">
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-2">Deposit due</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Deposit due</div>
               <div className="font-display text-2xl mb-3">{formatMoney(result.depositCents)}</div>
               {result.paymentMethod === "card" && result.checkoutUrl && (
                 <a href={result.checkoutUrl}>
@@ -83,7 +83,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
                 <div className="text-sm space-y-1.5">
                   <p>Send to: <span className="font-medium">{result.zelleHandle}</span></p>
                   <p>Reference: <span className="font-medium">{result.reference}</span></p>
-                  <p className="text-xs text-ink/45">Once sent, we&apos;ll confirm your booking shortly.</p>
+                  <p className="text-xs text-ink/65">Once sent, we&apos;ll confirm your booking shortly.</p>
                 </div>
               )}
               {result.paymentMethod === "bank_transfer" && (
@@ -122,7 +122,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
               >
                 <div>
                   <div className="font-medium text-sm">{s.name}</div>
-                  <div className="text-xs text-ink/45">{s.durationMins} min</div>
+                  <div className="text-xs text-ink/65">{s.durationMins} min</div>
                 </div>
                 <div className="font-medium text-sm">{formatMoney(s.priceCents)}</div>
               </button>
@@ -132,7 +132,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
 
         {step === 1 && service && (
           <div className="space-y-4">
-            <button onClick={() => setStep(0)} className="flex items-center gap-1 text-xs text-ink/40 hover:text-ink mb-1">
+            <button onClick={() => setStep(0)} className="flex items-center gap-1 text-xs text-ink/60 hover:text-ink mb-1">
               <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
               {service.name}
             </button>
@@ -144,8 +144,8 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
             {date && (
               <div>
                 <Label>Available times</Label>
-                {pending && !slots && <p className="text-sm text-ink/40">Checking availability…</p>}
-                {slots && slots.length === 0 && <p className="text-sm text-ink/40">No openings this day — try another date.</p>}
+                {pending && !slots && <p className="text-sm text-ink/60">Checking availability…</p>}
+                {slots && slots.length === 0 && <p className="text-sm text-ink/60">No openings this day — try another date.</p>}
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {slots?.map((s) => (
                     <button
@@ -170,7 +170,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
 
         {step === 2 && service && slot && (
           <div className="space-y-4">
-            <button onClick={() => setStep(1)} className="flex items-center gap-1 text-xs text-ink/40 hover:text-ink mb-1">
+            <button onClick={() => setStep(1)} className="flex items-center gap-1 text-xs text-ink/60 hover:text-ink mb-1">
               <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
               {format(new Date(slot.start), "MMM d, h:mm a")}
             </button>
@@ -197,12 +197,12 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
             </div>
 
             <div className="rounded-lg bg-black/[0.03] p-3 text-sm flex justify-between">
-              <span className="text-ink/55">Total</span>
+              <span className="text-ink/75">Total</span>
               <span className="font-medium">{formatMoney(service.priceCents)}</span>
             </div>
             {depositPercent > 0 && (
               <div className="rounded-lg bg-accent-soft/50 p-3 text-sm flex justify-between">
-                <span className="text-ink/55">Deposit to hold your date ({depositPercent}%)</span>
+                <span className="text-ink/75">Deposit to hold your date ({depositPercent}%)</span>
                 <span className="font-medium">{formatMoney(Math.round((service.priceCents * depositPercent) / 100))}</span>
               </div>
             )}

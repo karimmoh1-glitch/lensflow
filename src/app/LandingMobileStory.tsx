@@ -10,7 +10,7 @@ const STEPS = [
   { eyebrow: "01", title: "The message arrives", body: "A new inquiry lands in your inbox the moment it comes in — from any channel." },
   { eyebrow: "02", title: "It becomes a booking", body: "One tap turns a conversation into a confirmed booking." },
   { eyebrow: "03", title: "Payment is tracked", body: "Watch deposits and balances update in real time." },
-  { eyebrow: "04", title: "Delivery is automatic", body: "Your client is notified the moment their gallery is ready." },
+  { eyebrow: "04", title: "Delivery is automatic", body: "Your client is notified the moment their work is ready." },
 ];
 
 const SCREENS = [ScreenInboxNewLead, ScreenBookingCreated, ScreenPaymentConfirmed, ScreenDeliveryNotification];
@@ -38,7 +38,7 @@ export function LandingMobileStory() {
         ))}
       </StoryLayout>
       <div className="text-center mt-10">
-        <Link href="/mobile" className="inline-flex items-center gap-1 text-xs font-medium text-ink/40 hover:text-ink/70 transition-colors">
+        <Link href="/mobile" className="inline-flex items-center gap-1 text-xs font-medium text-ink/60 hover:text-ink/70 transition-colors">
           See the full mobile experience
           <ArrowRight className="w-3 h-3" strokeWidth={2} />
         </Link>

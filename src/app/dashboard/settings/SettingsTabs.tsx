@@ -33,7 +33,7 @@ export function SettingsTabs({
             onClick={() => setTab(t)}
             className={cn(
               "px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 whitespace-nowrap",
-              tab === t ? "border-ink text-ink" : "border-transparent text-ink/45 hover:text-ink/70"
+              tab === t ? "border-ink text-ink" : "border-transparent text-ink/65 hover:text-ink/70"
             )}
           >
             {t}

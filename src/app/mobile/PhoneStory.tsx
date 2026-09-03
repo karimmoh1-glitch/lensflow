@@ -16,7 +16,7 @@ const STEPS = [
   { title: "You open the conversation", body: "See the full thread, with an AI-drafted reply ready to send in your voice.", Screen: ScreenConversation },
   { title: "It becomes a booking", body: "One tap turns the conversation into a confirmed booking, deposit and all.", Screen: ScreenBookingCreated },
   { title: "Payment is confirmed", body: "Watch the deposit land in real time — no chasing, no spreadsheets.", Screen: ScreenPaymentConfirmed },
-  { title: "Your client gets their files", body: "When the gallery's ready, they're notified automatically.", Screen: ScreenDeliveryNotification },
+  { title: "Your client gets their files", body: "When the work's ready, they're notified automatically.", Screen: ScreenDeliveryNotification },
 ];
 
 export function PhoneStory() {
@@ -60,7 +60,7 @@ export function PhoneStory() {
           >
             <div className="text-xs font-medium text-ink/35 mb-2">{String(i + 1).padStart(2, "0")}</div>
             <h3 className="font-display text-2xl text-ink mb-2">{step.title}</h3>
-            <p className="text-sm text-ink/55 max-w-xs">{step.body}</p>
+            <p className="text-sm text-ink/75 max-w-xs">{step.body}</p>
           </div>
         ))}
       </div>

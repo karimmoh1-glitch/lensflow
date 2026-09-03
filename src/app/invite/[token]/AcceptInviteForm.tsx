@@ -37,7 +37,7 @@ export function AcceptInviteForm({ token, email, existingAccount }: { token: str
         <Input id="password" name="password" type="password" placeholder={existingAccount ? undefined : "At least 8 characters"} required />
       </div>
 
-      {existingAccount && <p className="text-xs text-ink/45">An account already exists for this email — enter your password to accept.</p>}
+      {existingAccount && <p className="text-xs text-ink/65">An account already exists for this email — enter your password to accept.</p>}
 
       {error && <p className="text-sm text-danger">{error}</p>}
 

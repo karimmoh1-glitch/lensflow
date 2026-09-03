@@ -17,7 +17,7 @@ export default async function WorkspacesPage() {
         <Card className="w-full max-w-sm">
           <CardBody className="p-8 text-center">
             <h1 className="font-display text-xl mb-2">No workspace yet</h1>
-            <p className="text-sm text-ink/55 mb-6">This account isn&apos;t part of any organization. Ask for an invitation, or create your own workspace.</p>
+            <p className="text-sm text-ink/75 mb-6">This account isn&apos;t part of any organization. Ask for an invitation, or create your own workspace.</p>
             <form action={logout}>
               <button className="text-sm text-accent-text font-medium">Log out</button>
             </form>
@@ -41,7 +41,7 @@ export default async function WorkspacesPage() {
     <main className="min-h-screen bg-paper flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <h1 className="font-display text-2xl mb-1 text-center">Choose a workspace</h1>
-        <p className="text-sm text-ink/50 mb-6 text-center">You belong to more than one organization.</p>
+        <p className="text-sm text-ink/70 mb-6 text-center">You belong to more than one organization.</p>
         <Card>
           <div className="divide-y divide-border">
             {memberships.map((m) => (
@@ -52,7 +52,7 @@ export default async function WorkspacesPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-medium truncate">{m.business.name}</div>
-                    <div className="text-xs text-ink/45">{m.role.charAt(0) + m.role.slice(1).toLowerCase()}</div>
+                    <div className="text-xs text-ink/65">{m.role.charAt(0) + m.role.slice(1).toLowerCase()}</div>
                   </div>
                 </button>
               </form>

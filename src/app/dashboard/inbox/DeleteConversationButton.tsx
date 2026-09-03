@@ -50,7 +50,7 @@ export function DeleteConversationButton({
   if (confirming) {
     return (
       <div className="flex items-center gap-1 shrink-0" onClick={stop}>
-        <span className="text-xs text-ink/45 mr-0.5">Delete?</span>
+        <span className="text-xs text-ink/65 mr-0.5">Delete?</span>
         <button
           disabled={pending}
           onClick={(e) => {
@@ -69,7 +69,7 @@ export function DeleteConversationButton({
             setConfirming(false);
           }}
           aria-label="Cancel"
-          className="w-6 h-6 flex items-center justify-center rounded-md text-ink/40 hover:bg-black/[0.05]"
+          className="w-6 h-6 flex items-center justify-center rounded-md text-ink/60 hover:bg-black/[0.05]"
         >
           <X className="w-3.5 h-3.5" strokeWidth={2.5} />
         </button>
@@ -84,7 +84,7 @@ export function DeleteConversationButton({
           stop(e);
           setConfirming(true);
         }}
-        className="text-xs text-ink/40 hover:text-danger transition-colors flex items-center gap-1"
+        className="text-xs text-ink/60 hover:text-danger transition-colors flex items-center gap-1"
       >
         <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
         Delete conversation

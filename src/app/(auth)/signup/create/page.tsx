@@ -28,14 +28,14 @@ export default function CreateBusinessSignupPage() {
     <main className="min-h-screen bg-paper flex items-center justify-center px-6 py-12">
       <Card className="w-full max-w-sm">
         <CardBody className="p-8">
-          <Link href="/signup" className="text-xs text-ink/40 hover:text-ink/60 mb-4 inline-block">
+          <Link href="/signup" className="text-xs text-ink/60 hover:text-ink/60 mb-4 inline-block">
             ← Back
           </Link>
           <Link href="/" className="font-display text-lg block">
             Daythread
           </Link>
           <h1 className="font-display text-2xl mt-4 mb-1">Create your business</h1>
-          <p className="text-sm text-ink/50 mb-6">Free to start. No credit card required. You&apos;ll be the owner.</p>
+          <p className="text-sm text-ink/70 mb-6">Free to start. No credit card required. You&apos;ll be the owner.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -84,7 +84,7 @@ export default function CreateBusinessSignupPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-sm text-center text-ink/50">
+          <p className="mt-6 text-sm text-center text-ink/70">
             Already have an account?{" "}
             <Link href="/login" className="text-accent-text font-medium">
               Log in

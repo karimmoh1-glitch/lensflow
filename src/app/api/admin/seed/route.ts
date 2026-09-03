@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { seedDemoWorkspace } from "@/server/seedDemo";
+import { verifySeedSecret } from "@/lib/adminAuth";
 
 /**
  * One-off deployment bootstrap: (re)creates the demo workspace against whichever
@@ -10,13 +11,11 @@ import { seedDemoWorkspace } from "@/server/seedDemo";
  * time it's called.
  */
 export async function POST(req: Request) {
-  const secret = process.env.SEED_SECRET;
-  if (!secret) {
+  const auth = verifySeedSecret(req);
+  if (auth === "unconfigured") {
     return NextResponse.json({ error: "SEED_SECRET is not configured on this deployment." }, { status: 501 });
   }
-
-  const provided = req.headers.get("x-seed-secret");
-  if (provided !== secret) {
+  if (auth === "unauthorized") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -25,6 +24,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     console.error("[admin/seed] failed:", err);
-    return NextResponse.json({ error: "Seeding failed", detail: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    return NextResponse.json({ error: "Seeding failed" }, { status: 500 });
   }
 }

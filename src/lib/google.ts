@@ -1,4 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 import { normalizeEmailContent } from "./emailNormalize";
 import type { Integration } from "@prisma/client";
@@ -34,8 +36,25 @@ export function googleOAuthConfigured() {
 // business's id through the redirect without an extra table.
 const stateSecret = () => new TextEncoder().encode(process.env.JWT_SECRET || "dev-only-insecure-secret");
 
+const NONCE_COOKIE = "google_oauth_nonce";
+
+/** Being signed only proves the state wasn't tampered with — it doesn't prove the browser
+ * completing the callback is the one that started the flow. Without binding to something
+ * only that browser has, anyone can mint a valid consent URL for their own business and
+ * get a victim to click it, linking the victim's real Gmail into the attacker's business.
+ * A random nonce set in an httpOnly cookie at connect-time, and required to match here at
+ * callback-time, closes that: an attacker's cookie never reaches the victim's browser. */
 export async function signGoogleState(businessId: string) {
-  return new SignJWT({ businessId })
+  const nonce = randomBytes(24).toString("hex");
+  const store = await cookies();
+  store.set(NONCE_COOKIE, nonce, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 10,
+  });
+  return new SignJWT({ businessId, nonce })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("10m")
@@ -45,7 +64,14 @@ export async function signGoogleState(businessId: string) {
 export async function verifyGoogleState(state: string): Promise<{ businessId: string } | null> {
   try {
     const { payload } = await jwtVerify(state, stateSecret());
-    return typeof payload.businessId === "string" ? { businessId: payload.businessId } : null;
+    if (typeof payload.businessId !== "string" || typeof payload.nonce !== "string") return null;
+
+    const store = await cookies();
+    const cookieNonce = store.get(NONCE_COOKIE)?.value;
+    store.delete(NONCE_COOKIE);
+    if (!cookieNonce || cookieNonce !== payload.nonce) return null;
+
+    return { businessId: payload.businessId };
   } catch {
     return null;
   }

@@ -3,21 +3,31 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { verifyPassword, createSessionToken, getUserMemberships, homeRouteFor } from "@/lib/auth";
 import { jsonError } from "@/lib/mobileApi";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
 
+const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
+
 /**
  * Mobile equivalent of src/app/actions/login — same password check, same membership
  * resolution, but returns a bearer token as JSON instead of setting an httpOnly cookie
- * and redirecting (neither of which make sense for a native client).
+ * and redirecting (neither of which make sense for a native client). Same per-IP and
+ * per-email rate limiting as the web login action — this endpoint does the identical
+ * password check, so it needs the identical brute-force guard.
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) return jsonError("Enter a valid email and password", 400);
+
+  const ip = await getClientIp();
+  const ipOk = rateLimit(`mobile-login:ip:${ip}`, { limit: 20, windowMs: 10 * 60 * 1000 }).ok;
+  const emailOk = rateLimit(`mobile-login:email:${parsed.data.email}`, { limit: 8, windowMs: 10 * 60 * 1000 }).ok;
+  if (!ipOk || !emailOk) return jsonError(TOO_MANY_ATTEMPTS, 429);
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {

@@ -36,7 +36,7 @@ export default async function TodayPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:flex sm:items-center gap-x-6 gap-y-4 sm:gap-8 mb-9 pb-6 border-b border-border">
-        <Stat label="Shoots today" value={String(brief.todaysBookings.length)} />
+        <Stat label="Bookings today" value={String(brief.todaysBookings.length)} />
         <Stat label="Outstanding" value={formatMoney(brief.money.outstandingCents)} tone={brief.money.outstandingCents > 0 ? "warning" : undefined} />
         <Stat label="Hot leads" value={String(brief.leads.hot.length)} tone={brief.leads.hot.length > 0 ? "accent" : undefined} />
         <Stat label="Collected all-time" value={formatMoney(brief.money.collectedCents)} muted />
@@ -44,7 +44,7 @@ export default async function TodayPage() {
 
       <div className="grid lg:grid-cols-2 gap-10">
         <div>
-          <SectionLabel>Today's shoots</SectionLabel>
+          <SectionLabel>Today's bookings</SectionLabel>
           {brief.todaysBookings.length === 0 ? (
             <EmptyState title="Nothing on the calendar today" description="Enjoy the quiet, or reach out to a warm lead." />
           ) : (

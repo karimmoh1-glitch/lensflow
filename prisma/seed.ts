@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../src/lib/db";
 import { seedDemoWorkspace } from "../src/server/seedDemo";
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seeding demo workspace…");

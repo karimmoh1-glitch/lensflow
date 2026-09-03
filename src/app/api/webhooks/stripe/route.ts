@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/payments";
 import { prisma } from "@/lib/db";
 import { sendOnChannel } from "@/lib/messaging";
+import { track } from "@/lib/analytics";
 import type { BillingStatus } from "@prisma/client";
 
 /**
@@ -50,13 +51,19 @@ export async function POST(req: Request) {
             where: { id: session.metadata.businessId },
             data: { stripeCustomerId: session.customer },
           });
+          await track("checkout_completed", { businessId: session.metadata.businessId, properties: { planKey: session.metadata?.planTier } });
         }
         break;
       }
       case "customer.subscription.created":
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted": {
+      case "customer.subscription.updated": {
         await syncSubscription(event.data.object as Stripe.Subscription);
+        break;
+      }
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await syncSubscription(subscription);
+        if (subscription.metadata?.businessId) await track("subscription_canceled", { businessId: subscription.metadata.businessId });
         break;
       }
       case "invoice.payment_failed": {

@@ -7,6 +7,7 @@ import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, get
 import { generatePasswordResetToken, passwordResetExpiry } from "@/lib/passwordReset";
 import { sendOnChannel, messagingIsLive } from "@/lib/messaging";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { track } from "@/lib/analytics";
 import type { Role } from "@prisma/client";
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
@@ -81,6 +82,7 @@ export async function signup(formData: FormData): Promise<FormState> {
     return { error: "Something went wrong creating your account. Please try again." };
   }
 
+  await track("signup_completed", { businessId: business.id });
   await setSessionCookie({ userId: user.id, activeBusinessId: business.id });
   redirect(homeRouteFor("OWNER", business));
 }

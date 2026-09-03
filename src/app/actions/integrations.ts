@@ -5,6 +5,8 @@ import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ingestInboundMessage } from "@/server/leadIngestion";
+import { smsEntitled } from "@/lib/billing";
+import { track } from "@/lib/analytics";
 import type { ChannelType, IntegrationProvider } from "@prisma/client";
 
 export async function toggleIntegration(provider: IntegrationProvider, connect: boolean) {
@@ -12,11 +14,19 @@ export async function toggleIntegration(provider: IntegrationProvider, connect: 
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 
+  // SMS is a Pro+ feature on the pricing page — enforce it here, not just by hiding the
+  // toggle in the UI, so a Free-plan business can't unlock it by calling this action
+  // directly. Disconnecting is always allowed regardless of plan.
+  if (provider === "SMS" && connect && !smsEntitled(business)) {
+    throw new Error("SMS is available on the Pro plan and above. Upgrade from Billing to connect it.");
+  }
+
   await prisma.integration.upsert({
     where: { businessId_provider: { businessId: business.id, provider } },
     create: { businessId: business.id, provider, status: connect ? "DEMO" : "NOT_CONNECTED", lastSyncedAt: connect ? new Date() : null },
     update: { status: connect ? "DEMO" : "NOT_CONNECTED", lastSyncedAt: connect ? new Date() : null },
   });
+  if (connect) await track("integration_connected", { businessId: business.id, properties: { provider } });
   revalidatePath("/dashboard/settings");
 }
 

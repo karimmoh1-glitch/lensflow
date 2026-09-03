@@ -1,16 +1,19 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, type SessionPayload } from "@/lib/auth";
 import { createCardCheckout } from "@/lib/payments";
 import { sendOnChannel } from "@/lib/messaging";
 import { revalidatePath } from "next/cache";
 
 /** Resolves the Client CRM record for the signed-in CLIENT user, scoped to their active
  * organization. Every portal query must go through this — a client's userId only ever
- * maps to one Client row per org, so there's no id to spoof from the client side. */
-export async function requireClientRecord() {
-  const ctx = await requireBusiness();
+ * maps to one Client row per org, so there's no id to spoof from the client side.
+ * Accepts an optional session override (same pattern as requireRole/confirmPayment) so
+ * callers — and their tests — can pass a specific session instead of always reading the
+ * request's cookie. */
+export async function requireClientRecord(session?: SessionPayload | null) {
+  const ctx = await requireBusiness(session);
   if (!ctx || ctx.role !== "CLIENT") return null;
   const client = await prisma.client.findFirst({ where: { userId: ctx.session.userId, businessId: ctx.business.id } });
   if (!client) return null;

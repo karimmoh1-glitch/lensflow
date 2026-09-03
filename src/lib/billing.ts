@@ -17,6 +17,8 @@ export const PLANS: Record<
     priceCents: number; // per month; 0 for Free
     maxTeamSeats: number; // Infinity = unlimited
     smsEnabled: boolean;
+    automationsEnabled: boolean;
+    aiEnabled: boolean; // AI lead scoring & reply drafts
     tagline: string;
     features: string[];
   }
@@ -27,6 +29,8 @@ export const PLANS: Record<
     priceCents: 0,
     maxTeamSeats: 1,
     smsEnabled: false,
+    automationsEnabled: false,
+    aiEnabled: false,
     tagline: "Everything a solo freelancer needs to get organized.",
     features: [
       "Unlimited clients & bookings",
@@ -42,6 +46,8 @@ export const PLANS: Record<
     priceCents: 2900,
     maxTeamSeats: 5,
     smsEnabled: true,
+    automationsEnabled: true,
+    aiEnabled: true,
     tagline: "For a growing business juggling more clients and a small team.",
     features: [
       "Everything in Free",
@@ -57,6 +63,8 @@ export const PLANS: Record<
     priceCents: 7900,
     maxTeamSeats: Infinity,
     smsEnabled: true,
+    automationsEnabled: true,
+    aiEnabled: true,
     tagline: "For businesses with a full team and higher booking volume.",
     features: ["Everything in Pro", "Unlimited team seats", "Priority support"],
   },
@@ -92,4 +100,12 @@ export function canAddTeamSeat(business: BillingFields, currentSeatCount: number
 
 export function smsEntitled(business: BillingFields): boolean {
   return planLimits(business).smsEnabled;
+}
+
+export function automationsEntitled(business: BillingFields): boolean {
+  return planLimits(business).automationsEnabled;
+}
+
+export function aiEntitled(business: BillingFields): boolean {
+  return planLimits(business).aiEnabled;
 }

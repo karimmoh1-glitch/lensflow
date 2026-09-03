@@ -9,6 +9,7 @@ import {
   subscriptionBillingIsLive,
 } from "@/lib/subscriptionBilling";
 import type { PlanKey } from "@/lib/billing";
+import { track } from "@/lib/analytics";
 
 const LIVE_SUBSCRIPTION_STATUSES = new Set(["ACTIVE", "TRIALING", "PAST_DUE"]);
 
@@ -29,6 +30,7 @@ export async function startUpgradeCheckout(
 
   const ctx = await requireBillingRole();
   const { business } = ctx;
+  await track("upgrade_clicked", { businessId: business.id, properties: { planKey } });
 
   // Already has a live subscription — change it in place (prorated) instead of starting
   // a second, parallel subscription through a fresh checkout.
@@ -51,6 +53,7 @@ export async function startUpgradeCheckout(
       successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?upgraded=1`,
       cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
     });
+    await track("checkout_started", { businessId: business.id, properties: { planKey } });
     return { url };
   } catch (err) {
     console.error("[billing] checkout creation failed", err);

@@ -14,10 +14,17 @@ export function LandingWorkflowStory() {
   const { active, refs } = useActiveStep(STEPS.length);
 
   return (
-    <StoryLayout visual={<WorkflowCard step={active} />}>
-      {STEPS.map((s, i) => (
-        <StoryStep key={s.title} index={i} refs={refs} eyebrow={s.eyebrow} title={s.title} body={s.body} />
-      ))}
-    </StoryLayout>
+    <div className="relative">
+      <div
+        className="absolute right-0 top-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full opacity-[0.14] blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle, #F0524D 0%, transparent 70%)" }}
+        aria-hidden
+      />
+      <StoryLayout visual={<WorkflowCard step={active} />}>
+        {STEPS.map((s, i) => (
+          <StoryStep key={s.title} index={i} refs={refs} eyebrow={s.eyebrow} title={s.title} body={s.body} />
+        ))}
+      </StoryLayout>
+    </div>
   );
 }

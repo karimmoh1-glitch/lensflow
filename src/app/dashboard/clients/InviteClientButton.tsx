@@ -77,7 +77,7 @@ export function InviteClientButton() {
                 ) : (
                   <div>
                     <p className="text-sm text-ink/55 mb-3">
-                      They'll be able to see their bookings, payments, and files once they accept.
+                      They&apos;ll be able to see their bookings, payments, and files once they accept.
                     </p>
                     <div className="flex items-center gap-2">
                       <Input value={link} readOnly className="text-xs" />

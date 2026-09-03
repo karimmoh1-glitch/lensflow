@@ -44,7 +44,7 @@ export default async function TodayPage() {
 
       <div className="grid lg:grid-cols-2 gap-10">
         <div>
-          <SectionLabel>Today's bookings</SectionLabel>
+          <SectionLabel>Today&apos;s bookings</SectionLabel>
           {brief.todaysBookings.length === 0 ? (
             <EmptyState title="Nothing on the calendar today" description="Enjoy the quiet, or reach out to a warm lead." />
           ) : (

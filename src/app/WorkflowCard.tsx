@@ -24,7 +24,7 @@ export function WorkflowCard({ step }: { step: number }) {
             </div>
             <div className="text-sm font-medium text-ink mb-0.5">Sarah Johnson</div>
             <div className="text-[11px] text-ink/40 mb-2">Instagram</div>
-            <p className="text-xs text-ink/60 italic">"Are you available June 14?"</p>
+            <p className="text-xs text-ink/60 italic">&quot;Are you available June 14?&quot;</p>
           </div>
         )}
         {step === 1 && (

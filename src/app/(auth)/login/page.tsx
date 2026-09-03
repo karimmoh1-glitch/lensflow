@@ -31,13 +31,18 @@ function LoginForm() {
   }
 
   return (
-    <main className="min-h-screen bg-paper flex items-center justify-center px-6">
-      <Card className="w-full max-w-sm">
+    <main className="relative min-h-screen bg-paper flex items-center justify-center px-6 overflow-hidden">
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[420px] rounded-full opacity-[0.16] blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, #F0524D 0%, transparent 72%)" }}
+        aria-hidden
+      />
+      <Card className="relative w-full max-w-sm">
         <CardBody className="p-8">
           <Link href="/" className="font-display text-lg">
             Daythread
           </Link>
-          <h1 className="font-display text-2xl mt-4 mb-6">Welcome back</h1>
+          <h1 className="font-sans font-black text-2xl tracking-tight mt-4 mb-6">Welcome back</h1>
 
           {justReset && (
             <p className="mb-4 text-sm text-success bg-success/10 rounded-md px-3 py-2">

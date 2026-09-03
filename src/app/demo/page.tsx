@@ -11,7 +11,7 @@ export default function DemoPage() {
           <span className="font-display text-lg block mb-4">Daythread</span>
           <h1 className="font-display text-xl mb-2">Live product demo</h1>
           <p className="text-sm text-ink/55 mb-6">
-            You'll be signed in as a real independent business with real bookings, leads, and payments already in progress — not a
+            You&apos;ll be signed in as a real independent business with real bookings, leads, and payments already in progress — not a
             scripted walkthrough.
           </p>
           <form action={loginAsDemo}>

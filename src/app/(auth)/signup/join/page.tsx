@@ -46,7 +46,7 @@ export default function JoinBusinessSignupPage() {
           <CardBody className="p-8 text-center">
             <h1 className="font-display text-xl mb-2">Request sent</h1>
             <p className="text-sm text-ink/50 mb-6">
-              {selected?.name} needs to approve your request before you can sign in. You'll be able to log in as soon as they accept it.
+              {selected?.name} needs to approve your request before you can sign in. You&apos;ll be able to log in as soon as they accept it.
             </p>
             <Link href="/login">
               <Button className="w-full">Go to login</Button>
@@ -114,7 +114,7 @@ export default function JoinBusinessSignupPage() {
             <>
               <h1 className="font-display text-2xl mt-4 mb-1">Request to join</h1>
               <p className="text-sm text-ink/50 mb-6">
-                You're requesting to join <span className="font-medium text-ink">{selected.name}</span>. They'll need to approve you
+                You&apos;re requesting to join <span className="font-medium text-ink">{selected.name}</span>. They&apos;ll need to approve you
                 before you get access.
               </p>
 

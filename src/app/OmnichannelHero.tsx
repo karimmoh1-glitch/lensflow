@@ -23,17 +23,21 @@ type Channel = {
   x: number;
   y: number;
   bg: string;
+  /** Where this channel flies in FROM — far off in its own direction, so the opening
+   * reads as "scattered communication converging," not five icons nudging into place. */
+  fromX: number;
+  fromY: number;
 };
 
 // Arranged as a shallow arc above the card so every connector reads as one clean fan
 // converging on a single point — never crossing behind an icon, never ambiguous.
 const CARD_TOP: [number, number] = [200, 158];
 const CHANNELS: Channel[] = [
-  { key: "instagram", label: "Instagram", icon: CameraGlyph, x: 44, y: 108, bg: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]" },
-  { key: "messages", label: "Messages", icon: MessageSquare, x: 138, y: 52, bg: "bg-[#3B82F6]" },
-  { key: "email", label: "Email", icon: Mail, x: 200, y: 34, bg: "bg-[#4F46E5]" },
-  { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, x: 262, y: 52, bg: "bg-[#25D366]" },
-  { key: "phone", label: "Phone", icon: Phone, x: 356, y: 108, bg: "bg-[#0D9488]" },
+  { key: "instagram", label: "Instagram", icon: CameraGlyph, x: 44, y: 108, bg: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]", fromX: -220, fromY: -60 },
+  { key: "messages", label: "Messages", icon: MessageSquare, x: 138, y: 52, bg: "bg-[#3B82F6]", fromX: -120, fromY: -180 },
+  { key: "email", label: "Email", icon: Mail, x: 200, y: 34, bg: "bg-[#4F46E5]", fromX: 0, fromY: -220 },
+  { key: "whatsapp", label: "WhatsApp", icon: MessageCircle, x: 262, y: 52, bg: "bg-[#25D366]", fromX: 130, fromY: -180 },
+  { key: "phone", label: "Phone", icon: Phone, x: 356, y: 108, bg: "bg-[#0D9488]", fromX: 230, fromY: -60 },
 ];
 
 function connectorPath(x: number, y: number): string {
@@ -41,6 +45,8 @@ function connectorPath(x: number, y: number): string {
   const midY = (y + cy) / 2;
   return `M ${x} ${y + 22} Q ${x} ${midY} ${cx} ${cy}`;
 }
+
+const POP = "cubic-bezier(0.22,1.4,0.36,1)"; // fast with a real overshoot — confident, playful
 
 export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number }) {
   const [mounted, setMounted] = useState(false);
@@ -53,8 +59,6 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
       setMounted(true);
       return;
     }
-    // Delayed so this whole diagram's internal stagger kicks off once the hero's text has
-    // already landed, instead of racing it — "the headline lands, then the product appears."
     const t = setTimeout(() => setMounted(true), startDelayMs);
     return () => clearTimeout(t);
   }, [startDelayMs]);
@@ -66,7 +70,7 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
         {/* Soft glow behind the destination card — gives it depth as the "answer" the eye lands on */}
         <div
           className={cn("absolute rounded-full bg-accent/10 blur-3xl transition-opacity duration-700", mounted && !reducedMotion && "animate-pulse")}
-          style={{ left: "50%", top: "58%", width: 260, height: 200, transform: "translate(-50%,-50%)", opacity: mounted ? 1 : 0, transitionDelay: "300ms" }}
+          style={{ left: "50%", top: "58%", width: 260, height: 200, transform: "translate(-50%,-50%)", opacity: mounted ? 1 : 0, transitionDelay: "500ms" }}
           aria-hidden
         />
 
@@ -92,7 +96,7 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
                 pathLength={1}
                 strokeDasharray={1}
                 strokeDashoffset={mounted ? 0 : 1}
-                style={{ transition: `stroke-dashoffset 750ms ease-out ${180 + i * 90}ms` }}
+                style={{ transition: `stroke-dashoffset 550ms ease-out ${420 + i * 80}ms` }}
               />
             );
           })}
@@ -104,8 +108,8 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
             mounted &&
             CHANNELS.map((c, i) => (
               <circle key={`dot-${c.key}`} r="2.5" fill="currentColor" className="text-accent">
-                <animateMotion dur="2.6s" begin={`${0.9 + i * 0.4}s`} repeatCount="indefinite" path={connectorPath(c.x, c.y)} />
-                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.55;0.62;1" dur="2.6s" begin={`${0.9 + i * 0.4}s`} repeatCount="indefinite" />
+                <animateMotion dur="2.6s" begin={`${1.1 + i * 0.4}s`} repeatCount="indefinite" path={connectorPath(c.x, c.y)} />
+                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.55;0.62;1" dur="2.6s" begin={`${1.1 + i * 0.4}s`} repeatCount="indefinite" />
               </circle>
             ))}
         </svg>
@@ -113,17 +117,14 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
         {CHANNELS.map((c, i) => (
           <div
             key={c.key}
-            className={cn(
-              "absolute flex flex-col items-center gap-1.5 transition-all duration-500 ease-out group",
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
-              !reducedMotion && mounted && "animate-[chipFloat_5s_ease-in-out_infinite]"
-            )}
+            className={cn("absolute flex flex-col items-center gap-1.5 group", !reducedMotion && mounted && "animate-[chipFloat_5s_ease-in-out_infinite]")}
             style={{
               left: `${(c.x / 400) * 100}%`,
               top: `${(c.y / 300) * 100}%`,
-              transform: "translate(-50%, -50%)",
-              transitionDelay: `${i * 70}ms`,
-              animationDelay: `${i * 260}ms`,
+              transition: `transform 650ms ${POP} ${i * 90}ms, opacity 400ms ease-out ${i * 90}ms`,
+              transform: mounted ? "translate(-50%, -50%) scale(1)" : `translate(calc(-50% + ${c.fromX}px), calc(-50% + ${c.fromY}px)) scale(0.3)`,
+              opacity: mounted ? 1 : 0,
+              animationDelay: `${1.6 + i * 0.26}s`,
             }}
           >
             <div
@@ -139,26 +140,51 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
         ))}
 
         <div
-          className="absolute left-1/2 transition-all duration-500 ease-out"
-          style={{ left: "50%", top: `${(CARD_TOP[1] / 300) * 100 + 22}%`, transform: "translate(-50%, 0)", transitionDelay: "460ms", opacity: mounted ? 1 : 0 }}
+          className="absolute left-1/2"
+          style={{
+            left: "50%",
+            top: `${(CARD_TOP[1] / 300) * 100 + 14}%`,
+            transition: `transform 600ms ${POP} 620ms, opacity 350ms ease-out 620ms`,
+            transform: mounted ? "translate(-50%, 0) scale(1)" : "translate(-50%, 12px) scale(0.55)",
+            opacity: mounted ? 1 : 0,
+          }}
         >
-          <div className={cn(!reducedMotion && mounted && "animate-[cardFloat_6s_ease-in-out_infinite]")} style={{ animationDelay: "700ms" }}>
+          <div className={cn(!reducedMotion && mounted && "animate-[cardFloat_6s_ease-in-out_infinite]")} style={{ animationDelay: "1.3s" }}>
             <SummaryCard />
           </div>
         </div>
       </div>
 
-      {/* Mobile: simplified vertical stack */}
+      {/* Mobile: simplified vertical stack — same converging idea, lighter execution */}
       <div className="sm:hidden flex flex-col items-center gap-3">
         <div className="flex items-center gap-2.5">
-          {CHANNELS.map((c) => (
-            <div key={c.key} className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0", c.bg)}>
+          {CHANNELS.map((c, i) => (
+            <div
+              key={c.key}
+              className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0", c.bg)}
+              style={{
+                transition: `transform 500ms ${POP} ${i * 80}ms, opacity 350ms ease-out ${i * 80}ms`,
+                transform: mounted ? "translateY(0) scale(1)" : "translateY(-28px) scale(0.5)",
+                opacity: mounted ? 1 : 0,
+              }}
+            >
               <c.icon className="w-4 h-4" strokeWidth={1.9} />
             </div>
           ))}
         </div>
-        <div className="w-px h-5 bg-ink/15" />
-        <SummaryCard compact />
+        <div
+          className="w-px h-5 bg-ink/15"
+          style={{ transition: "opacity 300ms ease-out 480ms", opacity: mounted ? 1 : 0 }}
+        />
+        <div
+          style={{
+            transition: `transform 550ms ${POP} 520ms, opacity 350ms ease-out 520ms`,
+            transform: mounted ? "scale(1)" : "scale(0.6)",
+            opacity: mounted ? 1 : 0,
+          }}
+        >
+          <SummaryCard compact />
+        </div>
       </div>
     </div>
   );

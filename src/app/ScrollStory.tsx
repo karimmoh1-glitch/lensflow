@@ -62,9 +62,9 @@ export function StoryLayout({
   visualFirst?: boolean;
 }) {
   return (
-    <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-start max-w-5xl mx-auto px-6">
+    <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center max-w-5xl mx-auto px-6">
       <div className={cn("flex justify-center md:sticky md:top-24 self-start", visualFirst ? "order-1" : "order-1 md:order-2")}>{visual}</div>
-      <div className={cn("flex flex-col gap-16 md:gap-20 py-6", visualFirst ? "order-2" : "order-2 md:order-1")}>{children}</div>
+      <div className={cn("flex flex-col gap-10 md:gap-12", visualFirst ? "order-2" : "order-2 md:order-1")}>{children}</div>
     </div>
   );
 }

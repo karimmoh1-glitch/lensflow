@@ -23,22 +23,24 @@ export default function LandingPage() {
           aria-hidden
         />
         <HeroIntro />
-        <div className="relative w-full h-[300px] md:h-[340px] mt-14 md:mt-20">
+        <div className="relative w-full h-[340px] md:h-[390px] mt-14 md:mt-20">
           <HeroVisual />
         </div>
       </section>
 
       {/* How it works — the defining visual moment: channels converging into Daythread */}
-      <section className="py-24 md:py-32 bg-white border-y border-border overflow-hidden">
+      <section className="py-16 md:py-24 bg-white border-y border-border overflow-hidden">
         <IntegrationShowcase />
       </section>
 
-      {/* Modularity — pinned scroll-scrubbed moment: scattered modules dock into the workspace */}
-      <WorkspaceAssembly />
+      {/* Modularity — a real click-to-toggle module picker, not a passive animation */}
+      <section className="py-16 md:py-24 bg-white border-y border-border">
+        <WorkspaceAssembly />
+      </section>
 
       {/* Interactive product showcase */}
-      <section className="py-20 md:py-28 bg-white border-y border-border">
-        <div className="text-center max-w-lg mx-auto mb-10 px-6">
+      <section className="py-16 md:py-24 bg-white border-y border-border">
+        <div className="text-center max-w-lg mx-auto mb-8 px-6">
           <div className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text mb-3">See it in action</div>
           <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink">The product is the pitch.</h2>
         </div>
@@ -46,19 +48,19 @@ export default function LandingPage() {
       </section>
 
       {/* The connected workflow */}
-      <section className="py-20 md:py-28">
+      <section className="py-16 md:py-24">
         <LandingWorkflowStory />
       </section>
 
       {/* Mobile story */}
-      <section className="py-20 md:py-28 bg-white border-y border-border">
+      <section className="py-16 md:py-24 bg-white border-y border-border">
         <LandingMobileStory />
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 md:py-28">
+      {/* Pricing — PricingSection owns its own section padding, don't double it up */}
+      <div id="pricing">
         <PricingSection />
-      </section>
+      </div>
 
       {/* Final CTA — coral + violet-blue + green, the same energy the hero opened with. */}
       <section className="relative bg-midnight text-paper py-28 md:py-36 px-6 overflow-hidden">

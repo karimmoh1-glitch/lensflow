@@ -5,6 +5,7 @@ import { useMounted } from "./useMounted";
 import { cn } from "@/lib/utils";
 
 const EASE = "cubic-bezier(0.16,1,0.3,1)"; // snappy deceleration — confident, not mushy
+const POP = "cubic-bezier(0.22,1.4,0.36,1)"; // real overshoot — reserved for the headline, the single biggest beat
 
 function Beat({ children, delay, className }: { children: React.ReactNode; delay: number; className?: string }) {
   const mounted = useMounted();
@@ -12,6 +13,22 @@ function Beat({ children, delay, className }: { children: React.ReactNode; delay
     <div
       className={cn("transition-all duration-700", mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-7 scale-[0.96]", className)}
       style={{ transitionTimingFunction: EASE, transitionDelay: mounted ? `${delay}ms` : "0ms" }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The headline gets its own beat with a much larger entrance than the rest of the copy —
+ * it's the visual anchor of the opening, landing at the same moment the channel icons in
+ * the hero visual are converging, so the whole hero reads as one event instead of text
+ * fading in above a separate animation. */
+function HeadlineBeat({ children, delay }: { children: React.ReactNode; delay: number }) {
+  const mounted = useMounted();
+  return (
+    <div
+      className={cn("transition-all duration-[850ms]", mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-16 scale-90")}
+      style={{ transitionTimingFunction: POP, transitionDelay: mounted ? `${delay}ms` : "0ms" }}
     >
       {children}
     </div>
@@ -32,21 +49,21 @@ export function HeroIntro() {
         </div>
       </Beat>
 
-      <Beat delay={90}>
+      <HeadlineBeat delay={140}>
         <h1 className="font-sans font-black text-[clamp(2.75rem,7vw,5rem)] leading-[0.98] tracking-tight text-ink">
           One thread for
           <br />
           your whole business.
         </h1>
-      </Beat>
+      </HeadlineBeat>
 
-      <Beat delay={200}>
+      <Beat delay={560}>
         <p className="mt-6 text-base md:text-lg text-ink/55 max-w-md mx-auto leading-relaxed">
           Every message, booking, and payment — organized automatically, the moment it happens.
         </p>
       </Beat>
 
-      <Beat delay={300} className="mt-8 flex items-center justify-center gap-3">
+      <Beat delay={700} className="mt-8 flex items-center justify-center gap-3">
         <LinkButton
           href="/signup"
           size="lg"

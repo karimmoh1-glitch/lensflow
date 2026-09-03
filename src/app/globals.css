@@ -2,13 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-display: "Playfair Display", serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-}
+/* --font-sans and --font-display are set by next/font in layout.tsx (both Manrope). Do not
+   redeclare them here: a :root fallback ties on specificity with next/font's class and, by
+   source order, won — which is why Inter and Playfair kept rendering after the swap. */
 
 html {
   scroll-behavior: smooth;
+}
+
+/* The "display voice" is now the same family as body (Manrope) — what distinguishes it
+   is weight and tracking, so give every font-display site that in one place. This lives
+   in the components layer so Tailwind's utilities layer (font-black, font-semibold, etc.)
+   still wins wherever a site sets its own weight. */
+@layer components {
+  .font-display {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
 }
 
 body {

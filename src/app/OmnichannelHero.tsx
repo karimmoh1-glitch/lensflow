@@ -76,9 +76,12 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
 
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 300" fill="none" preserveAspectRatio="xMidYMid meet" aria-hidden>
           <defs>
+            {/* The thread: every connector runs coral → violet → green, the brand's three
+                meanings in order — something to act on, the system reading it, done. */}
             <linearGradient id="connectorFade" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="currentColor" stopOpacity="0.06" />
+              <stop offset="0%" stopColor="#F0524D" stopOpacity="0.55" />
+              <stop offset="55%" stopColor="#6D5AE6" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#13CC78" stopOpacity="0.45" />
             </linearGradient>
           </defs>
           {CHANNELS.map((c, i) => {

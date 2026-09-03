@@ -37,7 +37,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/signup"
-            className="text-[13px] font-bold text-paper bg-ink hover:bg-black rounded-full px-4 py-2 transition-colors"
+            className="text-[13px] font-bold text-paper bg-ink hover:bg-black rounded-full px-4 py-2 transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
           >
             Start Free
           </Link>

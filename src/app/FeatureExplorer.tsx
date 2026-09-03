@@ -28,8 +28,10 @@ export function FeatureExplorer() {
               key={t.key}
               onClick={() => setActive(t.key)}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200",
-                isActive ? "bg-ink text-paper shadow-sm scale-[1.03]" : "bg-white text-ink/55 border border-border hover:text-ink hover:border-ink/20"
+                "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-95",
+                isActive
+                  ? "bg-ink text-paper shadow-sm scale-[1.03]"
+                  : "bg-white text-ink/55 border border-border hover:text-ink hover:border-ink/20 hover:scale-[1.03]"
               )}
             >
               <t.icon className="w-3.5 h-3.5" strokeWidth={2} />

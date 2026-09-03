@@ -41,6 +41,24 @@ body {
   }
 }
 
+/* Subtle ambient motion for hero elements once they've landed — small enough to read as
+   "alive," not so much that it's distracting or ever needs its own reduced-motion check
+   beyond what already gates whether these classes get applied at all. */
+@keyframes chipFloat {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-4px); }
+}
+
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pulseHighlight {
+  0% { background-color: var(--pulse-from, rgba(240, 82, 77, 0.12)); }
+  100% { background-color: transparent; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

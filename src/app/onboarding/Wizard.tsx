@@ -1,18 +1,29 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { X } from "lucide-react";
+import { X, Check, Mail, MessageCircle, MessageSquare, Inbox } from "lucide-react";
 import { Button, Input, Label, Card, CardBody, Badge, Textarea, Select } from "@/components/ui";
 import { completeOnboarding, type OnboardingPayload } from "@/app/actions/onboarding";
 import { cn } from "@/lib/utils";
 
+function InstagramGlyph({ className, strokeWidth = 2 }: { className?: string; strokeWidth?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="5.5" stroke="currentColor" strokeWidth={strokeWidth} />
+      <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth={strokeWidth} />
+      <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
+
 const SPECIALTIES = ["Consulting", "Coaching", "Design", "Photography", "Writing", "Web Development", "Event Planning", "Tutoring"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const CHANNELS: { key: string; label: string; blurb: string }[] = [
-  { key: "INSTAGRAM", label: "Instagram", blurb: "DMs land in your inbox" },
-  { key: "EMAIL", label: "Email", blurb: "Inquiries and replies" },
-  { key: "SMS", label: "SMS", blurb: "Text reminders and replies" },
-  { key: "WHATSAPP", label: "WhatsApp", blurb: "Where supported in your region" },
+type ChannelIcon = (props: { className?: string; strokeWidth?: number }) => React.ReactNode;
+const CHANNELS: { key: string; label: string; blurb: string; icon: ChannelIcon; iconClass: string }[] = [
+  { key: "INSTAGRAM", label: "Instagram", blurb: "DMs land in your inbox", icon: InstagramGlyph, iconClass: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]" },
+  { key: "EMAIL", label: "Email", blurb: "Inquiries and replies", icon: Mail, iconClass: "bg-[#4F46E5]" },
+  { key: "SMS", label: "SMS", blurb: "Text reminders and replies", icon: MessageCircle, iconClass: "bg-[#2FC26E]" },
+  { key: "WHATSAPP", label: "WhatsApp", blurb: "Where supported in your region", icon: MessageSquare, iconClass: "bg-[#25D366]" },
 ];
 
 const DEFAULT_SERVICES: Record<string, { name: string; priceCents: number; durationMins: number }> = {
@@ -297,30 +308,71 @@ export function Wizard({ businessName }: { businessName: string }) {
             )}
 
             {step === 5 && (
-              <div className="space-y-3">
-                <h1 className="font-display text-2xl">Connect your channels</h1>
+              <div className="space-y-4">
+                <h1 className="font-display text-2xl">Where do your clients reach you?</h1>
                 <p className="text-sm text-ink/70">
-                  Real OAuth setup happens later in Settings → Connections, where each channel explains exactly what it needs. Turn these
-                  on now to see the inbox work end-to-end with simulated messages in the meantime — nothing here claims a real connection.
+                  Turn on what you actually use — your inbox on the right builds itself from your picks. Real OAuth setup happens later in
+                  Settings → Connections; this turns on demo mode so you can see it work end-to-end in the meantime.
                 </p>
-                {CHANNELS.map((c) => (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() =>
-                      setConnectedChannels((prev) => (prev.includes(c.key) ? prev.filter((x) => x !== c.key) : [...prev, c.key]))
-                    }
-                    className="w-full flex items-center justify-between rounded-lg border border-border px-4 py-3 text-left hover:border-ink/20"
-                  >
-                    <div>
-                      <div className="font-medium text-sm">{c.label}</div>
-                      <div className="text-xs text-ink/65">{c.blurb}</div>
+                <div className="grid sm:grid-cols-[1.1fr_1fr] gap-4">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {CHANNELS.map((c) => {
+                      const isOn = connectedChannels.includes(c.key);
+                      return (
+                        <button
+                          key={c.key}
+                          type="button"
+                          onClick={() =>
+                            setConnectedChannels((prev) => (prev.includes(c.key) ? prev.filter((x) => x !== c.key) : [...prev, c.key]))
+                          }
+                          aria-pressed={isOn}
+                          className={cn(
+                            "relative flex flex-col items-center gap-2 rounded-2xl border py-4 px-2 transition-all duration-200 ease-[cubic-bezier(0.34,1.3,0.64,1)]",
+                            "hover:-translate-y-0.5 active:scale-95",
+                            isOn ? "border-ink bg-ink shadow-[0_4px_16px_-4px_rgba(16,17,20,0.35)] scale-[1.02]" : "border-border bg-white hover:border-ink/25"
+                          )}
+                        >
+                          {isOn && (
+                            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-accent flex items-center justify-center shadow-sm">
+                              <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                            </span>
+                          )}
+                          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0", c.iconClass)}>
+                            <c.icon className="w-4 h-4" strokeWidth={2} />
+                          </div>
+                          <span className={cn("text-[11px] font-medium text-center leading-tight", isOn ? "text-white" : "text-ink/70")}>{c.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-white overflow-hidden">
+                    <div className="flex items-center gap-1.5 px-3.5 py-2.5 border-b border-border">
+                      <Inbox className="w-3.5 h-3.5 text-signal-text" strokeWidth={2} />
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/60">Your inbox</span>
+                      <span className="ml-auto text-[10px] text-ink/40">{connectedChannels.length} on</span>
                     </div>
-                    <Badge tone={connectedChannels.includes(c.key) ? "warning" : "neutral"}>
-                      {connectedChannels.includes(c.key) ? "Demo mode" : "Enable demo"}
-                    </Badge>
-                  </button>
-                ))}
+                    <div className="p-3 min-h-[140px] flex flex-col gap-1.5">
+                      {connectedChannels.length === 0 ? (
+                        <div className="flex-1 flex items-center justify-center text-center px-4">
+                          <p className="text-[11px] text-ink/35">Turn on a channel to see it here.</p>
+                        </div>
+                      ) : (
+                        CHANNELS.filter((c) => connectedChannels.includes(c.key)).map((c) => (
+                          <div
+                            key={c.key}
+                            className="flex items-center gap-2 rounded-lg border border-border px-2.5 py-2 animate-[fadeUp_0.3s_cubic-bezier(0.34,1.3,0.64,1)_backwards]"
+                          >
+                            <div className={cn("w-5 h-5 rounded-md flex items-center justify-center text-white shrink-0", c.iconClass)}>
+                              <c.icon className="w-2.5 h-2.5" strokeWidth={2} />
+                            </div>
+                            <span className="text-[11px] font-medium text-ink/75 truncate">{c.blurb}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

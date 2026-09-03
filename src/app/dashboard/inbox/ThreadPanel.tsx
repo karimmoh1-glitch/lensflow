@@ -91,7 +91,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
               </div>
               <div className={cn("text-[11px] text-ink/35 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
                 {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
-                {m.aiDrafted && "AI drafted · "}
+                {m.aiDrafted && <span className="text-signal-text">AI drafted · </span>}
                 {format(m.createdAt, "MMM d, h:mm a")}
               </div>
             </div>

@@ -95,7 +95,7 @@ export async function completeOnboarding(payload: OnboardingPayload) {
           },
           {
             businessId: business.id,
-            name: "Shoot reminder",
+            name: "Booking reminder",
             trigger: "DAYS_BEFORE_SHOOT",
             offsetHours: 24,
             action: "SEND_REMINDER",

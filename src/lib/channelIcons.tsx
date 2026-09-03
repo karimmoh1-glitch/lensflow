@@ -13,10 +13,13 @@ function CameraGlyph({ className }: { className?: string }) {
 
 type IconComponent = (props: { className?: string; strokeWidth?: number }) => React.ReactNode;
 
+// Same colors as the marketing site's integration showcase (src/app/IntegrationShowcase.tsx)
+// — Email is realistically Gmail for every connected business, so it gets Gmail's actual
+// red rather than a generic indigo. One channel-color language across the whole product.
 export const CHANNEL_META: Record<ChannelType, { label: string; icon: IconComponent; bg: string }> = {
   INSTAGRAM: { label: "Instagram", icon: CameraGlyph, bg: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]" },
-  EMAIL: { label: "Email", icon: Mail, bg: "bg-[#4F46E5]" },
-  SMS: { label: "SMS", icon: MessageSquare, bg: "bg-[#3B82F6]" },
+  EMAIL: { label: "Email", icon: Mail, bg: "bg-[#EA4335]" },
+  SMS: { label: "SMS", icon: MessageSquare, bg: "bg-[#2FC26E]" },
   WHATSAPP: { label: "WhatsApp", icon: MessageCircle, bg: "bg-[#25D366]" },
   PHONE: { label: "Phone", icon: Phone, bg: "bg-[#0D9488]" },
   WEBSITE: { label: "Website", icon: Globe, bg: "bg-ink/70" },

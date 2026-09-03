@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Sparkles } from "lucide-react";
 import { Button, Input, Card, CardBody } from "@/components/ui";
 import { askCopilot } from "@/app/actions/copilot";
 import { cn } from "@/lib/utils";
@@ -37,13 +38,25 @@ export function CopilotChat() {
           </div>
         )}
         {turns.map((t, i) => (
-          <div key={i} className={cn("max-w-md", t.role === "user" ? "ml-auto" : "")}>
-            <Card className={cn(t.role === "user" ? "bg-ink text-white border-none" : "")}>
+          <div key={i} className={cn("max-w-md", t.role === "user" ? "ml-auto" : "flex items-start gap-2")}>
+            {t.role === "assistant" && (
+              <div className="w-6 h-6 rounded-full bg-signal-soft text-signal-text flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="w-3 h-3" strokeWidth={2} />
+              </div>
+            )}
+            <Card className={cn(t.role === "user" ? "bg-ink text-white border-none" : "bg-signal-soft/40 border-signal/15")}>
               <CardBody className="py-2.5 px-3.5 text-sm whitespace-pre-wrap">{t.text}</CardBody>
             </Card>
           </div>
         ))}
-        {pending && <div className="text-xs text-ink/40">Thinking…</div>}
+        {pending && (
+          <div className="flex items-center gap-2 text-xs text-signal-text">
+            <div className="w-6 h-6 rounded-full bg-signal-soft flex items-center justify-center shrink-0">
+              <Sparkles className="w-3 h-3" strokeWidth={2} />
+            </div>
+            Thinking…
+          </div>
+        )}
       </div>
 
       <form

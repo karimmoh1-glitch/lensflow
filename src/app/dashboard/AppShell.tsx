@@ -7,7 +7,7 @@ import {
   Home,
   Inbox as InboxIcon,
   CalendarDays,
-  Camera,
+  ClipboardCheck,
   Users,
   UserCog,
   CreditCard,
@@ -27,18 +27,21 @@ import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/app/dashboard/WorkspaceSwitcher";
 
-const BASE_NAV: { href: string; label: string; icon: LucideIcon; roles?: Role[] }[] = [
-  { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/dashboard/bookings", label: "Bookings", icon: Camera },
-  { href: "/dashboard/clients", label: "Clients", icon: Users },
-  { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
-  { href: "/dashboard/automations", label: "Automations", icon: Zap },
-  { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles },
-  { href: "/dashboard/team", label: "Team", icon: UserCog, roles: ["OWNER", "ADMIN"] },
-  { href: "/dashboard/billing", label: "Billing", icon: Receipt, roles: ["OWNER", "ADMIN"] },
-  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, roles: ["OWNER", "ADMIN"] },
+// Icon tone shows only in the item's resting state (active state is always solid ink/white
+// for clear legibility) — the same terracotta/signal/semantic language used on the
+// marketing site's module showcase, so the two feel like one product.
+const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[] }[] = [
+  { href: "/dashboard", label: "Home", icon: Home, tone: "text-ink/45" },
+  { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-signal-text/70" },
+  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-success/70" },
+  { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-info/70" },
+  { href: "/dashboard/clients", label: "Clients", icon: Users, tone: "text-accent/70" },
+  { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-warning/70" },
+  { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-signal-text/70" },
+  { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles, tone: "text-signal-text/70" },
+  { href: "/dashboard/team", label: "Team", icon: UserCog, tone: "text-ink/45", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/billing", label: "Billing", icon: Receipt, tone: "text-ink/45", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/45", roles: ["OWNER", "ADMIN"] },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -63,7 +66,7 @@ function NavLinks({ pathname, role, onNavigate }: { pathname: string; role: Role
               active ? "bg-ink text-white" : "text-ink/60 hover:bg-black/[0.05] hover:text-ink"
             )}
           >
-            <item.icon className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
+            <item.icon className={cn("w-4 h-4 shrink-0", !active && item.tone)} strokeWidth={2} aria-hidden />
             {item.label}
           </Link>
         );

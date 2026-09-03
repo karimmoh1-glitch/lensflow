@@ -140,7 +140,7 @@ export async function completeCardCheckout(paymentId: string) {
 }
 
 /**
- * Marks a completed shoot as delivered with a real gallery link (Pixieset, Google Drive,
+ * Marks a completed booking as delivered with a real gallery link (Pixieset, Google Drive,
  * Dropbox — however this business actually hands off photos). There's no file storage of
  * our own; this persists a real URL + timestamp against the booking, same as any other
  * field on it.

@@ -73,10 +73,10 @@ export async function gatherBusinessFacts(businessId: string): Promise<string> {
 
   lines.push(
     upcomingBookings.length > 0
-      ? `Upcoming shoots: ${upcomingBookings
+      ? `Upcoming bookings: ${upcomingBookings
           .map((b) => `${b.client.name} (${b.service.name}) on ${b.startAt.toDateString()}, status ${b.status}`)
           .join("; ")}.`
-      : "No upcoming shoots scheduled."
+      : "No upcoming bookings scheduled."
   );
 
   return lines.join("\n");

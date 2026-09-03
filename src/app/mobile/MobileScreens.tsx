@@ -18,8 +18,8 @@ export function ScreenInboxNewLead() {
               <span className="text-sm font-medium">Sarah Johnson</span>
               <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
             </div>
-            <div className="text-[11px] text-ink/40">Instagram · just now</div>
-            <p className="text-xs text-ink/55 truncate mt-0.5">Are you available June 14?</p>
+            <div className="text-[11px] text-ink/60">Instagram · just now</div>
+            <p className="text-xs text-ink/75 truncate mt-0.5">Are you available June 14?</p>
           </div>
         </div>
         {[
@@ -27,13 +27,13 @@ export function ScreenInboxNewLead() {
           ["Jessica Nguyen", "SMS", "Do you have availability next week?"],
         ].map(([name, ch, msg]) => (
           <div key={name} className="flex items-center gap-3 px-5 py-3.5">
-            <div className="w-9 h-9 rounded-full bg-black/[0.05] text-ink/50 flex items-center justify-center text-[11px] font-semibold shrink-0">
+            <div className="w-9 h-9 rounded-full bg-black/[0.05] text-ink/70 flex items-center justify-center text-[11px] font-semibold shrink-0">
               {name[0]}
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-sm font-medium">{name}</span>
-              <div className="text-[11px] text-ink/40">{ch}</div>
-              <p className="text-xs text-ink/45 truncate mt-0.5">{msg}</p>
+              <div className="text-[11px] text-ink/60">{ch}</div>
+              <p className="text-xs text-ink/65 truncate mt-0.5">{msg}</p>
             </div>
           </div>
         ))}
@@ -47,13 +47,13 @@ export function ScreenConversation() {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-2.5 px-4 pt-2 pb-3 border-b border-border shrink-0">
-        <ChevronLeft className="w-5 h-5 text-ink/50" strokeWidth={2} />
+        <ChevronLeft className="w-5 h-5 text-ink/70" strokeWidth={2} />
         <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-semibold shrink-0">
           SJ
         </div>
         <div>
           <div className="text-sm font-medium leading-tight">Sarah Johnson</div>
-          <div className="text-[10px] text-ink/40 leading-tight">Instagram</div>
+          <div className="text-[10px] text-ink/60 leading-tight">Instagram</div>
         </div>
       </div>
       <div className="flex-1 px-4 py-4 space-y-3 overflow-hidden">
@@ -74,7 +74,7 @@ export function ScreenBookingCreated() {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-2.5 px-4 pt-2 pb-3 border-b border-border shrink-0">
-        <ChevronLeft className="w-5 h-5 text-ink/50" strokeWidth={2} />
+        <ChevronLeft className="w-5 h-5 text-ink/70" strokeWidth={2} />
         <div className="text-sm font-medium">Booking</div>
       </div>
       <div className="flex-1 px-5 py-5">
@@ -82,14 +82,14 @@ export function ScreenBookingCreated() {
           Booked
         </div>
         <h2 className="font-display text-lg text-ink mb-0.5">Sarah Johnson</h2>
-        <p className="text-xs text-ink/45 mb-5">Graduation Session · June 14, 2:00 PM</p>
+        <p className="text-xs text-ink/65 mb-5">Graduation Session · June 14, 2:00 PM</p>
         <div className="rounded-lg border border-border p-3.5 space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-ink/50">Total</span>
+            <span className="text-ink/70">Total</span>
             <span className="font-medium text-ink">$350</span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-ink/50">Deposit due</span>
+            <span className="text-ink/70">Deposit due</span>
             <span className="font-medium text-warning-text">$105</span>
           </div>
         </div>
@@ -103,7 +103,7 @@ export function ScreenPaymentConfirmed() {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-2.5 px-4 pt-2 pb-3 border-b border-border shrink-0">
-        <ChevronLeft className="w-5 h-5 text-ink/50" strokeWidth={2} />
+        <ChevronLeft className="w-5 h-5 text-ink/70" strokeWidth={2} />
         <div className="text-sm font-medium">Payments</div>
       </div>
       <div className="flex-1 px-5 py-5">
@@ -113,16 +113,16 @@ export function ScreenPaymentConfirmed() {
           </div>
           <div>
             <div className="text-sm font-medium text-ink">Deposit received</div>
-            <div className="text-xs text-ink/45">Sarah Johnson · just now</div>
+            <div className="text-xs text-ink/65">Sarah Johnson · just now</div>
           </div>
         </div>
         <div className="rounded-lg border border-border p-3.5 space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-ink/50">Paid</span>
+            <span className="text-ink/70">Paid</span>
             <span className="font-medium text-success">$105</span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-ink/50">Remaining</span>
+            <span className="text-ink/70">Remaining</span>
             <span className="font-medium text-ink">$245</span>
           </div>
         </div>
@@ -142,14 +142,14 @@ export function ScreenDeliveryNotification() {
             <Bell className="w-4 h-4" strokeWidth={2} />
           </div>
           <div className="min-w-0">
-            <div className="text-xs font-medium text-ink">Alex Rivera Photography</div>
-            <p className="text-xs text-ink/55 mt-0.5">Your gallery is ready! Tap to view your graduation photos.</p>
+            <div className="text-xs font-medium text-ink">Rivera Consulting</div>
+            <p className="text-xs text-ink/75 mt-0.5">Your project is ready! Tap to view your final files.</p>
             <div className="text-[10px] text-ink/35 mt-1">now</div>
           </div>
         </div>
       </div>
       <div className={cn("flex-1 flex items-center justify-center px-8")}>
-        <p className="text-center text-xs text-ink/35">Delivered — 24 edited photos ready to download.</p>
+        <p className="text-center text-xs text-ink/35">Delivered — final files ready to download.</p>
       </div>
     </div>
   );

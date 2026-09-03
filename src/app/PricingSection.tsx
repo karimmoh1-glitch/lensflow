@@ -10,11 +10,11 @@ export function PricingSection() {
   return (
     <section className="px-6 py-16 md:py-24 max-w-5xl mx-auto">
       <div className="text-center max-w-lg mx-auto mb-12">
-        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40 mb-3">Pricing</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60 mb-3">Pricing</div>
         <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink mb-3">
           Simple pricing that grows with you.
         </h2>
-        <p className="text-sm md:text-base text-ink/55 max-w-sm mx-auto">Start free. Upgrade when your client list outgrows it — not before.</p>
+        <p className="text-sm md:text-base text-ink/75 max-w-sm mx-auto">Start free. Upgrade when your client list outgrows it — not before.</p>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-5">
@@ -37,9 +37,9 @@ export function PricingSection() {
               <h3 className="font-sans font-black text-xl tracking-tight text-ink">{plan.name}</h3>
               <p className="mt-2 text-4xl font-display text-ink">
                 {plan.priceCents === 0 ? "Free" : formatMoney(plan.priceCents)}
-                {plan.priceCents > 0 && <span className="text-sm font-sans text-ink/45">/mo</span>}
+                {plan.priceCents > 0 && <span className="text-sm font-sans text-ink/65">/mo</span>}
               </p>
-              <p className="mt-2 text-xs text-ink/50">{plan.tagline}</p>
+              <p className="mt-2 text-xs text-ink/70">{plan.tagline}</p>
               <ul className="mt-5 space-y-2 flex-1">
                 {plan.features.map((f) => (
                   <li key={f} className="text-xs text-ink/65 flex items-start gap-1.5">
@@ -62,7 +62,7 @@ export function PricingSection() {
         })}
       </div>
 
-      <p className="text-center text-xs text-ink/40 mt-8">No credit card required to start. Cancel anytime.</p>
+      <p className="text-center text-xs text-ink/60 mt-8">No credit card required to start. Cancel anytime.</p>
     </section>
   );
 }

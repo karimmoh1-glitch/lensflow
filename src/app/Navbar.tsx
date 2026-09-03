@@ -29,10 +29,10 @@ export function Navbar() {
           <Logo />
         </Link>
         <div className="flex items-center gap-7">
-          <Link href="#pricing" className="hidden sm:block text-[13px] font-medium text-ink/55 hover:text-ink transition-colors">
+          <Link href="#pricing" className="hidden sm:block text-[13px] font-medium text-ink/75 hover:text-ink transition-colors">
             Pricing
           </Link>
-          <Link href="/login" className="text-[13px] font-medium text-ink/55 hover:text-ink transition-colors">
+          <Link href="/login" className="text-[13px] font-medium text-ink/75 hover:text-ink transition-colors">
             Log in
           </Link>
           <Link

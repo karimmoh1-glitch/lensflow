@@ -45,7 +45,7 @@ export default function JoinBusinessSignupPage() {
         <Card className="w-full max-w-sm">
           <CardBody className="p-8 text-center">
             <h1 className="font-display text-xl mb-2">Request sent</h1>
-            <p className="text-sm text-ink/50 mb-6">
+            <p className="text-sm text-ink/70 mb-6">
               {selected?.name} needs to approve your request before you can sign in. You&apos;ll be able to log in as soon as they accept it.
             </p>
             <Link href="/login">
@@ -61,7 +61,7 @@ export default function JoinBusinessSignupPage() {
     <main className="min-h-screen bg-paper flex items-center justify-center px-6 py-12">
       <Card className="w-full max-w-sm">
         <CardBody className="p-8">
-          <Link href="/signup" className="text-xs text-ink/40 hover:text-ink/60 mb-4 inline-block">
+          <Link href="/signup" className="text-xs text-ink/60 hover:text-ink/60 mb-4 inline-block">
             ← Back
           </Link>
           <Link href="/" className="font-display text-lg block">
@@ -71,7 +71,7 @@ export default function JoinBusinessSignupPage() {
           {!selected ? (
             <>
               <h1 className="font-display text-2xl mt-4 mb-1">Find your business</h1>
-              <p className="text-sm text-ink/50 mb-6">Businesses are private — search by name to find the one you work with.</p>
+              <p className="text-sm text-ink/70 mb-6">Businesses are private — search by name to find the one you work with.</p>
 
               <form onSubmit={handleSearch} className="space-y-3">
                 <div>
@@ -101,19 +101,19 @@ export default function JoinBusinessSignupPage() {
                       className="w-full text-left px-3.5 py-3 rounded-md border border-border hover:bg-black/[0.02] transition-colors"
                     >
                       <div className="text-sm font-medium">{b.name}</div>
-                      {b.businessType && <div className="text-xs text-ink/45">{b.businessType}</div>}
+                      {b.businessType && <div className="text-xs text-ink/65">{b.businessType}</div>}
                     </button>
                   ))}
                 </div>
               )}
               {!searching && hasSearched && results.length === 0 && (
-                <p className="mt-4 text-sm text-ink/45">No business found with that name. Double-check the spelling with them.</p>
+                <p className="mt-4 text-sm text-ink/65">No business found with that name. Double-check the spelling with them.</p>
               )}
             </>
           ) : (
             <>
               <h1 className="font-display text-2xl mt-4 mb-1">Request to join</h1>
-              <p className="text-sm text-ink/50 mb-6">
+              <p className="text-sm text-ink/70 mb-6">
                 You&apos;re requesting to join <span className="font-medium text-ink">{selected.name}</span>. They&apos;ll need to approve you
                 before you get access.
               </p>
@@ -131,7 +131,7 @@ export default function JoinBusinessSignupPage() {
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" name="password" type="password" placeholder="At least 8 characters" required />
                 </div>
-                <p className="text-xs text-ink/40">Already have a Daythread account? Enter its email and password instead.</p>
+                <p className="text-xs text-ink/60">Already have a Daythread account? Enter its email and password instead.</p>
 
                 {error && <p className="text-sm text-danger">{error}</p>}
 
@@ -147,7 +147,7 @@ export default function JoinBusinessSignupPage() {
             </>
           )}
 
-          <p className="mt-6 text-sm text-center text-ink/50">
+          <p className="mt-6 text-sm text-center text-ink/70">
             Already have an account?{" "}
             <Link href="/login" className="text-accent-text font-medium">
               Log in

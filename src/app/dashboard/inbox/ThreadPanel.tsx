@@ -26,7 +26,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
     },
   });
 
-  if (!conversation) return <div className="flex-1 flex items-center justify-center text-ink/40 text-sm">Conversation not found</div>;
+  if (!conversation) return <div className="flex-1 flex items-center justify-center text-ink/60 text-sm">Conversation not found</div>;
 
   const lead = conversation.lead;
   const scored = lead
@@ -53,7 +53,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
           </Link>
           <div className="flex-1 min-w-0">
             <h2 className="font-medium text-sm truncate">{conversation.client?.name ?? conversation.externalHandle ?? "Unknown"}</h2>
-            <div className="flex items-center gap-1.5 text-xs text-ink/45 truncate">
+            <div className="flex items-center gap-1.5 text-xs text-ink/65 truncate">
               <ChannelBadge channel={conversation.channel} />
               {CHANNEL_META[conversation.channel].label}
               {conversation.externalHandle ? ` · ${conversation.externalHandle}` : ""}
@@ -64,7 +64,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
             <span
               className={cn(
                 "flex items-center gap-1.5 text-xs font-medium shrink-0",
-                temp === "HOT" ? "text-accent-text" : temp === "WARM" ? "text-warning-text" : "text-ink/40"
+                temp === "HOT" ? "text-accent-text" : temp === "WARM" ? "text-warning-text" : "text-ink/60"
               )}
             >
               <span className={cn("w-1.5 h-1.5 rounded-full", temp === "HOT" ? "bg-accent" : temp === "WARM" ? "bg-warning" : "bg-ink/25")} />
@@ -103,7 +103,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
 
       {lead && (
         <div className="hidden lg:block w-72 shrink-0 border-l border-border bg-white px-5 py-5 overflow-y-auto scrollbar-thin">
-          <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-3">Lead details</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-3">Lead details</div>
           {(() => {
             const fields = [
               { label: "Name", value: lead.extractedName },
@@ -114,7 +114,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
               { label: "Estimated value", value: lead.estimatedValueCents ? formatMoney(lead.estimatedValueCents) : null },
             ].filter((f) => f.value);
             if (fields.length === 0 && lead.intent === "UNKNOWN") {
-              return <p className="text-xs text-ink/40 italic">Still gathering details from the conversation.</p>;
+              return <p className="text-xs text-ink/60 italic">Still gathering details from the conversation.</p>;
             }
             return (
               <dl className="space-y-3 text-sm">
@@ -123,7 +123,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
                 ))}
                 {lead.intent !== "UNKNOWN" && (
                   <div>
-                    <dt className="text-xs text-ink/40">Intent</dt>
+                    <dt className="text-xs text-ink/60">Intent</dt>
                     <dd className="mt-0.5">
                       <span
                         className={cn(
@@ -132,7 +132,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
                             ? "bg-accent-soft text-accent-text"
                             : lead.intent === "MEDIUM"
                               ? "bg-warning-soft text-warning-text"
-                              : "bg-black/[0.05] text-ink/55"
+                              : "bg-black/[0.05] text-ink/75"
                         )}
                       >
                         {lead.intent}
@@ -146,8 +146,8 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
 
           {scored && scored.reasons.length > 0 && (
             <>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mt-6 mb-2">Why this score</div>
-              <ul className="space-y-1 text-xs text-ink/55">
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mt-6 mb-2">Why this score</div>
+              <ul className="space-y-1 text-xs text-ink/75">
                 {scored.reasons.map((r, i) => (
                   <li key={i}>{r}</li>
                 ))}
@@ -163,7 +163,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
           )}
           {lead.status === "BOOKED" && (
             <div className="mt-6 pt-4 border-t border-border">
-              <p className="text-xs text-ink/40">This lead already has a booking.</p>
+              <p className="text-xs text-ink/60">This lead already has a booking.</p>
             </div>
           )}
         </div>
@@ -175,7 +175,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
-      <dt className="text-xs text-ink/40">{label}</dt>
+      <dt className="text-xs text-ink/60">{label}</dt>
       <dd className={cn("font-medium", !value && "text-ink/30 font-normal italic")}>{value ?? "Unknown"}</dd>
     </div>
   );

@@ -65,7 +65,7 @@ export function BookingActions({
   return (
     <Card>
       <CardBody className="space-y-4">
-        <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Actions</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">Actions</div>
 
         {status === "INQUIRY" && (
           <Button size="sm" className="w-full" onClick={() => doAdvance("BOOKED")} disabled={pending}>
@@ -123,7 +123,7 @@ export function BookingActions({
               Send payment request
             </Button>
             {checkoutInfo && (
-              <div className="text-xs text-ink/50 bg-black/[0.03] rounded-lg p-2.5">
+              <div className="text-xs text-ink/70 bg-black/[0.03] rounded-lg p-2.5">
                 {checkoutInfo.url && (
                   <>
                     Checkout link:{" "}

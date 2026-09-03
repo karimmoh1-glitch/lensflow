@@ -38,7 +38,7 @@ export default async function BillingPage() {
             Billing is coming soon — plans below are shown for reference. We&apos;ll email you as soon as upgrades are open.
           </p>
         ) : (
-          <p className="text-sm text-ink/50 bg-black/[0.03] rounded-md px-3.5 py-2.5 mb-6">
+          <p className="text-sm text-ink/70 bg-black/[0.03] rounded-md px-3.5 py-2.5 mb-6">
             Subscription billing isn&apos;t configured on this deployment — add <code className="text-xs bg-black/[0.05] px-1 rounded">STRIPE_SECRET_KEY</code>{" "}
             and <code className="text-xs bg-black/[0.05] px-1 rounded">STRIPE_WEBHOOK_SECRET</code> to accept real payments. Every plan below is shown for
             reference only until then.
@@ -54,7 +54,7 @@ export default async function BillingPage() {
                 <Badge tone={STATUS_BADGE[business.billingStatus].tone}>{STATUS_BADGE[business.billingStatus].label}</Badge>
               )}
             </div>
-            <p className="text-sm text-ink/50 mt-1">
+            <p className="text-sm text-ink/70 mt-1">
               {PLANS[currentPlan].maxTeamSeats === Infinity
                 ? `${seatCount} team seats used`
                 : seatCount > PLANS[currentPlan].maxTeamSeats
@@ -85,9 +85,9 @@ export default async function BillingPage() {
                 </div>
                 <p className="text-2xl font-semibold text-ink mb-1">
                   {plan.priceCents === 0 ? "Free" : formatMoney(plan.priceCents)}
-                  {plan.priceCents > 0 && <span className="text-sm font-normal text-ink/45">/mo</span>}
+                  {plan.priceCents > 0 && <span className="text-sm font-normal text-ink/65">/mo</span>}
                 </p>
-                <p className="text-xs text-ink/50 mb-4">{plan.tagline}</p>
+                <p className="text-xs text-ink/70 mb-4">{plan.tagline}</p>
                 <ul className="space-y-1.5 mb-5">
                   {plan.features.map((f) => (
                     <li key={f} className="text-xs text-ink/65 flex items-start gap-1.5">
@@ -98,7 +98,7 @@ export default async function BillingPage() {
                 </ul>
                 {!isCurrent && key !== "FREE" && <UpgradeButton planKey={key as "PRO" | "BUSINESS"}>Upgrade to {plan.name}</UpgradeButton>}
                 {!isCurrent && key === "FREE" && business.stripeCustomerId && (
-                  <p className="text-xs text-ink/40">Cancel from Manage billing above to downgrade.</p>
+                  <p className="text-xs text-ink/60">Cancel from Manage billing above to downgrade.</p>
                 )}
               </CardBody>
             </Card>

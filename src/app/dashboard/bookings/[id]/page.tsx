@@ -65,7 +65,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             <div key={step.status} className="flex items-center shrink-0">
               <div
                 className={`text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap ${
-                  i <= currentIndex ? "bg-ink text-white" : "bg-black/5 text-ink/40"
+                  i <= currentIndex ? "bg-ink text-white" : "bg-black/5 text-ink/60"
                 }`}
               >
                 {step.label}
@@ -80,22 +80,22 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-3">Financial record</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-3">Financial record</div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-ink/55">Total</span>
+                  <span className="text-ink/75">Total</span>
                   <span className="font-medium">{formatMoney(booking.totalCents)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-ink/55">Deposit required</span>
+                  <span className="text-ink/75">Deposit required</span>
                   <span className="font-medium">{formatMoney(booking.depositCents)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-ink/55">Paid</span>
+                  <span className="text-ink/75">Paid</span>
                   <span className="font-medium text-success">{formatMoney(paidCents)}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-border">
-                  <span className="text-ink/55">Remaining</span>
+                  <span className="text-ink/75">Remaining</span>
                   <span className={`font-semibold ${remainingCents > 0 ? "text-warning" : "text-success"}`}>
                     {formatMoney(remainingCents)}
                   </span>
@@ -106,7 +106,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 <div className="mt-4 pt-4 border-t border-border space-y-2">
                   {booking.payments.map((p) => (
                     <div key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="text-ink/50">
+                      <span className="text-ink/70">
                         {p.purpose.toLowerCase()} · {p.method.toLowerCase().replace("_", " ")}
                         {p.reference && ` · ref ${p.reference}`}
                       </span>
@@ -122,7 +122,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-3">Questionnaire</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-3">Questionnaire</div>
               {booking.questionnaire?.completedAt ? (
                 <Badge tone="success">Completed</Badge>
               ) : booking.questionnaire?.sentAt ? (
@@ -141,14 +141,14 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <div>
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/40 mb-3">Client</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-3">Client</div>
               <Link href={`/dashboard/clients/${booking.clientId}`} className="font-medium text-sm hover:underline">
                 {booking.client.name}
               </Link>
-              {booking.client.email && <div className="text-xs text-ink/50 mt-0.5">{booking.client.email}</div>}
-              {booking.client.phone && <div className="text-xs text-ink/50">{booking.client.phone}</div>}
+              {booking.client.email && <div className="text-xs text-ink/70 mt-0.5">{booking.client.email}</div>}
+              {booking.client.phone && <div className="text-xs text-ink/70">{booking.client.phone}</div>}
               {booking.location && (
-                <div className="flex items-center gap-1 text-xs text-ink/50 mt-2">
+                <div className="flex items-center gap-1 text-xs text-ink/70 mt-2">
                   <MapPin className="w-3 h-3" strokeWidth={2} />
                   {booking.location}
                 </div>

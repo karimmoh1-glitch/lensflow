@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -31,7 +31,7 @@ import { WorkspaceSwitcher, type WorkspaceOption } from "@/app/dashboard/Workspa
 // for clear legibility) — the same terracotta/signal/semantic language used on the
 // marketing site's module showcase, so the two feel like one product.
 const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[] }[] = [
-  { href: "/dashboard", label: "Home", icon: Home, tone: "text-ink/45" },
+  { href: "/dashboard", label: "Home", icon: Home, tone: "text-ink/65" },
   { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-signal-text/70" },
   { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-success/70" },
   { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-info/70" },
@@ -39,9 +39,9 @@ const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; r
   { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-warning/70" },
   { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-signal-text/70" },
   { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles, tone: "text-signal-text/70" },
-  { href: "/dashboard/team", label: "Team", icon: UserCog, tone: "text-ink/45", roles: ["OWNER", "ADMIN"] },
-  { href: "/dashboard/billing", label: "Billing", icon: Receipt, tone: "text-ink/45", roles: ["OWNER", "ADMIN"] },
-  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/45", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/team", label: "Team", icon: UserCog, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/billing", label: "Billing", icon: Receipt, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -102,7 +102,7 @@ function AccountFooter({
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium truncate">{businessName}</div>
           <form action={logout}>
-            <button className="flex items-center gap-1 text-xs text-ink/40 hover:text-ink/70">
+            <button className="flex items-center gap-1 text-xs text-ink/60 hover:text-ink/70">
               <LogOut className="w-3 h-3" strokeWidth={2} aria-hidden />
               Log out
             </button>
@@ -130,6 +130,42 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const visibleNav = BASE_NAV.filter((item) => !item.roles || item.roles.includes(role));
   const current = visibleNav.find((item) => isActive(pathname, item.href));
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus management for the mobile drawer: move focus in on open, trap Tab within it so
+  // keyboard users can't tab into the page content hidden behind the overlay, close on
+  // Escape, and return focus to the button that opened it — the same contract any modal
+  // dialog needs, not just a visual overlay.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const drawer = drawerRef.current;
+    const menuButton = menuButtonRef.current;
+    const focusable = drawer?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])');
+    focusable?.[0]?.focus();
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        return;
+      }
+      if (e.key !== "Tab" || !focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      menuButton?.focus();
+    };
+  }, [mobileOpen]);
 
   return (
     <div className="min-h-screen bg-paper md:flex">
@@ -139,7 +175,7 @@ export function AppShell({
           <Link href="/dashboard" className="font-display text-lg text-ink">
             Daythread
           </Link>
-          <div className="text-xs text-ink/45 mt-0.5 truncate">{businessName}</div>
+          <div className="text-xs text-ink/65 mt-0.5 truncate">{businessName}</div>
         </div>
         <NavLinks pathname={pathname} role={role} />
         <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} />
@@ -148,9 +184,10 @@ export function AppShell({
       {/* Mobile top bar */}
       <div className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-border bg-white">
         <button
+          ref={menuButtonRef}
           aria-label="Open navigation"
           onClick={() => setMobileOpen(true)}
-          className="w-9 h-9 -ml-2 flex items-center justify-center rounded-md text-ink/60 hover:bg-black/[0.05]"
+          className="w-9 h-9 -ml-2 flex items-center justify-center rounded-md text-ink/60 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
         >
           <Menu className="w-5 h-5" strokeWidth={2} />
         </button>
@@ -163,16 +200,22 @@ export function AppShell({
       {/* Mobile nav drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-64 bg-white flex flex-col shadow-popover">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} aria-hidden />
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation"
+            className="absolute inset-y-0 left-0 w-64 bg-white flex flex-col shadow-popover"
+          >
             <div className="flex items-center justify-between px-5 py-5 border-b border-border">
               <span className="font-display text-lg text-ink">Daythread</span>
               <button
                 aria-label="Close navigation"
                 onClick={() => setMobileOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-md text-ink/50 hover:bg-black/[0.05]"
+                className="w-8 h-8 flex items-center justify-center rounded-md text-ink/70 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
               >
-                <X className="w-4.5 h-4.5" strokeWidth={2} />
+                <X className="w-[18px] h-[18px]" strokeWidth={2} />
               </button>
             </div>
             <NavLinks pathname={pathname} role={role} onNavigate={() => setMobileOpen(false)} />

@@ -15,7 +15,7 @@ export function PortalMessages({ conversationId, messages }: { conversationId: s
   const router = useRouter();
 
   if (!conversationId) {
-    return <EmptyState title="No messages yet" description="When your photographer starts a conversation, it'll show up here." />;
+    return <EmptyState title="No messages yet" description="When they start a conversation, it'll show up here." />;
   }
 
   function send() {

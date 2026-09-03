@@ -34,7 +34,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
         <Card className="w-full max-w-sm">
           <CardBody className="p-8 text-center">
             <h1 className="font-display text-xl mb-2">Invitation unavailable</h1>
-            <p className="text-sm text-ink/55">{message[invitation.status]}</p>
+            <p className="text-sm text-ink/75">{message[invitation.status]}</p>
           </CardBody>
         </Card>
       </main>
@@ -51,10 +51,10 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             <div className="w-14 h-14 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-lg font-semibold mb-3">
               {initials(invitation.businessName)}
             </div>
-            <p className="text-xs text-ink/45 mb-1">Invited by</p>
+            <p className="text-xs text-ink/65 mb-1">Invited by</p>
             <h1 className="font-display text-lg mb-3">{invitation.businessName}</h1>
             <p className="text-sm font-medium text-ink">{copy.title}</p>
-            <p className="text-sm text-ink/55 mt-1">{copy.body}</p>
+            <p className="text-sm text-ink/75 mt-1">{copy.body}</p>
           </div>
 
           <AcceptInviteForm token={token} email={invitation.email} existingAccount={invitation.existingAccount} />

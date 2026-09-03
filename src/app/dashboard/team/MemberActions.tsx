@@ -26,7 +26,7 @@ export function MemberActions({ membershipId, role, status }: { membershipId: st
     <button
       onClick={toggle}
       disabled={pending}
-      className="text-xs font-medium text-ink/40 hover:text-danger shrink-0 disabled:opacity-50"
+      className="text-xs font-medium text-ink/60 hover:text-danger shrink-0 disabled:opacity-50"
     >
       {status === "SUSPENDED" ? "Reactivate" : "Deactivate"}
     </button>

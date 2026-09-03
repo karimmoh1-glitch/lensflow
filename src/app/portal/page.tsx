@@ -59,7 +59,7 @@ export default async function PortalHomePage() {
                       {p.purpose === "DEPOSIT" ? "Deposit" : "Balance"} — {formatMoney(p.amountCents)}
                     </div>
                     {p.method !== "CARD" ? (
-                      <div className="text-xs text-ink/50 mt-1">
+                      <div className="text-xs text-ink/70 mt-1">
                         {p.method === "ZELLE" ? (
                           <>
                             Send via Zelle to <span className="font-medium">{business.zelleHandle}</span>, reference{" "}
@@ -72,7 +72,7 @@ export default async function PortalHomePage() {
                         )}
                       </div>
                     ) : (
-                      <div className="text-xs text-ink/45 mt-0.5">Card / Apple Pay</div>
+                      <div className="text-xs text-ink/65 mt-0.5">Card / Apple Pay</div>
                     )}
                   </div>
                   {p.method === "CARD" && <PayButton paymentId={p.id} />}
@@ -94,7 +94,7 @@ export default async function PortalHomePage() {
                 <div key={b.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
                   <div>
                     <div className="text-sm font-medium">{b.service.name}</div>
-                    <div className="text-xs text-ink/45">{format(toZonedDisplayDate(b.startAt, business.timezone), "EEEE, MMMM d 'at' h:mm a")}</div>
+                    <div className="text-xs text-ink/65">{format(toZonedDisplayDate(b.startAt, business.timezone), "EEEE, MMMM d 'at' h:mm a")}</div>
                   </div>
                   <Badge tone={STATUS_TONE[b.status] ?? "neutral"}>{b.status.replaceAll("_", " ").toLowerCase()}</Badge>
                 </div>
@@ -114,7 +114,7 @@ export default async function PortalHomePage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-medium">{b.service.name}</div>
-                      <div className="text-xs text-ink/45">{format(toZonedDisplayDate(b.startAt, business.timezone), "MMM d, yyyy")}</div>
+                      <div className="text-xs text-ink/65">{format(toZonedDisplayDate(b.startAt, business.timezone), "MMM d, yyyy")}</div>
                     </div>
                     <Badge tone={STATUS_TONE[b.status] ?? "neutral"}>{b.status.replaceAll("_", " ").toLowerCase()}</Badge>
                   </div>

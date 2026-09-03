@@ -24,7 +24,7 @@ export function JoinRequestRow({ id, name, email }: { id: string; name: string; 
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{name}</div>
-        <div className="text-xs text-ink/45 truncate">{email} · requested to join</div>
+        <div className="text-xs text-ink/65 truncate">{email} · requested to join</div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Button size="sm" variant="outline" disabled={pending} onClick={() => respond(false)}>

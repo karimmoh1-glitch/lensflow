@@ -26,7 +26,7 @@ export function GmailConnectedControls() {
 
   return (
     <div className="flex items-center gap-2 shrink-0">
-      {syncMessage && <span className="text-xs text-ink/45">{syncMessage}</span>}
+      {syncMessage && <span className="text-xs text-ink/65">{syncMessage}</span>}
       <Button
         size="sm"
         variant="outline"

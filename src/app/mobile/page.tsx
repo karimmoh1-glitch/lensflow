@@ -21,7 +21,7 @@ export default function MobilePage() {
         </div>
 
         <h1 className="font-display text-3xl leading-[1.15] text-ink mb-3">Daythread is on your phone.</h1>
-        <p className="text-[15px] text-ink/55 leading-[22px] mb-10">
+        <p className="text-[15px] text-ink/75 leading-[22px] mb-10">
           Leads, bookings, payments, and delivery — run your whole business from wherever you&apos;re working. No app to
           download, nothing to install.
         </p>
@@ -35,11 +35,11 @@ export default function MobilePage() {
           </LinkButton>
         </div>
 
-        <p className="text-xs text-ink/40 mt-6">Works instantly in Safari or Chrome — no install required.</p>
+        <p className="text-xs text-ink/60 mt-6">Works instantly in Safari or Chrome — no install required.</p>
       </div>
 
       <footer className="px-6 py-6 text-center">
-        <Link href="/" className="text-xs text-ink/35 hover:text-ink/55">
+        <Link href="/" className="text-xs text-ink/35 hover:text-ink/75">
           daythread.app
         </Link>
       </footer>

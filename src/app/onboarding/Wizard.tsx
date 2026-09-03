@@ -128,7 +128,7 @@ export function Wizard({ businessName }: { businessName: string }) {
                 <div>
                   <Label htmlFor="handle">Your booking page URL</Label>
                   <div className="flex items-center rounded-lg border border-border overflow-hidden">
-                    <span className="bg-black/5 px-3 py-2 text-sm text-ink/50">daythread.app/book/</span>
+                    <span className="bg-black/5 px-3 py-2 text-sm text-ink/70">daythread.app/book/</span>
                     <input
                       id="handle"
                       value={handle}
@@ -143,7 +143,7 @@ export function Wizard({ businessName }: { businessName: string }) {
             {step === 1 && (
               <div className="space-y-4">
                 <h1 className="font-display text-2xl">What do you offer?</h1>
-                <p className="text-sm text-ink/50">Pick everything that applies — you can change this later.</p>
+                <p className="text-sm text-ink/70">Pick everything that applies — you can change this later.</p>
                 <div className="flex flex-wrap gap-2">
                   {SPECIALTIES.map((s) => (
                     <button
@@ -165,7 +165,7 @@ export function Wizard({ businessName }: { businessName: string }) {
             {step === 2 && (
               <div className="space-y-4">
                 <h1 className="font-display text-2xl">Your services</h1>
-                <p className="text-sm text-ink/50">Set your pricing — this powers AI replies, invoices, and your booking page.</p>
+                <p className="text-sm text-ink/70">Set your pricing — this powers AI replies, invoices, and your booking page.</p>
                 <div className="space-y-3 max-h-80 overflow-y-auto scrollbar-thin pr-1">
                   {services.map((svc, i) => (
                     <div key={i} className="flex gap-2 items-end">
@@ -299,7 +299,7 @@ export function Wizard({ businessName }: { businessName: string }) {
             {step === 5 && (
               <div className="space-y-3">
                 <h1 className="font-display text-2xl">Connect your channels</h1>
-                <p className="text-sm text-ink/50">
+                <p className="text-sm text-ink/70">
                   Real OAuth setup happens later in Settings → Connections, where each channel explains exactly what it needs. Turn these
                   on now to see the inbox work end-to-end with simulated messages in the meantime — nothing here claims a real connection.
                 </p>
@@ -314,7 +314,7 @@ export function Wizard({ businessName }: { businessName: string }) {
                   >
                     <div>
                       <div className="font-medium text-sm">{c.label}</div>
-                      <div className="text-xs text-ink/45">{c.blurb}</div>
+                      <div className="text-xs text-ink/65">{c.blurb}</div>
                     </div>
                     <Badge tone={connectedChannels.includes(c.key) ? "warning" : "neutral"}>
                       {connectedChannels.includes(c.key) ? "Demo mode" : "Enable demo"}
@@ -327,7 +327,7 @@ export function Wizard({ businessName }: { businessName: string }) {
             {step === 6 && (
               <div className="space-y-3">
                 <h1 className="font-display text-2xl">Connect your calendar</h1>
-                <p className="text-sm text-ink/50">
+                <p className="text-sm text-ink/70">
                   Keep bookings in sync with your existing calendar. Real Google/Apple Calendar sync isn&apos;t built yet — enabling this just
                   reserves the setting so it&apos;s ready when it is.
                 </p>

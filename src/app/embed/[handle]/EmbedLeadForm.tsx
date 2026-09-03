@@ -33,7 +33,7 @@ export function EmbedLeadForm({ handle, services }: { handle: string; services: 
       <div className="flex flex-col items-center text-center py-10">
         <CheckCircle2 className="w-8 h-8 text-success mb-3" strokeWidth={1.75} />
         <p className="text-sm font-medium text-ink">Thanks — your message is on its way.</p>
-        <p className="text-xs text-ink/50 mt-1">We&apos;ll be in touch soon.</p>
+        <p className="text-xs text-ink/70 mt-1">We&apos;ll be in touch soon.</p>
       </div>
     );
   }

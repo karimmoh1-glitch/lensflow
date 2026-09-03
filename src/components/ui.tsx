@@ -124,7 +124,7 @@ export function IconButton({ className, "aria-label": ariaLabel, ...props }: But
     <button
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/45 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+        "inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/65 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
         className
       )}
       {...props}
@@ -153,7 +153,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
 });
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn("block text-xs font-medium text-ink/55 mb-1.5", className)} {...props} />;
+  return <label className={cn("block text-xs font-medium text-ink/75 mb-1.5", className)} {...props} />;
 }
 
 // ── Status ──────────────────────────────────────────────────────────────────
@@ -215,7 +215,7 @@ export function PageHeader({
     <div className="flex items-start justify-between gap-4 mb-7">
       <div>
         <h1 className="font-sans font-black text-page-title text-ink tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-ink/50">{description}</p>}
+        {description && <p className="mt-1 text-sm text-ink/70">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
@@ -226,7 +226,7 @@ export function EmptyState({ title, description, action }: { title: string; desc
   return (
     <div className="flex flex-col items-center justify-center text-center py-14 px-6 border border-dashed border-border rounded-xl">
       <p className="text-sm font-medium text-ink">{title}</p>
-      {description && <p className="mt-1 text-sm text-ink/45 max-w-sm">{description}</p>}
+      {description && <p className="mt-1 text-sm text-ink/65 max-w-sm">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

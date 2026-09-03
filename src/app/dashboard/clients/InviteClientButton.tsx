@@ -76,7 +76,7 @@ export function InviteClientButton() {
                   </form>
                 ) : (
                   <div>
-                    <p className="text-sm text-ink/55 mb-3">
+                    <p className="text-sm text-ink/75 mb-3">
                       They&apos;ll be able to see their bookings, payments, and files once they accept.
                     </p>
                     <div className="flex items-center gap-2">

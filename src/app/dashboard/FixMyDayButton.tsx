@@ -61,7 +61,7 @@ export function FixMyDayButton() {
 
                 {!pending && items && items.length > 0 && (
                   <>
-                    <p className="text-sm text-ink/55 mb-4">
+                    <p className="text-sm text-ink/75 mb-4">
                       {items.length} thing{items.length > 1 ? "s" : ""} need{items.length === 1 ? "s" : ""} attention:
                     </p>
                     <ol className="space-y-2">

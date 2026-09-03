@@ -50,7 +50,7 @@ export default async function AutomationsPage() {
                   <span className="text-sm font-medium">{a.name}</span>
                   {!a.enabled && <Badge tone="neutral">Off</Badge>}
                 </div>
-                <p className="text-xs text-ink/50">
+                <p className="text-xs text-ink/70">
                   {TRIGGER_LABEL[a.trigger]}
                   {a.offsetHours > 0 && ` (${a.offsetHours}h offset)`}, then {ACTION_LABEL[a.action]}
                 </p>
@@ -70,7 +70,7 @@ export default async function AutomationsPage() {
               {recentRuns.map((r) => (
                 <div key={r.id} className="flex items-center justify-between px-4 py-3 text-sm">
                   <span>{r.automation.name}</span>
-                  <span className="text-xs text-ink/40">{r.result}</span>
+                  <span className="text-xs text-ink/60">{r.result}</span>
                 </div>
               ))}
             </div>

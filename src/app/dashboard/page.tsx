@@ -26,7 +26,7 @@ export default async function TodayPage() {
           <h1 className="font-display text-page-title text-ink">
             {greeting}, {firstName}.
           </h1>
-          <p className="text-sm text-ink/50 mt-1">{format(new Date(), "EEEE, MMMM d")}</p>
+          <p className="text-sm text-ink/70 mt-1">{format(new Date(), "EEEE, MMMM d")}</p>
         </div>
         <FixMyDayButton />
       </div>
@@ -70,7 +70,7 @@ export default async function TodayPage() {
                   <Link key={lead.id} href="/dashboard/inbox" className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-black/[0.02]">
                     <div className="min-w-0">
                       <div className="text-sm font-medium truncate">{lead.extractedName || "Unknown"}</div>
-                      <div className="text-xs text-ink/45">
+                      <div className="text-xs text-ink/65">
                         {lead.requestedDateText && `${lead.requestedDateText} · `}
                         {formatMoney(lead.estimatedValueCents)}
                       </div>
@@ -93,11 +93,11 @@ export default async function TodayPage() {
 function Stat({ label, value, tone, muted }: { label: string; value: string; tone?: "warning" | "accent"; muted?: boolean }) {
   return (
     <div className="shrink-0">
-      <div className="text-xs text-ink/45 mb-0.5">{label}</div>
+      <div className="text-xs text-ink/65 mb-0.5">{label}</div>
       <div
         className={cn(
           "font-display text-xl",
-          muted ? "text-ink/50" : tone === "warning" ? "text-warning-text" : tone === "accent" ? "text-accent-text" : "text-ink"
+          muted ? "text-ink/70" : tone === "warning" ? "text-warning-text" : tone === "accent" ? "text-accent-text" : "text-ink"
         )}
       >
         {value}
@@ -131,7 +131,7 @@ function BookingList({
                 <div className="text-sm font-medium truncate">
                   {format(toZonedDisplayDate(b.startAt, timezone), timeFormat)} — {b.service.name}
                 </div>
-                <div className="text-xs text-ink/45">{b.client.name}</div>
+                <div className="text-xs text-ink/65">{b.client.name}</div>
               </div>
               <StatusBadge status={b.status} />
             </div>

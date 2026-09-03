@@ -1,7 +1,22 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { BookingFlow } from "./BookingFlow";
 import { initials } from "@/lib/utils";
+
+/** Every business's booking page is their actual public storefront — search results and
+ * shared links should show their name and bio, not generic Daythread site-wide branding. */
+export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
+  const { handle } = await params;
+  const business = await prisma.business.findUnique({ where: { handle }, select: { name: true, bio: true } });
+  if (!business) return {};
+  const description = business.bio ?? `Book with ${business.name} on Daythread.`;
+  return {
+    title: `${business.name} — Book now`,
+    description,
+    openGraph: { title: `${business.name} — Book now`, description },
+  };
+}
 
 export default async function PublicBookingPage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
@@ -20,7 +35,7 @@ export default async function PublicBookingPage({ params }: { params: Promise<{ 
           </div>
           <div>
             <h1 className="font-display text-2xl">{business.name}</h1>
-            {business.specialties.length > 0 && <p className="text-xs text-ink/45">{business.specialties.join(" · ")}</p>}
+            {business.specialties.length > 0 && <p className="text-xs text-ink/65">{business.specialties.join(" · ")}</p>}
           </div>
         </div>
         {business.bio && <p className="text-sm text-ink/60 mb-8 max-w-lg">{business.bio}</p>}

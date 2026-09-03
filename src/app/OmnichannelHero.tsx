@@ -135,7 +135,7 @@ export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number })
             >
               <c.icon className="w-[18px] h-[18px]" strokeWidth={1.9} />
             </div>
-            <span className="text-[11px] text-ink/45 font-medium">{c.label}</span>
+            <span className="text-[11px] text-ink/65 font-medium">{c.label}</span>
           </div>
         ))}
 
@@ -205,7 +205,7 @@ function SummaryCard({ compact }: { compact?: boolean }) {
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
         <span className="w-1.5 h-1.5 rounded-full bg-signal shrink-0" />
         <span className="font-display text-sm text-ink">Daythread</span>
-        <span className="ml-auto text-[10px] font-medium text-ink/40">3 new</span>
+        <span className="ml-auto text-[10px] font-medium text-ink/60">3 new</span>
       </div>
       <div className="divide-y divide-border">
         {INBOX_PREVIEW.map((row) => (
@@ -215,7 +215,7 @@ function SummaryCard({ compact }: { compact?: boolean }) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-medium text-ink truncate">{row.name}</div>
-              <div className="text-[11px] text-ink/45 truncate">{row.msg}</div>
+              <div className="text-[11px] text-ink/65 truncate">{row.msg}</div>
             </div>
           </div>
         ))}

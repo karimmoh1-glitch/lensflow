@@ -28,18 +28,21 @@ export function Navbar() {
         <Link href="/" aria-label="Daythread home">
           <Logo />
         </Link>
-        <div className="flex items-center gap-7">
-          <Link href="#pricing" className="hidden sm:block text-[13px] font-medium text-ink/75 hover:text-ink transition-colors">
+        <div className="flex items-center gap-6">
+          <Link href="#how" className="hidden sm:block text-[13px] font-semibold text-ink/70 hover:text-ink transition-colors">
+            How it works
+          </Link>
+          <Link href="#pricing" className="hidden sm:block text-[13px] font-semibold text-ink/70 hover:text-ink transition-colors">
             Pricing
           </Link>
-          <Link href="/login" className="text-[13px] font-medium text-ink/75 hover:text-ink transition-colors">
+          <Link href="/login" className="text-[13px] font-semibold text-ink/70 hover:text-ink transition-colors">
             Log in
           </Link>
           <Link
             href="/signup"
-            className="text-[13px] font-bold text-paper bg-ink hover:bg-black rounded-full px-4 py-2 transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
+            className="text-[13px] font-extrabold text-paper bg-ink hover:bg-black rounded-full px-4 py-2 transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
           >
-            Start Free
+            Start free
           </Link>
         </div>
       </nav>

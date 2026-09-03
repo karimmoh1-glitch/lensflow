@@ -33,10 +33,8 @@ export default function LandingPage() {
         <IntegrationShowcase />
       </section>
 
-      {/* Modularity — the workspace assembles itself as you scroll */}
-      <section className="py-20 md:py-28">
-        <WorkspaceAssembly />
-      </section>
+      {/* Modularity — pinned scroll-scrubbed moment: scattered modules dock into the workspace */}
+      <WorkspaceAssembly />
 
       {/* Interactive product showcase */}
       <section className="py-20 md:py-28 bg-white border-y border-border">

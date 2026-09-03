@@ -1,6 +1,7 @@
 import { LinkButton } from "@/components/ui";
 import { LogoMark } from "@/components/Logo";
 import { Navbar } from "./Navbar";
+import { HeroIntro } from "./HeroIntro";
 import { HeroVisual } from "./HeroVisual";
 import { IntegrationShowcase } from "./IntegrationShowcase";
 import { WorkspaceAssembly } from "./WorkspaceAssembly";
@@ -21,28 +22,7 @@ export default function LandingPage() {
           style={{ background: "radial-gradient(ellipse, #F0524D 0%, transparent 72%)" }}
           aria-hidden
         />
-        <div className="relative text-center max-w-2xl mx-auto shrink-0">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 mb-6 text-xs font-semibold text-ink/70 shadow-xs">
-            <span className="w-4 h-4 rounded-full shrink-0" style={{ background: "linear-gradient(135deg, #6D5AE6 0%, #3B82F6 100%)" }} />
-            The business OS for people who run their own thing
-          </div>
-          <h1 className="font-sans font-black text-[clamp(2.75rem,7vw,5rem)] leading-[0.98] tracking-tight text-ink">
-            One thread for
-            <br />
-            your whole business.
-          </h1>
-          <p className="mt-6 text-base md:text-lg text-ink/55 max-w-md mx-auto leading-relaxed">
-            Every message, booking, and payment — organized automatically, the moment it happens.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <LinkButton href="/signup" size="lg" className="rounded-full font-bold">
-              Start Free
-            </LinkButton>
-            <LinkButton href="/demo" size="lg" variant="outline" className="rounded-full font-bold">
-              See live demo
-            </LinkButton>
-          </div>
-        </div>
+        <HeroIntro />
         <div className="relative w-full h-[300px] md:h-[340px] mt-14 md:mt-20">
           <HeroVisual />
         </div>
@@ -98,7 +78,12 @@ export default function LandingPage() {
           <LogoMark className="w-8 h-8 mx-auto mb-8 text-paper" />
           <p className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight mb-4">Your business, in one thread.</p>
           <p className="text-paper/50 text-sm md:text-base mb-9">Free to start. No credit card required.</p>
-          <LinkButton href="/signup" size="lg" variant="secondary" className="rounded-full font-bold">
+          <LinkButton
+            href="/signup"
+            size="lg"
+            variant="secondary"
+            className="rounded-full font-bold transition-transform duration-150 hover:scale-[1.05] hover:-translate-y-0.5 active:scale-[0.96] active:translate-y-0"
+          >
             Start Free
           </LinkButton>
         </div>

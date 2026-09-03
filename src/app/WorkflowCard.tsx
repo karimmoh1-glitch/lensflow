@@ -11,7 +11,7 @@ export function WorkflowCard({ step }: { step: number }) {
       <div className="px-4 py-3 border-b border-border">
         <span className="font-display text-sm text-ink">Daythread</span>
       </div>
-      <div className="p-4 min-h-[168px] flex flex-col justify-center">
+      <div key={step} className="p-4 min-h-[168px] flex flex-col justify-center animate-[fadeUp_0.35s_ease-out]">
         {step === 0 && (
           <div>
             <div className="flex items-center justify-between mb-2.5">

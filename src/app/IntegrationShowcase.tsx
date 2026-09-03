@@ -96,6 +96,7 @@ export function IntegrationShowcase() {
   const [visible, setVisible] = useState(false);
   const [hovered, setHovered] = useState<ChannelKey | null>(null);
   const [arrived, setArrived] = useState<Set<ChannelKey>>(new Set());
+  const [justArrived, setJustArrived] = useState<ChannelKey | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -114,7 +115,11 @@ export function IntegrationShowcase() {
         if (entry.isIntersecting) {
           setVisible(true);
           CHANNELS.forEach((c, i) => {
-            setTimeout(() => setArrived((prev) => new Set(prev).add(c.key)), 900 + i * 550);
+            setTimeout(() => {
+              setArrived((prev) => new Set(prev).add(c.key));
+              setJustArrived(c.key);
+              setTimeout(() => setJustArrived((cur) => (cur === c.key ? null : cur)), 900);
+            }, 900 + i * 550);
           });
           observer.disconnect();
         }
@@ -163,7 +168,7 @@ export function IntegrationShowcase() {
                   )}
                   style={{ transitionDelay: visible ? `${CHANNELS.indexOf(c) * 120}ms` : "0ms" }}
                 >
-                  <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm relative overflow-hidden", c.badgeClass)}>
+                  <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm relative overflow-hidden", c.badgeClass)}>
                     <div className="absolute inset-0 bg-gradient-to-b from-white/25 to-transparent" />
                     <Glyph className="w-5 h-5 relative" />
                   </div>
@@ -221,9 +226,17 @@ export function IntegrationShowcase() {
           <div className={cn("order-1 md:order-3 transition-all duration-500", visible ? "opacity-100 scale-100" : "opacity-0 scale-[0.97]")}>
             <div className="rounded-2xl border border-border bg-white shadow-popover overflow-hidden">
               <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
-                <span className="w-2 h-2 rounded-full bg-signal shrink-0" />
+                <span className={cn("w-2 h-2 rounded-full bg-signal shrink-0", !reducedMotion && justArrived && "animate-ping")} />
                 <span className="font-display text-sm text-ink">Daythread</span>
-                <span className="ml-auto text-[11px] text-ink/40">{arrived.size} conversation{arrived.size === 1 ? "" : "s"}</span>
+                <span
+                  key={arrived.size}
+                  className={cn(
+                    "ml-auto text-[11px] text-ink/40 rounded px-1",
+                    !reducedMotion && justArrived && "animate-[fadeUp_0.3s_ease-out]"
+                  )}
+                >
+                  {arrived.size} conversation{arrived.size === 1 ? "" : "s"}
+                </span>
               </div>
               <div className="divide-y divide-border min-h-[188px]">
                 {CHANNELS.map((c) => {
@@ -234,11 +247,12 @@ export function IntegrationShowcase() {
                       key={c.key}
                       className={cn(
                         "flex items-center gap-3 px-5 py-3.5 transition-all duration-500",
-                        hasArrived ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none absolute"
+                        hasArrived ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none absolute",
+                        !reducedMotion && justArrived === c.key && "animate-[pulseHighlight_0.9s_ease-out]"
                       )}
                     >
-                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", c.badgeClass)}>
-                        <Glyph className="w-3.5 h-3.5" />
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center shrink-0", c.badgeClass)}>
+                        <Glyph className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-ink truncate">{c.resultLabel}</div>

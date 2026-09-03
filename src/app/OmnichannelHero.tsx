@@ -42,7 +42,7 @@ function connectorPath(x: number, y: number): string {
   return `M ${x} ${y + 22} Q ${x} ${midY} ${cx} ${cy}`;
 }
 
-export function OmnichannelHero() {
+export function OmnichannelHero({ startDelayMs = 0 }: { startDelayMs?: number }) {
   const [mounted, setMounted] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -53,9 +53,11 @@ export function OmnichannelHero() {
       setMounted(true);
       return;
     }
-    const t = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(t);
-  }, []);
+    // Delayed so this whole diagram's internal stagger kicks off once the hero's text has
+    // already landed, instead of racing it — "the headline lands, then the product appears."
+    const t = setTimeout(() => setMounted(true), startDelayMs);
+    return () => clearTimeout(t);
+  }, [startDelayMs]);
 
   return (
     <div className="relative w-full h-full">
@@ -111,10 +113,25 @@ export function OmnichannelHero() {
         {CHANNELS.map((c, i) => (
           <div
             key={c.key}
-            className={cn("absolute flex flex-col items-center gap-1.5 transition-all duration-500 ease-out", mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2")}
-            style={{ left: `${(c.x / 400) * 100}%`, top: `${(c.y / 300) * 100}%`, transform: "translate(-50%, -50%)", transitionDelay: `${i * 70}ms` }}
+            className={cn(
+              "absolute flex flex-col items-center gap-1.5 transition-all duration-500 ease-out group",
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
+              !reducedMotion && mounted && "animate-[chipFloat_5s_ease-in-out_infinite]"
+            )}
+            style={{
+              left: `${(c.x / 400) * 100}%`,
+              top: `${(c.y / 300) * 100}%`,
+              transform: "translate(-50%, -50%)",
+              transitionDelay: `${i * 70}ms`,
+              animationDelay: `${i * 260}ms`,
+            }}
           >
-            <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-[0_6px_16px_-4px_rgba(16,17,20,0.25)]", c.bg)}>
+            <div
+              className={cn(
+                "w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-[0_6px_16px_-4px_rgba(16,17,20,0.25)] transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5",
+                c.bg
+              )}
+            >
               <c.icon className="w-[18px] h-[18px]" strokeWidth={1.9} />
             </div>
             <span className="text-[11px] text-ink/45 font-medium">{c.label}</span>
@@ -125,7 +142,9 @@ export function OmnichannelHero() {
           className="absolute left-1/2 transition-all duration-500 ease-out"
           style={{ left: "50%", top: `${(CARD_TOP[1] / 300) * 100 + 22}%`, transform: "translate(-50%, 0)", transitionDelay: "460ms", opacity: mounted ? 1 : 0 }}
         >
-          <SummaryCard />
+          <div className={cn(!reducedMotion && mounted && "animate-[cardFloat_6s_ease-in-out_infinite]")} style={{ animationDelay: "700ms" }}>
+            <SummaryCard />
+          </div>
         </div>
       </div>
 

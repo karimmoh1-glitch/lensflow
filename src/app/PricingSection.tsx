@@ -2,6 +2,7 @@ import { LinkButton } from "@/components/ui";
 import { PLANS, type PlanKey } from "@/lib/billing";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { RevealOnScroll } from "./RevealOnScroll";
 
 export function PricingSection() {
   const order: PlanKey[] = ["FREE", "PRO", "BUSINESS"];
@@ -14,14 +15,14 @@ export function PricingSection() {
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
-        {order.map((key) => {
+        {order.map((key, index) => {
           const plan = PLANS[key];
           const isPro = key === "PRO";
           return (
+            <RevealOnScroll key={key} delay={index * 100}>
             <div
-              key={key}
               className={cn(
-                "relative rounded-xl border p-6 bg-white flex flex-col",
+                "relative rounded-xl border p-6 bg-white flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-popover",
                 isPro ? "border-accent shadow-[0_4px_24px_-8px_rgba(240,82,77,0.28)]" : "border-border"
               )}
             >
@@ -44,10 +45,16 @@ export function PricingSection() {
                   </li>
                 ))}
               </ul>
-              <LinkButton href="/signup" size="sm" variant={isPro ? "primary" : "outline"} className="w-full mt-5 rounded-full font-bold">
+              <LinkButton
+                href="/signup"
+                size="sm"
+                variant={isPro ? "primary" : "outline"}
+                className="w-full mt-5 rounded-full font-bold transition-transform duration-150 hover:scale-[1.04] active:scale-[0.96]"
+              >
                 {key === "FREE" ? "Start Free" : `Start with ${plan.name}`}
               </LinkButton>
             </div>
+            </RevealOnScroll>
           );
         })}
       </div>

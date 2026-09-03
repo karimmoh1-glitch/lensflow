@@ -5,6 +5,7 @@ import { Sparkles, RotateCcw } from "lucide-react";
 import { Button, Textarea } from "@/components/ui";
 import { generateDraftAction, sendReplyAction } from "@/app/actions/inbox";
 import { useRouter } from "next/navigation";
+import { EntitlementNotice } from "@/components/UpgradePrompt";
 
 export function Composer({ conversationId }: { conversationId: string }) {
   const [body, setBody] = useState("");
@@ -19,11 +20,15 @@ export function Composer({ conversationId }: { conversationId: string }) {
     setError(null);
     startTransition(async () => {
       try {
-        const text = await generateDraftAction(conversationId);
-        setBody(text);
+        const res = await generateDraftAction(conversationId);
+        if (res.error) {
+          setError(res.error);
+          return;
+        }
+        setBody(res.text ?? "");
         setWasAiDrafted(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Couldn't generate a draft.");
+      } catch {
+        setError("Couldn't draft a reply just now. Your conversation is untouched — try again.");
       } finally {
         setDrafting(false);
       }
@@ -57,7 +62,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
         placeholder="Write a reply, or let AI draft one…"
         rows={3}
       />
-      {error && <p className="text-xs text-danger mt-1.5">{error}</p>}
+      {error && <div className="mt-2"><EntitlementNotice message={error} /></div>}
       <div className="flex items-center justify-between mt-2.5">
         <Button
           variant="outline"

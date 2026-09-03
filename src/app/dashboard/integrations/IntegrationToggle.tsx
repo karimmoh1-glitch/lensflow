@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import { toggleIntegration } from "@/app/actions/integrations";
 import type { IntegrationProvider } from "@prisma/client";
+import { EntitlementNotice } from "@/components/UpgradePrompt";
 
 export function IntegrationToggle({ provider, connected }: { provider: IntegrationProvider; connected: boolean }) {
   const [pending, startTransition] = useTransition();
@@ -21,17 +22,21 @@ export function IntegrationToggle({ provider, connected }: { provider: Integrati
           startTransition(async () => {
             setError(null);
             try {
-              await toggleIntegration(provider, !connected);
+              const res = await toggleIntegration(provider, !connected);
+              if (res?.error) {
+                setError(res.error);
+                return;
+              }
               router.refresh();
-            } catch (err) {
-              setError(err instanceof Error ? err.message : "Something went wrong.");
+            } catch {
+              setError("Couldn't update this connection. Nothing was changed — try again.");
             }
           })
         }
       >
         {connected ? "Disconnect" : "Connect"}
       </Button>
-      {error && <p className="text-xs text-danger-text max-w-[200px] text-right">{error}</p>}
+      {error && <EntitlementNotice message={error} />}
     </div>
   );
 }

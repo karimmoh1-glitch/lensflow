@@ -9,7 +9,9 @@ import { smsEntitled } from "@/lib/billing";
 import { track } from "@/lib/analytics";
 import type { ChannelType, IntegrationProvider } from "@prisma/client";
 
-export async function toggleIntegration(provider: IntegrationProvider, connect: boolean) {
+/** Returns `{ error }` for the plan-limit case rather than throwing — see toggleAutomation
+ * for why (a thrown action error is a 500 whose message production strips). */
+export async function toggleIntegration(provider: IntegrationProvider, connect: boolean): Promise<{ error?: string }> {
   const ctx = await requireRole(["OWNER", "ADMIN"]);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
@@ -18,7 +20,7 @@ export async function toggleIntegration(provider: IntegrationProvider, connect: 
   // toggle in the UI, so a Free-plan business can't unlock it by calling this action
   // directly. Disconnecting is always allowed regardless of plan.
   if (provider === "SMS" && connect && !smsEntitled(business)) {
-    throw new Error("SMS is available on the Pro plan and above. Upgrade from Billing to connect it.");
+    return { error: "SMS is available on the Pro plan and above. Upgrade from Billing to connect it." };
   }
 
   await prisma.integration.upsert({
@@ -28,6 +30,7 @@ export async function toggleIntegration(provider: IntegrationProvider, connect: 
   });
   if (connect) await track("integration_connected", { businessId: business.id, properties: { provider } });
   revalidatePath("/dashboard/settings");
+  return {};
 }
 
 /**

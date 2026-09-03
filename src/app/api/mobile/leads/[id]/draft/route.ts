@@ -18,8 +18,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!lead || !lead.conversationId) return jsonError("Not found", 404);
 
   try {
-    const draft = await generateDraftAction(lead.conversationId, session);
-    return NextResponse.json({ draft });
+    const res = await generateDraftAction(lead.conversationId, session);
+    // A plan limit is an expected outcome, not a failure — 402 lets the mobile client
+    // show an upgrade prompt instead of a generic error.
+    if (res.error) return jsonError(res.error, 402);
+    return NextResponse.json({ draft: res.text });
   } catch {
     return jsonError("Unable to generate a draft", 500);
   }

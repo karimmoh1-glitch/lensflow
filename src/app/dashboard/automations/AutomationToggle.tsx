@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toggleAutomation } from "@/app/actions/automations";
 import { cn } from "@/lib/utils";
+import { EntitlementNotice } from "@/components/UpgradePrompt";
 
 export function AutomationToggle({ id, enabled }: { id: string; enabled: boolean }) {
   const [pending, startTransition] = useTransition();
@@ -20,10 +21,14 @@ export function AutomationToggle({ id, enabled }: { id: string; enabled: boolean
           startTransition(async () => {
             setError(null);
             try {
-              await toggleAutomation(id, !enabled);
+              const res = await toggleAutomation(id, !enabled);
+              if (res?.error) {
+                setError(res.error);
+                return;
+              }
               router.refresh();
-            } catch (err) {
-              setError(err instanceof Error ? err.message : "Something went wrong.");
+            } catch {
+              setError("Couldn't update this automation. Your settings are unchanged — try again.");
             }
           })
         }
@@ -34,7 +39,7 @@ export function AutomationToggle({ id, enabled }: { id: string; enabled: boolean
       >
         <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform", enabled && "translate-x-5")} />
       </button>
-      {error && <p className="text-xs text-danger-text max-w-[180px] text-right">{error}</p>}
+      {error && <EntitlementNotice message={error} />}
     </div>
   );
 }

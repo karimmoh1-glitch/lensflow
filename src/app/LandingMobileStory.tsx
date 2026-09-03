@@ -38,9 +38,9 @@ export function LandingMobileStory() {
         ))}
       </StoryLayout>
       <div className="text-center mt-10">
-        <Link href="/mobile" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent-text hover:underline">
+        <Link href="/mobile" className="inline-flex items-center gap-1 text-xs font-medium text-ink/40 hover:text-ink/70 transition-colors">
           See the full mobile experience
-          <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+          <ArrowRight className="w-3 h-3" strokeWidth={2} />
         </Link>
       </div>
     </div>

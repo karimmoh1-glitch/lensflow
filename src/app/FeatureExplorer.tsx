@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Users, Calendar as CalendarIcon, Inbox as InboxIcon, CreditCard, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TabKey = "clients" | "bookings" | "inbox" | "calendar" | "payments";
+export type TabKey = "clients" | "bookings" | "inbox" | "calendar" | "payments";
 
 const TABS: { key: TabKey; label: string; icon: typeof Users; blurb: string }[] = [
   { key: "clients", label: "Clients", icon: Users, blurb: "Every client, their history, and what they're worth to your business — in one list." },
@@ -65,7 +65,7 @@ function Avatar({ initials, tone }: { initials: string; tone: string }) {
   );
 }
 
-function FeatureMockup({ tab }: { tab: TabKey }) {
+export function FeatureMockup({ tab }: { tab: TabKey }) {
   if (tab === "clients") {
     return (
       <MockCard>

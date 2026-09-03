@@ -45,7 +45,7 @@ export function HeroIntro() {
       <Beat delay={0}>
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 mb-6 text-xs font-semibold text-ink/70 shadow-xs">
           <span className="w-4 h-4 rounded-full shrink-0" style={{ background: "linear-gradient(135deg, #6D5AE6 0%, #3B82F6 100%)" }} />
-          The business OS for people who run their own thing
+          For photographers, stylists &amp; independent service pros
         </div>
       </Beat>
 
@@ -59,7 +59,7 @@ export function HeroIntro() {
 
       <Beat delay={560}>
         <p className="mt-6 text-base md:text-lg text-ink/55 max-w-md mx-auto leading-relaxed">
-          Every message, booking, and payment — organized automatically, the moment it happens.
+          Instagram, email, texts, bookings, and payments — unified into one workspace that organizes itself.
         </p>
       </Beat>
 

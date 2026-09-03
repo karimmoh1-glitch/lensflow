@@ -7,12 +7,22 @@ import { revalidatePath } from "next/cache";
 import { draftReply } from "@/lib/ai";
 import { sendOnChannel } from "@/lib/messaging";
 import { getValidAccessToken, sendGmailMessage } from "@/lib/google";
+import { aiEntitled } from "@/lib/billing";
 import type { SendResult } from "@/lib/channels/types";
 
+/** "AI-powered lead scoring & reply drafts" is the marketed Pro+ feature — scoped here to
+ * the reply-draft generator specifically, not the underlying lead extraction/scoring that
+ * runs for every inbound message regardless of plan. Free's own feature list promises a
+ * working "unified email + website inbox," so gating basic lead intake would break a
+ * capability Free is supposed to have; gating the AI-drafted-reply button doesn't. */
 export async function generateDraftAction(conversationId: string, session?: SessionPayload | null): Promise<string> {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
+
+  if (!aiEntitled(business)) {
+    throw new Error("AI-drafted replies are available on the Pro plan and above. Upgrade from Billing to use this.");
+  }
 
   const conversation = await prisma.conversation.findFirst({
     where: { id: conversationId, businessId: business.id },

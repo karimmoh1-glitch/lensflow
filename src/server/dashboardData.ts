@@ -7,7 +7,7 @@ export async function getTodayBrief(businessId: string) {
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
 
-  const [todaysBookings, unconfirmed, activeLeads, allBookings, payments, upcoming] = await Promise.all([
+  const [todaysBookings, unconfirmed, activeLeads, bookedAgg, collectedAgg, upcoming, paymentsDueToday] = await Promise.all([
     prisma.booking.findMany({
       where: { businessId, startAt: { gte: todayStart, lte: todayEnd }, status: { notIn: ["CANCELED"] } },
       include: { client: true, service: true },
@@ -20,13 +20,16 @@ export async function getTodayBrief(businessId: string) {
       where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } },
       include: { service: true },
     }),
-    prisma.booking.findMany({
+    // Sums done at the database, not by pulling every historical row into JS to .reduce()
+    // — this page loads on every dashboard visit, so it should stay O(1) regardless of how
+    // many bookings/payments a business has accumulated.
+    prisma.booking.aggregate({
       where: { businessId, status: { notIn: ["CANCELED", "INQUIRY"] } },
-      select: { totalCents: true },
+      _sum: { totalCents: true },
     }),
-    prisma.payment.findMany({
-      where: { businessId },
-      select: { amountCents: true, status: true, purpose: true },
+    prisma.payment.aggregate({
+      where: { businessId, status: "PAID" },
+      _sum: { amountCents: true },
     }),
     prisma.booking.findMany({
       where: { businessId, startAt: { gt: now }, status: { notIn: ["CANCELED"] } },
@@ -34,19 +37,18 @@ export async function getTodayBrief(businessId: string) {
       orderBy: { startAt: "asc" },
       take: 5,
     }),
+    prisma.booking.count({
+      where: {
+        businessId,
+        status: { in: ["CONFIRMED", "UPCOMING", "COMPLETED"] },
+        startAt: { lte: addDays(now, 2) },
+      },
+    }),
   ]);
 
-  const bookedCents = allBookings.reduce((sum, b) => sum + b.totalCents, 0);
-  const collectedCents = payments.filter((p) => p.status === "PAID").reduce((sum, p) => sum + p.amountCents, 0);
+  const bookedCents = bookedAgg._sum.totalCents ?? 0;
+  const collectedCents = collectedAgg._sum.amountCents ?? 0;
   const outstandingCents = Math.max(0, bookedCents - collectedCents);
-
-  const paymentsDueToday = await prisma.booking.count({
-    where: {
-      businessId,
-      status: { in: ["CONFIRMED", "UPCOMING", "COMPLETED"] },
-      startAt: { lte: addDays(now, 2) },
-    },
-  });
 
   const scoredLeads = activeLeads
     .map((lead) => {

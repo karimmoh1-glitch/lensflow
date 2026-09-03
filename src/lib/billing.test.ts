@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { effectivePlan, planLimits, canAddTeamSeat, smsEntitled, PLANS } from "./billing";
+import { effectivePlan, planLimits, canAddTeamSeat, smsEntitled, automationsEntitled, aiEntitled, PLANS } from "./billing";
 
 // A business is never trusted by planTier alone — billingStatus (mirrored from Stripe via
 // the webhook) gates whether that tier is actually entitled right now. These tests exist
@@ -66,6 +66,39 @@ describe("smsEntitled", () => {
   it("Pro gets SMS only while actually entitled", () => {
     expect(smsEntitled({ planTier: "PRO", billingStatus: "ACTIVE" })).toBe(true);
     expect(smsEntitled({ planTier: "PRO", billingStatus: "UNPAID" })).toBe(false);
+  });
+});
+
+// These two guard the entitlement checks actually wired into toggleAutomation
+// (src/app/actions/automations.ts) and generateDraftAction (src/app/actions/inbox.ts) —
+// a regression here silently turns a paid feature free for every business on Free.
+describe("automationsEntitled", () => {
+  it("Free never gets automations", () => {
+    expect(automationsEntitled({ planTier: "FREE", billingStatus: null })).toBe(false);
+  });
+
+  it("Pro and Business get automations while actually entitled", () => {
+    expect(automationsEntitled({ planTier: "PRO", billingStatus: "ACTIVE" })).toBe(true);
+    expect(automationsEntitled({ planTier: "BUSINESS", billingStatus: "TRIALING" })).toBe(true);
+  });
+
+  it("a lapsed Pro subscription loses automations entitlement", () => {
+    expect(automationsEntitled({ planTier: "PRO", billingStatus: "CANCELED" })).toBe(false);
+  });
+});
+
+describe("aiEntitled", () => {
+  it("Free never gets AI-drafted replies", () => {
+    expect(aiEntitled({ planTier: "FREE", billingStatus: null })).toBe(false);
+  });
+
+  it("Pro and Business get AI while actually entitled", () => {
+    expect(aiEntitled({ planTier: "PRO", billingStatus: "ACTIVE" })).toBe(true);
+    expect(aiEntitled({ planTier: "BUSINESS", billingStatus: "ACTIVE" })).toBe(true);
+  });
+
+  it("a lapsed subscription loses AI entitlement", () => {
+    expect(aiEntitled({ planTier: "PRO", billingStatus: "UNPAID" })).toBe(false);
   });
 });
 

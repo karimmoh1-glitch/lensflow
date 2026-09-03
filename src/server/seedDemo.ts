@@ -1,7 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { addDays, addHours, subDays, subHours } from "date-fns";
 import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
+import type { Db } from "@/lib/db";
 
 const PASSWORD = "demo1234";
 
@@ -11,7 +11,7 @@ const PASSWORD = "demo1234";
  * (for seeding a deployed environment where a direct DB connection isn't available to run
  * the script locally). Same data either way — one seed story, two entry points.
  */
-export async function seedDemoWorkspace(prisma: PrismaClient) {
+export async function seedDemoWorkspace(prisma: Db) {
   await prisma.business.deleteMany({ where: { handle: { in: ["alex-photo", "wedding-collective"] } } });
   await prisma.user.deleteMany({
     where: {

@@ -16,11 +16,14 @@ export function Composer({ conversationId }: { conversationId: string }) {
 
   function draft() {
     setDrafting(true);
+    setError(null);
     startTransition(async () => {
       try {
         const text = await generateDraftAction(conversationId);
         setBody(text);
         setWasAiDrafted(true);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't generate a draft.");
       } finally {
         setDrafting(false);
       }
@@ -54,9 +57,15 @@ export function Composer({ conversationId }: { conversationId: string }) {
         placeholder="Write a reply, or let AI draft one…"
         rows={3}
       />
-      {error && <p className="text-xs text-danger mt-1.5">Couldn&apos;t send: {error}. Your draft is still here — try again.</p>}
+      {error && <p className="text-xs text-danger mt-1.5">{error}</p>}
       <div className="flex items-center justify-between mt-2.5">
-        <Button variant="outline" size="sm" onClick={draft} disabled={drafting || pending}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={draft}
+          disabled={drafting || pending}
+          className="border-signal/30 text-signal-text hover:bg-signal-soft hover:border-signal/50"
+        >
           {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} /> : <Sparkles className="w-3.5 h-3.5" strokeWidth={2} />}
           {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}
         </Button>

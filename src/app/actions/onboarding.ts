@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import { track } from "@/lib/analytics";
 import type { IntegrationProvider } from "@prisma/client";
 
 export type OnboardingPayload = {
@@ -115,11 +116,16 @@ export async function completeOnboarding(payload: OnboardingPayload) {
             trigger: "SHOOT_COMPLETED",
             offsetHours: 24,
             action: "SEND_THANK_YOU",
-            messageTemplate: "It was a pleasure photographing you! Your gallery will be ready soon — thank you for booking with {{business}}.",
+            messageTemplate: "It was a pleasure working with you! Your files will be ready soon — thank you for booking with {{business}}.",
           },
         ],
       });
     }
+  });
+
+  await track("onboarding_completed", {
+    businessId: business.id,
+    properties: { moduleCount: payload.connectedChannels.length, serviceCount: payload.services.length },
   });
 
   redirect("/dashboard");

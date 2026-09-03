@@ -137,8 +137,8 @@ export async function confirmPayment(paymentId: string, session?: SessionPayload
  * (this stands in for a webhook), so a broad "any org member" trust boundary would let a
  * client mark their own or someone else's invoice paid without money changing hands.
  */
-export async function completeCardCheckout(paymentId: string) {
-  const staffCtx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function completeCardCheckout(paymentId: string, session?: SessionPayload | null) {
+  const staffCtx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (staffCtx) {
     const payment = await prisma.payment.findFirst({ where: { id: paymentId, businessId: staffCtx.business.id, method: "CARD" } });
     if (!payment) throw new Error("not found");
@@ -146,7 +146,7 @@ export async function completeCardCheckout(paymentId: string) {
     return;
   }
 
-  const clientCtx = await requireClientRecord();
+  const clientCtx = await requireClientRecord(session);
   if (!clientCtx) throw new Error("unauthorized");
   const payment = await prisma.payment.findFirst({
     where: { id: paymentId, businessId: clientCtx.business.id, clientId: clientCtx.client.id, method: "CARD" },

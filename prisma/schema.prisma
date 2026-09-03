@@ -70,6 +70,7 @@ model Business {
   auditLogs      AuditLog[]
   notifications  Notification[]
   joinRequests   JoinRequest[]
+  analyticsEvents AnalyticsEvent[]
 }
 
 enum PlanTier {
@@ -298,6 +299,7 @@ model Client {
   referrals     Client[] @relation("Referrals")
 
   @@index([businessId])
+  @@index([businessId, email])
 }
 
 model ClientNote {
@@ -392,6 +394,7 @@ model Conversation {
   bookings Booking[]
 
   @@index([businessId, lastMessageAt])
+  @@index([businessId, clientId])
 }
 
 enum MessageDirection {
@@ -493,6 +496,7 @@ model Booking {
 
   @@index([businessId, startAt])
   @@index([businessId, status])
+  @@index([businessId, clientId])
 }
 
 model Questionnaire {
@@ -548,6 +552,7 @@ model Payment {
   createdAt  DateTime          @default(now())
 
   @@index([businessId, status])
+  @@index([businessId, clientId])
 }
 
 enum InvoiceStatus {
@@ -771,4 +776,22 @@ model WebhookEvent {
   receivedAt DateTime @default(now())
 
   @@unique([provider, eventId])
+}
+
+/// Own-database funnel analytics — no third-party analytics provider is configured in this
+/// deployment, and one isn't fabricated here. businessId is nullable because the funnel
+/// starts before a business exists (landing CTA click, signup started) — anonymousId
+/// (a client-set cookie/localStorage value, never anything identifying) is what threads
+/// pre-signup events to the same visitor. No email/name/IP is ever stored here.
+model AnalyticsEvent {
+  id           String   @id @default(cuid())
+  name         String // e.g. "signup_completed", "checkout_started" — see lib/analytics.ts for the canonical list
+  businessId   String?
+  business     Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  anonymousId  String?
+  properties   Json?
+  createdAt    DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([businessId, name])
 }

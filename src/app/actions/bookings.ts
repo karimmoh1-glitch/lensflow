@@ -1,7 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireBusiness, requireRole, type SessionPayload } from "@/lib/auth";
+import { requireRole, type SessionPayload } from "@/lib/auth";
+import { requireClientRecord } from "./portal";
 import { revalidatePath } from "next/cache";
 import { createCardCheckout } from "@/lib/payments";
 import { sendOnChannel } from "@/lib/messaging";
@@ -127,16 +128,31 @@ export async function confirmPayment(paymentId: string, session?: SessionPayload
 /**
  * Stands in for a payment-gateway webhook completing a card checkout. Deliberately
  * narrower than confirmPayment: only ever touches CARD payments, so it can never be used
- * to rubber-stamp a Zelle/bank transfer that was never actually sent. Any authenticated
- * org member can trigger it (mirrors a real checkout redirect), but the method check keeps
- * the manual-confirmation trust boundary intact.
+ * to rubber-stamp a Zelle/bank transfer that was never actually sent.
+ *
+ * Reachable by two callers, and only two: staff confirming on a client's behalf, or the
+ * CLIENT who actually owns this specific payment (mirroring a real checkout redirect back
+ * to them). Every other role/ownership combination — a PARTNER, or a CLIENT hitting a
+ * different client's paymentId — must be rejected. There is no proof-of-payment check here
+ * (this stands in for a webhook), so a broad "any org member" trust boundary would let a
+ * client mark their own or someone else's invoice paid without money changing hands.
  */
 export async function completeCardCheckout(paymentId: string) {
-  const ctx = await requireBusiness();
-  if (!ctx) throw new Error("unauthorized");
-  const payment = await prisma.payment.findFirst({ where: { id: paymentId, businessId: ctx.business.id, method: "CARD" } });
+  const staffCtx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+  if (staffCtx) {
+    const payment = await prisma.payment.findFirst({ where: { id: paymentId, businessId: staffCtx.business.id, method: "CARD" } });
+    if (!payment) throw new Error("not found");
+    await markPaymentPaidAndAdvanceBooking(paymentId, staffCtx.business.id);
+    return;
+  }
+
+  const clientCtx = await requireClientRecord();
+  if (!clientCtx) throw new Error("unauthorized");
+  const payment = await prisma.payment.findFirst({
+    where: { id: paymentId, businessId: clientCtx.business.id, clientId: clientCtx.client.id, method: "CARD" },
+  });
   if (!payment) throw new Error("not found");
-  await markPaymentPaidAndAdvanceBooking(paymentId, ctx.business.id);
+  await markPaymentPaidAndAdvanceBooking(paymentId, clientCtx.business.id);
 }
 
 /**

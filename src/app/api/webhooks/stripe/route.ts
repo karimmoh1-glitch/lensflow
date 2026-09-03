@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/payments";
 import { prisma } from "@/lib/db";
+import { sendOnChannel } from "@/lib/messaging";
 import type { BillingStatus } from "@prisma/client";
 
 /**
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
         if (subscriptionId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           await syncSubscription(subscription);
+          await notifyPaymentFailed(subscription);
         }
         break;
       }
@@ -87,6 +89,32 @@ const STRIPE_STATUS_MAP: Record<string, BillingStatus> = {
   incomplete_expired: "INCOMPLETE_EXPIRED",
   unpaid: "UNPAID",
 };
+
+/**
+ * Stripe retries a failed card automatically (Smart Retries) and the business keeps full
+ * access in the meantime (see PAST_DUE in ENTITLED_STATUSES, billing.ts) — that's correct,
+ * a single declined card shouldn't lock anyone out. But silently keeping access with no
+ * notification means the only way an owner finds out is by proactively opening /billing,
+ * which risks the subscription lapsing to CANCELED with the owner never having known why.
+ */
+async function notifyPaymentFailed(subscription: Stripe.Subscription) {
+  const businessId = subscription.metadata?.businessId;
+  if (!businessId) return;
+
+  const owner = await prisma.orgMembership.findFirst({
+    where: { businessId, role: "OWNER", status: "ACTIVE" },
+    include: { user: true, business: true },
+  });
+  if (!owner) return;
+
+  const billingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`;
+  await sendOnChannel({
+    channel: "EMAIL",
+    to: owner.user.email,
+    subject: "Your Daythread payment didn't go through",
+    body: `Hi ${owner.user.name}, we weren't able to charge the card on file for ${owner.business.name}'s Daythread subscription. We'll automatically retry over the next few days — no action needed yet, but you can update your card anytime here: ${billingUrl}`,
+  }).catch((err) => console.error("[webhook:stripe] payment-failed email send failed", err));
+}
 
 async function syncSubscription(subscription: Stripe.Subscription) {
   const businessId = subscription.metadata?.businessId;

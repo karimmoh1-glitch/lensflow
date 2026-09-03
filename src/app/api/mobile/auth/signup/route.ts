@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword, createSessionToken, homeRouteFor } from "@/lib/auth";
 import { uniqueHandle } from "@/app/actions/auth";
 import { jsonError } from "@/lib/mobileApi";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 const signupSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -14,13 +15,21 @@ const signupSchema = z.object({
   phone: z.string().optional(),
 });
 
+const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
+
 /** Mobile equivalent of src/app/actions/auth.ts signup() — same validation, same
- * user/business/membership creation, returns a bearer token instead of a cookie+redirect. */
+ * user/business/membership creation, returns a bearer token instead of a cookie+redirect.
+ * Same per-IP rate limit as the web signup action, to block mass fake-account creation. */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = signupSchema.safeParse(body);
   if (!parsed.success) return jsonError(parsed.error.issues[0]?.message ?? "Invalid input", 400);
   const { name, email, password, businessName, businessType, phone } = parsed.data;
+
+  const ip = await getClientIp();
+  if (!rateLimit(`mobile-signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok) {
+    return jsonError(TOO_MANY_ATTEMPTS, 429);
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return jsonError("An account already exists with this email.", 409);

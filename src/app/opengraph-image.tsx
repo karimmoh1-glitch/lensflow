@@ -35,13 +35,19 @@ export default function OpengraphImage() {
               <path d="M6 24C12 24 12 8 19 8C21.5 8 23.5 10 25 12" stroke="#FAFAF9" strokeWidth="2.6" strokeLinecap="round" />
             </svg>
           </div>
-          <div style={{ fontSize: 32, color: "#101114", fontWeight: 600, letterSpacing: "-0.01em", display: "flex" }}>Daythread</div>
+          <div style={{ fontSize: 32, color: "#101114", fontWeight: 700, letterSpacing: "-0.02em", display: "flex" }}>Daythread</div>
         </div>
-        <div style={{ fontSize: 64, color: "#101114", fontWeight: 600, lineHeight: 1.15, letterSpacing: "-0.02em", maxWidth: 920, display: "flex" }}>
-          Turn every message into an organized business.
+        <div style={{ fontSize: 88, color: "#101114", fontWeight: 800, lineHeight: 0.98, letterSpacing: "-0.045em", maxWidth: 960, display: "flex", flexDirection: "column" }}>
+          <span>All your clients.</span>
+          <span>One thread.</span>
         </div>
-        <div style={{ fontSize: 26, color: "rgba(16,17,20,0.55)", marginTop: 28, maxWidth: 780, display: "flex" }}>
-          Leads, bookings, payments, and follow-ups — all in one place.
+        <div style={{ fontSize: 28, color: "rgba(16,17,20,0.55)", marginTop: 32, maxWidth: 820, display: "flex" }}>
+          Instagram, email, texts, bookings and payments — connected.
+        </div>
+        <div style={{ display: "flex", gap: 12, marginTop: 40 }}>
+          {["#F0524D", "#6D5AE6", "#13CC78"].map((c) => (
+            <div key={c} style={{ width: 14, height: 14, borderRadius: 999, backgroundColor: c }} />
+          ))}
         </div>
       </div>
     ),

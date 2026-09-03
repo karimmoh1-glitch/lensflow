@@ -11,8 +11,8 @@ const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "sw
 const display = Manrope({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread-app.vercel.app";
-const TITLE = "Daythread — The operating system for independent businesses";
-const DESCRIPTION = "Every message organized, sorted by what it needs — leads, bookings, payments, and follow-ups, all in one place.";
+const TITLE = "Daythread — All your clients. One thread.";
+const DESCRIPTION = "Instagram, email, texts, bookings and payments — connected in one place, and telling you what's next. For freelancers and small businesses.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),

@@ -69,7 +69,47 @@ body {
   100% { background-color: transparent; }
 }
 
+/* ── Landing: the opening ────────────────────────────────────────────────────
+   Three keyframes, one sheet. Thread draws (0–650ms), name snaps in (500–800ms), sheet
+   lifts (950–1300ms). fill-mode forwards on the lift means the sheet ends off-screen even
+   if JS never removes it. The hero underneath gets its own delayed rise so brand → product
+   reads as one motion, not an intro followed by a page. */
+@keyframes dtThreadDraw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes dtWordIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); letter-spacing: 0.02em; }
+  to { opacity: 1; transform: translateY(0) scale(1); letter-spacing: -0.045em; }
+}
+@keyframes dtSheetLift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-101%); }
+}
+@keyframes dtHeroRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dt-opening { animation: dtSheetLift 480ms cubic-bezier(0.7, 0, 0.2, 1) 950ms forwards; }
+.dt-opening__thread { stroke-dasharray: 1; stroke-dashoffset: 1; animation: dtThreadDraw 680ms cubic-bezier(0.4, 0, 0.2, 1) 60ms forwards; }
+.dt-opening__word { opacity: 0; animation: dtWordIn 380ms cubic-bezier(0.22, 1.2, 0.36, 1) 520ms forwards; }
+.dt-opening--short { animation-delay: 0ms; animation-duration: 350ms; }
+.dt-opening--short .dt-opening__thread,
+.dt-opening--short .dt-opening__word { animation: none; opacity: 0; }
+.dt-hero-copy > * { opacity: 0; animation: dtHeroRise 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.dt-hero-copy > :nth-child(1) { animation-delay: 1050ms; }
+.dt-hero-copy > :nth-child(2) { animation-delay: 1120ms; }
+.dt-hero-copy > :nth-child(3) { animation-delay: 1220ms; }
+.dt-hero-copy > :nth-child(4) { animation-delay: 1300ms; }
+.dt-hero-copy > :nth-child(5) { animation-delay: 1380ms; }
+.dt-hero-visual { opacity: 0; animation: dtHeroRise 800ms cubic-bezier(0.16, 1, 0.3, 1) 1250ms forwards; }
+/* Returning visitor: the sheet lifts fast, so the hero rises fast too. */
+.dt-returning .dt-hero-copy > *,
+.dt-returning .dt-hero-visual { animation-delay: 120ms; animation-duration: 500ms; }
+
 @media (prefers-reduced-motion: reduce) {
+  .dt-opening { display: none; }
+  .dt-hero-copy > *, .dt-hero-visual { opacity: 1; animation: none; }
   *,
   *::before,
   *::after {

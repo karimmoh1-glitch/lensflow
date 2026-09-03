@@ -62,20 +62,12 @@ export function WorkspaceAssembly() {
 
   return (
     <div className="relative max-w-5xl mx-auto px-6">
-      <div
-        className="absolute left-1/2 top-0 -translate-x-1/2 w-[560px] h-[320px] rounded-full opacity-[0.13] blur-3xl pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, #13CC78 0%, transparent 70%)" }}
-        aria-hidden
-      />
-      <div className="relative text-center max-w-lg mx-auto mb-10">
-        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60 mb-3">Modular by design</div>
-        <h2 className="font-sans font-black text-3xl md:text-[2.75rem] leading-[1.02] tracking-tight text-ink mb-3">You choose what you need.</h2>
-        <p className="text-sm md:text-base text-ink/75 max-w-sm mx-auto">
-          Click what your business actually uses. Daythread becomes your workspace — nothing more, nothing less.
-        </p>
+      <div className="relative max-w-2xl mb-10">
+        <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-ink/45 mb-4">Modules</p>
+        <h2 className="font-sans font-extrabold text-[clamp(2.2rem,5vw,4rem)] leading-[0.96] tracking-[-0.04em] text-ink">Only what you use.</h2>
       </div>
 
-      <div className="grid md:grid-cols-[1.3fr_1fr] gap-8 md:gap-10 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-8 md:gap-10 items-start">
         {/* The picker — every module is a real button with a strong on/off state */}
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
           {MODULES.map((m) => {

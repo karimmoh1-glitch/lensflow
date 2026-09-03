@@ -15,7 +15,7 @@ import type {
 // ── Surfaces ────────────────────────────────────────────────────────────────
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-xl border border-border bg-white shadow-xs", className)} {...props} />;
+  return <div className={cn("rounded-2xl border border-border bg-white shadow-popover", className)} {...props} />;
 }
 
 export function CardBody({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
@@ -39,10 +39,15 @@ const variantClasses: Record<ButtonVariant, string> = {
   danger: "bg-danger text-white hover:bg-danger/90",
 };
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "text-[13px] h-8 px-3 rounded-md gap-1.5",
-  md: "text-sm h-9 px-3.5 rounded-md gap-1.5",
-  lg: "text-sm h-11 px-5 rounded-lg gap-2",
+  sm: "text-[13px] h-8 px-3.5 rounded-full gap-1.5",
+  md: "text-sm h-9 px-4 rounded-full gap-1.5",
+  lg: "text-sm h-11 px-5 rounded-full gap-2",
 };
+
+/** The same physical hover-lift/press feel as every button on the marketing site — the
+ * app should feel like the same product a visitor just saw, not a flatter internal tool. */
+const PHYSICAL_FEEL =
+  "transition-transform duration-150 hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0";
 
 export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize }>(
   function Button({ className, variant = "primary", size = "md", ...props }, ref) {
@@ -50,7 +55,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLBut
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center font-medium transition-colors whitespace-nowrap shrink-0 disabled:opacity-45 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-1",
+          "inline-flex items-center justify-center font-medium transition-colors whitespace-nowrap shrink-0 disabled:opacity-45 disabled:pointer-events-none disabled:hover:scale-100 disabled:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-1",
+          PHYSICAL_FEEL,
           variantClasses[variant],
           sizeClasses[size],
           className
@@ -82,6 +88,7 @@ export function LinkButton({
       target={target}
       className={cn(
         "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+        PHYSICAL_FEEL,
         variantClasses[variant],
         sizeClasses[size],
         className
@@ -207,7 +214,7 @@ export function PageHeader({
   return (
     <div className="flex items-start justify-between gap-4 mb-7">
       <div>
-        <h1 className="font-display text-page-title text-ink">{title}</h1>
+        <h1 className="font-sans font-black text-page-title text-ink tracking-tight">{title}</h1>
         {description && <p className="mt-1 text-sm text-ink/50">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}

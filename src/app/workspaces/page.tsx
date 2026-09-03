@@ -17,7 +17,7 @@ export default async function WorkspacesPage() {
         <Card className="w-full max-w-sm">
           <CardBody className="p-8 text-center">
             <h1 className="font-display text-xl mb-2">No workspace yet</h1>
-            <p className="text-sm text-ink/55 mb-6">This account isn't part of any organization. Ask for an invitation, or create your own workspace.</p>
+            <p className="text-sm text-ink/55 mb-6">This account isn&apos;t part of any organization. Ask for an invitation, or create your own workspace.</p>
             <form action={logout}>
               <button className="text-sm text-accent-text font-medium">Log out</button>
             </form>

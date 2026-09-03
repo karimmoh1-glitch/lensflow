@@ -35,7 +35,7 @@ export function PartnerInviteForm() {
       <Card>
         <CardBody>
           <p className="text-sm font-medium mb-1">Invitation sent</p>
-          <p className="text-xs text-ink/50 mb-3">Share this link, or they'll get it by email.</p>
+          <p className="text-xs text-ink/50 mb-3">Share this link, or they&apos;ll get it by email.</p>
           <div className="flex items-center gap-2">
             <Input value={link} readOnly className="text-xs" />
             <Button

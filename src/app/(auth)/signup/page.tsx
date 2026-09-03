@@ -17,7 +17,7 @@ export default function SignupChooserPage() {
               <CardBody className="p-6">
                 <h2 className="font-display text-lg mb-1.5">Create a business</h2>
                 <p className="text-sm text-ink/50">
-                  I'm a freelancer or independent business and want to manage my clients, bookings, and payments.
+                  I&apos;m a freelancer or independent business and want to manage my clients, bookings, and payments.
                 </p>
               </CardBody>
             </Card>
@@ -26,7 +26,7 @@ export default function SignupChooserPage() {
             <Card className="h-full transition-shadow hover:shadow-md">
               <CardBody className="p-6">
                 <h2 className="font-display text-lg mb-1.5">Join a business</h2>
-                <p className="text-sm text-ink/50">I'm working with an existing Daythread business and want to connect with them.</p>
+                <p className="text-sm text-ink/50">I&apos;m working with an existing Daythread business and want to connect with them.</p>
               </CardBody>
             </Card>
           </Link>

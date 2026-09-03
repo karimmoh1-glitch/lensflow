@@ -54,7 +54,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
         placeholder="Write a reply, or let AI draft one…"
         rows={3}
       />
-      {error && <p className="text-xs text-danger mt-1.5">Couldn't send: {error}. Your draft is still here — try again.</p>}
+      {error && <p className="text-xs text-danger mt-1.5">Couldn&apos;t send: {error}. Your draft is still here — try again.</p>}
       <div className="flex items-center justify-between mt-2.5">
         <Button variant="outline" size="sm" onClick={draft} disabled={drafting || pending}>
           {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} /> : <Sparkles className="w-3.5 h-3.5" strokeWidth={2} />}

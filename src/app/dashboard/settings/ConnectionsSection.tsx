@@ -81,8 +81,8 @@ export async function ConnectionsSection({
     <div className="space-y-8">
       {googleConnected && (
         <p className="text-sm text-success bg-success/10 rounded-md px-3.5 py-2.5">
-          Gmail connected — {gmailIntegration?.externalAccount}. New messages will show up in your Inbox once you hit "Check for new
-          emails," and replies now send from your real Gmail account.
+          Gmail connected — {gmailIntegration?.externalAccount}. New messages will show up in your Inbox once you hit &quot;Check for new
+          emails,&quot; and replies now send from your real Gmail account.
         </p>
       )}
       {googleError && (
@@ -220,7 +220,7 @@ export async function ConnectionsSection({
         {!anyLive && (
           <p className="text-xs text-ink/40 mt-2">
             Every channel above is in demo mode until real credentials are added — outbound messages log to the console instead of
-            sending, and nothing is ever shown as "Connected" unless it actually is.
+            sending, and nothing is ever shown as &quot;Connected&quot; unless it actually is.
           </p>
         )}
       </div>

@@ -22,7 +22,7 @@ export default function MobilePage() {
 
         <h1 className="font-display text-3xl leading-[1.15] text-ink mb-3">Daythread is on your phone.</h1>
         <p className="text-[15px] text-ink/55 leading-[22px] mb-10">
-          Leads, bookings, payments, and delivery — run your whole business from wherever you're working. No app to
+          Leads, bookings, payments, and delivery — run your whole business from wherever you&apos;re working. No app to
           download, nothing to install.
         </p>
 

@@ -32,7 +32,7 @@ export function FixMyDayButton() {
             <Card className="shadow-popover">
               <CardBody className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-display text-section-title">Today's priorities</h2>
+                  <h2 className="font-display text-section-title">Today&apos;s priorities</h2>
                   <IconButton aria-label="Close" onClick={() => setOpen(false)}>
                     <X className="w-4 h-4" strokeWidth={2} />
                   </IconButton>

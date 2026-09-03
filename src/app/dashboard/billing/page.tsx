@@ -32,19 +32,24 @@ export default async function BillingPage() {
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
       <PageHeader title="Billing" description="What your business pays for Daythread." />
 
-      {!subscriptionBillingIsLive && (
-        <p className="text-sm text-ink/50 bg-black/[0.03] rounded-md px-3.5 py-2.5 mb-6">
-          Subscription billing isn't configured on this deployment — add <code className="text-xs bg-black/[0.05] px-1 rounded">STRIPE_SECRET_KEY</code>{" "}
-          and <code className="text-xs bg-black/[0.05] px-1 rounded">STRIPE_WEBHOOK_SECRET</code> to accept real payments. Every plan below is shown for
-          reference only until then.
-        </p>
-      )}
+      {!subscriptionBillingIsLive &&
+        (process.env.NODE_ENV === "production" ? (
+          <p className="text-sm text-ink/60 bg-signal-soft rounded-2xl px-4 py-3 mb-6">
+            Billing is coming soon — plans below are shown for reference. We&apos;ll email you as soon as upgrades are open.
+          </p>
+        ) : (
+          <p className="text-sm text-ink/50 bg-black/[0.03] rounded-md px-3.5 py-2.5 mb-6">
+            Subscription billing isn&apos;t configured on this deployment — add <code className="text-xs bg-black/[0.05] px-1 rounded">STRIPE_SECRET_KEY</code>{" "}
+            and <code className="text-xs bg-black/[0.05] px-1 rounded">STRIPE_WEBHOOK_SECRET</code> to accept real payments. Every plan below is shown for
+            reference only until then.
+          </p>
+        ))}
 
       <Card className="mb-8">
         <CardBody className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-display text-section-title">{PLANS[currentPlan].name} plan</h2>
+              <h2 className="font-sans font-black text-section-title tracking-tight">{PLANS[currentPlan].name} plan</h2>
               {business.billingStatus && STATUS_BADGE[business.billingStatus] && (
                 <Badge tone={STATUS_BADGE[business.billingStatus].tone}>{STATUS_BADGE[business.billingStatus].label}</Badge>
               )}
@@ -75,7 +80,7 @@ export default async function BillingPage() {
             <Card key={key} className={isCurrent ? "border-ink" : undefined}>
               <CardBody>
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-display text-lg">{plan.name}</h3>
+                  <h3 className="font-sans font-black text-lg tracking-tight">{plan.name}</h3>
                   {isCurrent && <Badge tone="accent">Current</Badge>}
                 </div>
                 <p className="text-2xl font-semibold text-ink mb-1">

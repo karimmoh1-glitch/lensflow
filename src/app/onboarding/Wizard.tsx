@@ -112,7 +112,7 @@ export function Wizard({ businessName }: { businessName: string }) {
 
             {step === 0 && (
               <div className="space-y-4">
-                <h1 className="font-display text-2xl">What's your business called?</h1>
+                <h1 className="font-display text-2xl">What&apos;s your business called?</h1>
                 <div>
                   <Label htmlFor="bname">Business name</Label>
                   <Input
@@ -328,8 +328,8 @@ export function Wizard({ businessName }: { businessName: string }) {
               <div className="space-y-3">
                 <h1 className="font-display text-2xl">Connect your calendar</h1>
                 <p className="text-sm text-ink/50">
-                  Keep bookings in sync with your existing calendar. Real Google/Apple Calendar sync isn't built yet — enabling this just
-                  reserves the setting so it's ready when it is.
+                  Keep bookings in sync with your existing calendar. Real Google/Apple Calendar sync isn&apos;t built yet — enabling this just
+                  reserves the setting so it&apos;s ready when it is.
                 </p>
                 <button
                   type="button"

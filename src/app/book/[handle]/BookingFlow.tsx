@@ -65,7 +65,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
       <Card>
         <CardBody className="text-center py-10">
           <CheckCircle2 className="w-9 h-9 text-success mx-auto mb-3" strokeWidth={1.75} />
-          <h2 className="font-display text-2xl mb-2">You're booked!</h2>
+          <h2 className="font-display text-2xl mb-2">You&apos;re booked!</h2>
           <p className="text-sm text-ink/55 mb-6">
             {service?.name} on {slot && format(new Date(slot.start), "EEEE, MMMM d 'at' h:mm a")}
           </p>
@@ -83,7 +83,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
                 <div className="text-sm space-y-1.5">
                   <p>Send to: <span className="font-medium">{result.zelleHandle}</span></p>
                   <p>Reference: <span className="font-medium">{result.reference}</span></p>
-                  <p className="text-xs text-ink/45">Once sent, we'll confirm your booking shortly.</p>
+                  <p className="text-xs text-ink/45">Once sent, we&apos;ll confirm your booking shortly.</p>
                 </div>
               )}
               {result.paymentMethod === "bank_transfer" && (

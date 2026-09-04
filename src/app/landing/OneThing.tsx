@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useScrollProgress, seg } from "./useScrollProgress";
 
 /**
  * The emotional payoff, given its own dark stage. On the left, the business as it
@@ -25,23 +25,17 @@ const ACTIVITY = [
 ];
 
 export function OneThing() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => e.isIntersecting && (setInView(true), io.disconnect()), { threshold: 0.35 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
+  const { ref, p } = useScrollProgress<HTMLDivElement>("enter", 0.3);
+  const noise = seg(p, 0.0, 0.35); // the activity column comes up first
+  const quiet = seg(p, 0.35, 0.7); // then it dims, and the one thing lands
+  const inView = p > 0.02;
 
   return (
     <div ref={ref} className="relative max-w-[1200px] mx-auto px-6">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-10 lg:gap-20 items-center">
         {/* The drowning */}
-        <div className="relative h-[360px] lg:h-[440px] overflow-hidden rounded-[26px] border border-paper/10 bg-graphite [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]">
-          <ul className={cn("px-5", !inView && "opacity-0", inView && "dt-rise")}>
+        <div className="relative h-[360px] lg:h-[440px] overflow-hidden rounded-[26px] border border-paper/10 bg-graphite [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]" style={{ opacity: noise * (1 - quiet * 0.55), transform: `translateY(${(1 - noise) * 16}px)` }}>
+          <ul className={cn("px-5", inView && "dt-rise")}>
             {[...ACTIVITY, ...ACTIVITY].map(([src, text], i) => (
               <li key={i} className="flex items-center gap-3 py-3 border-b border-paper/[0.06] text-paper/55">
                 <span className="w-1.5 h-1.5 rounded-full bg-paper/25 shrink-0" />
@@ -58,7 +52,7 @@ export function OneThing() {
           <h2 className="font-sans font-extrabold text-[clamp(3rem,7vw,6.5rem)] leading-[0.9] tracking-[-0.05em] text-paper">
             One thing.
           </h2>
-          <div className={cn("mt-8 max-w-md", inView ? "dt-land" : "opacity-0")} style={{ animationDelay: "350ms" }}>
+          <div className="mt-8 max-w-md" style={{ opacity: quiet, transform: `translateY(${(1 - quiet) * 22}px) scale(${0.96 + quiet * 0.04})` }}>
             <div className="group relative flex items-center gap-4 rounded-[22px] border border-accent/50 px-5 py-4 bg-[linear-gradient(135deg,rgba(240,82,77,0.28),rgba(240,82,77,0.08))] shadow-[0_24px_60px_-24px_rgba(240,82,77,0.7)] transition-transform duration-200 hover:-translate-y-0.5">
               <span className="w-11 h-11 rounded-full bg-accent text-white flex items-center justify-center text-sm font-extrabold shrink-0">MC</span>
               <div className="min-w-0 flex-1">

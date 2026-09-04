@@ -1,12 +1,13 @@
-import { siWhatsapp, siInstagram, siGmail, siImessage } from "simple-icons";
+import { siWhatsapp, siInstagram, siImessage } from "simple-icons";
 import { cn } from "@/lib/utils";
 
 /**
  * The channels Daythread actually connects (prisma ChannelType: INSTAGRAM, EMAIL, SMS,
  * WHATSAPP, WEBSITE, PHONE), drawn with their real marks. The glyph paths come from
- * simple-icons — the official brand geometry, not an approximation — and each app keeps
- * its own form: Instagram's gradient tile, WhatsApp's green circle, Gmail's white tile
- * with the M, Messages' green bubble tile, and the booking page as Daythread's own ink.
+ * simple-icons — the official brand geometry, not an approximation — except Gmail, whose
+ * four-color M is drawn from Google's own logo geometry because the library only carries a
+ * monochrome glyph. Each app keeps its own form: Instagram's gradient tile, WhatsApp's
+ * green circle, Gmail's white tile with the M, Messages' green bubble tile, and the booking page as Daythread's own ink.
  * Messenger is deliberately absent: the product doesn't support it.
  */
 export type ChannelKey = "instagram" | "gmail" | "sms" | "whatsapp" | "website";
@@ -47,9 +48,18 @@ export function ChannelIcon({ k, size = 56, className, active }: { k: ChannelKey
     );
   }
   if (k === "gmail") {
+    // The Gmail mark as Google draws it: the four-color M — red across the top, blue on
+    // the left, green on the right, the folded corners in darker red and yellow — on a
+    // white tile. Not the monochrome glyph, not an envelope, not a "G".
     return (
       <span className={common} style={{ ...base, borderRadius: Math.round(size * 0.24), background: "#fff", border: "1px solid rgba(16,17,20,0.08)" }} title="Gmail">
-        <Mark path={siGmail.path} size={size * 0.52} color="#EA4335" />
+        <svg viewBox="0 0 24 24" style={{ width: size * 0.56, height: size * 0.56 }} aria-hidden>
+          <path fill="#4285F4" d="M1.636 20.6h3.818V11.33L0 7.234v11.73A1.636 1.636 0 0 0 1.636 20.6z" />
+          <path fill="#34A853" d="M18.545 20.6h3.819A1.636 1.636 0 0 0 24 18.964V7.234l-5.455 4.095V20.6z" />
+          <path fill="#FBBC04" d="M18.545 4.234v7.095L24 7.234V5.052c0-2.023-2.309-3.177-3.927-1.964l-1.528 1.146z" />
+          <path fill="#EA4335" d="M5.455 11.33V4.234L12 9.143l6.545-4.909v7.095L12 16.234 5.455 11.33z" />
+          <path fill="#C5221F" d="M0 5.052v2.182l5.455 4.095V4.234L3.927 3.088C2.309 1.875 0 3.029 0 5.052z" />
+        </svg>
       </span>
     );
   }

@@ -203,12 +203,19 @@ export function HeroThread() {
                 <span className="font-semibold">{s.who}</span>{" "}
                 <span className="text-ink/70">“<Highlight text={s.msg} part={s.highlight} on={on(2)} />”</span>
                 <span className="mt-1.5 flex flex-wrap gap-1.5">
-                  {s.extracted.map(([k, v]) => (
-                    <span key={k} className="inline-flex items-center gap-1 rounded-md bg-signal-soft/70 px-1.5 py-0.5 text-[10px] font-semibold text-signal-text"><span className="text-signal-text/60">{k}</span>{v}</span>
+                  {s.extracted.map(([k, v], i) => (
+                    <span
+                      key={k}
+                      className={cn("inline-flex items-center gap-1 rounded-md bg-signal-soft/70 px-1.5 py-0.5 text-[10px] font-semibold text-signal-text transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
+                      style={{ transitionDelay: on(2) ? `${120 + i * 110}ms` : "0ms" }}
+                    >
+                      <span className="text-signal-text/60">{k}</span>
+                      {v}
+                    </span>
                   ))}
                 </span>
               </Node>
-              <Node on={on(2)} dot="bg-signal" label="Daythread knows" labelClass="text-signal-text">
+              <Node on={on(2)} dot={cn("bg-signal", phase === 1 && !still && "animate-[dtBreathe_1.1s_ease-in-out_infinite]")} label="Daythread knows" labelClass="text-signal-text">
                 <span className="font-semibold">{s.ctx}</span>
                 <span className="block text-xs text-ink/60">{s.ctxMeta}</span>
               </Node>

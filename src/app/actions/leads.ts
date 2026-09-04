@@ -93,3 +93,22 @@ export async function bookLead(leadId: string, startISO: string): Promise<{ book
 
   return { bookingId: booking.id };
 }
+
+/**
+ * "Done" on the One Thing card. Marks the lead as responded to — the same field a real
+ * reply sets — so the next priority rises. Tenant-scoped: a lead id from another business
+ * is simply not found. Returns { error } for expected outcomes instead of throwing.
+ */
+export async function markLeadHandled(leadId: string): Promise<{ error?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+  if (!ctx) return { error: "Please log in again." };
+  const lead = await prisma.lead.findFirst({ where: { id: leadId, businessId: ctx.business.id }, select: { id: true, status: true } });
+  if (!lead) return { error: "That lead isn't here anymore." };
+  await prisma.lead.update({
+    where: { id: lead.id },
+    data: { respondedAt: new Date(), status: lead.status === "NEW" ? "CONTACTED" : lead.status },
+  });
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/inbox");
+  return {};
+}

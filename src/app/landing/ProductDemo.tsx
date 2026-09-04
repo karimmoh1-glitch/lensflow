@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Inbox, Users, CalendarClock, Zap, Home, CreditCard, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChannelIcon, type ChannelKey } from "./ChannelIcon";
@@ -39,6 +39,26 @@ export function ProductDemo() {
   const [asked, setAsked] = useState<string | null>(null);
   const active = TABS.find((t) => t.key === tab)!;
   const c = CONVOS.find((x) => x.id === convo)!;
+
+  // Arrow keys move through the inbox while it's in view — the demo behaves like the app.
+  useEffect(() => {
+    if (tab !== "inbox") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      const el = document.getElementById("demo");
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      e.preventDefault();
+      setConvo((cur) => {
+        const i = CONVOS.findIndex((x) => x.id === cur);
+        const n = e.key === "ArrowDown" ? Math.min(CONVOS.length - 1, i + 1) : Math.max(0, i - 1);
+        return CONVOS[n].id;
+      });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [tab]);
 
   return (
     <div className="relative max-w-[1200px] mx-auto px-6">
@@ -114,12 +134,16 @@ export function ProductDemo() {
                 <div className="px-5 py-3 flex items-center gap-2">
                   <span className="text-sm font-extrabold text-ink">Inbox</span>
                   <span className="text-[11px] text-ink/50">Sorted by what needs you</span>
+                  <span className="ml-auto hidden lg:inline-flex items-center gap-1 text-[10px] text-ink/40"><kbd className="rounded border border-border bg-paper px-1 font-sans">↑</kbd><kbd className="rounded border border-border bg-paper px-1 font-sans">↓</kbd> to move</span>
                 </div>
                 {CONVOS.map((x) => {
                   const on = x.id === convo;
                   return (
                     <button key={x.id} type="button" onClick={() => setConvo(x.id)} className={cn("w-full text-left px-5 py-3.5 flex gap-3 transition-all duration-200", on ? "bg-accent-soft/40" : "hover:bg-black/[0.02] hover:translate-x-0.5")}>
-                      <ChannelIcon k={x.ch} size={36} />
+                      <span className="relative shrink-0">
+                        <ChannelIcon k={x.ch} size={36} />
+                        {x.tag === "Needs reply" && <span aria-hidden className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-white" />}
+                      </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2"><span className="text-sm font-semibold text-ink truncate">{x.name}</span><span className="text-[10px] text-ink/45">· {x.when}</span></span>
                         <span className="block text-xs text-ink/70 truncate">{x.msg}</span>

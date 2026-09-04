@@ -25,10 +25,14 @@ function LoginForm() {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    window.dispatchEvent(new CustomEvent("dt-auth", { detail: 3 }));
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const result = await login(formData);
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        window.dispatchEvent(new CustomEvent("dt-auth", { detail: 0 }));
+      }
     });
   }
 
@@ -52,7 +56,7 @@ function LoginForm() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <Field id="email" label="Email">
-          <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@yourbusiness.com" required aria-invalid={!!error} />
+          <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@yourbusiness.com" required onInput={() => window.dispatchEvent(new CustomEvent("dt-auth", { detail: 1 }))} aria-invalid={!!error} />
         </Field>
         <Field
           id="password"
@@ -63,7 +67,7 @@ function LoginForm() {
             </Link>
           }
         >
-          <PasswordInput id="password" name="password" autoComplete="current-password" required aria-invalid={!!error} />
+          <PasswordInput id="password" name="password" autoComplete="current-password" required onInput={() => window.dispatchEvent(new CustomEvent("dt-auth", { detail: 2 }))} aria-invalid={!!error} />
         </Field>
         {error && <FormError>{error}</FormError>}
         <Button type="submit" size="lg" className="w-full mt-2" loading={pending} loadingLabel="Opening your thread">

@@ -156,7 +156,7 @@ export function Wizard({ businessName }: { businessName: string }) {
             {/* Booking page preview */}
             <div className="rounded-2xl border border-paper/10 bg-paper/[0.04] p-4">
               <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-paper/40 mb-2">Your booking page</div>
-              <div className="text-sm font-mono text-paper/50 truncate">daythread.app/book/<span className="text-paper">{handle || "your-name"}</span></div>
+              <div className="text-sm font-mono text-paper/50 truncate">daythread.org/book/<span className="text-paper">{handle || "your-name"}</span></div>
               <div className="mt-3 text-lg font-extrabold tracking-tight text-paper truncate">{name || "Your business"}</div>
               {specialties.length > 0 && <div className="mt-1 text-xs text-paper/55">{specialties.join(" · ")}</div>}
               <div className="mt-3 space-y-1.5">
@@ -251,7 +251,7 @@ export function Wizard({ businessName }: { businessName: string }) {
                 </Field>
                 <Field id="handle" label="Booking page address" hint="Clients book you here. You can change it later.">
                   <div className="flex items-center rounded-lg border border-ink/[0.14] bg-white overflow-hidden transition-[border-color,box-shadow] duration-150 focus-within:border-accent focus-within:ring-[3px] focus-within:ring-accent/20">
-                    <span className="bg-black/[0.04] px-3 h-10 flex items-center text-sm text-ink/50 shrink-0">daythread.app/book/</span>
+                    <span className="bg-black/[0.04] px-3 h-10 flex items-center text-sm text-ink/50 shrink-0">daythread.org/book/</span>
                     <input id="handle" value={handle} onChange={(e) => setHandle(slugify(e.target.value))} className="flex-1 min-w-0 px-2.5 h-10 text-sm outline-none bg-transparent" />
                   </div>
                 </Field>

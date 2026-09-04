@@ -232,7 +232,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false }: { c
             </div>
           </div>
           {needsReply && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0">
+            <span className="hidden xl:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-accent" />
               Needs reply
             </span>

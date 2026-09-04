@@ -151,10 +151,19 @@ export function HeroThread() {
             {STORIES.map((st, i) => {
               const d = gutterPath(i);
               const isOn = st.k === active;
+              const c = CHANNEL[st.k].brand === "#101114" ? "#6D5AE6" : CHANNEL[st.k].brand;
               return (
                 <g key={st.k}>
                   <path d={d} stroke="rgba(16,17,20,0.08)" strokeWidth="1.5" />
                   <path d={d} stroke="url(#dt-hero-grad)" strokeWidth="2.5" strokeLinecap="round" className="transition-opacity duration-300" style={{ opacity: isOn ? 1 : 0 }} />
+                  {/* a quiet, continuous flow on every channel — the system is always listening;
+                      brighter and faster on the one that's speaking */}
+                  {!still &&
+                    [0, 1].map((n) => (
+                      <circle key={n} r={isOn ? 2.2 : 1.4} fill={c} opacity={isOn ? 0.9 : 0.35}>
+                        <animateMotion dur={isOn ? "1.6s" : "3.2s"} begin={`${i * 0.4 + n * (isOn ? 0.8 : 1.6)}s`} repeatCount="indefinite" path={d} />
+                      </circle>
+                    ))}
                 </g>
               );
             })}

@@ -1,48 +1,37 @@
 import { Navbar } from "./Navbar";
 import { Opening } from "./landing/Opening";
 import { Hero } from "./landing/Hero";
-import { ChaosToClarity } from "./landing/ChaosToClarity";
-import { Integrations } from "./landing/Integrations";
+import { Story } from "./landing/Story";
 import { OneThing } from "./landing/OneThing";
 import { ProductDemo } from "./landing/ProductDemo";
 import { Workflow } from "./landing/Workflow";
-import { Outcome } from "./landing/Outcome";
-import { ThreadJoint } from "./landing/ThreadJoint";
-import { WorkspaceAssembly } from "./WorkspaceAssembly";
 import { PricingSection } from "./PricingSection";
 import { FinalCta } from "./landing/FinalCta";
 
 /**
- * One continuous experience, not a stack of sections. The rhythm is deliberate:
+ * One film, in this order:
  *
- *   open → hero (paper, product moving)
- *   chaos → one thread (paper → a dark sheet, pinned)
- *   every channel in (white, atmosphere in the channel's color)
- *   ONE THING (midnight — the emotional payoff gets the darkest stage)
- *   click around (white, atmosphere in the surface's color)
- *   runs itself (violet-tinted paper)
- *   before / after (white, type only)
- *   modules (paper) → pricing (white) → the end (midnight, the thread returns)
+ *   open → hero (the channels flowing into the product, alive)
+ *   the story — one pinned, scroll-driven stage: chaos → one thread → context → action →
+ *     outcome → the thread widens into the product itself
+ *   the business gets quiet — one thing to do (midnight)
+ *   click around — the product, interactive
+ *   it runs itself — an automation firing
+ *   pricing — the natural conclusion
+ *   the end — the thread returns, organized, and one line
  *
- * The thread reappears between sections as a short joint — the page's backbone, seen
- * only occasionally.
+ * Every transformation is tied to scroll position; nothing waits on a timer except the
+ * opening (~1.4s) and the ambient loops that don't block anything.
  */
 export default function LandingPage() {
   // overflow-x-clip, not hidden: hidden would make <main> the scroll container and break the
-  // pinned chaos→clarity section's position: sticky.
+  // pinned story's position: sticky.
   return (
     <main className="bg-paper overflow-x-clip">
       <Opening />
       <Navbar />
       <Hero />
-
-      <ChaosToClarity />
-
-      <ThreadJoint tone="signal" />
-
-      <section id="how" className="relative py-20 md:py-28 bg-white border-y border-border overflow-hidden scroll-mt-16">
-        <Integrations />
-      </section>
+      <Story />
 
       <section className="relative py-24 md:py-32 bg-midnight overflow-hidden">
         <OneThing />
@@ -52,18 +41,8 @@ export default function LandingPage() {
         <ProductDemo />
       </section>
 
-      <section className="relative py-20 md:py-28 bg-[linear-gradient(180deg,#FAFAF9_0%,#EEEBFC_55%,#FAFAF9_100%)]">
+      <section id="how" className="relative py-20 md:py-28 bg-[linear-gradient(180deg,#FAFAF9_0%,#EEEBFC_55%,#FAFAF9_100%)] scroll-mt-16">
         <Workflow />
-      </section>
-
-      <section className="py-20 md:py-28 bg-white border-y border-border">
-        <Outcome />
-      </section>
-
-      <ThreadJoint tone="accent" />
-
-      <section className="pb-20 md:pb-28">
-        <WorkspaceAssembly />
       </section>
 
       <div id="pricing" className="bg-white border-t border-border scroll-mt-16">

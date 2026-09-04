@@ -281,6 +281,11 @@ model Client {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  // Receiving a message from someone doesn't make them a customer. A record starts as a
+  // LEAD (potential client) and becomes a CUSTOMER when a real relationship exists — a
+  // booking or a payment. CONTACT is for people the business talks to who aren't buying.
+  relationship ClientRelationship @default(LEAD)
+
   // Set once the client accepts an invitation and creates a login — before that, this is
   // just a CRM record with no portal access.
   userId String? @unique
@@ -389,12 +394,34 @@ model Conversation {
   archived   Boolean     @default(false)
   createdAt  DateTime    @default(now())
 
+  // What this conversation is, decided at ingestion (see lib/classifyMessage.ts) and
+  // adjustable by the user. Priority is a view over this; nothing is ever deleted to
+  // keep it clean. Legacy rows default to PRIORITY — they were all real people.
+  category       ConversationCategory @default(PRIORITY)
+  categoryReason String?
+  categorySource String? // "rules" | "user"
+
   messages Message[]
   lead     Lead?
   bookings Booking[]
 
   @@index([businessId, lastMessageAt])
   @@index([businessId, clientId])
+  @@index([businessId, category, lastMessageAt])
+}
+
+enum ClientRelationship {
+  LEAD
+  CUSTOMER
+  CONTACT
+}
+
+enum ConversationCategory {
+  PRIORITY
+  AUTOMATED
+  PROMOTIONAL
+  INTERNAL
+  SPAM
 }
 
 enum MessageDirection {

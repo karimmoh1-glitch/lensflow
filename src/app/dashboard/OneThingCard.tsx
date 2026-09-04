@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { markLeadHandled } from "@/app/actions/leads";
+import { useToast } from "@/components/Toaster";
 import { initials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ export function OneThingCard({
   const [state, setState] = useState<"idle" | "settling" | "error">("idle");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const { toast } = useToast();
   const first = name.split(" ")[0] || "this lead";
 
   function done() {
@@ -42,6 +44,7 @@ export function OneThingCard({
         setState("error");
         return;
       }
+      toast({ tone: "outcome", title: `${first} marked as handled`, body: "The next thing is up." });
       // let the settle finish before the next thing rises
       await new Promise((r) => setTimeout(r, 420));
       router.refresh();

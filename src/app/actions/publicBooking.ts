@@ -63,6 +63,9 @@ export async function createPublicBooking(params: {
     },
   });
 
+  // Booking through the public page is the relationship — promote (or confirm) customer.
+  await prisma.client.update({ where: { id: client.id }, data: { relationship: "CUSTOMER" } });
+
   await prisma.auditLog.create({
     data: { businessId: business.id, action: "public_booking_created", targetType: "booking", targetId: booking.id },
   });

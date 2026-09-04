@@ -68,7 +68,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium truncate">{displayName}</div>
                 <div className="text-xs text-ink/65 truncate">
-                  {lead?.status === "BOOKED" ? "Client · booked" : lead?.status === "LOST" ? "Lead · lost" : returning ? "Returning client" : lead ? "New lead" : "Client"}
+                  {client?.relationship === "CUSTOMER" ? (returning ? "Customer · has booked" : "Customer") : lead?.status === "LOST" ? "Potential client · lost" : client?.relationship === "CONTACT" ? "Contact" : lead ? "Potential client · new" : "Potential client"}
                 </div>
               </div>
             </div>

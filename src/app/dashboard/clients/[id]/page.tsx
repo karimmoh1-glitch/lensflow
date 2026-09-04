@@ -3,7 +3,7 @@ import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardBody, Badge, EmptyState } from "@/components/ui";
 import { Thread, ThreadNode, NextAction, type ThreadKind } from "@/components/Thread";
-import { formatMoney, initials, toZonedDisplayDate } from "@/lib/utils";
+import { formatMoney, initials, toZonedDisplayDate, cn } from "@/lib/utils";
 import { CHANNEL_META } from "@/lib/channelIcons";
 import { format, formatDistanceToNowStrict, isFuture } from "date-fns";
 import { NoteForm } from "./NoteForm";
@@ -42,6 +42,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
   // The one thing: someone waiting beats an upcoming date beats money owed.
   const waitingLead = client.leads.find((l) => !l.respondedAt && l.status !== "BOOKED" && l.status !== "LOST");
+  const firstConversation = [...client.conversations].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
   const waitingConv = waitingLead?.conversationId ? client.conversations.find((c) => c.id === waitingLead.conversationId) : undefined;
   const nextBooking = [...client.bookings].filter((b) => b.status !== "CANCELED" && isFuture(b.startAt)).sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0];
   const owed = client.payments.find((p) => p.status !== "PAID");
@@ -82,8 +83,16 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           {initials(client.name)}
         </div>
         <div className="min-w-0">
-          <h1 className="font-display text-2xl truncate">{client.name}</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="font-display text-2xl truncate">{client.name}</h1>
+            <span className={cn("text-[10px] font-bold rounded-full px-2 py-0.5 shrink-0", client.relationship === "CUSTOMER" ? "bg-success-soft text-success-text" : client.relationship === "CONTACT" ? "bg-black/[0.05] text-ink/60" : "bg-signal-soft text-signal-text")}>
+              {client.relationship === "CUSTOMER" ? "Customer" : client.relationship === "CONTACT" ? "Contact" : "Potential client"}
+            </span>
+          </div>
           <p className="text-sm text-ink/70 truncate">{[client.email, client.phone, client.instagram].filter(Boolean).join(" · ") || "No contact info yet"}</p>
+          {firstConversation && (
+            <p className="text-xs text-ink/50 truncate mt-0.5">Came in via {CHANNEL_META[firstConversation.channel].label} · {format(firstConversation.createdAt, "MMM d, yyyy")}</p>
+          )}
         </div>
         <div className="ml-auto text-right shrink-0">
           <div className="text-xs text-ink/60">Lifetime</div>

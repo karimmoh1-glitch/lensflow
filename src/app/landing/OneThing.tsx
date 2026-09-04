@@ -62,7 +62,9 @@ export function OneThing() {
               <span className="inline-flex items-center h-10 px-4 rounded-full bg-accent text-white text-sm font-extrabold shrink-0 transition-transform duration-150 group-hover:scale-105">Reply</span>
             </div>
           </div>
-          <p className="mt-7 text-paper/50 text-base max-w-sm">It doesn&rsquo;t just collect your business. It tells you what matters, and hands you the button.</p>
+          <p className="mt-7 text-paper/50 text-base max-w-sm">
+            <span className="text-paper/80 font-semibold">{ACTIVITY.length} things happened.</span> Daythread handled {ACTIVITY.length - 1} of them. It tells you the one that matters, and hands you the button.
+          </p>
           <div className="mt-8 grid grid-cols-3 gap-3 max-w-md">
             {[["Today", "2 sessions"], ["Owed to you", "$1,240"], ["This month", "$4,860"]].map(([k, v]) => (
               <div key={k} className="rounded-2xl border border-paper/10 bg-paper/[0.04] px-3.5 py-3">

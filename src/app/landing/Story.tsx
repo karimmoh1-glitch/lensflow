@@ -47,7 +47,7 @@ const BEATS = [
   { at: 0.34, eyebrow: "Context", tone: "text-signal-text", title: <>It reads it.</>, sub: "Who this is. What they want. What's open." },
   { at: 0.52, eyebrow: "Action", tone: "text-accent-text", title: <>It knows what&rsquo;s next.</>, sub: "The booking, ready to send." },
   { at: 0.66, eyebrow: "Outcome", tone: "text-success-text", title: <>Done.</>, sub: "Booked. Deposit paid. Nothing to chase." },
-  { at: 0.8, eyebrow: "The product", tone: "text-ink/45", title: <>This is Daythread.</>, sub: "The thread is the interface." },
+  { at: 0.8, eyebrow: "The product", tone: "text-ink/45", title: <>Daythread handled it.</>, sub: "Six conversations became one thing to do. The thread is the interface." },
 ];
 
 export function Story() {
@@ -139,7 +139,7 @@ export function Story() {
                 <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
                 <span className="text-[13px] font-extrabold tracking-tight text-ink">Daythread</span>
                 <span className="text-[11px] text-ink/40">Inbox</span>
-                <span className="ml-auto text-[10px] font-bold rounded-full px-2 py-0.5 bg-success-soft text-success-text">Handled</span>
+                <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold rounded-full px-2 py-0.5 bg-success-soft text-success-text"><span className="text-ink/45 font-semibold">6 conversations</span><span aria-hidden>→</span>1 thing to do</span>
               </div>
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] h-[calc(100%-42px)]">
                 {/* Inbox */}

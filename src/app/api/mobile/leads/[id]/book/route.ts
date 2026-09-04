@@ -51,6 +51,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       },
     });
     await tx.lead.update({ where: { id: lead.id }, data: { status: "BOOKED" } });
+    await tx.client.update({ where: { id: lead.clientId! }, data: { relationship: "CUSTOMER" } });
     const payment =
       depositCents > 0
         ? await tx.payment.create({

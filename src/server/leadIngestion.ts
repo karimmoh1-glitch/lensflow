@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { extractLeadInfo } from "@/lib/ai";
 import { scoreLead } from "@/lib/leadScoring";
 import { cleanEmailBody } from "@/lib/emailText";
+import { classifyMessage } from "@/lib/classifyMessage";
 import type { ChannelType } from "@prisma/client";
 
 /**
@@ -36,8 +37,11 @@ export async function ingestInboundMessage(params: {
   /** Original pre-normalization content, kept only for internal debugging — never
    * rendered anywhere in the conversation UI. */
   rawBody?: string;
+  /** Transport headers that reveal bulk or automated mail — passed through, never used to
+   * drop anything. */
+  headers?: { listUnsubscribe?: string | null; listId?: string | null; precedence?: string | null; autoSubmitted?: string | null } | null;
 }) {
-  const { businessId, channel, senderName, senderHandle, subject, clientEmail, clientPhone, providerMessageId, rawBody } = params;
+  const { businessId, channel, senderName, senderHandle, subject, clientEmail, clientPhone, providerMessageId, rawBody, headers } = params;
   const body = channel === "EMAIL" ? cleanEmailBody(params.body) : params.body;
 
   // Idempotency: a webhook can legitimately be redelivered (provider retry after a slow
@@ -48,7 +52,53 @@ export async function ingestInboundMessage(params: {
       where: { providerMessageId, conversation: { businessId } },
       include: { conversation: true },
     });
-    if (existing) return { client: null, conversation: existing.conversation, lead: null, duplicate: true as const };
+    if (existing) return { client: null, conversation: existing.conversation, lead: null, duplicate: true as const, category: existing.conversation.category };
+  }
+
+  // Classify before creating anything. Receiving an email from someone does not make them
+  // a client: only a message that reads as a person writing to this business (PRIORITY)
+  // creates a client record and a lead. Everything else is stored as a conversation with
+  // its category — visible in All Inbox, absent from Priority and from the CRM.
+  const identityWhere = clientEmail ? { businessId, email: clientEmail } : { businessId, name: senderName };
+  const knownClient = await prisma.client.findFirst({ where: identityWhere, include: { _count: { select: { bookings: true, payments: true } } } });
+  const priorOutbound = knownClient
+    ? (await prisma.message.count({ where: { direction: "OUTBOUND", conversation: { businessId, clientId: knownClient.id } } })) > 0
+    : false;
+  const classification = classifyMessage({
+    channel,
+    senderEmail: clientEmail ?? (channel === "EMAIL" ? senderHandle : null),
+    senderName,
+    subject,
+    body,
+    headers,
+    knownCustomer: Boolean(knownClient && (knownClient._count.bookings > 0 || knownClient._count.payments > 0 || knownClient.relationship === "CUSTOMER")),
+    priorOutbound,
+  });
+
+  if (classification.category !== "PRIORITY") {
+    // Same-sender continuation for non-priority mail keys on the handle, since there is
+    // no client record to key on.
+    const existingQuiet = await prisma.conversation.findFirst({
+      where: { businessId, clientId: null, channel, externalHandle: senderHandle, archived: false },
+      orderBy: { lastMessageAt: "desc" },
+    });
+    const conversation =
+      existingQuiet ??
+      (await prisma.conversation.create({
+        data: {
+          businessId,
+          channel,
+          externalHandle: senderHandle,
+          subject,
+          lastMessageAt: new Date(),
+          category: classification.category,
+          categoryReason: classification.reason,
+          categorySource: "rules",
+        },
+      }));
+    await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body, providerMessageId, rawBody } });
+    if (existingQuiet) await prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date(), subject: existingQuiet.subject ?? subject } });
+    return { client: null, conversation, lead: null, duplicate: false as const, category: classification.category };
   }
 
   // A verified email address is a strong identity — matching on it alone avoids merging
@@ -56,9 +106,7 @@ export async function ingestInboundMessage(params: {
   // same person across messages even if a sender's display name changes. Other channels
   // don't have as strong a signal, so they fall back to matching by name.
   const client =
-    (await prisma.client.findFirst({
-      where: clientEmail ? { businessId, email: clientEmail } : { businessId, name: senderName },
-    })) ??
+    knownClient ??
     (await prisma.client.create({
       data: { businessId, name: senderName, email: clientEmail, phone: clientPhone, instagram: channel === "INSTAGRAM" ? senderHandle : undefined },
     }));
@@ -127,11 +175,11 @@ export async function ingestInboundMessage(params: {
       data: { businessId, title: "New message", body: `${client.name} sent a new message on ${channel.toLowerCase()}.` },
     });
 
-    return { client, conversation: existingConversation, lead: existingConversation.lead, duplicate: false as const };
+    return { client, conversation: existingConversation, lead: existingConversation.lead, duplicate: false as const, category: "PRIORITY" as const };
   }
 
   const conversation = await prisma.conversation.create({
-    data: { businessId, clientId: client.id, channel, externalHandle: senderHandle, subject, lastMessageAt: new Date() },
+    data: { businessId, clientId: client.id, channel, externalHandle: senderHandle, subject, lastMessageAt: new Date(), category: "PRIORITY", categoryReason: classification.reason, categorySource: "rules" },
   });
 
   await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body, providerMessageId, rawBody } });
@@ -168,5 +216,5 @@ export async function ingestInboundMessage(params: {
     data: { businessId, title: "New lead", body: `${extracted.name ?? senderName} messaged you on ${channel.toLowerCase()}.` },
   });
 
-  return { client, conversation, lead, duplicate: false as const };
+  return { client, conversation, lead, duplicate: false as const, category: "PRIORITY" as const };
 }

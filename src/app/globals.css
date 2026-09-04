@@ -133,23 +133,44 @@ body {
   from { clip-path: inset(0 100% 0 0); }
   to { clip-path: inset(0 -2% 0 0); }
 }
-.dt-opening { animation: dtSheetLift 460ms cubic-bezier(0.7, 0, 0.2, 1) 1080ms forwards; }
+/*
+ * The opening, ~2.0s once per session:
+ *   80ms   signal appears at the left edge, rings once
+ *   200ms  the thread draws across (760ms) and a chip travels its length just behind the pen
+ *   960ms  the thread reaches the right; the chip lands and resolves into a green node
+ *   1080ms the name is wiped in left-to-right, written by the thread beneath it
+ *   1620ms the sheet lifts (460ms); the hero rises to meet it
+ *   2080ms done
+ */
+.dt-opening { animation: dtSheetLift 460ms cubic-bezier(0.7, 0, 0.2, 1) 1620ms forwards; }
 .dt-opening__signal { transform-box: fill-box; transform-origin: center; transform: scale(0); animation: dtSignalIn 320ms cubic-bezier(0.22, 1.2, 0.36, 1) 80ms forwards; }
 .dt-opening__ring { transform-box: fill-box; transform-origin: center; opacity: 0; animation: dtRing 700ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards; }
 .dt-opening__thread { stroke-dasharray: 1; stroke-dashoffset: 1; animation: dtThreadDraw 760ms cubic-bezier(0.4, 0, 0.2, 1) 200ms forwards; }
-.dt-opening__word { clip-path: inset(0 100% 0 0); animation: dtWipe 520ms cubic-bezier(0.4, 0, 0.2, 1) 560ms forwards; }
+.dt-opening__chip { offset-path: path("M 40 620 C 260 620, 320 300, 540 300 S 800 620, 1010 620 S 1300 300, 1500 300"); offset-distance: 0%; offset-rotate: 0deg; opacity: 0; animation: dtOpenTravel 760ms cubic-bezier(0.4, 0, 0.2, 1) 220ms forwards; }
+.dt-opening__node { transform-box: fill-box; transform-origin: center; transform: scale(0); animation: dtSignalIn 360ms cubic-bezier(0.22, 1.2, 0.36, 1) 940ms forwards; }
+.dt-opening__node-ring { transform-box: fill-box; transform-origin: center; opacity: 0; animation: dtRing 700ms cubic-bezier(0.16, 1, 0.3, 1) 980ms forwards; }
+.dt-opening__word { clip-path: inset(0 100% 0 0); animation: dtWipe 520ms cubic-bezier(0.4, 0, 0.2, 1) 1080ms forwards; }
+@keyframes dtOpenTravel {
+  0% { offset-distance: 0%; opacity: 0; }
+  6% { opacity: 1; }
+  94% { opacity: 1; }
+  100% { offset-distance: 97.5%; opacity: 0; }
+}
 .dt-opening--short { animation-delay: 0ms; animation-duration: 350ms; }
 .dt-opening--short .dt-opening__thread,
 .dt-opening--short .dt-opening__signal,
 .dt-opening--short .dt-opening__ring,
+.dt-opening--short .dt-opening__chip,
+.dt-opening--short .dt-opening__node,
+.dt-opening--short .dt-opening__node-ring,
 .dt-opening--short .dt-opening__word { animation: none; opacity: 0; }
 .dt-hero-copy > * { opacity: 0; animation: dtHeroRise 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.dt-hero-copy > :nth-child(1) { animation-delay: 1180ms; }
-.dt-hero-copy > :nth-child(2) { animation-delay: 1250ms; }
-.dt-hero-copy > :nth-child(3) { animation-delay: 1350ms; }
-.dt-hero-copy > :nth-child(4) { animation-delay: 1430ms; }
-.dt-hero-copy > :nth-child(5) { animation-delay: 1500ms; }
-.dt-hero-visual { opacity: 0; animation: dtHeroRise 800ms cubic-bezier(0.16, 1, 0.3, 1) 1380ms forwards; }
+.dt-hero-copy > :nth-child(1) { animation-delay: 1720ms; }
+.dt-hero-copy > :nth-child(2) { animation-delay: 1790ms; }
+.dt-hero-copy > :nth-child(3) { animation-delay: 1890ms; }
+.dt-hero-copy > :nth-child(4) { animation-delay: 1970ms; }
+.dt-hero-copy > :nth-child(5) { animation-delay: 2040ms; }
+.dt-hero-visual { opacity: 0; animation: dtHeroRise 800ms cubic-bezier(0.16, 1, 0.3, 1) 1920ms forwards; }
 
 /* ── Landing: motion vocabulary ────────────────────────────────────────────── */
 /* A message chip travelling a connector (offset-path is set inline per channel). */

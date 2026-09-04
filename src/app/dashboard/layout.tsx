@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession, requireBusiness, getUserMemberships } from "@/lib/auth";
 import { AppShell } from "./AppShell";
+import { Toaster } from "@/components/Toaster";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -19,8 +20,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const workspaces = memberships.map((m) => ({ businessId: m.businessId, name: m.business.name, role: m.role }));
 
   return (
-    <AppShell businessName={business.name} handle={business.handle} role={role} workspaces={workspaces}>
-      {children}
-    </AppShell>
+    <Toaster>
+      <AppShell businessName={business.name} handle={business.handle} role={role} workspaces={workspaces}>
+        {children}
+      </AppShell>
+    </Toaster>
   );
 }

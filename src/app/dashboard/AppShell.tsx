@@ -26,6 +26,7 @@ import { initials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/app/dashboard/WorkspaceSwitcher";
+import { LogoMark } from "@/components/Logo";
 
 // Icon tone shows only in the item's resting state (active state is always solid ink/white
 // for clear legibility) — the same terracotta/signal/semantic language used on the
@@ -62,8 +63,8 @@ function NavLinks({ pathname, role, onNavigate }: { pathname: string; role: Role
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              active ? "bg-ink text-white" : "text-ink/60 hover:bg-black/[0.05] hover:text-ink"
+              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+              active ? "bg-ink text-white" : "text-ink/60 hover:bg-black/[0.05] hover:text-ink hover:translate-x-0.5"
             )}
           >
             <item.icon className={cn("w-4 h-4 shrink-0", !active && item.tone)} strokeWidth={2} aria-hidden />
@@ -172,10 +173,11 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-white flex-col">
         <div className="px-5 py-5 border-b border-border">
-          <Link href="/dashboard" className="font-display text-lg text-ink">
-            Daythread
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-ink">
+            <LogoMark className="w-5 h-5" />
+            <span className="font-sans font-extrabold text-[17px] tracking-tight">Daythread</span>
           </Link>
-          <div className="text-xs text-ink/65 mt-0.5 truncate">{businessName}</div>
+          <div className="text-xs text-ink/55 mt-1 truncate">{businessName}</div>
         </div>
         <NavLinks pathname={pathname} role={role} />
         <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} />
@@ -209,7 +211,7 @@ export function AppShell({
             className="absolute inset-y-0 left-0 w-64 bg-white flex flex-col shadow-popover"
           >
             <div className="flex items-center justify-between px-5 py-5 border-b border-border">
-              <span className="font-display text-lg text-ink">Daythread</span>
+              <span className="inline-flex items-center gap-2 text-ink"><LogoMark className="w-5 h-5" /><span className="font-sans font-extrabold text-[17px] tracking-tight">Daythread</span></span>
               <button
                 aria-label="Close navigation"
                 onClick={() => setMobileOpen(false)}

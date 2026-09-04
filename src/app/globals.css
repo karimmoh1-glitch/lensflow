@@ -10,6 +10,31 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Motion language ─────────────────────────────────────────────────────────
+   Four tempos, each with a job. Navigation and controls: fast. Content settling in:
+   smooth. Product events (a message arrives, a payment lands, an automation fires):
+   expressive, with a little overshoot. Atmosphere (ambient tints, drifts): very slow.
+   Nothing else. If an animation doesn't fit one of these, it probably shouldn't exist. */
+:root {
+  --dt-fast: 150ms;
+  --dt-smooth: 320ms;
+  --dt-expressive: 520ms;
+  --dt-slow: 1200ms;
+  --dt-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dt-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dt-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+/* Autofilled inputs keep the product's surface, not the browser's yellow. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: #101114;
+  caret-color: #101114;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* The "display voice" is now the same family as body (Manrope) — what distinguishes it
    is weight and tracking, so give every font-display site that in one place. This lives
    in the components layer so Tailwind's utilities layer (font-black, font-semibold, etc.)
@@ -38,6 +63,11 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: rgba(15, 15, 15, 0.15);
   border-radius: 999px;
+}
+
+@keyframes dtDot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+  40% { transform: translateY(-3px); opacity: 1; }
 }
 
 @keyframes fadeUp {

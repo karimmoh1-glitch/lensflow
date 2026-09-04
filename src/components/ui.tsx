@@ -49,23 +49,48 @@ const sizeClasses: Record<ButtonSize, string> = {
 const PHYSICAL_FEEL =
   "transition-transform duration-150 hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0";
 
-export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize }>(
-  function Button({ className, variant = "primary", size = "md", ...props }, ref) {
-    return (
-      <button
-        ref={ref}
-        className={cn(
-          "inline-flex items-center justify-center font-medium transition-colors whitespace-nowrap shrink-0 disabled:opacity-45 disabled:pointer-events-none disabled:hover:scale-100 disabled:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-1",
-          PHYSICAL_FEEL,
-          variantClasses[variant],
-          sizeClasses[size],
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
+/** Three dots breathing in sequence — the product's own "working" signal, used instead of a
+ * spinner inside buttons. Inherits the button's text color. */
+export function WorkingDots({ className }: { className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", className)} aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <span key={i} className="w-1.5 h-1.5 rounded-full bg-current animate-[dtDot_900ms_ease-in-out_infinite]" style={{ animationDelay: `${i * 150}ms` }} />
+      ))}
+    </span>
+  );
+}
+
+export const Button = forwardRef<
+  HTMLButtonElement,
+  ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize; loading?: boolean; loadingLabel?: string }
+>(function Button({ className, variant = "primary", size = "md", loading, loadingLabel, children, disabled, ...props }, ref) {
+  return (
+    <button
+      ref={ref}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={cn(
+        "relative inline-flex items-center justify-center font-semibold transition-colors whitespace-nowrap shrink-0 disabled:opacity-45 disabled:pointer-events-none disabled:hover:scale-100 disabled:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2",
+        PHYSICAL_FEEL,
+        variantClasses[variant],
+        sizeClasses[size],
+        loading && "opacity-90",
+        className
+      )}
+      {...props}
+    >
+      {loading ? (
+        <>
+          <WorkingDots />
+          {loadingLabel && <span className="ml-2">{loadingLabel}</span>}
+        </>
+      ) : (
+        children
+      )}
+    </button>
+  );
+});
 
 export function LinkButton({
   href,
@@ -134,12 +159,64 @@ export function IconButton({ className, "aria-label": ariaLabel, ...props }: But
 
 // ── Form controls ─────────────────────────────────────────────────────────
 
-const controlBase =
-  "w-full rounded-md border border-border bg-white px-3 h-9 text-sm placeholder:text-ink/35 focus:outline-none focus:ring-2 focus:ring-accent/35 focus:border-accent/60 disabled:opacity-50 disabled:bg-black/[0.02]";
+// One control surface for the whole product. Rest: hairline border. Hover: the border
+// darkens a step. Focus: a soft accent ring plus a solid accent border — visible without
+// being loud. Invalid (aria-invalid): the danger border, same ring language in red.
+export const controlBase =
+  "w-full rounded-lg border border-ink/[0.14] bg-white px-3.5 h-10 text-sm text-ink placeholder:text-ink/35 transition-[border-color,box-shadow] duration-150 hover:border-ink/25 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 aria-[invalid=true]:border-danger aria-[invalid=true]:focus:ring-danger/20 disabled:opacity-50 disabled:bg-black/[0.02] disabled:hover:border-ink/[0.14]";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
   return <input ref={ref} className={cn(controlBase, className)} {...props} />;
 });
+
+/** A labelled control with an optional error, wired for assistive tech: the error is
+ * announced, and the control is marked invalid. */
+export function Field({
+  id,
+  label,
+  hint,
+  error,
+  trailing,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: ReactNode;
+  error?: string | null;
+  trailing?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label htmlFor={id} className="block text-[13px] font-semibold text-ink/80">
+          {label}
+        </label>
+        {trailing}
+      </div>
+      {children}
+      {error ? (
+        <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs font-medium text-danger-text">
+          {error}
+        </p>
+      ) : hint ? (
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-ink/50">
+          {hint}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** A form-level problem, stated like a person would: what happened, and where to go. */
+export function FormError({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <div role="alert" className="rounded-xl border border-danger/25 bg-danger-soft/60 px-3.5 py-3 text-sm text-danger-text dt-swap">
+      <p>{children}</p>
+      {action && <div className="mt-1.5 flex gap-4 text-[13px] font-semibold">{action}</div>}
+    </div>
+  );
+}
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea(
   { className, ...props },
@@ -222,11 +299,32 @@ export function PageHeader({
   );
 }
 
-export function EmptyState({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
+/**
+ * The beginning of something, not a hole in the page. A short run of the thread with an
+ * unlit node says "this will fill in"; the title says what belongs here; the description
+ * says why it matters or what to do; the action (when there is one) does it.
+ */
+export function EmptyState({
+  title,
+  description,
+  action,
+  tone = "neutral",
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  tone?: "neutral" | "success" | "accent";
+}) {
+  const node = tone === "success" ? "bg-success" : tone === "accent" ? "bg-accent" : "bg-ink/20";
   return (
-    <div className="flex flex-col items-center justify-center text-center py-14 px-6 border border-dashed border-border rounded-xl">
-      <p className="text-sm font-medium text-ink">{title}</p>
-      {description && <p className="mt-1 text-sm text-ink/65 max-w-sm">{description}</p>}
+    <div className="flex flex-col items-center justify-center text-center py-12 px-6 rounded-2xl border border-border bg-white/60">
+      <div aria-hidden className="flex flex-col items-center mb-4">
+        <span className="w-px h-5 bg-ink/10" />
+        <span className={cn("w-[11px] h-[11px] rounded-full ring-[3px] ring-paper", node)} />
+        <span className="w-px h-5 bg-gradient-to-b from-ink/10 to-transparent" />
+      </div>
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      {description && <p className="mt-1 text-sm text-ink/60 max-w-sm leading-relaxed">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

@@ -85,7 +85,7 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
 
         <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-6 py-6 space-y-4">
           {conversation.messages.map((m) => (
-            <div key={m.id} className={cn("max-w-md", m.direction === "OUTBOUND" ? "ml-auto" : "")}>
+            <div key={m.id} className={cn("max-w-md dt-swap", m.direction === "OUTBOUND" ? "ml-auto" : "")}>
               <div
                 className={cn(
                   "rounded-2xl px-4 py-2.5 text-sm",

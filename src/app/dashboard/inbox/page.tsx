@@ -189,7 +189,17 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         {active ? (
           <ThreadPanel conversationId={active.id} />
         ) : (
-          <div className="hidden md:flex flex-1 items-center justify-center text-ink/60 text-sm">Select a conversation</div>
+          <div className="hidden md:flex flex-1 items-center justify-center px-10">
+            <div className="max-w-xs text-center">
+              <div aria-hidden className="flex flex-col items-center mb-4">
+                <span className="w-px h-6 bg-ink/10" />
+                <span className="w-[11px] h-[11px] rounded-full bg-signal ring-[3px] ring-paper" />
+                <span className="w-px h-6 bg-gradient-to-b from-ink/10 to-transparent" />
+              </div>
+              <p className="text-sm font-semibold text-ink">Pick a conversation</p>
+              <p className="mt-1 text-sm text-ink/55 leading-relaxed">Who they are, what they&rsquo;ve booked and what to do next shows up beside it.</p>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { resetPassword } from "@/app/actions/auth";
-import { Button, Input, Label, Card, CardBody } from "@/components/ui";
+import { Button, Field, FormError } from "@/components/ui";
+import { PasswordInput } from "@/components/PasswordInput";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function ResetPasswordPage({ params }: { params: { token: string } }) {
   const [error, setError] = useState<string | null>(null);
@@ -20,34 +22,26 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
   }
 
   return (
-    <main className="min-h-screen bg-paper flex items-center justify-center px-6">
-      <Card className="w-full max-w-sm">
-        <CardBody className="p-8">
-          <Link href="/" className="font-display text-lg">
-            Daythread
-          </Link>
-          <h1 className="font-display text-2xl mt-4 mb-1">Choose a new password</h1>
-          <p className="text-sm text-ink/70 mb-6">Enter a new password for your account.</p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="password">New password</Label>
-              <Input id="password" name="password" type="password" placeholder="At least 8 characters" required />
-            </div>
-            {error && (
-              <div className="text-sm text-danger space-y-1">
-                <p>{error}</p>
-                <Link href="/forgot-password" className="text-accent-text font-medium">
-                  Request a new link
-                </Link>
-              </div>
-            )}
-            <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Saving…" : "Reset password"}
-            </Button>
-          </form>
-        </CardBody>
-      </Card>
-    </main>
+    <AuthShell eyebrow="Reset" title="Choose a new password." lede="You'll use it from now on, on every device.">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <Field id="password" label="New password" hint="At least 8 characters.">
+          <PasswordInput id="password" name="password" autoComplete="new-password" required minLength={8} aria-invalid={!!error} />
+        </Field>
+        {error && (
+          <FormError
+            action={
+              <Link href="/forgot-password" className="text-ink hover:text-accent-text">
+                Request a new link
+              </Link>
+            }
+          >
+            {error}
+          </FormError>
+        )}
+        <Button type="submit" size="lg" className="w-full mt-2" loading={pending} loadingLabel="Saving">
+          Save password
+        </Button>
+      </form>
+    </AuthShell>
   );
 }

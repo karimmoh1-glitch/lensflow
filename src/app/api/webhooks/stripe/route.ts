@@ -158,7 +158,14 @@ async function syncSubscription(subscription: Stripe.Subscription) {
     console.error("[webhook:stripe] subscription missing businessId metadata", subscription.id);
     return;
   }
-  const planTier = subscription.metadata?.planTier === "BUSINESS" ? "BUSINESS" : "PRO";
+  // Only a tier this app sold. A subscription created some other way carries no planTier and
+  // must not silently grant Pro.
+  const soldTier = subscription.metadata?.planTier;
+  if (soldTier !== "PRO" && soldTier !== "BUSINESS") {
+    console.error("[webhook:stripe] subscription without a known planTier; not syncing", subscription.id);
+    return;
+  }
+  const planTier = soldTier;
   const billingStatus = STRIPE_STATUS_MAP[subscription.status] ?? "CANCELED";
 
   await prisma.business.updateMany({

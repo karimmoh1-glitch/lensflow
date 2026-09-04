@@ -1,13 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { track } from "@/lib/analytics";
 import { labelFor, type MessageCategory } from "@/lib/classifyMessage";
 import { summarizeDeterministically, type ConversationSummary } from "@/lib/summarize";
 import { summarizeConversationSentence } from "@/lib/ai";
-import { aiEntitled } from "@/lib/billing";
+import { aiEntitled, intelligenceEntitled } from "@/lib/billing";
 import { splitMessage } from "@/lib/cleanMessage";
 import { format } from "date-fns";
 import { toZonedDisplayDate } from "@/lib/utils";
@@ -28,8 +28,8 @@ function refresh() {
  * from them lands where you said. Nothing is deleted — a conversation moved out of Priority
  * is still in All.
  */
-export async function reclassifyConversation(conversationId: string, category: MessageCategory): Promise<{ error?: string; ruleFor?: string }> {
-  const ctx = await requireRole([...STAFF]);
+export async function reclassifyConversation(conversationId: string, category: MessageCategory, session?: SessionPayload | null): Promise<{ error?: string; ruleFor?: string }> {
+  const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const businessId = ctx.business.id;
   const conv = await prisma.conversation.findFirst({ where: { id: conversationId, businessId }, include: { client: true, lead: true } });
@@ -72,8 +72,8 @@ export async function reclassifyConversation(conversationId: string, category: M
   return { ruleFor: rule?.value };
 }
 
-export async function setClientRelationship(clientId: string, relationship: ClientRelationship): Promise<{ error?: string }> {
-  const ctx = await requireRole([...STAFF]);
+export async function setClientRelationship(clientId: string, relationship: ClientRelationship, session?: SessionPayload | null): Promise<{ error?: string }> {
+  const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const r = await prisma.client.updateMany({ where: { id: clientId, businessId: ctx.business.id }, data: { relationship } });
   if (r.count === 0) return { error: "Client not found." };
@@ -83,8 +83,8 @@ export async function setClientRelationship(clientId: string, relationship: Clie
   return {};
 }
 
-export async function markConversationRead(conversationId: string, read: boolean): Promise<void> {
-  const ctx = await requireRole([...STAFF]);
+export async function markConversationRead(conversationId: string, read: boolean, session?: SessionPayload | null): Promise<void> {
+  const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   await prisma.conversation.updateMany({ where: { id: conversationId, businessId: ctx.business.id }, data: { lastReadAt: read ? new Date() : null } });
   revalidatePath("/dashboard/inbox");
@@ -92,8 +92,8 @@ export async function markConversationRead(conversationId: string, read: boolean
 
 /** "Delete for me": hides the conversation from Daythread. The external message (Gmail,
  * SMS) is untouched and nothing is destroyed here — Undo brings it straight back. */
-export async function removeConversationForMe(conversationId: string, archived = true): Promise<{ error?: string }> {
-  const ctx = await requireRole([...STAFF]);
+export async function removeConversationForMe(conversationId: string, archived = true, session?: SessionPayload | null): Promise<{ error?: string }> {
+  const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const r = await prisma.conversation.updateMany({ where: { id: conversationId, businessId: ctx.business.id }, data: { archived } });
   if (r.count === 0) return { error: "Conversation not found." };
@@ -101,8 +101,8 @@ export async function removeConversationForMe(conversationId: string, archived =
   return {};
 }
 
-export async function summarizeConversation(conversationId: string, opts: { force?: boolean } = {}): Promise<{ summary?: ConversationSummary; error?: string }> {
-  const ctx = await requireRole([...STAFF]);
+export async function summarizeConversation(conversationId: string, opts: { force?: boolean } = {}, session?: SessionPayload | null): Promise<{ summary?: ConversationSummary; error?: string }> {
+  const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
   const conv = await prisma.conversation.findFirst({
@@ -160,4 +160,28 @@ function guessName(handle: string | null | undefined): string | null {
     return local.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   }
   return handle;
+}
+
+/**
+ * Ownership. A Business-plan feature: hand a conversation to a teammate. Both the
+ * conversation and the membership must belong to this business; the check is server-side
+ * and the plan is re-read from the database, never trusted from the client.
+ */
+export async function assignConversation(conversationId: string, membershipId: string | null, session?: SessionPayload | null): Promise<{ error?: string; assignee?: string | null }> {
+  const ctx = await requireRole([...STAFF], session);
+  if (!ctx) throw new Error("unauthorized");
+  const { business } = ctx;
+  if (!intelligenceEntitled(business)) return { error: "Assigning conversations to teammates is part of the Business plan." };
+  const conv = await prisma.conversation.findFirst({ where: { id: conversationId, businessId: business.id }, select: { id: true } });
+  if (!conv) return { error: "Conversation not found." };
+  let assigneeName: string | null = null;
+  if (membershipId) {
+    const member = await prisma.orgMembership.findFirst({ where: { id: membershipId, businessId: business.id, status: "ACTIVE", role: { not: "CLIENT" } }, include: { user: { select: { name: true } } } });
+    if (!member) return { error: "That teammate isn't in this workspace." };
+    assigneeName = member.user.name;
+  }
+  await prisma.conversation.update({ where: { id: conv.id }, data: { assigneeMembershipId: membershipId } });
+  await track("conversation_assigned", { businessId: business.id, properties: { assigned: Boolean(membershipId) } });
+  refresh();
+  return { assignee: assigneeName };
 }

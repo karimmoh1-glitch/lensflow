@@ -148,6 +148,12 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5", standing.tone === "signal" ? "bg-accent-soft text-accent-text" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-signal-soft text-signal-text" : "bg-black/[0.05] text-ink/60")}>{standing.label}</span>
             </div>
             <p className="mt-2 font-sans font-extrabold text-[1.35rem] leading-tight tracking-[-0.02em] text-ink">{standing.standing}</p>
+            {(standing.theyWaitFor || standing.youWaitFor) && (
+              <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                {standing.theyWaitFor && <div><dt className="inline text-ink/45">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor}</dd></div>}
+                {standing.youWaitFor && <div><dt className="inline text-ink/45">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor}</dd></div>}
+              </dl>
+            )}
             {lastInteraction && (
               <p className="mt-3 text-sm text-ink/60">
                 <span className="text-ink/45">Last interaction</span> · {humanAgo(lastInteraction.when, now)} ·{" "}

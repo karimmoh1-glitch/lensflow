@@ -5,6 +5,7 @@ import { Sparkles, RotateCcw } from "lucide-react";
 import { Button, Textarea } from "@/components/ui";
 import { generateDraftAction, sendReplyAction } from "@/app/actions/inbox";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toaster";
 import { EntitlementNotice } from "@/components/UpgradePrompt";
 
 export function Composer({ conversationId }: { conversationId: string }) {
@@ -13,6 +14,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
   const [pending, startTransition] = useTransition();
   const [drafting, setDrafting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   const router = useRouter();
 
   function draft() {
@@ -44,6 +46,11 @@ export function Composer({ conversationId }: { conversationId: string }) {
         setError(result.error);
         router.refresh();
         return;
+      }
+      if (result.simulated) {
+        toast({ tone: "signal", title: "Saved, not delivered", body: "This channel isn't connected on this deployment yet, so nothing was sent. Connect it in Settings → Connections.", ttl: 7000 });
+      } else {
+        toast({ tone: "outcome", title: "Sent" });
       }
       setBody("");
       setWasAiDrafted(false);

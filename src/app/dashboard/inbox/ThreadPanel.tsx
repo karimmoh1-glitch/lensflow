@@ -15,6 +15,8 @@ import { MessageBody } from "./MessageBody";
 import { ConversationTools, MarkReadOnOpen } from "./ConversationTools";
 import { SummaryCard } from "./SummaryCard";
 import { UnderstandingCard } from "./UnderstandingCard";
+import { AssignMenu } from "./AssignMenu";
+import { intelligenceEntitled } from "@/lib/billing";
 import { splitMessage } from "@/lib/cleanMessage";
 import { understand } from "@/lib/understand";
 import { readRelationship } from "@/lib/relationshipState";
@@ -51,6 +53,14 @@ export async function ThreadPanel({ conversationId, autoSummarize = false }: { c
   const lead = conversation.lead;
   const client = conversation.client;
   const now = new Date();
+
+  // What Daythread already did for this relationship, and who owns the thread.
+  const executive = intelligenceEntitled(business);
+  const targetIds = [...(client?.bookings.map((b) => b.id) ?? []), ...(client?.payments.map((p) => p.id) ?? []), ...(lead ? [lead.id] : [])];
+  const [handled, members] = await Promise.all([
+    targetIds.length ? prisma.automationExecution.findMany({ where: { businessId: business.id, targetId: { in: targetIds } }, include: { automation: { select: { name: true } } }, orderBy: { ranAt: "desc" }, take: 5 }) : Promise.resolve([]),
+    executive ? prisma.orgMembership.findMany({ where: { businessId: business.id, status: "ACTIVE", role: { in: ["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"] } }, include: { user: { select: { name: true } } }, orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
+  ]);
   const scored = lead
     ? scoreLead({
         intent: lead.intent,
@@ -151,6 +161,26 @@ export async function ThreadPanel({ conversationId, autoSummarize = false }: { c
 
         <SummaryCard conversationId={conversation.id} initial={cachedSummary} autoRun={autoSummarize} />
 
+        {(handled.length > 0 || (lead && (lead.serviceId || lead.requestedDateText || lead.requestedLocation || lead.budgetCents))) && (
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/60 mb-1.5">Daythread already handled</div>
+            <ul className="space-y-1 text-xs text-ink/70">
+              {lead && (lead.serviceId || lead.requestedDateText || lead.requestedLocation || lead.budgetCents) && (
+                <li className="flex items-start gap-2"><span className="mt-[5px] w-1.5 h-1.5 rounded-full bg-signal shrink-0" />Read the inquiry: {[lead.service && "service", lead.requestedDateText && "date", lead.requestedLocation && "location", lead.budgetCents && "budget"].filter(Boolean).join(", ")} extracted</li>
+              )}
+              {handled.map((h) => (
+                <li key={h.id} className="flex items-start gap-2">
+                  <span className={cn("mt-[5px] w-1.5 h-1.5 rounded-full shrink-0", h.result === "sent" ? "bg-success" : h.result === "failed" ? "bg-accent" : "bg-ink/30")} />
+                  <span>
+                    {h.result === "sent" ? "Sent" : h.result === "not_configured" ? "Tried to send" : h.result === "failed" ? "Failed to send" : "Skipped"} {h.automation.name.toLowerCase()} · {format(h.ranAt, "MMM d")}
+                    {h.result === "not_configured" && <span className="text-warning-text"> — channel not connected</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {lead && (lead.service || lead.requestedDateText || lead.requestedLocation || lead.budgetCents) && (
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/60 mb-2">They mentioned</div>
@@ -219,7 +249,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false }: { c
       <MarkReadOnOpen conversationId={conversation.id} unread={unread} />
       <div className="flex-1 flex flex-col min-w-0">
         <div className="px-4 md:px-6 py-3 border-b border-border bg-white flex items-center gap-3">
-          <Link href="/dashboard/inbox" className="md:hidden -ml-1 w-8 h-8 flex items-center justify-center rounded-md hover:bg-black/[0.05]" aria-label="Back to inbox">
+          <Link href="/dashboard/inbox" className="lg:hidden -ml-1 w-8 h-8 flex items-center justify-center rounded-md hover:bg-black/[0.05]" aria-label="Back to inbox">
             <ChevronLeft className="w-[18px] h-[18px] text-ink/60" strokeWidth={2} />
           </Link>
           <div className="flex-1 min-w-0">
@@ -232,15 +262,16 @@ export async function ThreadPanel({ conversationId, autoSummarize = false }: { c
             </div>
           </div>
           {needsReply && (
-            <span className="hidden xl:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0">
+            <span className="hidden 2xl:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-accent" />
               Needs reply
             </span>
           )}
+          {executive && <AssignMenu conversationId={conversation.id} members={members.map((m) => ({ membershipId: m.id, name: m.user.name, role: m.role }))} current={conversation.assigneeMembershipId} />}
           <ConversationTools conversationId={conversation.id} unread={unread} category={conversation.category} clientId={client?.id ?? null} relationship={client?.relationship ?? null} variant="header" />
         </div>
 
-        <details className="lg:hidden border-b border-border bg-paper/60 group/ctx">
+        <details className="xl:hidden border-b border-border bg-paper/60 group/ctx">
           <summary className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-ink/70 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
             <span className="w-1.5 h-1.5 rounded-full bg-signal" />
             About {displayName}
@@ -258,6 +289,8 @@ export async function ThreadPanel({ conversationId, autoSummarize = false }: { c
                   "rounded-2xl px-4 py-2.5 text-sm",
                   m.status === "FAILED"
                     ? "bg-danger-soft text-danger-text rounded-br-sm border border-danger/30"
+                    : m.status === "NOT_DELIVERED"
+                      ? "bg-warning-soft/60 text-ink rounded-br-sm border border-warning/40"
                     : m.direction === "OUTBOUND"
                       ? "bg-ink text-white rounded-br-sm"
                       : "bg-black/[0.05] text-ink rounded-bl-sm"
@@ -267,6 +300,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false }: { c
               </div>
               <div className={cn("text-[11px] text-ink/50 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
                 {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
+                {m.status === "NOT_DELIVERED" && <span className="text-warning-text">Not delivered — {CHANNEL_META[conversation.channel].label} isn&rsquo;t connected · </span>}
                 {m.aiDrafted && <span className="text-signal-text">AI drafted · </span>}
                 {m.direction === "OUTBOUND" && !m.sentByUserId && !m.aiDrafted && <span className="text-signal-text">Sent by Daythread · </span>}
                 {format(m.createdAt, "MMM d, h:mm a")}
@@ -278,7 +312,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false }: { c
         <Composer conversationId={conversation.id} />
       </div>
 
-      <aside className="hidden lg:flex w-[22rem] shrink-0 border-l border-border bg-white flex-col overflow-y-auto scrollbar-thin">{rail}</aside>
+      <aside className="hidden xl:flex w-80 2xl:w-[22rem] shrink-0 border-l border-border bg-white flex-col overflow-y-auto scrollbar-thin">{rail}</aside>
     </div>
   );
 }

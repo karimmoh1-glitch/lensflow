@@ -107,6 +107,9 @@ export function UnderstandingCard({
         >
           {u.nextAction.label}
         </button>
+        {u.ifNot && u.nextAction.kind !== "none" && (
+          <p className="mt-2 text-[11px] text-ink/55 leading-snug"><span className="font-semibold text-ink/70">If you don&rsquo;t:</span> {u.ifNot}</p>
+        )}
         {disabled && u.nextAction.kind === "book" && <p className="mt-1.5 text-[11px] text-ink/50">Match a service to this lead first, below.</p>}
         {u.confidence === "low" && <p className="mt-1.5 text-[11px] text-ink/45">Read from the message — check it before acting.</p>}
       </div>

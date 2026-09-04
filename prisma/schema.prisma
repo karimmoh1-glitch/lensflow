@@ -148,6 +148,7 @@ model OrgMembership {
   canViewAllConversations Boolean @default(false)
 
   assignedBookings Booking[] @relation("AssignedPartner")
+  assignedConversations Conversation[] @relation("AssignedConversations")
 
   @@unique([userId, businessId])
   @@index([businessId])
@@ -408,6 +409,9 @@ model Conversation {
   // Read state for the business (one shared inbox): unread when the last inbound message
   // is newer than this.
   lastReadAt DateTime?
+  // Ownership (Business plan): the teammate this conversation is assigned to.
+  assigneeMembershipId String?
+  assignee             OrgMembership? @relation("AssignedConversations", fields: [assigneeMembershipId], references: [id], onDelete: SetNull)
   // The latest summary (AI when configured, deterministic extraction otherwise), kept so it
   // doesn't have to be regenerated every open. Never a substitute for the messages.
   summary       Json?
@@ -421,6 +425,7 @@ model Conversation {
   @@index([businessId, lastMessageAt])
   @@index([businessId, clientId])
   @@index([businessId, category, lastMessageAt])
+  @@index([businessId, assigneeMembershipId])
 }
 
 enum ClientRelationship {
@@ -465,6 +470,7 @@ enum MessageStatus {
   SENT
   DELIVERED
   FAILED
+  NOT_DELIVERED // the channel isn't configured on this deployment; nothing left the building
 }
 
 model Message {

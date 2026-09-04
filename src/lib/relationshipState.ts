@@ -39,11 +39,48 @@ export type RelationshipRead = {
   standing: string; // "Sarah replied yesterday and is waiting on you."
   nextAction: { label: string; why: string } | null;
   tone: "signal" | "thinking" | "outcome" | "neutral" | "warning";
+  /** What they're waiting for from you, if anything. */
+  theyWaitFor: string | null;
+  /** What you're waiting for from them, if anything. */
+  youWaitFor: string | null;
 };
 
 const DAY = 86_400_000;
 
 export function readRelationship(i: RelationshipInput): RelationshipRead {
+  const base = readCore(i);
+  return { ...base, ...waiting(base.state, i) };
+}
+
+function waiting(state: RelationshipState, i: RelationshipInput): { theyWaitFor: string | null; youWaitFor: string | null } {
+  switch (state) {
+    case "NEW_INQUIRY":
+      return { theyWaitFor: "Your first reply", youWaitFor: null };
+    case "WAITING_ON_YOU":
+      return { theyWaitFor: "Your reply", youWaitFor: null };
+    case "CONTACTED":
+    case "QUALIFIED":
+      return { theyWaitFor: null, youWaitFor: "Their answer" };
+    case "PROPOSAL_SENT":
+      return { theyWaitFor: null, youWaitFor: "A yes on your proposal" };
+    case "FOLLOW_UP":
+      return { theyWaitFor: null, youWaitFor: "Their answer — it's been a week" };
+    case "BOOKED":
+      return i.outstandingCents > 0
+        ? { theyWaitFor: null, youWaitFor: `$${(i.outstandingCents / 100).toLocaleString()} still owed` }
+        : i.upcomingBooking && (i.upcomingBooking.status === "BOOKED" || i.upcomingBooking.status === "INQUIRY")
+          ? { theyWaitFor: "Your confirmation", youWaitFor: null }
+          : { theyWaitFor: "The session details", youWaitFor: null };
+    case "COMPLETED":
+      return i.outstandingCents > 0 ? { theyWaitFor: null, youWaitFor: `$${(i.outstandingCents / 100).toLocaleString()} still owed` } : { theyWaitFor: "Their photos or deliverables", youWaitFor: null };
+    default:
+      return { theyWaitFor: null, youWaitFor: null };
+  }
+}
+
+type CoreRead = Omit<RelationshipRead, "theyWaitFor" | "youWaitFor">;
+
+function readCore(i: RelationshipInput): CoreRead {
   const now = i.now ?? new Date();
   const daysSince = (d: Date | null) => (d ? (now.getTime() - d.getTime()) / DAY : Infinity);
   const theyWroteLast = Boolean(i.lastInbound && (!i.lastOutbound || i.lastInbound > i.lastOutbound));

@@ -4,10 +4,11 @@ import { fireAutomationEvent, runScheduledAutomations, interpolate } from "./aut
 import { addHours } from "date-fns";
 
 /**
- * The runner against a real database. The email adapter is not configured in tests, so a
- * send is simulated (ok, no provider id) — what matters here is the contract: one
- * execution per (automation, target), a message written into the client's thread, an
- * entitlement check at run time, and the scheduled sweep finding what's due.
+ * The runner against a real database. No email provider is configured in tests, so the
+ * honest result is "not_configured" with a NOT_DELIVERED message in the thread — never
+ * "sent". What matters here is the contract: one execution per (automation, target), the
+ * message written into the client's thread with its true status, an entitlement check at
+ * run time, and the scheduled sweep finding what's due.
  */
 describe("automation runner", () => {
   let businessId: string;
@@ -41,12 +42,16 @@ describe("automation runner", () => {
     expect(first.ran).toBe(1);
     const execs = await prisma.automationExecution.findMany({ where: { automationId } });
     expect(execs).toHaveLength(1);
-    expect(execs[0].result).toBe("sent");
+    expect(execs[0].result).toBe("not_configured");
     const outbound = await prisma.message.findMany({ where: { direction: "OUTBOUND", conversation: { businessId, clientId } } });
     expect(outbound).toHaveLength(1);
+    expect(outbound[0].status).toBe("NOT_DELIVERED");
     expect(outbound[0].body).toContain("Thanks for booking with Runner Fixture, Sarah!");
     expect(outbound[0].body).toContain("Brand Session on");
 
+    // A not_configured run is retried (the channel may exist next time) but a sent or
+    // skipped one never is — simulate a sent one and fire again.
+    await prisma.automationExecution.updateMany({ where: { automationId }, data: { result: "sent" } });
     await fireAutomationEvent({ businessId, trigger: "BOOKING_CREATED", targetType: "booking", targetId: bookingId });
     expect(await prisma.automationExecution.count({ where: { automationId } })).toBe(1);
     expect(await prisma.message.count({ where: { direction: "OUTBOUND", conversation: { businessId, clientId } } })).toBe(1);
@@ -55,13 +60,14 @@ describe("automation runner", () => {
   it("the scheduled sweep finds a shoot due within the reminder window", async () => {
     const reminder = await prisma.automation.create({ data: { businessId, name: "Shoot reminder", trigger: "DAYS_BEFORE_SHOOT", offsetHours: 24, action: "SEND_REMINDER", messageTemplate: "Reminder: {{service}} is {{date}} at {{time}}." } });
     const summary = await runScheduledAutomations(new Date());
-    expect(summary.sent).toBeGreaterThanOrEqual(1);
+    expect(summary.not_configured).toBeGreaterThanOrEqual(1);
     const exec = await prisma.automationExecution.findFirst({ where: { automationId: reminder.id, targetId: bookingId } });
-    expect(exec?.result).toBe("sent");
-    // Sweep again: nothing new.
-    const again = await runScheduledAutomations(new Date());
+    expect(exec?.result).toBe("not_configured");
+    expect(summary.failed).toBe(0);
+    // Once it has actually gone out, the sweep never sends it again.
+    await prisma.automationExecution.updateMany({ where: { automationId: reminder.id }, data: { result: "sent" } });
+    await runScheduledAutomations(new Date());
     expect(await prisma.automationExecution.count({ where: { automationId: reminder.id } })).toBe(1);
-    expect(again.failed).toBe(0);
   });
 
   it("stops running for a business whose plan lapsed — server-side, not just the toggle", async () => {

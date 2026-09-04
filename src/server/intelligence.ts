@@ -19,12 +19,24 @@ export type Intelligence = {
   conversion: { leads: number; booked: number; rate: number | null }; // last 90 days
   topCustomers: Array<{ clientId: string; name: string; paidCents: number; bookings: number }>;
   dormantCustomers: number;
+  /** Who is carrying what: open conversations per teammate, and how many are waiting on a reply. */
+  team: Array<{ membershipId: string; name: string; role: string; open: number; needsReply: number }>;
+  unassignedNeedsReply: number;
 };
 
 export async function getIntelligence(businessId: string, now = new Date()): Promise<Intelligence> {
   const d30 = subDays(now, 30);
   const d90 = subDays(now, 90);
   const weekEnd = addDays(now, 7);
+  const [members, assigned, unassignedNeedsReply] = await Promise.all([
+    prisma.orgMembership.findMany({ where: { businessId, status: "ACTIVE", role: { in: ["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"] } }, include: { user: { select: { name: true } } } }),
+    prisma.conversation.findMany({ where: { businessId, archived: false, category: "PRIORITY", assigneeMembershipId: { not: null } }, select: { assigneeMembershipId: true, lead: { select: { respondedAt: true, status: true } } } }),
+    prisma.conversation.count({ where: { businessId, archived: false, category: "PRIORITY", assigneeMembershipId: null, lead: { respondedAt: null, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } } }),
+  ]);
+  const team = members.map((m) => {
+    const mine = assigned.filter((c) => c.assigneeMembershipId === m.id);
+    return { membershipId: m.id, name: m.user.name, role: m.role, open: mine.length, needsReply: mine.filter((c) => c.lead && !c.lead.respondedAt && !["BOOKED", "LOST"].includes(c.lead.status)).length };
+  });
   const [openLeads, waiting, unconfirmedSoon, overdue, failedAutomations, weekBookings, weekCollected, weekNewLeads, weekBooked, respondedLeads, leads90, booked90, customers] = await Promise.all([
     prisma.lead.findMany({ where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } }, include: { client: { select: { id: true, name: true } } } }),
     prisma.lead.count({ where: { businessId, respondedAt: null, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } }),
@@ -103,6 +115,8 @@ export async function getIntelligence(businessId: string, now = new Date()): Pro
     conversion: { leads: leads90, booked: booked90, rate: leads90 > 0 ? booked90 / leads90 : null },
     topCustomers: topCustomers.slice(0, 3),
     dormantCustomers,
+    team,
+    unassignedNeedsReply,
   };
 }
 

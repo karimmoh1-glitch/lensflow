@@ -5,9 +5,8 @@ import { requireRole } from "@/lib/auth";
 import type { SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { draftReply } from "@/lib/ai";
-import { sendOnChannel } from "@/lib/messaging";
-import { getValidAccessToken, sendGmailMessage } from "@/lib/google";
-import { aiEntitled } from "@/lib/billing";
+import { aiEntitled, smsEntitled } from "@/lib/billing";
+import { deliverToCustomer } from "@/server/deliver";
 import type { SendResult } from "@/lib/channels/types";
 
 /** "AI-powered lead scoring & reply drafts" is the marketed Pro+ feature — scoped here to
@@ -56,64 +55,33 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
   const conversation = await prisma.conversation.findFirst({ where: { id: conversationId, businessId: business.id } });
   if (!conversation) throw new Error("not found");
 
-  // For email specifically: Reply-To routes the customer's reply back through our own
-  // webhook instead of nowhere, and threading headers keep it in the same thread in
-  // their mail client, not just in ours.
-  let replyTo: string | undefined;
-  let headers: Record<string, string> | undefined;
+  // Threading for email: the last inbound provider id keeps the reply in the same thread
+  // in the customer's mail client, not just in ours.
   let lastInboundMessageId: string | undefined;
   if (conversation.channel === "EMAIL") {
-    const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;
-    if (inboundDomain) replyTo = `${business.handle}@${inboundDomain}`;
-
     const lastInbound = await prisma.message.findFirst({
       where: { conversationId, direction: "INBOUND", providerMessageId: { not: null } },
       orderBy: { createdAt: "desc" },
     });
     lastInboundMessageId = lastInbound?.providerMessageId ?? undefined;
-    if (lastInboundMessageId) {
-      headers = { "In-Reply-To": lastInboundMessageId, References: lastInboundMessageId };
-    }
   }
 
-  // A connected Gmail account (per-business, real OAuth) takes priority over the
-  // platform-wide Resend path for customer replies specifically — transactional system
-  // email (invitations, password resets) never goes through a business's personal
-  // Gmail, only their own customer conversations do.
-  let result: SendResult;
-  const gmailIntegration =
-    conversation.channel === "EMAIL" && conversation.externalHandle
-      ? await prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "EMAIL" } } })
-      : null;
-
-  if (gmailIntegration?.refreshToken && conversation.externalHandle) {
-    try {
-      const accessToken = await getValidAccessToken(gmailIntegration);
-      const sent = await sendGmailMessage({
-        accessToken,
-        fromEmail: gmailIntegration.externalAccount!,
-        fromName: business.name,
-        to: conversation.externalHandle,
-        subject: "Re: your inquiry",
-        body,
-        inReplyTo: lastInboundMessageId,
-        references: lastInboundMessageId,
-      });
-      result = { ok: true, simulated: false, providerMessageId: sent.id };
-    } catch (err) {
-      console.error("[inbox] gmail send failed", err);
-      result = { ok: false, error: err instanceof Error ? err.message : "Gmail send failed" };
-    }
-  } else {
-    result = await sendOnChannel({
-      channel: conversation.channel,
-      to: conversation.externalHandle,
-      body,
-      fromName: business.name,
-      replyTo,
-      headers,
-    });
+  // A downgraded business keeps reading SMS but can't send on it.
+  if (conversation.channel === "SMS" && !smsEntitled(business)) {
+    return { ok: false, error: "SMS replies are available on the Pro plan and above. Upgrade from Billing to reply here." } as SendResult;
   }
+
+  const delivery = await deliverToCustomer({
+    businessId: business.id,
+    businessName: business.name,
+    businessHandle: business.handle,
+    channel: conversation.channel,
+    to: conversation.externalHandle,
+    body,
+    subject: conversation.subject ? `Re: ${conversation.subject.replace(/^re:\s*/i, "")}` : undefined,
+    inReplyTo: lastInboundMessageId,
+  });
+  const result: SendResult = delivery.status === "SENT" ? { ok: true, simulated: false, providerMessageId: delivery.providerMessageId } : delivery.status === "NOT_DELIVERED" ? { ok: true, simulated: true } : { ok: false, error: delivery.error ?? "Send failed" };
 
   // Only ever marked SENT once the provider actually confirms it — a failed send keeps
   // the draft text intact (the caller still has it) and the message row records exactly
@@ -125,13 +93,14 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
         direction: "OUTBOUND",
         body,
         aiDrafted,
-        status: result.ok ? "SENT" : "FAILED",
+        status: delivery.status,
         sentByUserId: ctxSession.userId,
-        providerMessageId: result.ok ? result.providerMessageId : undefined,
+        providerMessageId: delivery.providerMessageId,
       },
     }),
     prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
-    ...(result.ok ? [prisma.lead.updateMany({ where: { conversationId }, data: { respondedAt: new Date(), status: "CONTACTED" as const } })] : []),
+    // The lead counts as answered only when something actually reached them.
+    ...(delivery.status === "SENT" ? [prisma.lead.updateMany({ where: { conversationId }, data: { respondedAt: new Date(), status: "CONTACTED" as const } })] : []),
   ]);
 
   revalidatePath("/dashboard/inbox");

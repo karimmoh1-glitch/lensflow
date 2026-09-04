@@ -36,19 +36,24 @@ async function getOrCreatePriceId(planKey: Extract<PlanKey, "PRO" | "BUSINESS">)
   const lookupKey = `daythread_${planKey.toLowerCase()}_monthly`;
 
   const existing = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
-  if (existing.data[0]) {
-    priceCache.set(planKey, existing.data[0].id);
-    return existing.data[0].id;
+  const current = existing.data[0];
+  if (current && current.unit_amount === plan.priceCents && current.currency === "usd" && current.recurring?.interval === "month") {
+    priceCache.set(planKey, current.id);
+    return current.id;
   }
 
   try {
-    const product = await stripe.products.create({ name: `Daythread ${plan.name}`, metadata: { planKey } });
+    // Either no price yet, or the plan table changed price: create the new one and move the
+    // lookup key onto it so the next call finds it. Existing subscribers stay on their price
+    // until they change plans — Stripe never reprices a live subscription by itself.
+    const productId = current ? (typeof current.product === "string" ? current.product : current.product.id) : (await stripe.products.create({ name: `Daythread ${plan.name}`, metadata: { planKey } })).id;
     const price = await stripe.prices.create({
-      product: product.id,
+      product: productId,
       currency: "usd",
       unit_amount: plan.priceCents,
       recurring: { interval: "month" },
       lookup_key: lookupKey,
+      transfer_lookup_key: true,
     });
     priceCache.set(planKey, price.id);
     return price.id;

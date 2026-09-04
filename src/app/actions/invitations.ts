@@ -213,6 +213,15 @@ export async function acceptInvitation(token: string, formData: FormData): Promi
     userId = user.id;
   }
 
+  if (invitation.role !== "CLIENT") {
+    // The plan may have changed since the invitation was sent: re-check the seat at accept time.
+    const business = await prisma.business.findUnique({ where: { id: invitation.businessId } });
+    const seats = await prisma.orgMembership.count({ where: { businessId: invitation.businessId, role: { not: "CLIENT" }, status: "ACTIVE" } });
+    if (!business || !canAddTeamSeat(business, seats)) {
+      return { error: "This workspace has no free team seat right now. Ask the owner to upgrade their plan, then try the link again." };
+    }
+  }
+
   await prisma.$transaction(async (tx) => {
     await tx.orgMembership.create({ data: { userId, businessId: invitation.businessId, role: invitation.role } });
     await tx.invitation.update({ where: { id: invitation.id }, data: { status: "ACCEPTED", acceptedAt: new Date() } });

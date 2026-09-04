@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { forgotPassword } from "@/app/actions/auth";
-import { Button, Input, Label, Card, CardBody } from "@/components/ui";
+import { Button, Input, Field, FormError } from "@/components/ui";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
@@ -26,58 +27,38 @@ export default function ForgotPasswordPage() {
     });
   }
 
-  return (
-    <main className="min-h-screen bg-paper flex items-center justify-center px-6">
-      <Card className="w-full max-w-sm">
-        <CardBody className="p-8">
-          <Link href="/" className="font-display text-lg">
-            Daythread
-          </Link>
-          <h1 className="font-display text-2xl mt-4 mb-1">Reset your password</h1>
+  const footer = (
+    <Link href="/login" className="font-semibold text-ink hover:text-accent-text transition-colors">
+      ← Back to log in
+    </Link>
+  );
 
-          {sent ? (
-            <>
-              <p className="text-sm text-ink/60 mt-4">
-                If an account exists for that email, we&apos;ve sent a link to reset your password. It expires in 1 hour.
-              </p>
-              {devLink && (
-                <div className="mt-4 rounded-lg bg-warning-soft border border-warning/30 px-3.5 py-3">
-                  <p className="text-xs font-medium text-warning-text mb-1.5">
-                    No email provider is configured on this deployment, so here&apos;s your link directly:
-                  </p>
-                  <a href={devLink} className="text-xs text-accent-text underline break-all">
-                    {devLink}
-                  </a>
-                </div>
-              )}
-              <p className="mt-6 text-sm text-center text-ink/70">
-                <Link href="/login" className="text-accent-text font-medium">
-                  Back to log in
-                </Link>
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-ink/70 mb-6">Enter your email and we&apos;ll send you a reset link.</p>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" placeholder="alex@business.com" required />
-                </div>
-                {error && <p className="text-sm text-danger">{error}</p>}
-                <Button type="submit" className="w-full" disabled={pending}>
-                  {pending ? "Sending…" : "Send reset link"}
-                </Button>
-              </form>
-              <p className="mt-6 text-sm text-center text-ink/70">
-                <Link href="/login" className="text-accent-text font-medium">
-                  Back to log in
-                </Link>
-              </p>
-            </>
-          )}
-        </CardBody>
-      </Card>
-    </main>
+  if (sent) {
+    return (
+      <AuthShell eyebrow="Check your email" title="If that address is yours, a link is on its way." lede="It works for one hour. Nothing in your inbox? Check spam, then try again." footer={footer}>
+        {devLink && (
+          <div className="rounded-xl border border-warning/30 bg-warning-soft px-3.5 py-3 dt-swap">
+            <p className="text-xs font-semibold text-warning-text mb-1.5">No email provider is configured on this deployment, so here&rsquo;s the link directly:</p>
+            <a href={devLink} className="text-xs text-accent-text underline break-all">
+              {devLink}
+            </a>
+          </div>
+        )}
+      </AuthShell>
+    );
+  }
+
+  return (
+    <AuthShell eyebrow="Reset" title="Forgot your password?" lede="Enter your email and we'll send a link to choose a new one." footer={footer}>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <Field id="email" label="Email">
+          <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@yourbusiness.com" required aria-invalid={!!error} />
+        </Field>
+        {error && <FormError>{error}</FormError>}
+        <Button type="submit" size="lg" className="w-full mt-2" loading={pending} loadingLabel="Sending">
+          Send the link
+        </Button>
+      </form>
+    </AuthShell>
   );
 }

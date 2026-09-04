@@ -3,7 +3,10 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { searchBusinesses, requestToJoin } from "@/app/actions/joinRequests";
-import { Button, Input, Label, Card, CardBody } from "@/components/ui";
+import { Button, Input, Field, FormError } from "@/components/ui";
+import { PasswordInput } from "@/components/PasswordInput";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { initials } from "@/lib/utils";
 
 type BusinessResult = { id: string; name: string; handle: string; businessType: string | null };
 
@@ -39,122 +42,99 @@ export default function JoinBusinessSignupPage() {
     });
   }
 
+  const footer = (
+    <>
+      Already on Daythread?{" "}
+      <Link href="/login" className="font-semibold text-ink hover:text-accent-text transition-colors">
+        Log in
+      </Link>
+    </>
+  );
+
   if (submitted) {
     return (
-      <main className="min-h-screen bg-paper flex items-center justify-center px-6 py-12">
-        <Card className="w-full max-w-sm">
-          <CardBody className="p-8 text-center">
-            <h1 className="font-display text-xl mb-2">Request sent</h1>
-            <p className="text-sm text-ink/70 mb-6">
-              {selected?.name} needs to approve your request before you can sign in. You&apos;ll be able to log in as soon as they accept it.
-            </p>
-            <Link href="/login">
-              <Button className="w-full">Go to login</Button>
-            </Link>
-          </CardBody>
-        </Card>
-      </main>
+      <AuthShell eyebrow="Request sent" title={`${selected?.name} will let you in.`} lede="They approve requests from their team page. The moment they do, your login works.">
+        <Link href="/login" className="inline-flex">
+          <Button size="lg">Go to log in</Button>
+        </Link>
+      </AuthShell>
+    );
+  }
+
+  if (!selected) {
+    return (
+      <AuthShell back={{ href: "/signup", label: "Back" }} eyebrow="Join a team" title="Find the business." lede="Businesses are private. Search by name to find the one you work with." footer={footer}>
+        <form onSubmit={handleSearch} className="space-y-4" noValidate>
+          <Field id="query" label="Business name">
+            <Input
+              id="query"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setHasSearched(false);
+              }}
+              placeholder="Rivera Consulting"
+              autoFocus
+            />
+          </Field>
+          <Button type="submit" size="lg" className="w-full" loading={searching} loadingLabel="Searching" disabled={query.trim().length < 2}>
+            Search
+          </Button>
+        </form>
+        {results.length > 0 && (
+          <ul className="mt-5 space-y-2 dt-swap">
+            {results.map((b) => (
+              <li key={b.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelected(b)}
+                  className="w-full flex items-center gap-3 text-left px-4 py-3 rounded-2xl border border-border bg-white hover:border-ink/25 hover:-translate-y-px transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                >
+                  <span className="w-9 h-9 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-extrabold shrink-0">{initials(b.name)}</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-ink truncate">{b.name}</span>
+                    {b.businessType && <span className="block text-xs text-ink/55 truncate">{b.businessType}</span>}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!searching && hasSearched && results.length === 0 && (
+          <p className="mt-4 text-sm text-ink/60">Nothing by that name. Check the spelling with them — it has to match exactly.</p>
+        )}
+      </AuthShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-paper flex items-center justify-center px-6 py-12">
-      <Card className="w-full max-w-sm">
-        <CardBody className="p-8">
-          <Link href="/signup" className="text-xs text-ink/60 hover:text-ink/60 mb-4 inline-block">
-            ← Back
-          </Link>
-          <Link href="/" className="font-display text-lg block">
-            Daythread
-          </Link>
-
-          {!selected ? (
-            <>
-              <h1 className="font-display text-2xl mt-4 mb-1">Find your business</h1>
-              <p className="text-sm text-ink/70 mb-6">Businesses are private — search by name to find the one you work with.</p>
-
-              <form onSubmit={handleSearch} className="space-y-3">
-                <div>
-                  <Label htmlFor="query">Business name</Label>
-                  <Input
-                    id="query"
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setHasSearched(false);
-                    }}
-                    placeholder="Rivera Consulting"
-                    autoFocus
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={searching || query.trim().length < 2}>
-                  {searching ? "Searching…" : "Search"}
-                </Button>
-              </form>
-
-              {results.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {results.map((b) => (
-                    <button
-                      key={b.id}
-                      onClick={() => setSelected(b)}
-                      className="w-full text-left px-3.5 py-3 rounded-md border border-border hover:bg-black/[0.02] transition-colors"
-                    >
-                      <div className="text-sm font-medium">{b.name}</div>
-                      {b.businessType && <div className="text-xs text-ink/65">{b.businessType}</div>}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {!searching && hasSearched && results.length === 0 && (
-                <p className="mt-4 text-sm text-ink/65">No business found with that name. Double-check the spelling with them.</p>
-              )}
-            </>
-          ) : (
-            <>
-              <h1 className="font-display text-2xl mt-4 mb-1">Request to join</h1>
-              <p className="text-sm text-ink/70 mb-6">
-                You&apos;re requesting to join <span className="font-medium text-ink">{selected.name}</span>. They&apos;ll need to approve you
-                before you get access.
-              </p>
-
-              <form onSubmit={handleRequest} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Full name</Label>
-                  <Input id="name" name="name" placeholder="Sarah Johnson" required />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" placeholder="you@example.com" required />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" name="password" type="password" placeholder="At least 8 characters" required />
-                </div>
-                <p className="text-xs text-ink/60">Already have a Daythread account? Enter its email and password instead.</p>
-
-                {error && <p className="text-sm text-danger">{error}</p>}
-
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={() => setSelected(null)}>
-                    Back
-                  </Button>
-                  <Button type="submit" className="flex-1" disabled={pending}>
-                    {pending ? "Sending…" : "Send request"}
-                  </Button>
-                </div>
-              </form>
-            </>
-          )}
-
-          <p className="mt-6 text-sm text-center text-ink/70">
-            Already have an account?{" "}
-            <Link href="/login" className="text-accent-text font-medium">
-              Log in
-            </Link>
-          </p>
-        </CardBody>
-      </Card>
-    </main>
+    <AuthShell
+      back={{ href: "/signup/join", label: "Different business" }}
+      eyebrow="Join a team"
+      title={`Ask to join ${selected.name}.`}
+      lede="They'll approve you before you get access."
+      footer={footer}
+    >
+      <form onSubmit={handleRequest} className="space-y-4" noValidate>
+        <Field id="name" label="Your name">
+          <Input id="name" name="name" autoComplete="name" placeholder="Sarah Johnson" required />
+        </Field>
+        <Field id="email" label="Email" hint="Already have a Daythread account? Use its email and password.">
+          <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@example.com" required />
+        </Field>
+        <Field id="password" label="Password">
+          <PasswordInput id="password" name="password" autoComplete="new-password" required minLength={8} />
+        </Field>
+        {error && <FormError>{error}</FormError>}
+        <div className="flex gap-2 pt-1">
+          <Button type="button" variant="outline" size="lg" onClick={() => setSelected(null)}>
+            Back
+          </Button>
+          <Button type="submit" size="lg" className="flex-1" loading={pending} loadingLabel="Sending">
+            Send request
+          </Button>
+        </div>
+      </form>
+    </AuthShell>
   );
 }

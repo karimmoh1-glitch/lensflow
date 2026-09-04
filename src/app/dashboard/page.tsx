@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, MessageSquareText, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { getTodayBrief, buildBriefText } from "@/server/dashboardData";
 import { Card, Badge, EmptyState } from "@/components/ui";
@@ -8,6 +8,13 @@ import { formatMoney, cn, initials, toZonedDisplayDate } from "@/lib/utils";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { FixMyDayButton } from "./FixMyDayButton";
 
+/**
+ * Home answers three questions in order, and the layout is that order:
+ *   NOW    — who needs you (one card, the action color, the button to do it)
+ *   TODAY  — what's on, and what isn't confirmed
+ *   MONEY  — what you're owed, what came in
+ * then WORK, quieter. The most important thing is the biggest thing.
+ */
 export default async function TodayPage() {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
@@ -19,72 +26,125 @@ export default async function TodayPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const firstName = user.name.split(" ")[0];
-
-  // The single most actionable thing on the page — everything below is context, this is
-  // the instruction. Ranked by how much a client is actively waiting on the business:
-  // an unanswered message first (someone is sitting with a question right now), scored
-  // highest-value/most-urgent first within that.
   const waitingOnReply = brief.leads.all.filter((l) => !l.lead.respondedAt).slice(0, 3);
+  const top = waitingOnReply[0];
 
   return (
     <div className="max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10">
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-7">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-sans font-black text-page-title text-ink tracking-tight">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-2">{format(new Date(), "EEEE, MMMM d")}</p>
+          <h1 className="font-sans font-extrabold text-[1.9rem] leading-none tracking-[-0.03em] text-ink">
             {greeting}, {firstName}.
           </h1>
-          <p className="text-sm text-ink/70 mt-1">{format(new Date(), "EEEE, MMMM d")}</p>
         </div>
         <FixMyDayButton />
       </div>
 
-      <PriorityZone waitingOnReply={waitingOnReply} briefText={briefText} totalNeedsResponse={brief.leads.needsResponse.length} />
+      {/* NOW */}
+      <section aria-labelledby="now-label">
+        <h2 id="now-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-accent-text mb-2.5">
+          Now
+        </h2>
+        {!top ? (
+          <div className="rounded-2xl border border-success/25 bg-success-soft/50 px-5 py-4 flex items-center gap-3 dt-swap">
+            <span className="w-2.5 h-2.5 rounded-full bg-success shrink-0" />
+            <p className="text-sm text-ink/80">{briefText}</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Link
+              href={top.lead.conversationId ? `/dashboard/inbox?c=${top.lead.conversationId}` : "/dashboard/inbox"}
+              className="group flex items-center gap-4 rounded-2xl border border-accent/30 bg-gradient-to-br from-accent-soft/70 to-white px-5 py-4 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-accent/50 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-24px_rgba(240,82,77,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            >
+              <span className="w-11 h-11 rounded-full bg-accent text-white flex items-center justify-center text-sm font-extrabold shrink-0">{initials(top.lead.extractedName || "?")}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-extrabold text-ink tracking-tight leading-tight">
+                  Reply to {top.lead.extractedName?.split(" ")[0] || "this lead"}.
+                  {top.lead.lastInboundAt && <span className="text-ink/60 font-semibold"> Waiting {formatDistanceToNowStrict(top.lead.lastInboundAt)}.</span>}
+                </span>
+                <span className="block text-sm text-ink/60 mt-0.5">
+                  {top.score >= 70 ? "High intent" : "New inquiry"}
+                  {brief.leads.needsResponse.length > 1 && ` · ${brief.leads.needsResponse.length - 1} more waiting`}
+                </span>
+              </span>
+              <span className="inline-flex items-center h-10 px-4 rounded-full bg-ink text-white text-sm font-extrabold shrink-0 transition-transform duration-150 group-hover:scale-105">Reply</span>
+            </Link>
+            {waitingOnReply.slice(1).map(({ lead, score }) => (
+              <Link
+                key={lead.id}
+                href={lead.conversationId ? `/dashboard/inbox?c=${lead.conversationId}` : "/dashboard/inbox"}
+                className="group flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-2.5 transition-all duration-150 hover:border-ink/20 hover:translate-x-0.5"
+              >
+                <span className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-bold shrink-0">{initials(lead.extractedName || "?")}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-ink truncate">{lead.extractedName || "Unknown"}</span>
+                  <span className="block text-xs text-ink/55 truncate">
+                    {lead.lastInboundAt ? `Waiting ${formatDistanceToNowStrict(lead.lastInboundAt)}` : "New inquiry"}
+                    {score >= 70 && " · High intent"}
+                  </span>
+                </span>
+                <ArrowRight className="w-4 h-4 text-ink/30 shrink-0 transition-all group-hover:text-ink group-hover:translate-x-0.5" strokeWidth={2} />
+              </Link>
+            ))}
+            {brief.leads.needsResponse.length > waitingOnReply.length && (
+              <Link href="/dashboard/inbox" className="inline-block text-xs font-semibold text-ink/55 hover:text-ink transition-colors pl-1">
+                See all {brief.leads.needsResponse.length} in the inbox →
+              </Link>
+            )}
+          </div>
+        )}
+      </section>
 
-      <div className="grid grid-cols-2 sm:flex sm:items-center gap-x-6 gap-y-4 sm:gap-8 my-9 pb-6 border-b border-border">
-        <Stat label="Bookings today" value={String(brief.todaysBookings.length)} />
-        <Stat label="Outstanding" value={formatMoney(brief.money.outstandingCents)} tone={brief.money.outstandingCents > 0 ? "warning" : undefined} />
-        <Stat label="Hot leads" value={String(brief.leads.hot.length)} tone={brief.leads.hot.length > 0 ? "accent" : undefined} />
-        <Stat label="Collected all-time" value={formatMoney(brief.money.collectedCents)} muted />
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-10">
-        <div>
-          <SectionLabel>Today&apos;s bookings</SectionLabel>
+      {/* TODAY + MONEY */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 mt-10">
+        <section aria-labelledby="today-label">
+          <h2 id="today-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-2.5">
+            Today
+          </h2>
           {brief.todaysBookings.length === 0 ? (
-            <EmptyState title="Nothing on the calendar today" description="Enjoy the quiet, or reach out to a warm lead." />
+            <EmptyState title="Nothing on the calendar today" description="A quiet day. Warm leads are the best use of it." tone="success" />
           ) : (
-            <BookingList bookings={brief.todaysBookings} timeFormat="h:mm a" timezone={business.timezone} />
+            <BookingList bookings={brief.todaysBookings} timeFormat="h:mm a" timezone={business.timezone} linked />
           )}
-
-          <SectionLabel className="mt-8">Upcoming</SectionLabel>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mt-7 mb-2.5">Coming up</h2>
           {brief.upcoming.length === 0 ? (
-            <EmptyState title="No upcoming bookings yet" description="Confirmed bookings from your inbox or booking page will line up here." />
+            <EmptyState title="No upcoming bookings yet" description="Confirmed bookings from your inbox or booking page line up here." />
           ) : (
-            <BookingList bookings={brief.upcoming} timeFormat="MMM d, h:mm a" timezone={business.timezone} linked />
+            <BookingList bookings={brief.upcoming} timeFormat="EEE, MMM d · h:mm a" timezone={business.timezone} linked />
           )}
-        </div>
+        </section>
 
-        <div>
-          <SectionLabel>Hot leads</SectionLabel>
-          {brief.leads.hot.length === 0 ? (
-            <EmptyState title="No hot leads right now" description="New inquiries will show up here as they come in." />
-          ) : (
-            <Card>
+        <section aria-labelledby="money-label">
+          <h2 id="money-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-2.5">
+            Money
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <Stat label="Owed to you" value={formatMoney(brief.money.outstandingCents)} tone={brief.money.outstandingCents > 0 ? "warning" : undefined} href="/dashboard/payments" />
+            <Stat label="Collected" value={formatMoney(brief.money.collectedCents)} tone="success" href="/dashboard/payments" />
+          </div>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mt-7 mb-2.5">Work</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <Stat label="Bookings today" value={String(brief.todaysBookings.length)} href="/dashboard/bookings" />
+            <Stat label="Hot leads" value={String(brief.leads.hot.length)} tone={brief.leads.hot.length > 0 ? "accent" : undefined} href="/dashboard/inbox" />
+          </div>
+          {brief.leads.hot.length > 0 && (
+            <Card className="mt-3">
               <div className="divide-y divide-border">
                 {brief.leads.hot.map(({ lead, score }) => (
                   <Link
                     key={lead.id}
                     href={lead.conversationId ? `/dashboard/inbox?c=${lead.conversationId}` : "/dashboard/inbox"}
-                    className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-black/[0.02]"
+                    className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-black/[0.02] transition-colors"
                   >
                     <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{lead.extractedName || "Unknown"}</div>
-                      <div className="text-xs text-ink/65">
+                      <div className="text-sm font-semibold truncate">{lead.extractedName || "Unknown"}</div>
+                      <div className="text-xs text-ink/60">
                         {lead.requestedDateText && `${lead.requestedDateText} · `}
                         {formatMoney(lead.estimatedValueCents)}
                       </div>
                     </div>
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-accent-text shrink-0 tabular-nums">
                       <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                       {score}
                     </span>
@@ -93,94 +153,29 @@ export default async function TodayPage() {
               </div>
             </Card>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
 }
 
-/**
- * The page's whole reason for existing: tell the owner the one thing that most needs them
- * right now, not a wall of equally-weighted stats they have to interpret themselves. When
- * there's nothing waiting, say so plainly rather than leaving a blank space — "caught up"
- * is itself useful information, not an empty state to apologize for.
- */
-function PriorityZone({
-  waitingOnReply,
-  briefText,
-  totalNeedsResponse,
-}: {
-  waitingOnReply: { lead: { id: string; extractedName: string | null; conversationId: string | null; lastInboundAt: Date | null; intent: string }; score: number }[];
-  briefText: string;
-  totalNeedsResponse: number;
-}) {
-  if (waitingOnReply.length === 0) {
-    return (
-      <div className="rounded-2xl border border-success/25 bg-success-soft/50 px-5 py-4 flex items-center gap-3">
-        <span className="w-8 h-8 rounded-full bg-success/15 text-success flex items-center justify-center shrink-0">
-          <Sparkles className="w-4 h-4" strokeWidth={2} />
-        </span>
-        <p className="text-sm text-ink/80">{briefText}</p>
-      </div>
-    );
-  }
-
+function Stat({ label, value, tone, href }: { label: string; value: string; tone?: "warning" | "accent" | "success"; href: string }) {
   return (
-    <div className="rounded-2xl border border-accent/25 bg-gradient-to-br from-accent-soft/60 to-transparent p-5">
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-accent-text">
-          {totalNeedsResponse === 1 ? "Needs your reply" : `${totalNeedsResponse} conversations need your reply`}
-        </div>
-        {totalNeedsResponse > waitingOnReply.length && (
-          <Link href="/dashboard/inbox" className="text-xs font-medium text-accent-text hover:underline shrink-0">
-            See all {totalNeedsResponse}
-          </Link>
-        )}
-      </div>
-      <div className="space-y-2">
-        {waitingOnReply.map(({ lead, score }) => (
-          <Link
-            key={lead.id}
-            href={lead.conversationId ? `/dashboard/inbox?c=${lead.conversationId}` : "/dashboard/inbox"}
-            className="flex items-center gap-3 rounded-xl bg-white/80 hover:bg-white border border-accent/15 px-3.5 py-3 transition-colors group"
-          >
-            <span className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-semibold shrink-0">
-              {initials(lead.extractedName || "?")}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-ink truncate">{lead.extractedName || "Unknown"}</div>
-              <div className="text-xs text-ink/60 truncate">
-                {lead.lastInboundAt ? `Waiting ${formatDistanceToNowStrict(lead.lastInboundAt)}` : "New inquiry"}
-                {score >= 70 && " · High intent"}
-              </div>
-            </div>
-            <MessageSquareText className="w-4 h-4 text-accent-text/50 shrink-0 group-hover:text-accent-text transition-colors" strokeWidth={2} />
-            <ArrowRight className="w-3.5 h-3.5 text-accent-text/40 shrink-0 group-hover:translate-x-0.5 transition-transform" strokeWidth={2} />
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value, tone, muted }: { label: string; value: string; tone?: "warning" | "accent"; muted?: boolean }) {
-  return (
-    <div className="shrink-0">
-      <div className="text-xs text-ink/65 mb-0.5">{label}</div>
+    <Link
+      href={href}
+      className="block rounded-2xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-ink/20 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+    >
+      <div className="text-[11px] text-ink/55">{label}</div>
       <div
         className={cn(
-          "font-display text-xl",
-          muted ? "text-ink/70" : tone === "warning" ? "text-warning-text" : tone === "accent" ? "text-accent-text" : "text-ink"
+          "font-sans font-extrabold text-2xl tracking-[-0.03em] tabular-nums mt-0.5",
+          tone === "warning" ? "text-warning-text" : tone === "accent" ? "text-accent-text" : tone === "success" ? "text-success-text" : "text-ink"
         )}
       >
         {value}
       </div>
-    </div>
+    </Link>
   );
-}
-
-function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <h2 className={cn("text-sm font-medium text-ink mb-2.5", className)}>{children}</h2>;
 }
 
 function BookingList({
@@ -200,17 +195,18 @@ function BookingList({
         {bookings.map((b) => {
           const row = (
             <div className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <div className="text-sm font-medium truncate">
-                  {format(toZonedDisplayDate(b.startAt, timezone), timeFormat)} — {b.service.name}
-                </div>
-                <div className="text-xs text-ink/65">{b.client.name}</div>
+              <div className="min-w-0 flex items-center gap-3">
+                <span className="text-xs font-semibold text-ink/50 tabular-nums w-[4.5rem] shrink-0">{format(toZonedDisplayDate(b.startAt, timezone), timeFormat).split(" · ").pop()}</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold truncate">{b.client.name}</span>
+                  <span className="block text-xs text-ink/60 truncate">{b.service.name}{timeFormat.includes("EEE") && ` · ${format(toZonedDisplayDate(b.startAt, timezone), "EEE, MMM d")}`}</span>
+                </span>
               </div>
               <StatusBadge status={b.status} />
             </div>
           );
           return linked ? (
-            <Link key={b.id} href={`/dashboard/bookings/${b.id}`} className="block hover:bg-black/[0.02]">
+            <Link key={b.id} href={`/dashboard/bookings/${b.id}`} className="block hover:bg-black/[0.02] transition-colors">
               {row}
             </Link>
           ) : (

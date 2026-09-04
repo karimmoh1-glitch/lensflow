@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSession, getUserMemberships, homeRouteFor } from "@/lib/auth";
 import { switchWorkspace } from "@/app/actions/workspace";
-import { Card, CardBody } from "@/components/ui";
 import { initials } from "@/lib/utils";
 import { logout } from "@/app/actions/auth";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default async function WorkspacesPage() {
   const session = await getSession();
@@ -13,17 +13,16 @@ export default async function WorkspacesPage() {
 
   if (memberships.length === 0) {
     return (
-      <main className="min-h-screen bg-paper flex items-center justify-center px-6">
-        <Card className="w-full max-w-sm">
-          <CardBody className="p-8 text-center">
-            <h1 className="font-display text-xl mb-2">No workspace yet</h1>
-            <p className="text-sm text-ink/75 mb-6">This account isn&apos;t part of any organization. Ask for an invitation, or create your own workspace.</p>
-            <form action={logout}>
-              <button className="text-sm text-accent-text font-medium">Log out</button>
-            </form>
-          </CardBody>
-        </Card>
-      </main>
+      <AuthShell eyebrow="No workspace yet" title="This account isn't part of a business yet." lede="Ask the owner for an invitation, or start your own thread.">
+        <div className="flex flex-col gap-3">
+          <a href="/signup/create" className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-ink text-white text-sm font-semibold transition-transform hover:scale-[1.03] active:scale-[0.97]">
+            Start my own
+          </a>
+          <form action={logout}>
+            <button className="text-sm font-semibold text-ink/60 hover:text-ink transition-colors">Log out</button>
+          </form>
+        </div>
+      </AuthShell>
     );
   }
 
@@ -38,28 +37,29 @@ export default async function WorkspacesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper flex items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <h1 className="font-display text-2xl mb-1 text-center">Choose a workspace</h1>
-        <p className="text-sm text-ink/70 mb-6 text-center">You belong to more than one organization.</p>
-        <Card>
-          <div className="divide-y divide-border">
-            {memberships.map((m) => (
-              <form key={m.businessId} action={switchWorkspace.bind(null, m.businessId)}>
-                <button type="submit" className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-black/[0.02]">
-                  <div className="w-9 h-9 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
-                    {initials(m.business.name)}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{m.business.name}</div>
-                    <div className="text-xs text-ink/65">{m.role.charAt(0) + m.role.slice(1).toLowerCase()}</div>
-                  </div>
-                </button>
-              </form>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </main>
+    <AuthShell eyebrow="Workspaces" title="Which business today?" lede="You're part of more than one.">
+      <ul className="space-y-2">
+        {memberships.map((m) => (
+          <li key={m.businessId}>
+            <form action={switchWorkspace.bind(null, m.businessId)}>
+              <button
+                type="submit"
+                className="group w-full flex items-center gap-3 px-4 py-3.5 text-left rounded-2xl border border-border bg-white transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-ink/25 hover:-translate-y-0.5 hover:shadow-popover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              >
+                <span className="w-10 h-10 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-extrabold shrink-0">{initials(m.business.name)}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-ink truncate">{m.business.name}</span>
+                  <span className="block text-xs text-ink/55">{m.role.charAt(0) + m.role.slice(1).toLowerCase()}</span>
+                </span>
+                <span aria-hidden className="text-ink/30 transition-all duration-200 group-hover:text-ink group-hover:translate-x-0.5">→</span>
+              </button>
+            </form>
+          </li>
+        ))}
+      </ul>
+      <form action={logout} className="mt-6">
+        <button className="text-sm font-semibold text-ink/50 hover:text-ink transition-colors">Log out</button>
+      </form>
+    </AuthShell>
   );
 }

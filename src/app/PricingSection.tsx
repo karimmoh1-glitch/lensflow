@@ -28,10 +28,18 @@ const LADDER: Record<PlanKey, { who: string; why?: string; gets: string[] }> = {
 export function PricingSection() {
   const order: PlanKey[] = ["FREE", "PRO", "BUSINESS"];
   return (
-    <section className="px-6 py-20 md:py-28 max-w-6xl mx-auto">
+    <section className="px-6 py-20 md:py-28 max-w-[1200px] mx-auto">
+      {/* The lead-in: everything above, in one line, so the price reads as the conclusion. */}
+      <RevealOnScroll className="mb-14 md:mb-20">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-4">What it replaces</p>
+        <p className="font-sans font-extrabold text-[clamp(1.5rem,3.2vw,2.5rem)] leading-[1.1] tracking-[-0.035em] text-ink/35 max-w-4xl text-balance">
+          <span className="text-ink">Instagram DMs. Gmail. Texts. WhatsApp. A booking page. Deposits. Balances. Reminders. Follow-ups. The list in your head.</span>{" "}
+          One thread.
+        </p>
+      </RevealOnScroll>
       <div className="max-w-2xl mb-12">
-        <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-ink/45 mb-4">Pricing</p>
-        <h2 className="font-sans font-extrabold text-[clamp(2.2rem,5vw,4rem)] leading-[0.96] tracking-[-0.04em] text-ink">Start free. Upgrade when it&rsquo;s obvious.</h2>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-4">Pricing</p>
+        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">Start free. Upgrade when it&rsquo;s obvious.</h2>
       </div>
       <div className="grid md:grid-cols-3 gap-4 md:gap-5 items-stretch">
         {order.map((key, i) => {

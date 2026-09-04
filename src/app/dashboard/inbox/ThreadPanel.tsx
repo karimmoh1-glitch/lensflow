@@ -58,60 +58,8 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
   const paidCents = client?.payments.filter((p) => p.status === "PAID").reduce((s, p) => s + p.amountCents, 0) ?? 0;
   const returning = (client?.bookings.length ?? 0) > 0;
 
-  return (
-    <div className="flex-1 flex min-w-0">
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="px-4 md:px-6 py-3.5 border-b border-border bg-white flex items-center gap-3">
-          <Link href="/dashboard/inbox" className="md:hidden -ml-1 w-8 h-8 flex items-center justify-center rounded-md hover:bg-black/[0.05]">
-            <ChevronLeft className="w-[18px] h-[18px] text-ink/60" strokeWidth={2} />
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-medium text-sm truncate">{displayName}</h2>
-            <div className="flex items-center gap-1.5 text-xs text-ink/65 truncate">
-              <ChannelBadge channel={conversation.channel} />
-              {CHANNEL_META[conversation.channel].label}
-              {conversation.externalHandle ? ` · ${conversation.externalHandle}` : ""}
-              {conversation.subject ? ` · ${conversation.subject}` : ""}
-            </div>
-          </div>
-          {needsReply && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-              Needs reply
-            </span>
-          )}
-          <DeleteConversationButton conversationId={conversation.id} />
-        </div>
-
-        <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-6 py-6 space-y-4">
-          {conversation.messages.map((m) => (
-            <div key={m.id} className={cn("max-w-md dt-swap", m.direction === "OUTBOUND" ? "ml-auto" : "")}>
-              <div
-                className={cn(
-                  "rounded-2xl px-4 py-2.5 text-sm",
-                  m.status === "FAILED"
-                    ? "bg-danger-soft text-danger-text rounded-br-sm border border-danger/30"
-                    : m.direction === "OUTBOUND"
-                      ? "bg-ink text-white rounded-br-sm"
-                      : "bg-black/[0.05] text-ink rounded-bl-sm"
-                )}
-              >
-                {m.body}
-              </div>
-              <div className={cn("text-[11px] text-ink/50 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
-                {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
-                {m.aiDrafted && <span className="text-signal-text">AI drafted · </span>}
-                {format(m.createdAt, "MMM d, h:mm a")}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <Composer conversationId={conversation.id} />
-      </div>
-
-      {(lead || client) && (
-        <aside className="hidden lg:flex w-80 shrink-0 border-l border-border bg-white flex-col overflow-y-auto scrollbar-thin">
+  const rail = (lead || client) ? (
+    <>
           <div className="px-5 pt-5 pb-4 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
@@ -202,6 +150,75 @@ export async function ThreadPanel({ conversationId }: { conversationId: string }
               </details>
             )}
           </div>
+
+    </>
+  ) : null;
+
+  return (
+    <div className="flex-1 flex min-w-0">
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="px-4 md:px-6 py-3.5 border-b border-border bg-white flex items-center gap-3">
+          <Link href="/dashboard/inbox" className="md:hidden -ml-1 w-8 h-8 flex items-center justify-center rounded-md hover:bg-black/[0.05]">
+            <ChevronLeft className="w-[18px] h-[18px] text-ink/60" strokeWidth={2} />
+          </Link>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-medium text-sm truncate">{displayName}</h2>
+            <div className="flex items-center gap-1.5 text-xs text-ink/65 truncate">
+              <ChannelBadge channel={conversation.channel} />
+              {CHANNEL_META[conversation.channel].label}
+              {conversation.externalHandle ? ` · ${conversation.externalHandle}` : ""}
+              {conversation.subject ? ` · ${conversation.subject}` : ""}
+            </div>
+          </div>
+          {needsReply && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+              Needs reply
+            </span>
+          )}
+          <DeleteConversationButton conversationId={conversation.id} />
+        </div>
+
+        {rail && (
+          <details className="lg:hidden border-b border-border bg-paper/60 group/ctx">
+            <summary className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-ink/70 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+              <span className="w-1.5 h-1.5 rounded-full bg-signal" />
+              About {displayName}
+              <span className="ml-auto text-ink/40 transition-transform group-open/ctx:rotate-180" aria-hidden>▾</span>
+            </summary>
+            <div className="max-h-[52vh] overflow-y-auto scrollbar-thin bg-white border-t border-border">{rail}</div>
+          </details>
+        )}
+        <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-6 py-6 space-y-4">
+          {conversation.messages.map((m) => (
+            <div key={m.id} className={cn("max-w-md dt-swap", m.direction === "OUTBOUND" ? "ml-auto" : "")}>
+              <div
+                className={cn(
+                  "rounded-2xl px-4 py-2.5 text-sm",
+                  m.status === "FAILED"
+                    ? "bg-danger-soft text-danger-text rounded-br-sm border border-danger/30"
+                    : m.direction === "OUTBOUND"
+                      ? "bg-ink text-white rounded-br-sm"
+                      : "bg-black/[0.05] text-ink rounded-bl-sm"
+                )}
+              >
+                {m.body}
+              </div>
+              <div className={cn("text-[11px] text-ink/50 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
+                {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
+                {m.aiDrafted && <span className="text-signal-text">AI drafted · </span>}
+                {format(m.createdAt, "MMM d, h:mm a")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Composer conversationId={conversation.id} />
+      </div>
+
+      {rail && (
+        <aside className="hidden lg:flex w-80 shrink-0 border-l border-border bg-white flex-col overflow-y-auto scrollbar-thin">
+          {rail}
         </aside>
       )}
     </div>

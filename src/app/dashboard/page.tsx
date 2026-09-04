@@ -7,6 +7,7 @@ import { Card, Badge, EmptyState } from "@/components/ui";
 import { formatMoney, cn, initials, toZonedDisplayDate } from "@/lib/utils";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { FixMyDayButton } from "./FixMyDayButton";
+import { OneThingCard } from "./OneThingCard";
 
 /**
  * Home answers three questions in order, and the layout is that order:
@@ -53,23 +54,15 @@ export default async function TodayPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            <Link
+            <OneThingCard
+              key={top.lead.id}
+              leadId={top.lead.id}
+              name={top.lead.extractedName || ""}
               href={top.lead.conversationId ? `/dashboard/inbox?c=${top.lead.conversationId}` : "/dashboard/inbox"}
-              className="group flex items-center gap-4 rounded-2xl border border-accent/30 bg-gradient-to-br from-accent-soft/70 to-white px-5 py-4 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-accent/50 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-24px_rgba(240,82,77,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-            >
-              <span className="w-11 h-11 rounded-full bg-accent text-white flex items-center justify-center text-sm font-extrabold shrink-0">{initials(top.lead.extractedName || "?")}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-base font-extrabold text-ink tracking-tight leading-tight">
-                  Reply to {top.lead.extractedName?.split(" ")[0] || "this lead"}.
-                  {top.lead.lastInboundAt && <span className="text-ink/60 font-semibold"> Waiting {formatDistanceToNowStrict(top.lead.lastInboundAt)}.</span>}
-                </span>
-                <span className="block text-sm text-ink/60 mt-0.5">
-                  {top.score >= 70 ? "High intent" : "New inquiry"}
-                  {brief.leads.needsResponse.length > 1 && ` · ${brief.leads.needsResponse.length - 1} more waiting`}
-                </span>
-              </span>
-              <span className="inline-flex items-center h-10 px-4 rounded-full bg-ink text-white text-sm font-extrabold shrink-0 transition-transform duration-150 group-hover:scale-105">Reply</span>
-            </Link>
+              waiting={top.lead.lastInboundAt ? `Waiting ${formatDistanceToNowStrict(top.lead.lastInboundAt)}.` : null}
+              detail={top.score >= 70 ? "High intent" : "New inquiry"}
+              more={Math.max(0, brief.leads.needsResponse.length - 1)}
+            />
             {waitingOnReply.slice(1).map(({ lead, score }) => (
               <Link
                 key={lead.id}

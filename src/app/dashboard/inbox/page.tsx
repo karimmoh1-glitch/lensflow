@@ -112,14 +112,15 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
           {rows.length === 0 && (
             <div className="p-6">
               <EmptyState
-                title={filter === "all" ? "No conversations yet" : "Nothing here"}
+                title={filter === "all" ? "Your inbox is quiet." : filter === "needs_reply" ? "Nobody is waiting on you." : "No lead is going cold."}
                 description={
                   filter === "all"
-                    ? "Inquiries from every connected channel will show up here."
+                    ? "When someone messages you on any connected channel, they appear here — with who they are, what they want, and what to do next."
                     : filter === "needs_reply"
-                      ? "Every lead has been responded to."
-                      : "No leads have gone quiet."
+                      ? "Every conversation has a reply. New ones land here the moment they arrive."
+                      : "Daythread watches for leads that stop answering and lifts them here before they're gone."
                 }
+                tone={filter === "all" ? "neutral" : "success"}
               />
             </div>
           )}

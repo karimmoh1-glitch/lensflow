@@ -44,7 +44,7 @@ export default async function AutomationsPage() {
   const { business } = ctx;
 
   const [automations, recentRuns] = await Promise.all([
-    prisma.automation.findMany({ where: { businessId: business.id }, orderBy: { createdAt: "asc" } }),
+    prisma.automation.findMany({ where: { businessId: business.id }, orderBy: [{ createdAt: "asc" }, { name: "asc" }] }),
     prisma.automationExecution.findMany({ where: { businessId: business.id }, orderBy: { ranAt: "desc" }, take: 8, include: { automation: true } }),
   ]);
 

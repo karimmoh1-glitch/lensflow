@@ -40,7 +40,7 @@ export default function MobilePage() {
 
       <footer className="px-6 py-6 text-center">
         <Link href="/" className="text-xs text-ink/35 hover:text-ink/75">
-          daythread.app
+          daythread.org
         </Link>
       </footer>
     </main>

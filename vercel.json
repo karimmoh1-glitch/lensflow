@@ -16,6 +16,28 @@
       ],
       "destination": "https://daythread.org/:path*",
       "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "daythread-app.vercel.app"
+        }
+      ],
+      "destination": "https://daythread.org/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "lensflow-nu.vercel.app"
+        }
+      ],
+      "destination": "https://daythread.org/:path*",
+      "permanent": true
     }
   ]
 }

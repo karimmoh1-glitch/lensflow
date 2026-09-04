@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread-app.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
 
 // Regenerate hourly rather than only on redeploy — new businesses finish onboarding
 // between deploys and should show up in search without waiting for the next push.

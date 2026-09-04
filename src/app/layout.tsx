@@ -10,7 +10,7 @@ import "./globals.css";
 const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const display = Manrope({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread-app.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
 const TITLE = "Daythread — All your clients. One thread.";
 const DESCRIPTION = "Instagram, email, texts, bookings and payments — connected in one place, and telling you what's next. For freelancers and small businesses.";
 

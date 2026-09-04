@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { addDays, addHours, subDays, subHours } from "date-fns";
+import { addDays, addHours, subDays, subHours, subMinutes, format } from "date-fns";
 import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
 import type { Db } from "@/lib/db";
 
@@ -33,6 +33,10 @@ export async function seedDemoWorkspace(prisma: Db) {
     data: {
       name: "Alex Rivera Photography",
       handle: "alex-photo",
+      // The demo shows the whole product, so it runs on the Business plan.
+      planTier: "BUSINESS",
+      billingStatus: "ACTIVE",
+      priorities: ["messages", "bookings", "follow-ups"],
       specialties: ["Portrait", "Graduation", "Family", "Wedding"],
       bio: "Natural-light portrait and lifestyle photography based in Austin, TX. Booking graduation season now!",
       timezone: "America/Chicago",
@@ -304,7 +308,47 @@ export async function seedDemoWorkspace(prisma: Db) {
     data: { conversationId: priyaConvo.id, direction: "OUTBOUND", body: "Looking forward to your session today! Please arrive 10 minutes early.", sentByUserId: owner.id, createdAt: subHours(now, 5) },
   });
 
-  const diego = await prisma.client.create({ data: { businessId: business.id, name: "Diego Ramirez", email: "diego.r@example.com" } });
+  // A messy real reply: the new sentence on top, the quoted chain underneath. The inbox
+  // shows the sentence; the chain is one click away.
+  const ahmed = await prisma.client.create({ data: { businessId: business.id, name: "Ahmed Mantawy", email: "ahmed.m@example.com" } });
+  const ahmedConvo = await prisma.conversation.create({
+    data: { businessId: business.id, clientId: ahmed.id, channel: "EMAIL", externalHandle: "ahmed.m@example.com", subject: "Newborn session", lastMessageAt: subHours(now, 4) },
+  });
+  await prisma.message.create({ data: { conversationId: ahmedConvo.id, direction: "INBOUND", body: "Hi, are you available for a newborn session in September?", createdAt: subDays(now, 2) } });
+  await prisma.message.create({ data: { conversationId: ahmedConvo.id, direction: "OUTBOUND", body: "Hi Ahmed! Yes — where were you thinking, and do you have a budget in mind?", sentByUserId: owner.id, createdAt: subHours(now, 40) } });
+  await prisma.message.create({
+    data: {
+      conversationId: ahmedConvo.id,
+      direction: "INBOUND",
+      createdAt: subHours(now, 4),
+      body: `The location will be at Redmond Town Center. My budget is $500, and I want this done for my newborn child.\n\nOn ${format(subHours(now, 40), "EEE, MMM d, yyyy")} at ${format(subHours(now, 40), "h:mm a")} Alex Rivera <alex@demo.lensflow.app> wrote:\n> Hi Ahmed! Yes — where were you thinking, and do you have a budget in mind?\n>\n> On ${format(subDays(now, 2), "EEE, MMM d, yyyy")} Ahmed Mantawy <ahmed.m@example.com> wrote:\n> > Hi, are you available for a newborn session in September?\n\nSent from my iPhone`,
+    },
+  });
+  await prisma.lead.create({
+    data: {
+      businessId: business.id,
+      clientId: ahmed.id,
+      conversationId: ahmedConvo.id,
+      extractedName: "Ahmed Mantawy",
+      requestedDateText: "September",
+      requestedLocation: "Redmond Town Center",
+      budgetCents: 50000,
+      intent: "HIGH",
+      score: 71,
+      scoreReasons: ["Budget stated", "Location stated", "Replied within a day"],
+      estimatedValueCents: 50000,
+      status: "CONTACTED",
+      respondedAt: null, // they wrote back after your reply — waiting on you again
+      lastInboundAt: subHours(now, 4),
+    },
+  });
+
+  const diego = await prisma.client.create({ data: { businessId: business.id, name: "Diego Ramirez", email: "diego.r@example.com", phone: "+1 512 555 0177" } });
+  const diegoConvo = await prisma.conversation.create({
+    data: { businessId: business.id, clientId: diego.id, channel: "SMS", externalHandle: "+1 512 555 0177", lastMessageAt: subMinutes(now, 35) },
+  });
+  await prisma.message.create({ data: { conversationId: diegoConvo.id, direction: "OUTBOUND", body: "Hi Diego — you're booked for the Family Session tomorrow at 2:00 PM at Zilker Park. See you there!", sentByUserId: owner.id, createdAt: subHours(now, 26) } });
+  await prisma.message.create({ data: { conversationId: diegoConvo.id, direction: "INBOUND", body: "Tomorrow works! Can we do 3pm instead of 2? The kids nap till 2:30", createdAt: subMinutes(now, 35) } });
   await prisma.booking.create({
     data: {
       businessId: business.id,
@@ -317,6 +361,7 @@ export async function seedDemoWorkspace(prisma: Db) {
       totalCents: family.priceCents,
       depositCents: Math.round(family.priceCents * 0.3),
       assignedMembershipId: partnerMembership.id,
+      conversationId: diegoConvo.id,
     },
   });
 
@@ -359,12 +404,14 @@ export async function seedDemoWorkspace(prisma: Db) {
 
   // The mail a real business inbox actually gets. Stored, classified, kept out of
   // Priority and out of the CRM — no client record for any of these.
-  const noise: { handle: string; subject: string; body: string; category: "AUTOMATED" | "PROMOTIONAL" | "INTERNAL"; reason: string; hoursAgo: number }[] = [
-    { handle: "no-reply@doordash.com", subject: "Your order has been confirmed", body: "Your DoorDash order from Thai Basil is confirmed and on its way. Estimated arrival 7:40 PM.", category: "AUTOMATED", reason: "A notification from doordash.com.", hoursAgo: 2 },
-    { handle: "shipment-tracking@amazon.com", subject: "Shipped: your Amazon.com order", body: "Your package with 1 item will arrive Thursday.", category: "AUTOMATED", reason: "A notification from amazon.com.", hoursAgo: 9 },
-    { handle: "receipts@stripe.com", subject: "Your Stripe payout of $312.00", body: "A payout was sent to your bank account ending in 4411.", category: "INTERNAL", reason: "From stripe.com, a platform you use.", hoursAgo: 26 },
-    { handle: "no-reply@accounts.google.com", subject: "Security alert", body: "A new sign-in on Mac. If this was you, you can ignore this.", category: "INTERNAL", reason: "From accounts.google.com, a platform you use.", hoursAgo: 30 },
-    { handle: "news@lensmag.example", subject: "Weekly digest: 5 lighting setups under $100", body: "Plus a 20% off code for members. Unsubscribe any time.", category: "PROMOTIONAL", reason: "A mailing list or newsletter.", hoursAgo: 48 },
+  const noise: { handle: string; subject: string; body: string; category: "AUTOMATED" | "PROMOTIONAL" | "VENDOR"; reason: string; hoursAgo: number }[] = [
+    { handle: "no-reply@doordash.com", subject: "Your order has been confirmed", body: "Your DoorDash order from Thai Basil is confirmed and on its way. Estimated arrival 7:40 PM.\n\nThis is an automated message. Do not reply to this email.", category: "AUTOMATED", reason: "Transactional notification from Doordash.", hoursAgo: 2 },
+    { handle: "shipment-tracking@amazon.com", subject: "Shipped: your Amazon.com order", body: "Your package with 1 item will arrive Thursday. Tracking number TBA123456789.", category: "AUTOMATED", reason: "Transactional notification from Amazon.", hoursAgo: 9 },
+    { handle: "receipts@stripe.com", subject: "Your Stripe payout of $312.00", body: "A payout was sent to your bank account ending in 4411.", category: "VENDOR", reason: "From Stripe, a platform you use.", hoursAgo: 26 },
+    { handle: "no-reply@accounts.google.com", subject: "Security alert", body: "A new sign-in on Mac. If this was you, you can ignore this.", category: "VENDOR", reason: "From Google, a platform you use.", hoursAgo: 30 },
+    { handle: "accounts@printlab.example", subject: "Invoice #10432 for your recent order", body: "Please find attached invoice #10432 for the album prints. Payment terms net 30.\n\nPrintLab Accounts", category: "VENDOR", reason: "A business you deal with, not a customer.", hoursAgo: 40 },
+    { handle: "news@lensmag.example", subject: "Weekly digest: 5 lighting setups under $100", body: "Plus a 20% off code for members. View in browser. Unsubscribe any time.", category: "PROMOTIONAL", reason: "Mailing list or newsletter.", hoursAgo: 48 },
+    { handle: "hello@courseplatform.example", subject: "Last chance: 50% off the lighting masterclass", body: "Ends tonight. Don't miss it. You are receiving this because you signed up. Unsubscribe.", category: "PROMOTIONAL", reason: "Reads like marketing.", hoursAgo: 70 },
   ];
   for (const n of noise) {
     const conv = await prisma.conversation.create({

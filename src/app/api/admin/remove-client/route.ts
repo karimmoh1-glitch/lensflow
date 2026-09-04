@@ -8,13 +8,17 @@ import { verifySeedSecret } from "@/lib/adminAuth";
 export async function GET(req: Request) {
   const auth = verifySeedSecret(req);
   if (auth === "unconfigured") return NextResponse.json({ error: "SEED_SECRET is not configured on this deployment." }, { status: 501 });
-  if (auth === "unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (auth === "rate-limited") return NextResponse.json({ error: "Too many attempts" }, { status: 429 });
+  if (auth !== "ok") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const q = new URL(req.url).searchParams.get("q");
-  if (!q) return NextResponse.json({ error: "Pass ?q=<search text>" }, { status: 400 });
+  const url = new URL(req.url);
+  const q = url.searchParams.get("q");
+  const businessHandle = url.searchParams.get("business");
+  if (!q || !businessHandle) return NextResponse.json({ error: "Pass ?q=<search text>&business=<handle>" }, { status: 400 });
 
+  // Scoped to one business: an infrastructure tool must never read across tenants.
   const messages = await prisma.message.findMany({
-    where: { body: { contains: q, mode: "insensitive" } },
+    where: { body: { contains: q, mode: "insensitive" }, conversation: { business: { handle: businessHandle } } },
     include: { conversation: { include: { client: true, business: true } } },
     take: 10,
   });
@@ -43,17 +47,21 @@ export async function POST(req: Request) {
   if (auth === "unconfigured") {
     return NextResponse.json({ error: "SEED_SECRET is not configured on this deployment." }, { status: 501 });
   }
-  if (auth === "unauthorized") {
+  if (auth === "rate-limited") {
+    return NextResponse.json({ error: "Too many attempts" }, { status: 429 });
+  }
+  if (auth !== "ok") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { email } = await req.json().catch(() => ({ email: undefined }));
-  if (!email || typeof email !== "string") {
-    return NextResponse.json({ error: "Body must include { email: string }" }, { status: 400 });
+  const { email, business } = await req.json().catch(() => ({ email: undefined, business: undefined }));
+  if (!email || typeof email !== "string" || !business || typeof business !== "string") {
+    return NextResponse.json({ error: "Body must include { email: string, business: <handle> }" }, { status: 400 });
   }
 
   try {
-    const clients = await prisma.client.findMany({ where: { email } });
+    // Scoped to one business by handle: never delete across tenants.
+    const clients = await prisma.client.findMany({ where: { email, business: { handle: business } } });
     if (clients.length === 0) return NextResponse.json({ ok: true, removed: 0 });
 
     for (const c of clients) {

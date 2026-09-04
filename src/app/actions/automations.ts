@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { track } from "@/lib/analytics";
 import { requireRole } from "@/lib/auth";
 import { automationsEntitled } from "@/lib/billing";
 import { revalidatePath } from "next/cache";
@@ -19,6 +20,7 @@ export async function toggleAutomation(id: string, enabled: boolean): Promise<{ 
     return { error: "Automations are available on the Pro plan and above. Upgrade from Billing to turn this on." };
   }
   await prisma.automation.updateMany({ where: { id, businessId: ctx.business.id }, data: { enabled } });
+  await track(enabled ? "automation_enabled" : "automation_disabled", { businessId: ctx.business.id, properties: { automationId: id } });
   revalidatePath("/dashboard/automations");
   return {};
 }

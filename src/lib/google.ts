@@ -200,6 +200,8 @@ export type FetchedGmailMessage = {
   subject: string;
   body: string;
   messageIdHeader?: string;
+  headers?: { listUnsubscribe?: string | null; listId?: string | null; precedence?: string | null; autoSubmitted?: string | null; replyTo?: string | null; messageId?: string | null };
+  rawBody?: string;
 };
 
 /** Pulls the most recent inbox messages via the Gmail API — a real poll, not a
@@ -210,7 +212,10 @@ export async function listRecentGmailMessages(accessToken: string, maxResults = 
   // category:primary leans on Gmail's own classifier to exclude promotions/social/updates
   // tabs — the same signal the Gmail web UI uses to keep newsletters out of the main
   // inbox view. Real customer inquiries land in Primary; a Redfin listing alert doesn't.
-  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${maxResults}&q=${encodeURIComponent("in:inbox category:primary")}`, {
+  // Everything in the inbox, not only Primary: Daythread's own classifier decides what is
+  // automated, promotional or a vendor, and All Inbox keeps it all. Gmail's tabs are one
+  // opinion; the product's is the one the owner can correct.
+  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${maxResults}&q=${encodeURIComponent("in:inbox")}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!listRes.ok) throw new Error(`Gmail list failed: ${listRes.status} ${await listRes.text()}`);
@@ -227,14 +232,6 @@ export async function listRecentGmailMessages(accessToken: string, maxResults = 
     const headers: { name: string; value: string }[] = data.payload?.headers ?? [];
     const header = (name: string) => headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
 
-    // Belt-and-suspenders on top of category:primary: List-Unsubscribe/List-Id are
-    // near-universal on bulk mail (Gmail and other major providers require it of bulk
-    // senders) and never appear on a person's actual inquiry — a reliable, cheap filter
-    // that doesn't depend on Gmail's tab classification being enabled for this account.
-    if (header("List-Unsubscribe") || header("List-Id") || /\bbulk\b/i.test(header("Precedence") ?? "")) {
-      continue;
-    }
-
     const fromHeader = header("From") ?? "";
     const displayMatch = fromHeader.match(/^"?([^"<]+?)"?\s*<(.+)>$/);
     const fromEmail = displayMatch?.[2]?.trim() ?? fromHeader.trim();
@@ -249,6 +246,16 @@ export async function listRecentGmailMessages(accessToken: string, maxResults = 
       subject: header("Subject") ?? "(no subject)",
       body: normalizeEmailContent({ text, html }),
       messageIdHeader: header("Message-ID") ?? undefined,
+      // Bulk / automated signals travel with the message; classification decides, nothing is dropped.
+      headers: {
+        listUnsubscribe: header("List-Unsubscribe") ?? null,
+        listId: header("List-Id") ?? null,
+        precedence: header("Precedence") ?? null,
+        autoSubmitted: header("Auto-Submitted") ?? null,
+        replyTo: header("Reply-To") ?? null,
+        messageId: header("Message-ID") ?? null,
+      },
+      rawBody: (text ?? html ?? "").slice(0, 8000),
     });
   }
   return results;

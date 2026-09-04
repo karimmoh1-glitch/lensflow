@@ -174,3 +174,31 @@ export async function summarizeCopilotAnswer(question: string, facts: string): P
   }
   return facts;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Conversation summary — one sentence, grounded in the cleaned messages. The structured
+// details and next step are computed from records (lib/summarize.ts); the model only
+// writes the sentence, and only when a key is configured. Returns null otherwise.
+// ─────────────────────────────────────────────────────────────────────────
+
+export async function summarizeConversationSentence(input: { personName: string; businessName: string; messages: Array<{ direction: "INBOUND" | "OUTBOUND"; body: string }> }): Promise<string | null> {
+  if (!client) return null;
+  try {
+    const transcript = input.messages
+      .slice(-12)
+      .map((m) => `${m.direction === "INBOUND" ? input.personName : input.businessName}: ${m.body.replace(/\s+/g, " ").slice(0, 600)}`)
+      .join("\n");
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.1,
+      messages: [
+        { role: "system", content: "Summarize this business conversation in ONE plain sentence (max 30 words) from the business owner's point of view: what the person wants and where it stands. Use only facts in the transcript. No preamble." },
+        { role: "user", content: transcript },
+      ],
+    });
+    return completion.choices[0]?.message?.content?.trim() || null;
+  } catch (err) {
+    console.error("[ai] summary failed, using rules", err);
+    return null;
+  }
+}

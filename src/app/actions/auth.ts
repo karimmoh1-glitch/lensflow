@@ -218,14 +218,10 @@ async function loginAsDemoRole(role: Role) {
   redirect(homeRouteFor(membership.role, membership.business));
 }
 
+/** The public "try the demo" entry: signs in as the seeded demo workspace's owner. The
+ * demo workspace is throwaway by design (the seed recreates it). Other roles are not
+ * exposed — there is no product surface for them and an unauthenticated entry point
+ * shouldn't exist without one. */
 export async function loginAsDemo() {
   await loginAsDemoRole("OWNER");
-}
-
-export async function loginAsDemoClient() {
-  await loginAsDemoRole("CLIENT");
-}
-
-export async function loginAsDemoPartner() {
-  await loginAsDemoRole("PARTNER");
 }

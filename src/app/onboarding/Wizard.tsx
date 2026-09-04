@@ -40,13 +40,22 @@ const DEFAULT_SERVICES: Record<string, { name: string; priceCents: number; durat
   Tutoring: { name: "Tutoring Session", priceCents: 8000, durationMins: 60 },
 };
 
+const PRIORITIES = [
+  { key: "messages", label: "Messages", hint: "Know what needs a reply, and what doesn't.", dot: "bg-signal", dotOn: "bg-signal" },
+  { key: "clients", label: "Clients", hint: "Where every relationship stands.", dot: "bg-accent", dotOn: "bg-accent" },
+  { key: "bookings", label: "Bookings", hint: "The calendar, confirmed and reminded.", dot: "bg-success", dotOn: "bg-spark" },
+  { key: "payments", label: "Payments", hint: "Deposits and balances, chased for you.", dot: "bg-warning", dotOn: "bg-warning" },
+  { key: "follow-ups", label: "Follow-ups", hint: "Nobody goes quiet without a nudge.", dot: "bg-ink/40", dotOn: "bg-white/70" },
+];
+
 function slugify(input: string) {
   return input.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40);
 }
 
 const STEPS = [
   { key: "business", label: "Business" },
-  { key: "offer", label: "What you offer" },
+  { key: "offer", label: "What you do" },
+  { key: "focus", label: "What matters" },
   { key: "services", label: "Services" },
   { key: "hours", label: "Hours & deposits" },
   { key: "channels", label: "Channels" },
@@ -60,6 +69,7 @@ export function Wizard({ businessName }: { businessName: string }) {
   const [name, setName] = useState(businessName);
   const [handle, setHandle] = useState(slugify(businessName));
   const [specialties, setSpecialties] = useState<string[]>([]);
+  const [priorities, setPriorities] = useState<string[]>([]);
   const [services, setServices] = useState<{ name: string; priceCents: number; durationMins: number }[]>([{ name: "Consulting Session", priceCents: 25000, durationMins: 60 }]);
   const [workingDays, setWorkingDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [startMin, setStartMin] = useState(9 * 60);
@@ -93,19 +103,23 @@ export function Wizard({ businessName }: { businessName: string }) {
       case 1:
         return specialties.length > 0;
       case 2:
-        return services.length > 0 && services.every((s) => s.name && s.priceCents > 0);
+        return priorities.length > 0;
       case 3:
+        return services.length > 0 && services.every((s) => s.name && s.priceCents > 0);
+      case 4:
         return workingDays.length > 0 && endMin > startMin;
       default:
         return true;
     }
-  }, [step, name, handle, specialties, services, workingDays, startMin, endMin]);
+  }, [step, name, handle, specialties, priorities, services, workingDays, startMin, endMin]);
 
   function submit() {
     const payload: OnboardingPayload = {
       businessName: name,
       handle,
       specialties,
+      priorities,
+      businessType: specialties[0] ?? null,
       services,
       workingDays,
       startMin,
@@ -254,7 +268,7 @@ export function Wizard({ businessName }: { businessName: string }) {
 
             {step === 1 && (
               <div className="space-y-5">
-                <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">What do you offer?</h1>
+                <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">What do you do?</h1>
                 <p className="text-sm text-ink/60">Pick everything that applies. Each one adds a starter service.</p>
                 <div className="flex flex-wrap gap-2">
                   {SPECIALTIES.map((s) => {
@@ -279,6 +293,36 @@ export function Wizard({ businessName }: { businessName: string }) {
             )}
 
             {step === 2 && (
+              <div className="space-y-5">
+                <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">What matters most?</h1>
+                <p className="text-sm text-ink/60">Daythread arranges itself around this — what it shows first, what it chases for you.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {PRIORITIES.map((p) => {
+                    const on = priorities.includes(p.key);
+                    return (
+                      <button
+                        key={p.key}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setPriorities((prev) => (on ? prev.filter((x) => x !== p.key) : [...prev, p.key]))}
+                        className={cn(
+                          "text-left rounded-2xl border px-4 py-3.5 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+                          on ? "border-ink bg-ink text-white shadow-[0_10px_30px_-18px_rgba(16,17,20,0.6)]" : "border-border bg-white hover:border-ink/25"
+                        )}
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <span className={cn("w-2 h-2 rounded-full shrink-0", on ? p.dotOn : p.dot)} />
+                          <span className="text-sm font-semibold">{p.label}</span>
+                        </span>
+                        <span className={cn("block text-xs mt-1 pl-[18px]", on ? "text-white/65" : "text-ink/55")}>{p.hint}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
               <div className="space-y-5">
                 <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">Your services.</h1>
                 <p className="text-sm text-ink/60">Prices power your booking page, invoices and AI replies.</p>
@@ -309,7 +353,7 @@ export function Wizard({ businessName }: { businessName: string }) {
               </div>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <div className="space-y-6">
                 <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">When do you work?</h1>
                 <div className="flex flex-wrap gap-2">
@@ -375,7 +419,7 @@ export function Wizard({ businessName }: { businessName: string }) {
               </div>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <div className="space-y-5">
                 <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">Where do clients reach you?</h1>
                 <p className="text-sm text-ink/60">Turn on what you use. Watch the inbox on the left. Real account connections happen in Settings; this turns on demo mode so you can see it work first.</p>
@@ -420,7 +464,7 @@ export function Wizard({ businessName }: { businessName: string }) {
               </div>
             )}
 
-            {step === 5 && (
+            {step === 6 && (
               <div className="space-y-5">
                 <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">One line about you.</h1>
                 <p className="text-sm text-ink/60">It goes at the top of your booking page. Optional.</p>

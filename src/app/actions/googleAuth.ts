@@ -47,7 +47,9 @@ export async function syncGmailNow(): Promise<SyncGmailResult> {
 
   try {
     const accessToken = await getValidAccessToken(integration);
-    const messages = await listRecentGmailMessages(accessToken, 15);
+    // First sync pulls deeper so the first minute shows the real shape of the inbox
+    // ("184 conversations · 127 automated · 7 need you"); later syncs only need the top.
+    const messages = await listRecentGmailMessages(accessToken, integration.lastSyncedAt ? 15 : 60);
 
     let ingested = 0;
     for (const m of messages) {
@@ -60,6 +62,8 @@ export async function syncGmailNow(): Promise<SyncGmailResult> {
         subject: m.subject,
         clientEmail: m.from,
         providerMessageId: m.messageIdHeader || m.id,
+        headers: m.headers,
+        rawBody: m.rawBody,
       });
       if (!result.duplicate) ingested += 1;
     }

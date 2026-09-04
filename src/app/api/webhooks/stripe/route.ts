@@ -4,14 +4,19 @@ import { stripe } from "@/lib/payments";
 import { prisma } from "@/lib/db";
 import { sendOnChannel } from "@/lib/messaging";
 import { track } from "@/lib/analytics";
+import { markPaymentPaidAndAdvanceBooking } from "@/server/payments";
 import type { BillingStatus } from "@prisma/client";
 
 /**
  * Stripe's webhook for Daythread's own subscription billing (a business paying us) —
  * distinct from any future webhook covering a business's own end-client card payments.
  * Configure this URL (…/api/webhooks/stripe) in the Stripe Dashboard subscribed to at
- * least: checkout.session.completed, customer.subscription.created/updated/deleted,
+ * least: checkout.session.completed, checkout.session.async_payment_succeeded,
+ * checkout.session.async_payment_failed, customer.subscription.created/updated/deleted,
  * invoice.payment_failed. Copy the signing secret into STRIPE_WEBHOOK_SECRET.
+ *
+ * Handles both sides of money: Daythread's own subscriptions (mode: subscription) and a
+ * business's client deposits/balances paid by card (mode: payment, metadata.paymentId).
  *
  * Signature-verified (stripe.webhooks.constructEvent) and idempotent — every event id is
  * recorded in WebhookEvent before processing; a redelivery hits the unique constraint and
@@ -53,6 +58,27 @@ export async function POST(req: Request) {
           });
           await track("checkout_completed", { businessId: session.metadata.businessId, properties: { planKey: session.metadata?.planTier } });
         }
+        // A business's own client paying a deposit or balance by card: the checkout carried
+        // the payment id in metadata, so this is what marks it PAID (never the redirect).
+        if (session.mode === "payment" && session.payment_status === "paid" && session.metadata?.paymentId && session.metadata?.businessId) {
+          const intentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+          await markPaymentPaidAndAdvanceBooking(session.metadata.paymentId, session.metadata.businessId, { stripePaymentIntentId: intentId });
+        }
+        break;
+      }
+      case "checkout.session.async_payment_succeeded": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === "payment" && session.metadata?.paymentId && session.metadata?.businessId) {
+          const intentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+          await markPaymentPaidAndAdvanceBooking(session.metadata.paymentId, session.metadata.businessId, { stripePaymentIntentId: intentId });
+        }
+        break;
+      }
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === "payment" && session.metadata?.paymentId && session.metadata?.businessId) {
+          await prisma.payment.updateMany({ where: { id: session.metadata.paymentId, businessId: session.metadata.businessId, status: "AWAITING_CONFIRMATION" }, data: { status: "FAILED" } });
+        }
         break;
       }
       case "customer.subscription.created":
@@ -81,6 +107,9 @@ export async function POST(req: Request) {
     }
   } catch (err) {
     console.error(`[webhook:stripe] failed processing ${event.type}`, err);
+    // Release the idempotency claim so Stripe's retry is processed rather than swallowed
+    // as a duplicate.
+    await prisma.webhookEvent.deleteMany({ where: { provider: "stripe", eventId: event.id } }).catch(() => {});
     return NextResponse.json({ error: "Internal error processing event" }, { status: 500 });
   }
 

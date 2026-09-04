@@ -29,6 +29,8 @@ export type Understanding = {
   amountCents: number | null;
   context: string | null; // "Existing booking · Brand session · Fri 2:30 PM"
   nextAction: { label: string; kind: "confirm" | "reply" | "book" | "reschedule" | "send_link" | "collect" | "none" };
+  /** What happens if you don't act — the cost of leaving it. */
+  ifNot: string | null;
   confidence: "high" | "medium" | "low";
 };
 
@@ -137,8 +139,32 @@ export function understand(input: UnderstandInput): Understanding {
       nextAction = { label: "Nothing needed right now", kind: "none" };
   }
 
+  const ifNot: string | null = (() => {
+    switch (intent) {
+      case "CONFIRM":
+        return input.hasUpcomingBooking ? "The booking stays unconfirmed and they may keep looking." : "They're ready — a slow reply is how ready people book someone else.";
+      case "RESCHEDULE":
+        return "The booking stays at the old time; a no-show is likely.";
+      case "CANCEL":
+        return "The slot stays blocked and any deposit stays unresolved.";
+      case "PRICING":
+      case "AVAILABILITY":
+      case "BOOK":
+        return "Inquiries go cold fast — most bookings go to whoever answers first.";
+      case "PAYMENT":
+        return input.hasOutstandingPayment ? "The balance stays open and the booking isn't secured." : null;
+      case "LOGISTICS":
+        return "They show up unsure of the plan.";
+      case "THANKS":
+        return "A referral moment passes.";
+      case "QUESTION":
+        return "Unanswered questions turn into silence.";
+      default:
+        return null;
+    }
+  })();
   const confidence: Understanding["confidence"] = intent === "UPDATE" || intent === "QUESTION" ? "low" : day || time || amountCents ? "high" : "medium";
-  return { intent, intentLabel, day, time, amountCents, context, nextAction, confidence };
+  return { intent, intentLabel, day, time, amountCents, context, nextAction, ifNot, confidence };
 }
 
 function capitalize(s: string) {

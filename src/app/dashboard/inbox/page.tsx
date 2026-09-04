@@ -53,6 +53,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       where: { businessId: business.id, archived: false },
       include: {
         client: { select: { id: true, name: true, relationship: true } },
+        assignee: { select: { user: { select: { name: true } } } },
         lead: { include: { service: { select: { priceCents: true } } } },
         messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true, direction: true, createdAt: true } },
         bookings: { where: { startAt: { gte: startOfDay(now), lte: endOfDay(now) }, status: { not: "CANCELED" } }, select: { id: true } },
@@ -140,7 +141,8 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   return (
     <div className="flex h-screen">
       {gmailConnected && <AutoGmailSync />}
-      <div className={cn("w-full md:w-[360px] shrink-0 border-r border-border flex-col bg-white", selectedId ? "hidden md:flex" : "flex")}>
+      {/* Below lg the list and the thread take turns (a tablet is a wide phone here); from lg they sit side by side. */}
+      <div className={cn("w-full lg:w-[360px] shrink-0 border-r border-border flex-col bg-white", selectedId ? "hidden lg:flex" : "flex")}>
         <div className="px-5 pt-4 pb-3 border-b border-border">
           <div className="flex items-center justify-between gap-3 mb-3">
             <h1 className="font-sans font-extrabold text-[17px] tracking-tight text-ink">Inbox</h1>
@@ -259,6 +261,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                           </span>
                         )}
                         {!isPerson && <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 shrink-0 bg-black/[0.05] text-ink/55">{CATEGORY_LABEL[conv.category]}</span>}
+                        {conv.assignee && <span title={`Assigned to ${conv.assignee.user.name}`} className="w-5 h-5 rounded-full bg-signal text-white text-[9px] font-extrabold flex items-center justify-center shrink-0">{initials(conv.assignee.user.name)}</span>}
                         {score !== null && (
                           <span className={cn("flex items-center gap-1 text-xs font-medium shrink-0", temp === "HOT" ? "text-accent-text" : temp === "WARM" ? "text-warning-text" : "text-ink/35")}>
                             <span className={cn("w-1.5 h-1.5 rounded-full", temp === "HOT" ? "bg-accent" : temp === "WARM" ? "bg-warning" : "bg-ink/25")} />
@@ -303,11 +306,11 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         </div>
       </div>
 
-      <div className={cn("flex-1 min-w-0", !selectedId && "hidden md:flex")}>
+      <div className={cn("flex-1 min-w-0", !selectedId && "hidden lg:flex")}>
         {active ? (
           <ThreadPanel conversationId={active.id} autoSummarize={sp.summarize === "1"} />
         ) : (
-          <div className="hidden md:flex flex-1 items-center justify-center px-10">
+          <div className="hidden lg:flex flex-1 items-center justify-center px-10">
             <div className="max-w-xs text-center">
               <div aria-hidden className="flex flex-col items-center mb-4">
                 <span className="w-px h-6 bg-ink/10" />

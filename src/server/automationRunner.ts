@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { sendOnChannel } from "@/lib/messaging";
+import { deliverToCustomer, type Delivery } from "@/server/deliver";
 import { automationsEntitled } from "@/lib/billing";
 import { toZonedDisplayDate } from "@/lib/utils";
 import { format, subHours, addHours, subDays } from "date-fns";
@@ -40,7 +40,7 @@ export async function runScheduledAutomations(now = new Date()) {
   const automations = await prisma.automation.findMany({
     where: { enabled: true, trigger: { in: ["DAYS_BEFORE_SHOOT", "SHOOT_COMPLETED", "PAYMENT_DUE_SOON", "PAYMENT_OVERDUE", "LEAD_INACTIVE"] } },
   });
-  const summary = { checked: automations.length, sent: 0, skipped: 0, failed: 0 };
+  const summary = { checked: automations.length, sent: 0, skipped: 0, not_configured: 0, failed: 0 };
   for (const automation of automations) {
     const targets = await dueTargets(automation, now);
     for (const t of targets) {
@@ -99,15 +99,19 @@ async function dueTargets(automation: { id: string; businessId: string; trigger:
   }
 }
 
-async function runOne(automation: { id: string; businessId: string; name: string; messageTemplate: string; trigger: AutomationTrigger }, target: Target): Promise<"sent" | "skipped" | "failed"> {
+/** Execution results: sent · skipped (dedupe, entitlement, no address) · not_configured
+ * (the channel has no provider on this deployment — nothing left) · failed. */
+export type RunResult = "sent" | "skipped" | "not_configured" | "failed";
+
+async function runOne(automation: { id: string; businessId: string; name: string; messageTemplate: string; trigger: AutomationTrigger }, target: Target): Promise<RunResult> {
   const { businessId } = automation;
-  // Idempotent per target.
+  // Idempotent per target. A not_configured run is retried once the channel exists.
   const already = await prisma.automationExecution.findFirst({ where: { automationId: automation.id, targetId: target.targetId, result: { in: ["sent", "skipped"] } } });
   if (already) return "skipped";
 
   const business = await prisma.business.findUnique({ where: { id: businessId } });
   if (!business) return "failed";
-  const record = (result: "sent" | "skipped" | "failed") =>
+  const record = (result: RunResult) =>
     prisma.automationExecution.create({ data: { businessId, automationId: automation.id, targetType: target.targetType, targetId: target.targetId, result } });
 
   // Server-side entitlement at run time: a downgraded business's automations stop.
@@ -131,16 +135,12 @@ async function runOne(automation: { id: string; businessId: string; name: string
     return "skipped";
   }
 
-  let ok = false;
-  let providerMessageId: string | undefined;
-  try {
-    const sent = await sendOnChannel({ channel, to, body, fromName: business.name, subject: `${business.name}: ${automation.name}` });
-    ok = sent.ok;
-    providerMessageId = sent.ok ? sent.providerMessageId : undefined;
-  } catch (err) {
+  const delivery = await deliverToCustomer({ businessId, businessName: business.name, businessHandle: business.handle, channel, to, body, subject: `${business.name}: ${automation.name}` }).catch((err) => {
     console.error("[automations] send failed", err);
-    ok = false;
-  }
+    return { status: "FAILED", error: "Send failed", via: "none", providerMessageId: undefined } as Delivery;
+  });
+  const ok = delivery.status === "SENT";
+  const providerMessageId = delivery.providerMessageId;
 
   // Write it into the thread so the owner sees what went out on their behalf.
   const conversationId =
@@ -150,12 +150,13 @@ async function runOne(automation: { id: string; businessId: string; name: string
       : null);
   if (conversationId) {
     await prisma.$transaction([
-      prisma.message.create({ data: { conversationId, direction: "OUTBOUND", body, status: ok ? "SENT" : "FAILED", providerMessageId } }),
+      prisma.message.create({ data: { conversationId, direction: "OUTBOUND", body, status: delivery.status, providerMessageId } }),
       prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
     ]);
   }
-  await record(ok ? "sent" : "failed");
-  return ok ? "sent" : "failed";
+  const result: RunResult = ok ? "sent" : delivery.status === "NOT_DELIVERED" ? "not_configured" : "failed";
+  await record(result);
+  return result;
 }
 
 type Ctx = {

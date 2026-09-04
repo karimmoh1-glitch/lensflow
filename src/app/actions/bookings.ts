@@ -26,10 +26,31 @@ export async function assignPartner(bookingId: string, membershipId: string | nu
   revalidatePath(`/dashboard/bookings/${bookingId}`);
 }
 
+/** Which statuses a booking may move to from where it is. Anything can be canceled; nothing
+ * moves backwards or skips the money steps. */
+const LEGAL_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
+  INQUIRY: ["BOOKED", "CANCELED"],
+  BOOKED: ["DEPOSIT_PAID", "CONFIRMED", "CANCELED"],
+  DEPOSIT_PAID: ["CONFIRMED", "CANCELED"],
+  CONFIRMED: ["QUESTIONNAIRE_COMPLETE", "UPCOMING", "COMPLETED", "CANCELED"],
+  QUESTIONNAIRE_COMPLETE: ["UPCOMING", "COMPLETED", "CANCELED"],
+  UPCOMING: ["COMPLETED", "CANCELED"],
+  COMPLETED: ["BALANCE_PAID", "FOLLOWED_UP"],
+  BALANCE_PAID: ["FOLLOWED_UP"],
+  FOLLOWED_UP: [],
+  CANCELED: [],
+};
+
 export async function advanceBookingStatus(bookingId: string, status: BookingStatus, session?: SessionPayload | null) {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
+
+  const current = await prisma.booking.findFirst({ where: { id: bookingId, businessId: business.id }, select: { status: true } });
+  if (!current) throw new Error("not found");
+  if (!LEGAL_TRANSITIONS[current.status].includes(status)) {
+    throw new Error(`A booking can't go from ${current.status.toLowerCase().replaceAll("_", " ")} to ${status.toLowerCase().replaceAll("_", " ")}.`);
+  }
 
   await prisma.booking.updateMany({
     where: { id: bookingId, businessId: business.id },

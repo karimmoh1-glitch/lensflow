@@ -142,6 +142,25 @@ export default async function TodayPage() {
               <Glance label="awaiting follow-up" value={String(intel.awaitingFollowUp.length)} tone={intel.awaitingFollowUp.length > 0 ? "warning" : undefined} href="/dashboard/clients" sub="customers who need a nudge" />
               <Glance label="bookings this week" value={String(intel.thisWeek.bookings)} tone="success" href="/dashboard/bookings" sub={`${formatMoney(intel.thisWeek.bookedCents)} on the calendar`} />
             </ul>
+            {intel.team.length > 1 && (
+              <div className="border-t border-border px-5 py-4">
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/45">Team</div>
+                  {intel.unassignedNeedsReply > 0 && <Link href="/dashboard/inbox?filter=needs_reply" className="text-xs text-accent-text font-semibold hover:underline">{intel.unassignedNeedsReply} waiting with no owner</Link>}
+                </div>
+                <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {intel.team.map((m) => (
+                    <li key={m.membershipId} className="flex items-center gap-2.5 rounded-xl border border-border px-3 py-2">
+                      <span className="w-7 h-7 rounded-full bg-signal-soft text-signal-text text-[10px] font-extrabold flex items-center justify-center shrink-0">{initials(m.name)}</span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-ink truncate">{m.name.split(" ")[0]}</span>
+                        <span className="block text-[11px] text-ink/55">{m.open} open{m.needsReply > 0 ? <span className="text-accent-text"> · {m.needsReply} waiting</span> : ""}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border border-t border-border">
               <div className="px-5 py-4">
                 <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-accent-text mb-2">At risk</div>

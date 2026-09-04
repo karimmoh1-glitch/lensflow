@@ -154,3 +154,81 @@ describe("ingestInboundMessage classification", () => {
     expect(await prisma.client.count({ where: { businessId } })).toBe(1); // still just Sarah
   });
 });
+
+describe("ingestInboundMessage relationships and corrections", () => {
+  let businessId: string;
+
+  beforeAll(async () => {
+    const business = await prisma.business.create({ data: { name: "Relationship Fixture", handle: `relationship-fixture-${Date.now()}` } });
+    businessId = business.id;
+  });
+
+  afterAll(async () => {
+    await prisma.business.delete({ where: { id: businessId } });
+  });
+
+  it("an existing customer stays a customer even when a later message looks automated", async () => {
+    const client = await prisma.client.create({ data: { businessId, name: "Priya Patel", email: "priya@customer.example", relationship: "CUSTOMER" } });
+    const r = await ingestInboundMessage({
+      businessId,
+      channel: "EMAIL",
+      senderName: "Priya Patel",
+      senderHandle: "priya@customer.example",
+      clientEmail: "priya@customer.example",
+      subject: "Your order confirmation — quick question",
+      body: "Can you resend the receipt for the deposit? Order number is on it I think.",
+      providerMessageId: "customer-transactional-1",
+    });
+    expect(r.category).toBe("PRIORITY");
+    expect(r.client?.id).toBe(client.id);
+    const after = await prisma.client.findUnique({ where: { id: client.id } });
+    expect(after?.relationship).toBe("CUSTOMER");
+    expect(await prisma.client.count({ where: { businessId } })).toBe(1);
+  });
+
+  it("a stored correction for this business changes where the next message lands — and only for this business", async () => {
+    await prisma.senderRule.create({ data: { businessId, kind: "domain", value: "bookingtool.example", category: "PRIORITY" } });
+    const here = await ingestInboundMessage({
+      businessId,
+      channel: "EMAIL",
+      senderName: "Booking Tool",
+      senderHandle: "noreply@bookingtool.example",
+      clientEmail: "noreply@bookingtool.example",
+      subject: "Booking request received",
+      body: "We received your booking request.",
+      providerMessageId: "rule-1",
+    });
+    expect(here.category).toBe("PRIORITY");
+    expect(here.conversation.categoryReason).toMatch(/You marked/);
+
+    const other = await prisma.business.create({ data: { name: "Other Tenant", handle: `other-tenant-${Date.now()}` } });
+    try {
+      const there = await ingestInboundMessage({
+        businessId: other.id,
+        channel: "EMAIL",
+        senderName: "Booking Tool",
+        senderHandle: "noreply@bookingtool.example",
+        clientEmail: "noreply@bookingtool.example",
+        subject: "Booking request received",
+        body: "We received your booking request.",
+        providerMessageId: "rule-2",
+      });
+      expect(there.category).toBe("AUTOMATED");
+      expect(await prisma.client.count({ where: { businessId: other.id } })).toBe(0);
+    } finally {
+      await prisma.business.delete({ where: { id: other.id } });
+    }
+  });
+
+  it("a platform's mail is a vendor, and a teammate on the business's own domain is internal", async () => {
+    const stripe = await ingestInboundMessage({ businessId, channel: "EMAIL", senderName: "Stripe", senderHandle: "receipts@stripe.com", clientEmail: "receipts@stripe.com", subject: "Your Stripe payout of $312.00", body: "A payout was sent to your bank account.", providerMessageId: "vendor-1" });
+    expect(stripe.category).toBe("VENDOR");
+    expect(stripe.client).toBeNull();
+    const owner = await prisma.user.create({ data: { name: "Owner", email: `owner-${Date.now()}@alexrivera.example`, passwordHash: "x" } });
+    await prisma.orgMembership.create({ data: { userId: owner.id, businessId, role: "OWNER" } });
+    const mate = await ingestInboundMessage({ businessId, channel: "EMAIL", senderName: "Dana", senderHandle: "dana@alexrivera.example", clientEmail: "dana@alexrivera.example", subject: "Saturday coverage", body: "Can you cover the 2pm on Saturday? I'm double-booked.", providerMessageId: "internal-1" });
+    expect(mate.category).toBe("INTERNAL");
+    expect(mate.client).toBeNull();
+    await prisma.user.delete({ where: { id: owner.id } });
+  });
+});

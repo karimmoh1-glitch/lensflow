@@ -36,6 +36,9 @@ model Business {
   twilioPhoneNumber String? @unique
 
   onboardingStep     Int     @default(0)
+  // What the owner said matters most during onboarding ("messages", "clients", "bookings",
+  // "payments", "follow-ups") — shapes the first-run experience and the dashboard order.
+  priorities         String[] @default([])
   onboardingComplete Boolean @default(false)
 
   // Daythread's own subscription — this business paying US for the platform. Distinct
@@ -71,6 +74,7 @@ model Business {
   notifications  Notification[]
   joinRequests   JoinRequest[]
   analyticsEvents AnalyticsEvent[]
+  senderRules     SenderRule[]
 }
 
 enum PlanTier {
@@ -401,6 +405,15 @@ model Conversation {
   categoryReason String?
   categorySource String? // "rules" | "user"
 
+  // Read state for the business (one shared inbox): unread when the last inbound message
+  // is newer than this.
+  lastReadAt DateTime?
+  // The latest summary (AI when configured, deterministic extraction otherwise), kept so it
+  // doesn't have to be regenerated every open. Never a substitute for the messages.
+  summary       Json?
+  summaryAt     DateTime?
+  summarySource String? // "ai" | "rules"
+
   messages Message[]
   lead     Lead?
   bookings Booking[]
@@ -420,8 +433,26 @@ enum ConversationCategory {
   PRIORITY
   AUTOMATED
   PROMOTIONAL
-  INTERNAL
+  VENDOR // a platform or supplier the business uses
+  INTERNAL // the business's own team
   SPAM
+}
+
+/// A correction the business made ("not priority", "this sender is a customer"), kept per
+/// tenant and consulted first on every future message from that sender or domain. Never
+/// shared across businesses.
+model SenderRule {
+  id         String               @id @default(cuid())
+  businessId String
+  business   Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  kind       String // "email" | "domain"
+  value      String // lower-cased address or domain
+  category   ConversationCategory
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@unique([businessId, kind, value])
+  @@index([businessId])
 }
 
 enum MessageDirection {

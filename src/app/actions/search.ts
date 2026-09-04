@@ -12,7 +12,8 @@ export type SearchHit =
   | { kind: "client"; id: string; title: string; subtitle: string; href: string }
   | { kind: "conversation"; id: string; title: string; subtitle: string; href: string }
   | { kind: "booking"; id: string; title: string; subtitle: string; href: string }
-  | { kind: "payment"; id: string; title: string; subtitle: string; href: string };
+  | { kind: "payment"; id: string; title: string; subtitle: string; href: string }
+  | { kind: "automation"; id: string; title: string; subtitle: string; href: string };
 
 export async function universalSearch(q: string): Promise<{ hits: SearchHit[]; summary?: { name: string; conversations: number; bookings: number; paidCents: number; nextAction: string | null; href: string } }> {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
@@ -22,10 +23,10 @@ export async function universalSearch(q: string): Promise<{ hits: SearchHit[]; s
   const businessId = ctx.business.id;
   const contains = { contains: term, mode: "insensitive" as const };
 
-  const [clients, conversations, bookings, payments] = await Promise.all([
+  const [clients, conversations, bookings, payments, automations] = await Promise.all([
     prisma.client.findMany({
       where: { businessId, OR: [{ name: contains }, { email: contains }, { phone: contains }, { instagram: contains }] },
-      include: { _count: { select: { conversations: true, bookings: true } }, payments: { where: { status: "PAID" }, select: { amountCents: true } }, leads: { where: { respondedAt: null, status: { notIn: ["BOOKED", "LOST"] } }, select: { id: true, conversationId: true }, take: 1 } },
+      include: { _count: { select: { conversations: true, bookings: true } }, payments: { where: { status: "PAID" }, select: { amountCents: true } }, leads: { where: { respondedAt: null, status: { notIn: ["BOOKED", "LOST"] } }, select: { id: true, conversationId: true }, take: 1 }, bookings: { where: { startAt: { gte: new Date() }, status: { not: "CANCELED" } }, orderBy: { startAt: "asc" }, take: 1, include: { service: { select: { name: true } } } } },
       take: 5,
       orderBy: { updatedAt: "desc" },
     }),
@@ -47,6 +48,7 @@ export async function universalSearch(q: string): Promise<{ hits: SearchHit[]; s
       take: 4,
       orderBy: { createdAt: "desc" },
     }),
+    prisma.automation.findMany({ where: { businessId, OR: [{ name: contains }, { messageTemplate: contains }] }, take: 3 }),
   ]);
 
   const money = (c: number) => `$${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
@@ -79,6 +81,13 @@ export async function universalSearch(q: string): Promise<{ hits: SearchHit[]; s
       subtitle: `${p.purpose.toLowerCase()} · ${p.status.replaceAll("_", " ").toLowerCase()}`,
       href: "/dashboard/payments",
     })),
+    ...automations.map((a) => ({
+      kind: "automation" as const,
+      id: a.id,
+      title: a.name,
+      subtitle: `${a.enabled ? "Running" : "Paused"} · ${a.trigger.replaceAll("_", " ").toLowerCase()}`,
+      href: "/dashboard/automations",
+    })),
   ];
 
   const top = clients[0];
@@ -88,7 +97,7 @@ export async function universalSearch(q: string): Promise<{ hits: SearchHit[]; s
         conversations: top._count.conversations,
         bookings: top._count.bookings,
         paidCents: top.payments.reduce((s, p) => s + p.amountCents, 0),
-        nextAction: top.leads[0] ? "Reply — they're waiting" : top._count.bookings === 0 ? "Follow up" : null,
+        nextAction: top.leads[0] ? "Reply — they're waiting" : top.bookings[0] ? `${top.bookings[0].service.name} · ${top.bookings[0].startAt.toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : top._count.bookings === 0 ? "Follow up" : null,
         href: top.leads[0]?.conversationId ? `/dashboard/inbox?c=${top.leads[0].conversationId}` : `/dashboard/clients/${top.id}`,
       }
     : undefined;

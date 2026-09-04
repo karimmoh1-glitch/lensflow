@@ -10,6 +10,8 @@ export type OnboardingPayload = {
   businessName: string;
   handle: string;
   specialties: string[];
+  priorities?: string[]; // "messages" | "clients" | "bookings" | "payments" | "follow-ups"
+  businessType?: string | null;
   services: { name: string; priceCents: number; durationMins: number }[];
   workingDays: number[]; // 0-6
   startMin: number;
@@ -38,7 +40,9 @@ export async function completeOnboarding(payload: OnboardingPayload) {
         depositPercent: payload.depositPercent,
         paymentMethods: payload.paymentMethods,
         onboardingComplete: true,
-        onboardingStep: 8,
+        priorities: payload.priorities ?? [],
+        businessType: payload.businessType ?? undefined,
+        onboardingStep: 7,
       },
     });
 

@@ -15,7 +15,10 @@ export async function POST(req: Request) {
   if (auth === "unconfigured") {
     return NextResponse.json({ error: "SEED_SECRET is not configured on this deployment." }, { status: 501 });
   }
-  if (auth === "unauthorized") {
+  if (auth === "rate-limited") {
+    return NextResponse.json({ error: "Too many attempts" }, { status: 429 });
+  }
+  if (auth !== "ok") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

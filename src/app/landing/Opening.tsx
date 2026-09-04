@@ -29,6 +29,7 @@ function decide(): "full" | "short" {
  *   80ms    a coral signal appears at the left edge and pulses once — something arrived
  *   200ms   the thread draws out of it across the screen, coral → violet → green
  *   220ms   a message chip travels the thread just behind the pen
+ *   520ms+  as the chip passes, three small readings appear: who, when, what to do
  *   960ms   the chip lands at the far end and resolves into a green node — handled
  *   1080ms  the name is revealed left-to-right, a wipe, not a fade — the thread writes it
  *   1620ms  the sheet lifts; the hero beneath rises to meet it
@@ -81,6 +82,32 @@ export function Opening() {
           <rect x="-22" y="-9" width="44" height="18" rx="9" fill="#101114" />
           <circle cx="-11" cy="0" r="2.5" fill="#F0524D" />
           <rect x="-4" y="-1.5" width="18" height="3" rx="1.5" fill="white" opacity="0.85" />
+        </g>
+        {/* understanding: what the thread read, in three small words along the way */}
+        <g className="dt-opening__read" fontFamily="inherit" fontSize="13" fontWeight="700">
+          {/* outer g carries the position; the inner g is what animates (a CSS transform
+              would otherwise replace the SVG translate) */}
+          <g transform="translate(540 262)">
+            <g className="dt-opening__read-1">
+              <rect x="-46" y="-13" width="92" height="26" rx="13" fill="#FCE6E5" />
+              <circle cx="-32" cy="0" r="3" fill="#F0524D" />
+              <text x="-22" y="4.5" fill="#C13530">Sarah</text>
+            </g>
+          </g>
+          <g transform="translate(1010 584)">
+            <g className="dt-opening__read-2">
+              <rect x="-56" y="-13" width="112" height="26" rx="13" fill="#EEEBFC" />
+              <circle cx="-42" cy="0" r="3" fill="#6D5AE6" />
+              <text x="-32" y="4.5" fill="#5642C9">Thu · 3 pm</text>
+            </g>
+          </g>
+          <g transform="translate(1310 330)">
+            <g className="dt-opening__read-3">
+              <rect x="-44" y="-13" width="88" height="26" rx="13" fill="#DDF6E9" />
+              <circle cx="-30" cy="0" r="3" fill="#13CC78" />
+              <text x="-20" y="4.5" fill="#1E8E5A">Confirm</text>
+            </g>
+          </g>
         </g>
         {/* where it lands: resolved */}
         <circle className="dt-opening__node" cx="1400" cy="366" r="7" fill="#13CC78" />

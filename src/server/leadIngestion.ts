@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { track } from "@/lib/analytics";
 import { extractLeadInfo } from "@/lib/ai";
 import { scoreLead } from "@/lib/leadScoring";
 import { cleanEmailBody } from "@/lib/emailText";
@@ -39,7 +40,7 @@ export async function ingestInboundMessage(params: {
   rawBody?: string;
   /** Transport headers that reveal bulk or automated mail — passed through, never used to
    * drop anything. */
-  headers?: { listUnsubscribe?: string | null; listId?: string | null; precedence?: string | null; autoSubmitted?: string | null } | null;
+  headers?: { listUnsubscribe?: string | null; listId?: string | null; precedence?: string | null; autoSubmitted?: string | null; replyTo?: string | null; messageId?: string | null } | null;
 }) {
   const { businessId, channel, senderName, senderHandle, subject, clientEmail, clientPhone, providerMessageId, rawBody, headers } = params;
   const body = channel === "EMAIL" ? cleanEmailBody(params.body) : params.body;
@@ -60,19 +61,34 @@ export async function ingestInboundMessage(params: {
   // creates a client record and a lead. Everything else is stored as a conversation with
   // its category — visible in All Inbox, absent from Priority and from the CRM.
   const identityWhere = clientEmail ? { businessId, email: clientEmail } : { businessId, name: senderName };
-  const knownClient = await prisma.client.findFirst({ where: identityWhere, include: { _count: { select: { bookings: true, payments: true } } } });
+  const senderEmail = clientEmail ?? (channel === "EMAIL" ? senderHandle : null);
+  const [knownClient, rules, owners, priorInboundCount] = await Promise.all([
+    prisma.client.findFirst({ where: identityWhere, include: { _count: { select: { bookings: true, payments: true } } } }),
+    // Only this business's corrections — never another tenant's.
+    prisma.senderRule.findMany({ where: { businessId }, select: { kind: true, value: true, category: true } }),
+    prisma.orgMembership.findMany({ where: { businessId, role: { in: ["OWNER", "ADMIN"] } }, select: { user: { select: { email: true } } } }),
+    senderHandle ? prisma.message.count({ where: { direction: "INBOUND", conversation: { businessId, externalHandle: senderHandle } } }) : Promise.resolve(0),
+  ]);
   const priorOutbound = knownClient
     ? (await prisma.message.count({ where: { direction: "OUTBOUND", conversation: { businessId, clientId: knownClient.id } } })) > 0
     : false;
+  // Teammates write from the business's own domain — but a gmail.com owner doesn't make
+  // every gmail.com sender a teammate.
+  const businessDomains = owners
+    .map((o) => o.user.email.split("@")[1]?.toLowerCase())
+    .filter((d): d is string => Boolean(d) && !/^(gmail|googlemail|yahoo|outlook|hotmail|live|icloud|me|aol|proton|protonmail|msn)\.(com|net|me)$/i.test(d));
   const classification = classifyMessage({
     channel,
-    senderEmail: clientEmail ?? (channel === "EMAIL" ? senderHandle : null),
+    senderEmail,
     senderName,
     subject,
     body,
     headers,
     knownCustomer: Boolean(knownClient && (knownClient._count.bookings > 0 || knownClient._count.payments > 0 || knownClient.relationship === "CUSTOMER")),
     priorOutbound,
+    priorInboundCount,
+    businessDomains,
+    rules: rules.map((r) => ({ kind: r.kind as "email" | "domain", value: r.value, category: r.category })),
   });
 
   if (classification.category !== "PRIORITY") {
@@ -98,6 +114,7 @@ export async function ingestInboundMessage(params: {
       }));
     await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body, providerMessageId, rawBody } });
     if (existingQuiet) await prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date(), subject: existingQuiet.subject ?? subject } });
+    else if ((await prisma.conversation.count({ where: { businessId, category: { not: "PRIORITY" } } })) === 1) await track("first_classified_conversation", { businessId, properties: { category: classification.category } });
     return { client: null, conversation, lead: null, duplicate: false as const, category: classification.category };
   }
 

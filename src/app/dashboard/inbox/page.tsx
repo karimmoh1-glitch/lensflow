@@ -10,7 +10,8 @@ import type { ConversationCategory } from "@prisma/client";
 import { ThreadPanel } from "./ThreadPanel";
 import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
 import { AutoGmailSync } from "./AutoGmailSync";
-import { DeleteConversationButton } from "./DeleteConversationButton";
+import { ConversationTools } from "./ConversationTools";
+import { previewOf } from "@/lib/cleanMessage";
 
 /**
  * Two views over one stream.
@@ -28,13 +29,13 @@ import { DeleteConversationButton } from "./DeleteConversationButton";
  */
 type View = "priority" | "all";
 type Filter = "all" | "needs_reply" | "cold";
-type Cat = "all" | "customers" | "automated" | "promotions" | "internal" | "spam";
+type Cat = "all" | "customers" | "leads" | "automated" | "promotions" | "vendors" | "internal" | "spam";
 type Sort = "priority" | "newest" | "oldest";
 
-const CAT_TO_CATEGORY: Record<Exclude<Cat, "all" | "customers">, ConversationCategory> = { automated: "AUTOMATED", promotions: "PROMOTIONAL", internal: "INTERNAL", spam: "SPAM" };
-const CATEGORY_LABEL: Record<ConversationCategory, string> = { PRIORITY: "Priority", AUTOMATED: "Automated", PROMOTIONAL: "Promotion", INTERNAL: "Internal", SPAM: "Spam" };
+const CAT_TO_CATEGORY: Record<Exclude<Cat, "all" | "customers" | "leads">, ConversationCategory> = { automated: "AUTOMATED", promotions: "PROMOTIONAL", vendors: "VENDOR", internal: "INTERNAL", spam: "SPAM" };
+const CATEGORY_LABEL: Record<ConversationCategory, string> = { PRIORITY: "Priority", AUTOMATED: "Automated", PROMOTIONAL: "Promotion", VENDOR: "Vendor", INTERNAL: "Internal", SPAM: "Spam" };
 
-export default async function InboxPage({ searchParams }: { searchParams: Promise<{ c?: string; filter?: string; sort?: string; view?: string; cat?: string }> }) {
+export default async function InboxPage({ searchParams }: { searchParams: Promise<{ c?: string; filter?: string; sort?: string; view?: string; cat?: string; summarize?: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
   if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
@@ -43,7 +44,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const selectedId = sp.c;
   const view: View = sp.view === "all" ? "all" : "priority";
   const filter: Filter = sp.filter === "needs_reply" || sp.filter === "cold" ? sp.filter : "all";
-  const cat: Cat = (["customers", "automated", "promotions", "internal", "spam"] as Cat[]).includes(sp.cat as Cat) ? (sp.cat as Cat) : "all";
+  const cat: Cat = (["customers", "leads", "automated", "promotions", "vendors", "internal", "spam"] as Cat[]).includes(sp.cat as Cat) ? (sp.cat as Cat) : "all";
   const sort: Sort = sp.sort === "newest" || sp.sort === "oldest" ? sp.sort : "priority";
   const now = new Date();
 
@@ -51,12 +52,15 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     prisma.conversation.findMany({
       where: { businessId: business.id, archived: false },
       include: {
-        client: true,
-        lead: { include: { service: true } },
-        messages: { orderBy: { createdAt: "desc" }, take: 1 },
+        client: { select: { id: true, name: true, relationship: true } },
+        lead: { include: { service: { select: { priceCents: true } } } },
+        messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true, direction: true, createdAt: true } },
         bookings: { where: { startAt: { gte: startOfDay(now), lte: endOfDay(now) }, status: { not: "CANCELED" } }, select: { id: true } },
       },
       orderBy: { lastMessageAt: "desc" },
+      // The list is a view, not an archive: the most recent 400 keeps it fast at volume;
+      // ⌘K search reaches everything.
+      take: 400,
     }),
     prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "EMAIL" } } }),
   ]);
@@ -79,9 +83,11 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     const needsReply = Boolean(lead && !lead.respondedAt && lead.status !== "BOOKED" && lead.status !== "LOST");
     const isCold = Boolean(lead && lead.status !== "BOOKED" && lead.status !== "LOST" && lead.createdAt <= coldCutoff);
     const isPerson = conv.category === "PRIORITY";
+    const last = conv.messages[0];
+    const unread = Boolean(last && last.direction === "INBOUND" && (!conv.lastReadAt || conv.lastReadAt < last.createdAt));
     const today = conv.bookings.length > 0;
     const group: "needs_you" | "today" | "watch" = needsReply ? "needs_you" : today ? "today" : "watch";
-    return { conv, lead, score, needsReply, isCold, isPerson, today, group };
+    return { conv, lead, score, needsReply, isCold, isPerson, today, group, unread };
   });
 
   const bySort = (a: (typeof enriched)[number], b: (typeof enriched)[number]) => {
@@ -101,6 +107,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     .filter((r) => {
       if (cat === "all") return true;
       if (cat === "customers") return r.conv.client?.relationship === "CUSTOMER";
+      if (cat === "leads") return r.isPerson && r.conv.client?.relationship === "LEAD";
       return r.conv.category === CAT_TO_CATEGORY[cat];
     })
     .sort(bySort);
@@ -112,8 +119,10 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const counts: Record<Cat, number> = {
     all: enriched.length,
     customers: enriched.filter((r) => r.conv.client?.relationship === "CUSTOMER").length,
+    leads: enriched.filter((r) => r.isPerson && r.conv.client?.relationship === "LEAD").length,
     automated: enriched.filter((r) => r.conv.category === "AUTOMATED").length,
     promotions: enriched.filter((r) => r.conv.category === "PROMOTIONAL").length,
+    vendors: enriched.filter((r) => r.conv.category === "VENDOR").length,
     internal: enriched.filter((r) => r.conv.category === "INTERNAL").length,
     spam: enriched.filter((r) => r.conv.category === "SPAM").length,
   };
@@ -164,11 +173,22 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
               </div>
             </>
           ) : (
+            <>
+              <p className="text-sm text-ink mb-2.5">
+                <span className="font-extrabold">{enriched.length} conversation{enriched.length === 1 ? "" : "s"}</span>
+                {filteredOut > 0 && (
+                  <span className="text-ink/55">
+                    {" "}· {filteredOut} kept out of Priority
+                    <span className="text-ink/40">{[counts.automated && `${counts.automated} automated`, counts.promotions && `${counts.promotions} promotional`, counts.vendors && `${counts.vendors} vendor`, counts.internal && `${counts.internal} internal`, counts.spam && `${counts.spam} spam`].filter(Boolean).length ? ` (${[counts.automated && `${counts.automated} automated`, counts.promotions && `${counts.promotions} promotional`, counts.vendors && `${counts.vendors} vendor`, counts.internal && `${counts.internal} internal`, counts.spam && `${counts.spam} spam`].filter(Boolean).join(" · ")})` : ""}</span>
+                  </span>
+                )}
+              </p>
             <div className="flex flex-wrap items-center gap-1 text-xs mb-2">
-              {(["all", "customers", "automated", "promotions", "internal", "spam"] as Cat[]).map((c) => (
+              {(["all", "customers", "leads", "automated", "promotions", "vendors", "internal", "spam"] as Cat[]).map((c) => (
                 <FilterChip key={c} href={href({ cat: c })} active={cat === c} label={c === "all" ? "Everything" : c.charAt(0).toUpperCase() + c.slice(1)} count={counts[c]} />
               ))}
             </div>
+            </>
           )}
           <div className="flex items-center gap-1.5 text-[11px] text-ink/60">
             <span className="font-medium">Sort by</span>
@@ -207,7 +227,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                     {GROUP_LABEL[g]} <span className="text-ink/30">{list.length}</span>
                   </div>
                 )}
-                {list.map(({ conv, lead, score, needsReply, isPerson }) => {
+                {list.map(({ conv, lead, score, needsReply, isPerson, unread }) => {
                   const isActive = active?.id === conv.id;
                   const temp = score !== null ? scoreLabel(score) : null;
                   const name = conv.client?.name ?? lead?.extractedName ?? conv.externalHandle ?? "Unknown";
@@ -221,14 +241,18 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                     <Link
                       key={conv.id}
                       href={href({}).includes("?") ? `${href({})}&c=${conv.id}` : `/dashboard/inbox?c=${conv.id}`}
-                      className={cn("group block px-5 py-3.5 border-b border-border transition-colors hover:bg-black/[0.02]", isActive && "bg-accent-soft/50", !isPerson && "bg-paper/40")}
+                      className={cn("group relative block px-5 py-3.5 border-b border-border transition-colors hover:bg-black/[0.02] focus-visible:outline-none focus-visible:bg-black/[0.03] focus-within:bg-black/[0.02]", isActive && "bg-accent-soft/50", !isPerson && "bg-paper/40")}
                     >
-                      <div className="flex items-center gap-2 mb-1">
+                      {/* hover / focus action rail */}
+                      <div className="absolute right-3 top-2.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">
+                        <ConversationTools conversationId={conv.id} unread={unread} category={conv.category} clientId={conv.client?.id ?? null} relationship={conv.client?.relationship ?? null} />
+                      </div>
+                      <div className="flex items-center gap-2 mb-1 group-hover:pr-32 group-focus-within:pr-32">
                         <div className={cn("relative w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/50")}>
                           {initials(name)}
-                          {needsReply && <span aria-hidden className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent ring-2 ring-white" />}
+                          {(needsReply || unread) && <span aria-hidden className={cn("absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-white", needsReply ? "bg-accent" : "bg-signal")} />}
                         </div>
-                        <span className={cn("text-sm truncate flex-1", isPerson ? "font-semibold text-ink" : "font-medium text-ink/70")}>{name}</span>
+                        <span className={cn("text-sm truncate flex-1", isPerson ? (unread ? "font-extrabold text-ink" : "font-semibold text-ink") : unread ? "font-semibold text-ink/80" : "font-medium text-ink/70")}>{name}</span>
                         {isPerson && relationship && (
                           <span className={cn("text-[10px] font-bold rounded-full px-1.5 py-0.5 shrink-0", relationship === "CUSTOMER" ? "bg-success-soft text-success-text" : relationship === "CONTACT" ? "bg-black/[0.05] text-ink/60" : "bg-signal-soft text-signal-text")}>
                             {relationship === "CUSTOMER" ? "Customer" : relationship === "CONTACT" ? "Contact" : "Potential"}
@@ -241,9 +265,6 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                             {score}
                           </span>
                         )}
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <DeleteConversationButton conversationId={conv.id} />
-                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-ink/60 mb-1">
                         <ChannelBadge channel={conv.channel} />
@@ -252,7 +273,10 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                         <span>{formatDistanceToNowStrict(conv.lastMessageAt, { addSuffix: true })}</span>
                       </div>
                       {conv.subject && !isPerson && <p className="text-xs font-medium text-ink/75 truncate">{conv.subject}</p>}
-                      <p className={cn("text-xs line-clamp-2", isPerson ? "text-ink/75" : "text-ink/55")}>{conv.messages[0]?.body}</p>
+                      <p className={cn("text-xs line-clamp-2", isPerson ? (unread ? "text-ink/85" : "text-ink/70") : "text-ink/55")}>
+                        {conv.messages[0]?.direction === "OUTBOUND" && <span className="text-ink/45">You: </span>}
+                        {previewOf(conv.messages[0]?.body ?? "")}
+                      </p>
                       {metaBits.length > 0 && (
                         <div className="flex items-center gap-1 text-xs mt-1">
                           {metaBits.map((bit, i) => (
@@ -281,7 +305,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
 
       <div className={cn("flex-1 min-w-0", !selectedId && "hidden md:flex")}>
         {active ? (
-          <ThreadPanel conversationId={active.id} />
+          <ThreadPanel conversationId={active.id} autoSummarize={sp.summarize === "1"} />
         ) : (
           <div className="hidden md:flex flex-1 items-center justify-center px-10">
             <div className="max-w-xs text-center">

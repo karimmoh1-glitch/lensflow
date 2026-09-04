@@ -18,8 +18,10 @@ export const PLANS: Record<
     maxTeamSeats: number; // Infinity = unlimited
     smsEnabled: boolean;
     automationsEnabled: boolean;
-    aiEnabled: boolean; // AI lead scoring & reply drafts
+    aiEnabled: boolean; // AI summaries, reply drafts, lead scoring
+    intelligenceEnabled: boolean; // the executive view: what's at risk, what's converting, response time
     tagline: string;
+    outcome: string; // what the tier is for, in one line
     features: string[];
   }
 > = {
@@ -31,42 +33,56 @@ export const PLANS: Record<
     smsEnabled: false,
     automationsEnabled: false,
     aiEnabled: false,
-    tagline: "Everything a solo freelancer needs to get organized.",
+    intelligenceEnabled: false,
+    tagline: "Get your business onto one thread.",
+    outcome: "Every conversation, booking and payment in one place — with automated mail kept out of your way.",
     features: [
-      "Unlimited clients & bookings",
-      "Unified email + website inbox",
-      "Booking pages & deposit collection",
+      "Priority inbox — automated, promotional and vendor mail kept out of your way",
+      "Unlimited clients, bookings and conversations",
+      "Email + booking page inbox",
+      "Booking page with deposits",
       "Zelle / bank transfer payment tracking",
-      "1 team seat",
+      "1 seat",
     ],
   },
   PRO: {
     key: "PRO",
     name: "Pro",
-    priceCents: 2900,
+    priceCents: 2000,
     maxTeamSeats: 5,
     smsEnabled: true,
     automationsEnabled: true,
     aiEnabled: true,
-    tagline: "For a growing business juggling more clients and a small team.",
+    intelligenceEnabled: false,
+    tagline: "Know what deserves your attention.",
+    outcome: "For people who are serious about running their business without living inside their inbox.",
     features: [
       "Everything in Free",
-      "AI-powered lead scoring & reply drafts",
+      "Automations that actually run — confirmations, reminders, follow-ups, thank-yous",
+      "AI summaries and reply drafts, grounded in your services and prices",
       "SMS inbox on your own number",
-      "Up to 5 team seats",
-      "Automations",
+      "Client intelligence — where every relationship stands and what to do next",
+      "Up to 5 seats",
     ],
   },
   BUSINESS: {
     key: "BUSINESS",
     name: "Business",
-    priceCents: 7900,
+    priceCents: 8000,
     maxTeamSeats: Infinity,
     smsEnabled: true,
     automationsEnabled: true,
     aiEnabled: true,
-    tagline: "For businesses with a full team and higher booking volume.",
-    features: ["Everything in Pro", "Unlimited team seats", "Priority support"],
+    intelligenceEnabled: true,
+    tagline: "Run the business from one intelligent operating system.",
+    outcome: "For operators with a team, real volume, and no time to inspect everything by hand.",
+    features: [
+      "Everything in Pro",
+      "Executive view — what's at risk, what's converting, how fast you respond, revenue sitting in conversations",
+      "Unlimited seats, roles, partner assignment and shared inbox access",
+      "Business memory — what each customer is worth, who's going cold, who's due a follow-up",
+      "Priority support",
+    ],
   },
 };
 
@@ -108,4 +124,8 @@ export function automationsEntitled(business: BillingFields): boolean {
 
 export function aiEntitled(business: BillingFields): boolean {
   return planLimits(business).aiEnabled;
+}
+
+export function intelligenceEntitled(business: BillingFields): boolean {
+  return planLimits(business).intelligenceEnabled;
 }

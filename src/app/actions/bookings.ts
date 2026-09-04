@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { markPaymentPaidAndAdvanceBooking } from "@/server/payments";
+import { fireAutomationEvent } from "@/server/automationRunner";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { requireClientRecord } from "./portal";
 import { revalidatePath } from "next/cache";
@@ -91,27 +93,6 @@ export async function requestPayment(params: {
   revalidatePath(`/dashboard/bookings/${booking.id}`);
   revalidatePath("/dashboard/payments");
   return { paymentId: payment.id, checkoutUrl, reference };
-}
-
-async function markPaymentPaidAndAdvanceBooking(paymentId: string, businessId: string) {
-  const payment = await prisma.payment.findFirst({ where: { id: paymentId, businessId }, include: { booking: true } });
-  if (!payment) throw new Error("not found");
-  if (payment.status === "PAID") return;
-
-  await prisma.payment.update({ where: { id: paymentId }, data: { status: "PAID", confirmedAt: new Date() } });
-
-  if (payment.booking) {
-    const nextStatus: BookingStatus | null =
-      payment.purpose === "DEPOSIT" ? "DEPOSIT_PAID" : payment.purpose === "BALANCE" || payment.purpose === "FULL" ? "BALANCE_PAID" : null;
-    if (nextStatus) {
-      await prisma.booking.update({ where: { id: payment.booking.id }, data: { status: nextStatus } });
-    }
-  }
-
-  revalidatePath("/dashboard/payments");
-  if (payment.bookingId) revalidatePath(`/dashboard/bookings/${payment.bookingId}`);
-  revalidatePath("/dashboard");
-  revalidatePath("/portal");
 }
 
 /**

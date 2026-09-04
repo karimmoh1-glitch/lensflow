@@ -4,6 +4,9 @@ import { ArrowRight } from "lucide-react";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { getTodayBrief, buildBriefText } from "@/server/dashboardData";
 import { getWeekStrip } from "@/server/weekStrip";
+import { getIntelligence, getFirstLook } from "@/server/intelligence";
+import { intelligenceEntitled } from "@/lib/billing";
+import { differenceInDays } from "date-fns";
 import { Users, Zap } from "lucide-react";
 import { Card, Badge, EmptyState } from "@/components/ui";
 import { formatMoney, cn, initials, toZonedDisplayDate } from "@/lib/utils";
@@ -26,7 +29,10 @@ export default async function TodayPage() {
   if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business, user } = ctx;
 
-  const [brief, week] = await Promise.all([getTodayBrief(business.id), getWeekStrip(business.id)]);
+  const executive = intelligenceEntitled(business);
+  const [brief, week, intel, firstLook] = await Promise.all([getTodayBrief(business.id), getWeekStrip(business.id), executive ? getIntelligence(business.id) : Promise.resolve(null), getFirstLook(business.id)]);
+  // The first minute: show what Daythread found until the owner has replied to something.
+  const showFirstLook = firstLook.total > 0 && !firstLook.hasReplied && differenceInDays(new Date(), business.createdAt) <= 30;
   const briefText = buildBriefText(brief, business.name);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -45,6 +51,36 @@ export default async function TodayPage() {
         </div>
         <FixMyDayButton />
       </div>
+
+      {showFirstLook && (
+        <section aria-labelledby="first-look-label" className="mb-8 rounded-[22px] border border-signal/25 bg-white overflow-hidden dt-land">
+          <div className="px-5 md:px-6 pt-5 pb-4">
+            <h2 id="first-look-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">What Daythread found</h2>
+            <p className="mt-1.5 font-sans font-extrabold text-[1.6rem] leading-tight tracking-[-0.03em] text-ink">
+              {firstLook.total} conversation{firstLook.total === 1 ? "" : "s"}.{" "}
+              <span className="text-ink/45">{firstLook.needsYou === 0 ? "None need you right now." : firstLook.needsYou === 1 ? "One needs you." : `${firstLook.needsYou} need you.`}</span>
+            </p>
+          </div>
+          <div className="px-5 md:px-6 pb-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              ["Automated", firstLook.automated + firstLook.spam, "kept out of your way"],
+              ["Promotional", firstLook.promotional, "newsletters and offers"],
+              ["Vendors & internal", firstLook.vendor + firstLook.internal, "platforms, suppliers, your team"],
+              ["People", firstLook.priority, "real conversations"],
+            ].map(([k, v, hint], i) => (
+              <div key={String(k)} className={cn("rounded-2xl px-3.5 py-3", i === 3 ? "bg-accent-soft/60" : "bg-paper")}>
+                <div className={cn("font-sans font-extrabold text-2xl tracking-[-0.03em] tabular-nums", i === 3 ? "text-accent-text" : "text-ink")}>{String(v)}</div>
+                <div className="text-[11px] font-semibold text-ink/70">{String(k)}</div>
+                <div className="text-[11px] text-ink/45">{String(hint)}</div>
+              </div>
+            ))}
+          </div>
+          <div className="px-5 md:px-6 py-3 border-t border-border bg-paper/60 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink/60">
+            <span>Priority shows only the people. Everything else stays in <Link href="/dashboard/inbox?view=all" className="text-ink font-semibold hover:underline">All</Link>, and you can correct any of it.</span>
+            {waitingOnReply.length > 0 && <span className="text-accent-text font-semibold">Here {waitingOnReply.length === 1 ? "is the thing" : `are the ${waitingOnReply.length} things`} I&rsquo;d handle first ↓</span>}
+          </div>
+        </section>
+      )}
 
       {/* NOW */}
       <section aria-labelledby="now-label">
@@ -92,6 +128,56 @@ export default async function TodayPage() {
           </div>
         )}
       </section>
+
+      {intel && (
+        <section aria-labelledby="exec-label" className="mt-10">
+          <div className="flex items-baseline justify-between gap-4 mb-3">
+            <h2 id="exec-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45">Your business, in one glance</h2>
+            <span className="text-[11px] text-ink/40">Business plan · from your records</span>
+          </div>
+          <div className="rounded-[22px] border border-border bg-white overflow-hidden">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 divide-border sm:[&>li:nth-child(n+3)]:border-t lg:[&>li:nth-child(n+3)]:border-t-0 sm:[&>li:nth-child(2n)]:border-l lg:[&>li:nth-child(n+2)]:border-l">
+              <Glance label="need you" value={String(intel.needsYou)} tone={intel.needsYou > 0 ? "accent" : undefined} href="/dashboard/inbox?filter=needs_reply" sub={intel.needsYou === 0 ? "Nobody waiting" : "waiting on a reply"} />
+              <Glance label="in open opportunities" value={formatMoney(intel.opportunityCents)} href="/dashboard/inbox" sub={`${intel.openLeads} open ${intel.openLeads === 1 ? "inquiry" : "inquiries"}, priced from what they asked for`} />
+              <Glance label="awaiting follow-up" value={String(intel.awaitingFollowUp.length)} tone={intel.awaitingFollowUp.length > 0 ? "warning" : undefined} href="/dashboard/clients" sub="customers who need a nudge" />
+              <Glance label="bookings this week" value={String(intel.thisWeek.bookings)} tone="success" href="/dashboard/bookings" sub={`${formatMoney(intel.thisWeek.bookedCents)} on the calendar`} />
+            </ul>
+            <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border border-t border-border">
+              <div className="px-5 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-accent-text mb-2">At risk</div>
+                <ul className="space-y-1.5 text-sm">
+                  {intel.goingCold.slice(0, 3).map((g) => (
+                    <li key={g.leadId}><Link href={g.conversationId ? `/dashboard/inbox?c=${g.conversationId}` : "/dashboard/inbox"} className="hover:underline"><span className="font-semibold text-ink">{g.name}</span></Link> <span className="text-ink/55">quiet for {Math.round(g.hours / 24)}d{g.valueCents ? ` · ${formatMoney(g.valueCents)}` : ""}</span></li>
+                  ))}
+                  {intel.atRisk.unconfirmedSoon > 0 && <li><Link href="/dashboard/bookings" className="hover:underline"><span className="font-semibold text-ink">{intel.atRisk.unconfirmedSoon} booking{intel.atRisk.unconfirmedSoon === 1 ? "" : "s"}</span></Link> <span className="text-ink/55">within 3 days, not confirmed</span></li>}
+                  {intel.atRisk.overdueCount > 0 && <li><Link href="/dashboard/payments" className="hover:underline"><span className="font-semibold text-ink">{formatMoney(intel.atRisk.overdueCents)}</span></Link> <span className="text-ink/55">overdue across {intel.atRisk.overdueCount} payment{intel.atRisk.overdueCount === 1 ? "" : "s"}</span></li>}
+                  {intel.atRisk.failedAutomations > 0 && <li><Link href="/dashboard/automations" className="hover:underline"><span className="font-semibold text-ink">{intel.atRisk.failedAutomations} automation{intel.atRisk.failedAutomations === 1 ? "" : "s"}</span></Link> <span className="text-ink/55">failed to send this week</span></li>}
+                  {intel.goingCold.length === 0 && intel.atRisk.unconfirmedSoon === 0 && intel.atRisk.overdueCount === 0 && intel.atRisk.failedAutomations === 0 && <li className="text-ink/55">Nothing at risk right now.</li>}
+                </ul>
+              </div>
+              <div className="px-5 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-signal-text mb-2">How you&rsquo;re doing</div>
+                <dl className="space-y-1.5 text-sm">
+                  <div className="flex justify-between gap-3"><dt className="text-ink/55">Response time</dt><dd className="font-semibold text-ink tabular-nums">{intel.responseTimeHours === null ? "—" : intel.responseTimeHours < 1 ? `${Math.round(intel.responseTimeHours * 60)} min` : `${intel.responseTimeHours.toFixed(1)} h`} <span className="text-ink/40 font-medium text-xs">median, 30d</span></dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink/55">Inquiries → bookings</dt><dd className="font-semibold text-ink tabular-nums">{intel.conversion.rate === null ? "—" : `${Math.round(intel.conversion.rate * 100)}%`} <span className="text-ink/40 font-medium text-xs">{intel.conversion.booked}/{intel.conversion.leads}, 90d</span></dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink/55">Collected this week</dt><dd className="font-semibold text-success-text tabular-nums">{formatMoney(intel.thisWeek.collectedCents)}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink/55">New inquiries this week</dt><dd className="font-semibold text-ink tabular-nums">{intel.thisWeek.newLeads}</dd></div>
+                </dl>
+              </div>
+              <div className="px-5 py-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-success-text mb-2">Most valuable</div>
+                <ul className="space-y-1.5 text-sm">
+                  {intel.topCustomers.map((c) => (
+                    <li key={c.clientId} className="flex justify-between gap-3"><Link href={`/dashboard/clients/${c.clientId}`} className="font-semibold text-ink hover:underline truncate">{c.name}</Link><span className="text-ink/55 tabular-nums shrink-0">{formatMoney(c.paidCents)} · {c.bookings}</span></li>
+                  ))}
+                  {intel.topCustomers.length === 0 && <li className="text-ink/55">No paying customers yet.</li>}
+                  {intel.dormantCustomers > 0 && <li className="text-ink/55 pt-1">{intel.dormantCustomers} past customer{intel.dormantCustomers === 1 ? "" : "s"} gone quiet for 90+ days — <Link href="/dashboard/clients" className="text-ink font-semibold hover:underline">reach out</Link></li>}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* TODAY + MONEY */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 mt-10">
@@ -189,6 +275,18 @@ export default async function TodayPage() {
         </dl>
       </section>
     </div>
+  );
+}
+
+function Glance({ label, value, tone, href, sub }: { label: string; value: string; tone?: "warning" | "accent" | "success"; href: string; sub?: string }) {
+  return (
+    <li>
+      <Link href={href} className="block px-5 py-4 hover:bg-black/[0.02] transition-colors focus-visible:outline-none focus-visible:bg-black/[0.03]">
+        <div className={cn("font-sans font-extrabold text-[1.75rem] leading-none tracking-[-0.03em] tabular-nums", tone === "warning" ? "text-warning-text" : tone === "accent" ? "text-accent-text" : tone === "success" ? "text-success-text" : "text-ink")}>{value}</div>
+        <div className="mt-1 text-sm font-semibold text-ink">{label}</div>
+        {sub && <div className="text-[11px] text-ink/50 mt-0.5">{sub}</div>}
+      </Link>
+    </li>
   );
 }
 

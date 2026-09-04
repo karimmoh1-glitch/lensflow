@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  * "where do we stand with Sarah" before you press Enter. Fully keyboard-driven, a real
  * dialog for assistive tech, and closed with Escape or a click outside.
  */
-type Item = { key: string; title: string; subtitle?: string; href: string; icon: typeof Search; group: "Go to" | "People" | "Conversations" | "Bookings" | "Payments" };
+type Item = { key: string; title: string; subtitle?: string; href: string; icon: typeof Search; group: "Go to" | "People" | "Conversations" | "Bookings" | "Payments" | "Automations" };
 
 const GO: Item[] = [
   { key: "go-home", title: "Home", subtitle: "What needs you now", href: "/dashboard", icon: Home, group: "Go to" },
@@ -27,8 +27,8 @@ const GO: Item[] = [
   { key: "go-billing", title: "Billing", href: "/dashboard/billing", icon: Receipt, group: "Go to" },
   { key: "go-settings", title: "Settings", subtitle: "Connections, team, booking page", href: "/dashboard/settings", icon: Settings, group: "Go to" },
 ];
-const ICON: Record<SearchHit["kind"], typeof Search> = { client: Users, conversation: Inbox, booking: CalendarClock, payment: CreditCard };
-const GROUP: Record<SearchHit["kind"], Item["group"]> = { client: "People", conversation: "Conversations", booking: "Bookings", payment: "Payments" };
+const ICON: Record<SearchHit["kind"], typeof Search> = { client: Users, conversation: Inbox, booking: CalendarClock, payment: CreditCard, automation: Zap };
+const GROUP: Record<SearchHit["kind"], Item["group"]> = { client: "People", conversation: "Conversations", booking: "Bookings", payment: "Payments", automation: "Automations" };
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -130,7 +130,7 @@ export function CommandPalette() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Find a person, a booking, a payment — or go somewhere"
+            placeholder="Find a person, a conversation, a booking, a payment, an automation — or go somewhere"
             aria-label="Search"
             aria-activedescendant={items[cursor] ? `cmd-${items[cursor].key}` : undefined}
             aria-controls="cmd-list"

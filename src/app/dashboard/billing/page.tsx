@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader, Card, CardBody, Badge } from "@/components/ui";
 import { formatMoney } from "@/lib/utils";
+import Link from "next/link";
 import { PLANS, effectivePlan, type PlanKey } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { UpgradeButton, ManageBillingButton } from "./PlanActions";
@@ -32,18 +33,16 @@ export default async function BillingPage() {
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
       <PageHeader title="Billing" description="What your business pays for Daythread." />
 
-      {!subscriptionBillingIsLive &&
-        (process.env.NODE_ENV === "production" ? (
-          <p className="text-sm text-ink/60 bg-signal-soft rounded-2xl px-4 py-3 mb-6">
-            Billing is coming soon — plans below are shown for reference. We&apos;ll email you as soon as upgrades are open.
-          </p>
-        ) : (
-          <p className="text-sm text-ink/70 bg-black/[0.03] rounded-md px-3.5 py-2.5 mb-6">
-            Subscription billing isn&apos;t configured on this deployment — add <code className="text-xs bg-black/[0.05] px-1 rounded">STRIPE_SECRET_KEY</code>{" "}
-            and <code className="text-xs bg-black/[0.05] px-1 rounded">STRIPE_WEBHOOK_SECRET</code> to accept real payments. Every plan below is shown for
-            reference only until then.
-          </p>
-        ))}
+      {!subscriptionBillingIsLive && (
+        <div className="text-sm text-ink/70 bg-signal-soft/50 border border-signal/15 rounded-2xl px-4 py-3 mb-6 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span>Upgrades aren&apos;t open on this deployment yet — plans are shown for reference and nothing is charged.</span>
+          {ctx.role === "OWNER" && (
+            <Link href="/dashboard/billing/setup" className="text-signal-text font-semibold hover:underline">
+              Owner setup guide →
+            </Link>
+          )}
+        </div>
+      )}
 
       <Card className="mb-8">
         <CardBody className="flex items-center justify-between flex-wrap gap-4">
@@ -87,7 +86,8 @@ export default async function BillingPage() {
                   {plan.priceCents === 0 ? "Free" : formatMoney(plan.priceCents)}
                   {plan.priceCents > 0 && <span className="text-sm font-normal text-ink/65">/mo</span>}
                 </p>
-                <p className="text-xs text-ink/70 mb-4">{plan.tagline}</p>
+                <p className="text-sm font-semibold text-ink mb-1">{plan.tagline}</p>
+                <p className="text-xs text-ink/55 mb-4 leading-relaxed">{plan.outcome}</p>
                 <ul className="space-y-1.5 mb-5">
                   {plan.features.map((f) => (
                     <li key={f} className="text-xs text-ink/65 flex items-start gap-1.5">

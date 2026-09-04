@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { track } from "@/lib/analytics";
+import { fireAutomationEvent } from "@/server/automationRunner";
 import { requireRole } from "@/lib/auth";
 import { getAvailableSlots, isSlotStillAvailable } from "@/lib/availability";
 import { revalidatePath } from "next/cache";
@@ -87,6 +89,8 @@ export async function bookLead(leadId: string, startISO: string): Promise<{ book
   await prisma.auditLog.create({
     data: { businessId: business.id, actorId: session.userId, action: "booking_created_from_lead", targetType: "booking", targetId: booking.id },
   });
+  await fireAutomationEvent({ businessId: business.id, trigger: "BOOKING_CREATED", targetType: "booking", targetId: booking.id });
+  if ((await prisma.booking.count({ where: { businessId: business.id } })) === 1) await track("first_booking_created", { businessId: business.id, properties: { via: "inbox" } });
 
   revalidatePath("/dashboard/inbox");
   revalidatePath("/dashboard/bookings");
@@ -110,6 +114,8 @@ export async function markLeadHandled(leadId: string): Promise<{ error?: string 
     where: { id: lead.id },
     data: { respondedAt: new Date(), status: lead.status === "NEW" ? "CONTACTED" : lead.status },
   });
+  const priorHandled = await prisma.lead.count({ where: { businessId: ctx.business.id, respondedAt: { not: null } } });
+  await track(priorHandled <= 1 ? "first_priority_action" : "priority_action", { businessId: ctx.business.id, properties: { via: "done" } });
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/inbox");
   return {};

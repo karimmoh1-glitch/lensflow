@@ -11,18 +11,18 @@ import { ValueLadder } from "./landing/ValueLadder";
  */
 const LADDER: Record<PlanKey, { who: string; why?: string; gets: string[] }> = {
   FREE: {
-    who: "Just you, getting organized.",
-    gets: ["Unlimited clients & bookings", "Email + website inbox", "Booking page & deposits", "Payment tracking"],
+    who: "Get your business onto one thread.",
+    gets: ["Every conversation, booking and payment in one place", "Automated and promotional mail kept out of your way", "Booking page with deposits", "Payment tracking"],
   },
   PRO: {
-    who: "You, with real momentum.",
-    why: "When leads come from everywhere and reminders are eating your evenings.",
-    gets: ["Instagram, SMS & Messenger inbox", "Automations that run themselves", "AI-drafted replies", "Client timelines & lead scores"],
+    who: "Know what deserves your attention.",
+    why: "For people who are serious about running their business without living inside their inbox.",
+    gets: ["Priority inbox that says what needs you, by name", "Automations that actually run — confirmations, reminders, follow-ups", "Summaries and reply drafts, grounded in your prices", "Where every relationship stands, and what to do next"],
   },
   BUSINESS: {
-    who: "You and a small team.",
-    why: "When more than one person answers the phone.",
-    gets: ["Everything in Pro", "Team seats & roles", "Shared inbox assignment", "Priority support"],
+    who: "Run the business from one intelligent operating system.",
+    why: "For operators with a team, real volume, and no time to inspect everything by hand.",
+    gets: ["Your business in one glance — what's at risk, what's converting, how fast you respond", "Revenue sitting in open conversations, priced from what people asked for", "Unlimited seats, roles and partner assignment", "Business memory — who's most valuable, who's going cold, who's due a follow-up"],
   },
 };
 
@@ -33,7 +33,7 @@ export function PricingSection() {
       <ValueLadder />
       <div className="max-w-2xl mb-12">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-4">Pricing</p>
-        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">Start free. Upgrade when it&rsquo;s obvious.</h2>
+        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">Start free. Step up when it&rsquo;s obvious.</h2>
       </div>
       <div className="grid md:grid-cols-3 gap-4 md:gap-5 items-stretch">
         {order.map((key, i) => {
@@ -44,7 +44,8 @@ export function PricingSection() {
             <RevealOnScroll key={key} delay={i * 90} className="h-full">
               <div className={cn("relative h-full rounded-[22px] border p-6 md:p-7 flex flex-col transition-all duration-300 hover:-translate-y-1", pro ? "border-accent bg-white shadow-[0_24px_60px_-24px_rgba(240,82,77,0.45)]" : "border-border bg-white hover:shadow-popover")}>
                 {pro && <span className="absolute -top-3 left-6 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white bg-accent rounded-full px-2.5 py-1">Most people</span>}
-                <div className="text-sm font-semibold text-ink/55">{l.who}</div>
+                {key === "BUSINESS" && <span className="absolute -top-3 left-6 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white bg-ink rounded-full px-2.5 py-1">Operators</span>}
+                <div className="text-sm font-semibold text-ink/70 leading-snug min-h-[2.5rem]">{l.who}</div>
                 <div className="mt-3 flex items-baseline gap-1.5">
                   <span className="font-sans font-extrabold text-4xl tracking-[-0.04em] text-ink">{plan.priceCents === 0 ? "Free" : formatMoney(plan.priceCents)}</span>
                   {plan.priceCents > 0 && <span className="text-sm text-ink/50">/ month</span>}
@@ -67,7 +68,7 @@ export function PricingSection() {
           );
         })}
       </div>
-      <p className="mt-6 text-xs text-ink/45">No card to start. Cancel anytime.</p>
+      <p className="mt-6 text-xs text-ink/45">No card to start. Cancel anytime. No usage counters — you pay for what Daythread does, not how much you type.</p>
     </section>
   );
 }

@@ -6,11 +6,13 @@ import { Button } from "@/components/ui";
 import { toggleIntegration } from "@/app/actions/integrations";
 import type { IntegrationProvider } from "@prisma/client";
 import { EntitlementNotice } from "@/components/UpgradePrompt";
+import { useToast } from "@/components/Toaster";
 
 export function IntegrationToggle({ provider, connected }: { provider: IntegrationProvider; connected: boolean }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
   return (
     <div className="flex flex-col items-end gap-1">
@@ -27,6 +29,7 @@ export function IntegrationToggle({ provider, connected }: { provider: Integrati
                 setError(res.error);
                 return;
               }
+              toast({ tone: connected ? "neutral" : "outcome", title: connected ? "Disconnected" : "Connected", body: connected ? "Messages from this channel will stop arriving here." : "New messages on this channel now land in your inbox." });
               router.refresh();
             } catch {
               setError("Couldn't update this connection. Nothing was changed — try again.");

@@ -29,7 +29,7 @@ export default async function ClientsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title="Clients" description={`${clients.length} total`} action={<InviteClientButton />} />
+      <PageHeader title="Clients" description={`${clients.filter((c) => c.relationship === "CUSTOMER").length} customers · ${clients.filter((c) => c.relationship === "LEAD").length} potential`} action={<InviteClientButton />} />
 
       {clients.length === 0 ? (
         <EmptyState
@@ -58,6 +58,7 @@ export default async function ClientsPage() {
                     </div>
                   </div>
                   <div className="flex items-center flex-wrap gap-3 pl-11 sm:pl-0 shrink-0">
+                    <Badge tone={c.relationship === "CUSTOMER" ? "success" : c.relationship === "CONTACT" ? "neutral" : "info"}>{c.relationship === "CUSTOMER" ? "Customer" : c.relationship === "CONTACT" ? "Contact" : "Potential"}</Badge>
                     {c.subscriptions.length > 0 && <Badge tone="success">Member</Badge>}
                     {c.userId ? <Badge tone="info">Portal active</Badge> : null}
                     <div className="text-right">

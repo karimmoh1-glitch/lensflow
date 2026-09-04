@@ -27,6 +27,8 @@ import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/app/dashboard/WorkspaceSwitcher";
 import { LogoMark } from "@/components/Logo";
+import { CommandPalette } from "./CommandPalette";
+import { Search } from "lucide-react";
 
 // Icon tone shows only in the item's resting state (active state is always solid ink/white
 // for clear legibility) — the same terracotta/signal/semantic language used on the
@@ -178,6 +180,15 @@ export function AppShell({
             <span className="font-sans font-extrabold text-[17px] tracking-tight">Daythread</span>
           </Link>
           <div className="text-xs text-ink/55 mt-1 truncate">{businessName}</div>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("dt-open-palette"))}
+            className="mt-3 w-full flex items-center gap-2 rounded-lg border border-border bg-paper/70 px-2.5 py-1.5 text-xs text-ink/55 hover:text-ink hover:border-ink/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+          >
+            <Search className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
+            <span className="flex-1 text-left">Find anything</span>
+            <kbd className="text-[10px] font-semibold text-ink/40">⌘K</kbd>
+          </button>
         </div>
         <NavLinks pathname={pathname} role={role} />
         <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} />
@@ -226,7 +237,36 @@ export function AppShell({
         </div>
       )}
 
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0 pb-16 md:pb-0">{children}</main>
+
+      {/* Phone: the four places that matter, always under the thumb. */}
+      <nav aria-label="Primary" className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+        <ul className="grid grid-cols-5">
+          {[
+            { href: "/dashboard", label: "Home", icon: Home },
+            { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon },
+            { href: "/dashboard/clients", label: "Clients", icon: Users },
+            { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck },
+          ].map((item) => {
+            const active = isActive(pathname, item.href);
+            return (
+              <li key={item.href}>
+                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors", active ? "text-ink" : "text-ink/45")}>
+                  <span className={cn("w-9 h-6 rounded-full flex items-center justify-center transition-colors", active && "bg-ink text-white")}><item.icon className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <button type="button" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-full flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold text-ink/45">
+              <span className="w-9 h-6 rounded-full flex items-center justify-center"><Search className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
+              Find
+            </button>
+          </li>
+        </ul>
+      </nav>
+      <CommandPalette />
     </div>
   );
 }

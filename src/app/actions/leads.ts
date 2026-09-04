@@ -65,6 +65,8 @@ export async function bookLead(leadId: string, startISO: string): Promise<{ book
       },
     });
     await tx.lead.update({ where: { id: lead.id }, data: { status: "BOOKED" } });
+    // A booking is what makes someone a customer — not the fact that they wrote in.
+    await tx.client.update({ where: { id: lead.clientId! }, data: { relationship: "CUSTOMER" } });
     if (depositCents > 0) {
       await tx.payment.create({
         data: {

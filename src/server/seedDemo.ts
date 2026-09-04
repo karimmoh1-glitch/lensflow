@@ -354,6 +354,25 @@ export async function seedDemoWorkspace(prisma: Db) {
   });
   await prisma.clientNote.create({ data: { clientId: lily.id, authorId: owner.id, body: "Prefers golden-hour outdoor sessions. Allergic to dogs — no pet shoots." } });
 
+  // The people with bookings are customers; everyone else stays a potential client.
+  await prisma.client.updateMany({ where: { businessId: business.id, bookings: { some: {} } }, data: { relationship: "CUSTOMER" } });
+
+  // The mail a real business inbox actually gets. Stored, classified, kept out of
+  // Priority and out of the CRM — no client record for any of these.
+  const noise: { handle: string; subject: string; body: string; category: "AUTOMATED" | "PROMOTIONAL" | "INTERNAL"; reason: string; hoursAgo: number }[] = [
+    { handle: "no-reply@doordash.com", subject: "Your order has been confirmed", body: "Your DoorDash order from Thai Basil is confirmed and on its way. Estimated arrival 7:40 PM.", category: "AUTOMATED", reason: "A notification from doordash.com.", hoursAgo: 2 },
+    { handle: "shipment-tracking@amazon.com", subject: "Shipped: your Amazon.com order", body: "Your package with 1 item will arrive Thursday.", category: "AUTOMATED", reason: "A notification from amazon.com.", hoursAgo: 9 },
+    { handle: "receipts@stripe.com", subject: "Your Stripe payout of $312.00", body: "A payout was sent to your bank account ending in 4411.", category: "INTERNAL", reason: "From stripe.com, a platform you use.", hoursAgo: 26 },
+    { handle: "no-reply@accounts.google.com", subject: "Security alert", body: "A new sign-in on Mac. If this was you, you can ignore this.", category: "INTERNAL", reason: "From accounts.google.com, a platform you use.", hoursAgo: 30 },
+    { handle: "news@lensmag.example", subject: "Weekly digest: 5 lighting setups under $100", body: "Plus a 20% off code for members. Unsubscribe any time.", category: "PROMOTIONAL", reason: "A mailing list or newsletter.", hoursAgo: 48 },
+  ];
+  for (const n of noise) {
+    const conv = await prisma.conversation.create({
+      data: { businessId: business.id, channel: "EMAIL", externalHandle: n.handle, subject: n.subject, lastMessageAt: subHours(now, n.hoursAgo), category: n.category, categoryReason: n.reason, categorySource: "rules" },
+    });
+    await prisma.message.create({ data: { conversationId: conv.id, direction: "INBOUND", body: n.body, createdAt: subHours(now, n.hoursAgo) } });
+  }
+
   const invitedClient = await prisma.client.create({ data: { businessId: business.id, name: "Jamie Chen", email: "demo-client@example.com" } });
   await prisma.invitation.create({
     data: {

@@ -28,10 +28,11 @@ function decide(): "full" | "short" {
  *   0ms     an empty sheet of paper
  *   80ms    a coral signal appears at the left edge and pulses once — something arrived
  *   200ms   the thread draws out of it across the screen, coral → violet → green
- *   560ms   the name is revealed left-to-right as the thread passes beneath it, with
- *           the mark; not a fade, a wipe — the thread is what writes it
- *   1080ms  the sheet lifts; the hero beneath rises to meet it
- *   1450ms  done
+ *   220ms   a message chip travels the thread just behind the pen
+ *   960ms   the chip lands at the far end and resolves into a green node — handled
+ *   1080ms  the name is revealed left-to-right, a wipe, not a fade — the thread writes it
+ *   1620ms  the sheet lifts; the hero beneath rises to meet it
+ *   2080ms  done
  *
  * All CSS keyframes, transform/opacity/clip-path only. pointer-events-none: nothing is
  * ever blocked. Once per session; returning visitors get a 350ms lift. Reduced motion:
@@ -47,7 +48,7 @@ export function Opening() {
       setMode("short");
       document.documentElement.classList.add("dt-returning");
     }
-    const t = setTimeout(() => setMode("done"), seen ? 400 : 1600);
+    const t = setTimeout(() => setMode("done"), seen ? 400 : 2100);
     return () => clearTimeout(t);
   }, []);
 
@@ -75,6 +76,15 @@ export function Opening() {
           strokeLinecap="round"
           pathLength={1}
         />
+        {/* the message, travelling the thread */}
+        <g className="dt-opening__chip">
+          <rect x="-22" y="-9" width="44" height="18" rx="9" fill="#101114" />
+          <circle cx="-11" cy="0" r="2.5" fill="#F0524D" />
+          <rect x="-4" y="-1.5" width="18" height="3" rx="1.5" fill="white" opacity="0.85" />
+        </g>
+        {/* where it lands: resolved */}
+        <circle className="dt-opening__node" cx="1400" cy="366" r="7" fill="#13CC78" />
+        <circle className="dt-opening__node-ring" cx="1400" cy="366" r="7" stroke="#13CC78" strokeWidth="2" />
       </svg>
       <div className="dt-opening__word absolute inset-0 flex items-center justify-center gap-4 md:gap-6">
         <svg viewBox="0 0 24 24" className="w-10 h-10 md:w-16 md:h-16 text-ink shrink-0" fill="none">

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { getTodayBrief, buildBriefText } from "@/server/dashboardData";
+import { getWeekStrip } from "@/server/weekStrip";
+import { Users, Zap } from "lucide-react";
 import { Card, Badge, EmptyState } from "@/components/ui";
 import { formatMoney, cn, initials, toZonedDisplayDate } from "@/lib/utils";
 import { format, formatDistanceToNowStrict } from "date-fns";
@@ -14,7 +16,9 @@ import { OneThingCard } from "./OneThingCard";
  *   NOW    — who needs you (one card, the action color, the button to do it)
  *   TODAY  — what's on, and what isn't confirmed
  *   MONEY  — what you're owed, what came in
- * then WORK, quieter. The most important thing is the biggest thing.
+ * then RELATIONSHIPS and AUTOMATION, quieter, and a strip of what Daythread handled this
+ * week (real counts; the minutes figure is labeled as an estimate). The most important
+ * thing is the biggest thing.
  */
 export default async function TodayPage() {
   const ctx = await requireBusiness();
@@ -22,7 +26,7 @@ export default async function TodayPage() {
   if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business, user } = ctx;
 
-  const brief = await getTodayBrief(business.id);
+  const [brief, week] = await Promise.all([getTodayBrief(business.id), getWeekStrip(business.id)]);
   const briefText = buildBriefText(brief, business.name);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -116,11 +120,26 @@ export default async function TodayPage() {
             <Stat label="Owed to you" value={formatMoney(brief.money.outstandingCents)} tone={brief.money.outstandingCents > 0 ? "warning" : undefined} href="/dashboard/payments" />
             <Stat label="Collected" value={formatMoney(brief.money.collectedCents)} tone="success" href="/dashboard/payments" />
           </div>
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mt-7 mb-2.5">Work</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <Stat label="Bookings today" value={String(brief.todaysBookings.length)} href="/dashboard/bookings" />
-            <Stat label="Hot leads" value={String(brief.leads.hot.length)} tone={brief.leads.hot.length > 0 ? "accent" : undefined} href="/dashboard/inbox" />
-          </div>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mt-7 mb-2.5">Relationships</h2>
+          <Link href="/dashboard/clients" className="block rounded-2xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-ink/20 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <div className="flex items-center gap-2 text-[11px] text-ink/55"><Users className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />People on the thread</div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {[["Customers", week.relationships.customers, "text-success-text"], ["Potential", week.relationships.leads, "text-signal-text"], ["Contacts", week.relationships.contacts, "text-ink/70"]].map(([k, v, c]) => (
+                <div key={String(k)}>
+                  <div className={cn("font-sans font-extrabold text-xl tracking-[-0.03em] tabular-nums", String(c))}>{String(v)}</div>
+                  <div className="text-[11px] text-ink/55">{String(k)}</div>
+                </div>
+              ))}
+            </div>
+            {brief.leads.hot.length > 0 && <div className="mt-2 text-xs text-accent-text font-semibold">{brief.leads.hot.length} hot {brief.leads.hot.length === 1 ? "lead" : "leads"} worth following up</div>}
+          </Link>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mt-7 mb-2.5">Automation</h2>
+          <Link href="/dashboard/automations" className="block rounded-2xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-ink/20 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <div className="flex items-center gap-2 text-[11px] text-ink/55"><Zap className="w-3.5 h-3.5 text-signal-text" strokeWidth={2} aria-hidden />{week.automationsOn === 0 ? "Nothing running yet" : `${week.automationsOn} running`}</div>
+            <div className="mt-1.5 text-sm text-ink/80">
+              {week.automatedSent > 0 ? <><span className="font-extrabold text-ink">{week.automatedSent}</span> {week.automatedSent === 1 ? "message" : "messages"} sent for you this week</> : week.automationsOn > 0 ? "Watching bookings and payments. Nothing was due this week." : "Turn one on and Daythread sends reminders, follow-ups and thank-yous for you."}
+            </div>
+          </Link>
           {brief.leads.hot.length > 0 && (
             <Card className="mt-3">
               <div className="divide-y divide-border">
@@ -148,6 +167,27 @@ export default async function TodayPage() {
           )}
         </section>
       </div>
+
+      {/* THIS WEEK — real counts; minutes are an estimate and say so */}
+      <section aria-labelledby="week-label" className="mt-10 rounded-2xl border border-signal/20 bg-signal-soft/30 px-5 py-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+          <h2 id="week-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Daythread handled, last 7 days</h2>
+          <p className="text-[11px] text-ink/45">≈{week.estimatedMinutes < 60 ? `${week.estimatedMinutes} min` : `${(week.estimatedMinutes / 60).toFixed(1)} h`} of your time · estimate</p>
+        </div>
+        <dl className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            ["Messages sent for you", week.automatedSent],
+            ["Kept out of your way", week.keptOut],
+            ["Inquiries structured", week.structuredLeads],
+            ["Turned into bookings", week.bookedLeads],
+          ].map(([k, v]) => (
+            <div key={String(k)}>
+              <dd className="font-sans font-extrabold text-2xl tracking-[-0.03em] tabular-nums text-ink">{String(v)}</dd>
+              <dt className="text-[11px] text-ink/55">{String(k)}</dt>
+            </div>
+          ))}
+        </dl>
+      </section>
     </div>
   );
 }

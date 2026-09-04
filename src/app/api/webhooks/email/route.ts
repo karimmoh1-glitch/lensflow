@@ -66,12 +66,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Could not retrieve email content" }, { status: 502 });
     }
 
-    // Bulk mail (newsletters, notifications) reliably carries List-Unsubscribe/List-Id —
-    // a genuine customer inquiry never does. Route those into the inbox's junk pile
-    // would just be noise; skip ingesting them as a "lead" entirely.
-    if (full.headers?.["list-unsubscribe"] || full.headers?.["list-id"] || /\bbulk\b/i.test(full.headers?.["precedence"] ?? "")) {
-      return NextResponse.json({ ok: true });
-    }
+    // Bulk mail (newsletters, notifications) reliably carries List-Unsubscribe/List-Id.
+    // It's still stored — All Inbox is the source of truth — but the headers travel with it
+    // so classification keeps it out of Priority and out of the CRM.
+    const headers = {
+      listUnsubscribe: full.headers?.["list-unsubscribe"] ?? null,
+      listId: full.headers?.["list-id"] ?? null,
+      precedence: full.headers?.["precedence"] ?? null,
+      autoSubmitted: full.headers?.["auto-submitted"] ?? null,
+    };
 
     // Prefer the real text part; fall back to converting the HTML part to readable
     // text (not the subject line) when there's no plain-text alternative — losing the
@@ -94,6 +97,7 @@ export async function POST(req: Request) {
       clientEmail: fromEmail,
       providerMessageId: full.message_id || event.data.email_id,
       rawBody: (full.html || full.text || "").slice(0, 8000) || undefined,
+      headers,
     });
 
     return NextResponse.json({ ok: true });

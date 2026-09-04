@@ -1,5 +1,21 @@
 {
   "crons": [
-    { "path": "/api/cron/automations", "schedule": "0 13 * * *" }
+    {
+      "path": "/api/cron/automations",
+      "schedule": "0 13 * * *"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.daythread.org"
+        }
+      ],
+      "destination": "https://daythread.org/:path*",
+      "permanent": true
+    }
   ]
 }

@@ -21,6 +21,7 @@ type Story = {
   who: string;
   handle: string;
   msg: string;
+  highlight: string;
   extracted: [string, string][];
   ctx: string;
   ctxMeta: string;
@@ -32,27 +33,27 @@ type Story = {
 
 const STORIES: Story[] = [
   {
-    k: "instagram", who: "Maya Chen", handle: "@maya.makes", msg: "Hey! Are you free Tuesday afternoon?",
+    k: "instagram", who: "Maya Chen", handle: "@maya.makes", msg: "Hey! Are you free Tuesday afternoon?", highlight: "Tuesday afternoon",
     extracted: [["Date", "Tuesday PM"], ["Intent", "High"]], ctx: "Returning client · $2,150 lifetime", ctxMeta: "Booked twice · prefers afternoons",
     action: "Booked · Brand session · Tue 2:00 PM", outcome: "$105 deposit paid", next: "Send Maya the questionnaire", nextWhy: "Booked and paid. This is the one thing left.",
   },
   {
-    k: "gmail", who: "Jordan Lee", handle: "jordan@northloop.co", msg: "Following up on pricing for a September date.",
+    k: "gmail", who: "Jordan Lee", handle: "jordan@northloop.co", msg: "Following up on pricing for a September date.", highlight: "September",
     extracted: [["Date", "September"], ["Intent", "Medium"]], ctx: "Warm lead · asked twice", ctxMeta: "First wrote 9 days ago",
     action: "Pricing sheet sent", outcome: "Follow-up set · 2 days", next: "Reply to Jordan", nextWhy: "Leads that wait 9 days usually go cold.",
   },
   {
-    k: "sms", who: "(512) 555-0148", handle: "New number", msg: "Do you have anything open next week?",
+    k: "sms", who: "(512) 555-0148", handle: "New number", msg: "Do you have anything open next week?", highlight: "next week",
     extracted: [["Date", "Next week"], ["Intent", "Medium"]], ctx: "New lead · contact created", ctxMeta: "Not in your clients until now",
     action: "Booking link sent", outcome: "Viewed · picking a time", next: "Nothing yet", nextWhy: "Daythread will tell you when they book.",
   },
   {
-    k: "whatsapp", who: "Sam Okafor", handle: "+1 415 …", msg: "Can we move Thursday to 4pm?",
+    k: "whatsapp", who: "Sam Okafor", handle: "+1 415 …", msg: "Can we move Thursday to 4pm?", highlight: "Thursday to 4pm",
     extracted: [["Date", "Thu 4:00 PM"], ["Intent", "High"]], ctx: "Client · booked Thursday", ctxMeta: "Consult · $180 · deposit paid",
     action: "Moved to 4:00 PM · confirmed", outcome: "Reminder rescheduled", next: "Nothing to do", nextWhy: "Sam got the confirmation on WhatsApp.",
   },
   {
-    k: "website", who: "Priya Patel", handle: "Booking page", msg: "Booked the Full package for Sep 18.",
+    k: "website", who: "Priya Patel", handle: "Booking page", msg: "Booked the Full package for Sep 18.", highlight: "Full package",
     extracted: [["Service", "Full package"], ["Date", "Sep 18"]], ctx: "New client · $1,800", ctxMeta: "Came in through your booking page",
     action: "Confirmation + questionnaire sent", outcome: "$540 deposit paid", next: "Nothing to do", nextWhy: "Everything sent itself.",
   },
@@ -121,7 +122,7 @@ export function HeroThread() {
 
       <div className="relative grid grid-cols-1 sm:grid-cols-[64px_120px_minmax(0,1fr)] items-center gap-y-5">
         {/* Channels */}
-        <ul className="flex sm:flex-col justify-center gap-3 sm:gap-[4px]" role="tablist" aria-label="Channels">
+        <ul className="flex sm:flex-col justify-center gap-3 sm:gap-[4px]" role="tablist" aria-label="Channels" style={{ transform: "translate(calc(var(--mx) * 5px), calc(var(--my) * 4px))", transition: "transform 700ms cubic-bezier(0.16,1,0.3,1)" }}>
           {STORIES.map((st) => (
             <li key={st.k} className="sm:h-[60px] flex items-center justify-center">
               <button
@@ -199,7 +200,8 @@ export function HeroThread() {
               <span aria-hidden className="absolute left-[19px] top-4 bottom-4 w-px bg-border" />
               <span aria-hidden className="absolute left-[19px] top-4 w-px bg-gradient-to-b from-accent via-signal to-success origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 4})` }} />
               <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}`} labelClass="text-accent-text">
-                <span className="font-semibold">{s.who}</span> <span className="text-ink/70">“{s.msg}”</span>
+                <span className="font-semibold">{s.who}</span>{" "}
+                <span className="text-ink/70">“<Highlight text={s.msg} part={s.highlight} on={on(2)} />”</span>
                 <span className="mt-1.5 flex flex-wrap gap-1.5">
                   {s.extracted.map(([k, v]) => (
                     <span key={k} className="inline-flex items-center gap-1 rounded-md bg-signal-soft/70 px-1.5 py-0.5 text-[10px] font-semibold text-signal-text"><span className="text-signal-text/60">{k}</span>{v}</span>
@@ -232,6 +234,20 @@ export function HeroThread() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** The phrase Daythread pulled the date/service from — it lights violet the moment the
+ * system reads the message, so the chips below visibly come *from* the words. */
+function Highlight({ text, part, on }: { text: string; part: string; on: boolean }) {
+  const i = text.indexOf(part);
+  if (i < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, i)}
+      <span className={cn("rounded-[4px] px-0.5 -mx-0.5 transition-colors duration-500", on ? "bg-signal-soft text-signal-text" : "bg-transparent")}>{part}</span>
+      {text.slice(i + part.length)}
+    </>
   );
 }
 

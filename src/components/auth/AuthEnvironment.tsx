@@ -21,6 +21,17 @@ export function AuthEnvironment() {
   const [i, setI] = useState(0);
   const [phase, setPhase] = useState<0 | 1 | 2>(2);
   const [still, setStill] = useState(false);
+  // 0 idle · 1 email typed (the thread wakes) · 2 password typed (the panel reads) · 3 submitting (the signal travels)
+  const [attention, setAttention] = useState<0 | 1 | 2 | 3>(0);
+
+  useEffect(() => {
+    const onAuth = (e: Event) => {
+      const d = (e as CustomEvent<0 | 1 | 2 | 3>).detail;
+      setAttention((cur) => (d > cur || d === 0 ? d : cur));
+    };
+    window.addEventListener("dt-auth", onAuth);
+    return () => window.removeEventListener("dt-auth", onAuth);
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -46,9 +57,12 @@ export function AuthEnvironment() {
   const s = STORIES[i];
   const brand = CHANNEL[s.k].brand;
   const on = (n: number) => still || phase >= n;
+  const awake = attention >= 1;
+  const reading = attention >= 2;
+  const sending = attention === 3;
 
   return (
-    <div className="grid grid-cols-[48px_56px_minmax(0,1fr)] lg:grid-cols-[56px_72px_minmax(0,1fr)] items-center max-w-md">
+    <div className={cn("grid grid-cols-[48px_56px_minmax(0,1fr)] lg:grid-cols-[56px_72px_minmax(0,1fr)] items-center max-w-md transition-all duration-700", sending && "translate-x-3 lg:translate-x-6")}>
       <ul className="flex flex-col gap-2 lg:gap-3">
         {STORIES.map((st) => (
           <li key={st.k} className="h-9 lg:h-11 flex items-center">
@@ -64,7 +78,12 @@ export function AuthEnvironment() {
           return (
             <g key={st.k}>
               <path d={d} stroke="rgba(250,250,249,0.10)" strokeWidth="1.5" />
-              <path d={d} stroke={brand === "#101114" ? "#FAFAF9" : brand} strokeWidth="2" strokeLinecap="round" className="transition-opacity duration-500" style={{ opacity: isOn ? 0.9 : 0 }} />
+              <path d={d} stroke={brand === "#101114" ? "#FAFAF9" : brand} strokeWidth="2" strokeLinecap="round" className="transition-opacity duration-500" style={{ opacity: isOn ? 0.9 : awake ? 0.28 : 0 }} />
+              {sending && !still && (
+                <circle r="3" fill="#FAFAF9" opacity="0.9">
+                  <animateMotion dur="0.9s" begin={`${n * 0.12}s`} repeatCount="indefinite" path={d} />
+                </circle>
+              )}
               {isOn && !still && phase === 0 && (
                 <circle r="3.5" fill={brand === "#101114" ? "#FAFAF9" : brand}>
                   <animateMotion dur="0.7s" fill="freeze" path={d} />
@@ -74,7 +93,7 @@ export function AuthEnvironment() {
           );
         })}
       </svg>
-      <div className="rounded-2xl border border-paper/10 bg-paper/[0.04] backdrop-blur-sm p-4 min-h-[168px] flex flex-col">
+      <div className={cn("rounded-2xl border bg-paper/[0.04] backdrop-blur-sm p-4 min-h-[168px] flex flex-col transition-all duration-700", reading ? "border-signal/50 shadow-[0_0_0_6px_rgba(109,90,230,0.12)]" : awake ? "border-paper/20" : "border-paper/10")}>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-1.5 h-1.5 rounded-full transition-colors duration-500" style={{ background: brand === "#101114" ? "#FAFAF9" : brand }} />
           <span className="text-[11px] font-bold text-paper/60 uppercase tracking-[0.12em]">{CHANNEL[s.k].name}</span>

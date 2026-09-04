@@ -15,6 +15,7 @@ export default function CreateBusinessSignupPage() {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    window.dispatchEvent(new CustomEvent("dt-auth", { detail: 3 }));
     setDuplicateEmail(false);
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
@@ -22,6 +23,7 @@ export default function CreateBusinessSignupPage() {
       if (result?.error) {
         setError(result.error);
         setDuplicateEmail(!!result.duplicateEmail);
+        window.dispatchEvent(new CustomEvent("dt-auth", { detail: 0 }));
       }
     });
   }
@@ -46,7 +48,7 @@ export default function CreateBusinessSignupPage() {
           <Input id="name" name="name" autoComplete="name" placeholder="Alex Rivera" required />
         </Field>
         <Field id="email" label="Email" error={duplicateEmail ? error : null}>
-          <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@yourbusiness.com" required aria-invalid={duplicateEmail} />
+          <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@yourbusiness.com" required onInput={() => window.dispatchEvent(new CustomEvent("dt-auth", { detail: 1 }))} aria-invalid={duplicateEmail} />
         </Field>
         {duplicateEmail && (
           <p className="-mt-2 text-xs text-ink/60 flex gap-3">
@@ -55,7 +57,7 @@ export default function CreateBusinessSignupPage() {
           </p>
         )}
         <Field id="password" label="Password" hint="At least 8 characters.">
-          <PasswordInput id="password" name="password" autoComplete="new-password" required minLength={8} />
+          <PasswordInput id="password" name="password" autoComplete="new-password" required onInput={() => window.dispatchEvent(new CustomEvent("dt-auth", { detail: 2 }))} minLength={8} />
         </Field>
         <Field id="businessName" label="Business name">
           <Input id="businessName" name="businessName" autoComplete="organization" placeholder="Rivera Consulting" required />

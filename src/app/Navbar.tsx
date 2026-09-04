@@ -21,11 +21,11 @@ export function Navbar() {
         className={cn(
           "w-full flex items-center justify-between transition-all duration-300 ease-out",
           scrolled
-            ? "max-w-3xl px-5 py-2.5 rounded-full border border-border bg-white/90 backdrop-blur-md shadow-[0_2px_24px_-8px_rgba(16,17,20,0.12)]"
+            ? "max-w-3xl px-4 py-1.5 rounded-full border border-border bg-white/90 backdrop-blur-md shadow-[0_2px_24px_-8px_rgba(16,17,20,0.12)]"
             : "max-w-6xl px-2 py-2 rounded-full border border-transparent bg-transparent"
         )}
       >
-        <Link href="/" aria-label="Daythread home">
+        <Link href="/" aria-label="Daythread home" className={cn("transition-transform duration-300 origin-left", scrolled && "scale-90")}>
           <Logo />
         </Link>
         <div className="flex items-center gap-6">

@@ -1,12 +1,29 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LogoMark } from "@/components/Logo";
-import { RevealOnScroll } from "../RevealOnScroll";
+import { cn } from "@/lib/utils";
 
-/** The end of the film. Dark, quiet, one line, one button. */
+/**
+ * The end of the film. The thread that opened the site draws itself once more, across a
+ * dark sheet this time, and the page closes on the line the whole story was building to.
+ */
 export function FinalCta() {
+  const ref = useRef<HTMLElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && (setInView(true), io.disconnect()), { threshold: 0.3 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <section className="relative bg-midnight text-paper px-6 pt-28 md:pt-40 pb-12 overflow-hidden">
-      <svg className="absolute inset-x-0 top-0 w-full h-[220px] opacity-70" viewBox="0 0 1440 220" preserveAspectRatio="none" fill="none" aria-hidden>
+    <section ref={ref} className="relative bg-midnight text-paper px-6 pt-32 md:pt-44 pb-12 overflow-hidden">
+      <svg className="absolute inset-x-0 top-0 w-full h-[260px]" viewBox="0 0 1440 260" preserveAspectRatio="none" fill="none" aria-hidden>
         <defs>
           <linearGradient id="dt-end-grad" x1="0" x2="1">
             <stop offset="0" stopColor="#F0524D" />
@@ -14,25 +31,23 @@ export function FinalCta() {
             <stop offset="1" stopColor="#13CC78" />
           </linearGradient>
         </defs>
-        <path d="M -20 170 C 300 170, 420 40, 720 40 S 1140 170, 1460 170" stroke="url(#dt-end-grad)" strokeWidth="2" strokeLinecap="round" />
+        <path className={cn("dt-draw", inView && "is-in")} d="M -20 200 C 300 200, 420 50, 720 50 S 1140 200, 1460 200" stroke="url(#dt-end-grad)" strokeWidth="2.5" strokeLinecap="round" pathLength={1} />
       </svg>
-      <RevealOnScroll className="relative max-w-2xl mx-auto text-center">
-        <p className="font-sans font-extrabold text-[clamp(2.4rem,6vw,4.75rem)] leading-[0.94] tracking-[-0.045em] text-balance">
-          <span className="text-paper/35">It started scattered.</span>
-          <br />
-          Now it&rsquo;s one thread.
+      <div className={cn("relative max-w-3xl mx-auto text-center", inView ? "dt-land" : "opacity-0")} style={{ animationDelay: "500ms" }}>
+        <p className="font-sans font-extrabold text-[clamp(2.6rem,6.4vw,5.5rem)] leading-[0.92] tracking-[-0.05em] text-balance">
+          Your business,<br />finally on one thread.
         </p>
         <div className="mt-10 flex flex-col items-center gap-3">
           <Link
             href="/signup"
-            className="inline-flex items-center gap-2 h-13 px-7 py-3.5 rounded-full bg-accent text-white text-base font-extrabold shadow-[0_14px_36px_-12px_rgba(240,82,77,0.8)] transition-transform duration-150 hover:scale-[1.04] hover:-translate-y-0.5 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+            className="group inline-flex items-center gap-2 h-14 px-8 rounded-full bg-accent text-white text-base font-extrabold shadow-[0_16px_40px_-12px_rgba(240,82,77,0.85)] transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] hover:scale-[1.04] hover:-translate-y-0.5 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
           >
-            Build your Daythread <span aria-hidden>→</span>
+            Start for free <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
           </Link>
-          <span className="text-sm text-paper/45">Free to start · no card</span>
+          <span className="text-sm text-paper/45">No card. Pro is $29 when you need it.</span>
         </div>
-      </RevealOnScroll>
-      <footer className="relative max-w-6xl mx-auto mt-28 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-paper/40">
+      </div>
+      <footer className="relative max-w-[1200px] mx-auto mt-28 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-paper/40">
         <span className="inline-flex items-center gap-2 text-paper/70"><LogoMark className="w-5 h-5" /><span className="font-extrabold tracking-tight text-sm">Daythread</span></span>
         <nav className="flex items-center gap-6">
           <Link href="#pricing" className="hover:text-paper transition-colors">Pricing</Link>

@@ -1,61 +1,87 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { ChannelIcon, CHANNEL, type ChannelKey } from "./ChannelIcon";
 
 /**
- * The hero visual: the apps on the left, Daythread on the right, and a thread between them
- * that a message actually travels. Every few seconds one channel lights up, its message
- * runs the connector into the panel, and the panel reads it — who it is, what it's worth,
- * what happens next — on the same thread grammar the app uses.
+ * The hero: many inputs → one system → one result, told by the information itself.
  *
- * First paint is the completed panel (the richest frame), so it's whole before JavaScript
- * and in any screenshot. Reduced motion: that frame, still.
+ * Every few seconds one channel lights up and its actual message — a chip with the words
+ * in it — travels the connector into Daythread. The product responds in order: it reads
+ * who this is (real lead extraction: service, date, intent), it acts (a booking or a
+ * booking link), the outcome lands (a deposit, a confirmation), and the one thing left
+ * to do surfaces. Hovering or clicking a channel makes it that channel's turn.
+ *
+ * The first paint is the completed panel — the richest frame — so the hero is whole
+ * before JavaScript and in any screenshot. Reduced motion: that frame, still.
  */
-type Key = "instagram" | "gmail" | "sms" | "messenger" | "whatsapp";
+type Story = {
+  k: ChannelKey;
+  who: string;
+  handle: string;
+  msg: string;
+  extracted: [string, string][];
+  ctx: string;
+  ctxMeta: string;
+  action: string;
+  outcome: string;
+  next: string;
+  nextWhy: string;
+};
 
-const CHANNELS: { key: Key; name: string; bg: string; brand: string; glyph: React.ReactNode }[] = [
+const STORIES: Story[] = [
   {
-    key: "instagram", name: "Instagram", brand: "#D62976", bg: "bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]",
-    glyph: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="5.5" stroke="white" strokeWidth="1.9" /><circle cx="12" cy="12" r="4.2" stroke="white" strokeWidth="1.9" /><circle cx="17.2" cy="6.8" r="1.2" fill="white" /></svg>,
+    k: "instagram", who: "Maya Chen", handle: "@maya.makes", msg: "Hey! Are you free Tuesday afternoon?",
+    extracted: [["Date", "Tuesday PM"], ["Intent", "High"]], ctx: "Returning client · $2,150 lifetime", ctxMeta: "Booked twice · prefers afternoons",
+    action: "Booked · Brand session · Tue 2:00 PM", outcome: "$105 deposit paid", next: "Send Maya the questionnaire", nextWhy: "Booked and paid. This is the one thing left.",
   },
   {
-    key: "gmail", name: "Gmail", brand: "#EA4335", bg: "bg-[#EA4335]",
-    glyph: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5"><rect x="3" y="5" width="18" height="14" rx="2.5" stroke="white" strokeWidth="1.9" /><path d="M4 6.5L12 13L20 6.5" stroke="white" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+    k: "gmail", who: "Jordan Lee", handle: "jordan@northloop.co", msg: "Following up on pricing for a September date.",
+    extracted: [["Date", "September"], ["Intent", "Medium"]], ctx: "Warm lead · asked twice", ctxMeta: "First wrote 9 days ago",
+    action: "Pricing sheet sent", outcome: "Follow-up set · 2 days", next: "Reply to Jordan", nextWhy: "Leads that wait 9 days usually go cold.",
   },
   {
-    key: "sms", name: "Messages", brand: "#2FC26E", bg: "bg-[#2FC26E]",
-    glyph: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5"><path d="M4 5.5C4 4.7 4.7 4 5.5 4h13c.8 0 1.5.7 1.5 1.5v9c0 .8-.7 1.5-1.5 1.5H9l-4 3.5V16h-.5C3.7 16 3 15.3 3 14.5v-9z" fill="white" /></svg>,
+    k: "sms", who: "(512) 555-0148", handle: "New number", msg: "Do you have anything open next week?",
+    extracted: [["Date", "Next week"], ["Intent", "Medium"]], ctx: "New lead · contact created", ctxMeta: "Not in your clients until now",
+    action: "Booking link sent", outcome: "Viewed · picking a time", next: "Nothing yet", nextWhy: "Daythread will tell you when they book.",
   },
   {
-    key: "whatsapp", name: "WhatsApp", brand: "#25D366", bg: "bg-[#25D366]",
-    glyph: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3Z" stroke="white" strokeWidth="1.9" strokeLinejoin="round" /><path d="M9 8.5c.3 2.5 2.5 4.7 5 5l1.2-1.2 1.8.9-.3 1.5c-3.8.5-8.3-4-7.9-7.9l1.5-.3.9 1.8L9 8.5Z" fill="white" /></svg>,
+    k: "whatsapp", who: "Sam Okafor", handle: "+1 415 …", msg: "Can we move Thursday to 4pm?",
+    extracted: [["Date", "Thu 4:00 PM"], ["Intent", "High"]], ctx: "Client · booked Thursday", ctxMeta: "Consult · $180 · deposit paid",
+    action: "Moved to 4:00 PM · confirmed", outcome: "Reminder rescheduled", next: "Nothing to do", nextWhy: "Sam got the confirmation on WhatsApp.",
   },
   {
-    key: "messenger", name: "Messenger", brand: "#8134F5", bg: "bg-gradient-to-br from-[#00B2FF] to-[#8134F5]",
-    glyph: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5"><path d="M12 3.5C6.75 3.5 2.5 7.34 2.5 12.06c0 2.64 1.35 5 3.46 6.55.18.13.3.34.3.57l.06 1.83a.72.72 0 0 0 1.01.65l2.04-.9a1 1 0 0 1 .68-.04c.6.16 1.24.24 1.95.24 5.25 0 9.5-3.84 9.5-8.9S17.25 3.5 12 3.5Z" fill="white" /></svg>,
+    k: "website", who: "Priya Patel", handle: "Booking page", msg: "Booked the Full package for Sep 18.",
+    extracted: [["Service", "Full package"], ["Date", "Sep 18"]], ctx: "New client · $1,800", ctxMeta: "Came in through your booking page",
+    action: "Confirmation + questionnaire sent", outcome: "$540 deposit paid", next: "Nothing to do", nextWhy: "Everything sent itself.",
   },
 ];
 
-const STORIES: Record<Key, { who: string; msg: string; ctx: string; next: string }> = {
-  instagram: { who: "Maya Chen", msg: "Are you free Tuesday?", ctx: "Returning · $2,150 lifetime", next: "Booked Tue 2:00 · deposit paid" },
-  gmail: { who: "Jordan Lee", msg: "Pricing for September?", ctx: "Warm lead · asked twice", next: "Pricing sent · follow-up set" },
-  sms: { who: "(512) 555-0148", msg: "Anything open next week?", ctx: "New lead · contact created", next: "Booking link sent" },
-  whatsapp: { who: "Sam Okafor", msg: "Can we move to 4pm?", ctx: "Client · booked Thu", next: "Moved to 4:00 · confirmed" },
-  messenger: { who: "Priya Patel", msg: "Let’s do the full package!", ctx: "Client · $175 balance open", next: "Full package booked · $1,800" },
-};
-
-// Panel input point, in the 120x300 gutter's coordinates
-const IN: [number, number] = [120, 150];
+const PANEL_IN_Y = 150;
+const gutterPath = (i: number) => `M 0 ${30 + i * 60} C 60 ${30 + i * 60}, 60 ${PANEL_IN_Y}, 120 ${PANEL_IN_Y}`;
 
 export function HeroThread() {
-  // `active` is the channel lit up on the left; `shown` is the story the panel is reading.
-  // They differ only while a message is in flight (phase 0), when the panel keeps the last
-  // story, dimmed, instead of going blank.
-  const [active, setActive] = useState<Key>("instagram");
-  const [shown, setShown] = useState<Key>("instagram");
-  const [phase, setPhase] = useState<0 | 1 | 2 | 3>(3); // 0 in flight, 1 arrived, 2 read, 3 done
+  const [active, setActive] = useState<ChannelKey>("instagram");
+  const [shown, setShown] = useState<ChannelKey>("instagram");
+  const [phase, setPhase] = useState<0 | 1 | 2 | 3 | 4>(4); // 0 in flight · 1 read · 2 acted · 3 outcome · 4 next
   const [still, setStill] = useState(false);
+  const [travelKey, setTravelKey] = useState(0);
+  const touched = useRef<number>(0);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const play = (next: ChannelKey) => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    const later = (fn: () => void, ms: number) => timers.current.push(setTimeout(fn, ms));
+    setActive(next);
+    setPhase(0);
+    setTravelKey((n) => n + 1);
+    later(() => { setShown(next); setPhase(1); }, 900);
+    later(() => setPhase(2), 1700);
+    later(() => setPhase(3), 2400);
+    later(() => setPhase(4), 3100);
+  };
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -63,109 +89,148 @@ export function HeroThread() {
       return;
     }
     let i = 0;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const later = (fn: () => void, ms: number) => timers.push(setTimeout(fn, ms));
-    const run = () => {
-      i = (i + 1) % CHANNELS.length;
-      const next = CHANNELS[i].key;
-      setActive(next);
-      setPhase(0);
-      later(() => {
-        setShown(next);
-        setPhase(1);
-      }, 800);
-      later(() => setPhase(2), 1600);
-      later(() => setPhase(3), 2400);
-      later(run, 5000);
+    const loop = setInterval(() => {
+      if (Date.now() - touched.current < 6000) return; // the visitor is driving
+      i = (i + 1) % STORIES.length;
+      play(STORIES[i].k);
+    }, 5600);
+    return () => {
+      clearInterval(loop);
+      timers.current.forEach(clearTimeout);
     };
-    later(run, 3600);
-    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const s = STORIES[shown];
-  const ch = CHANNELS.find((c) => c.key === active)!;
-  const inFlight = phase === 0;
+  function pick(k: ChannelKey) {
+    if (still || k === active) return;
+    touched.current = Date.now();
+    play(k);
+  }
+
+  const s = STORIES.find((x) => x.k === shown)!;
+  const a = STORIES.find((x) => x.k === active)!;
+  const brand = CHANNEL[active].brand;
+  const inFlight = phase === 0 && !still;
+  const on = (n: number) => still || inFlight || phase >= n;
+  const idx = STORIES.findIndex((x) => x.k === active);
 
   return (
-    <div className="relative w-full max-w-[640px] mx-auto select-none grid grid-cols-[64px_minmax(0,1fr)] sm:grid-cols-[72px_88px_minmax(0,1fr)] items-center" aria-label="Messages from Instagram, Gmail, Messages, WhatsApp and Messenger flowing into one Daythread">
-      {/* Channels */}
-      <ul className="flex flex-col gap-3.5 sm:gap-4">
-        {CHANNELS.map((c) => {
-          const on = c.key === active;
-          return (
-            <li key={c.key} className="flex items-center gap-2">
-              <span
-                className={cn("w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-400 ease-[cubic-bezier(0.22,1.2,0.36,1)]", c.bg, on ? "scale-110 -translate-y-px" : "scale-100 opacity-80")}
-                style={{ boxShadow: on ? `0 12px 28px -10px ${c.brand}` : "0 4px 12px -6px rgba(16,17,20,0.25)" }}
-                title={c.name}
+    <div className="relative w-full select-none" aria-label="Messages from Instagram, Gmail, Messages, WhatsApp and your booking page flowing into one Daythread">
+      {/* ambient: the active channel's color, softly, behind the product */}
+      <div aria-hidden className="absolute -inset-10 rounded-[40px] blur-3xl transition-colors duration-700 pointer-events-none" style={{ background: `radial-gradient(60% 60% at 70% 50%, ${brand}22, transparent 70%)` }} />
+
+      <div className="relative grid grid-cols-1 sm:grid-cols-[64px_120px_minmax(0,1fr)] items-center gap-y-5">
+        {/* Channels */}
+        <ul className="flex sm:flex-col justify-center gap-3 sm:gap-[4px]" role="tablist" aria-label="Channels">
+          {STORIES.map((st) => (
+            <li key={st.k} className="sm:h-[60px] flex items-center justify-center">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={st.k === active}
+                aria-label={CHANNEL[st.k].name}
+                onMouseEnter={() => pick(st.k)}
+                onClick={() => pick(st.k)}
+                className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
               >
-                {c.glyph}
-              </span>
+                <ChannelIcon k={st.k} size={56} active={st.k === active} className={st.k === active ? "" : "opacity-75 hover:opacity-100"} />
+              </button>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
 
-      {/* Connectors (sm+) */}
-      <svg className="hidden sm:block w-full h-[300px]" viewBox="0 0 120 300" preserveAspectRatio="none" fill="none" aria-hidden>
-        <defs>
-          <linearGradient id="dt-hero-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor={ch.brand} />
-            <stop offset="0.6" stopColor="#6D5AE6" />
-            <stop offset="1" stopColor="#13CC78" />
-          </linearGradient>
-        </defs>
-        {CHANNELS.map((c, i) => {
-          const y = 30 + i * 60;
-          const d = `M 0 ${y} C 55 ${y}, 60 ${IN[1]}, ${IN[0]} ${IN[1]}`;
-          const on = c.key === active;
-          return (
-            <g key={c.key}>
-              <path d={d} stroke="rgba(16,17,20,0.09)" strokeWidth="1.5" />
-              <path d={d} stroke="url(#dt-hero-grad)" strokeWidth="2.5" strokeLinecap="round" className="transition-opacity duration-300" style={{ opacity: on ? 1 : 0 }} />
-              {on && !still && phase === 0 && (
-                <circle r="3.5" fill={c.brand}>
-                  <animateMotion dur="0.85s" begin="0s" fill="freeze" path={d} />
-                </circle>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* Daythread */}
-      <div className="rounded-[20px] border border-border bg-white shadow-[0_24px_64px_-24px_rgba(16,17,20,0.28),0_2px_6px_rgba(16,17,20,0.06)] overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-paper/70">
-          <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
-          <span className="text-[13px] font-extrabold tracking-tight text-ink">Daythread</span>
-          <span className={cn("ml-auto w-2 h-2 rounded-full transition-colors duration-300", phase === 0 ? "bg-accent" : phase < 3 ? "bg-signal" : "bg-success")} />
+        {/* Gutter: connectors + the message travelling (sm+) */}
+        <div className="hidden sm:block relative h-[300px]">
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 120 300" preserveAspectRatio="none" fill="none" aria-hidden>
+            <defs>
+              <linearGradient id="dt-hero-grad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor={brand} />
+                <stop offset="1" stopColor="#6D5AE6" />
+              </linearGradient>
+            </defs>
+            {STORIES.map((st, i) => {
+              const d = gutterPath(i);
+              const isOn = st.k === active;
+              return (
+                <g key={st.k}>
+                  <path d={d} stroke="rgba(16,17,20,0.08)" strokeWidth="1.5" />
+                  <path d={d} stroke="url(#dt-hero-grad)" strokeWidth="2.5" strokeLinecap="round" className="transition-opacity duration-300" style={{ opacity: isOn ? 1 : 0 }} />
+                </g>
+              );
+            })}
+          </svg>
+          {inFlight && (
+            <div
+              key={travelKey}
+              aria-hidden
+              className="dt-travel absolute left-0 top-0 max-w-[200px] rounded-xl bg-white border px-2.5 py-1.5 text-[11px] leading-tight text-ink shadow-popover whitespace-nowrap overflow-hidden text-ellipsis"
+              style={{ offsetPath: `path("${gutterPath(idx)}")`, offsetRotate: "0deg", borderColor: `${brand}66` }}
+            >
+              {a.msg}
+            </div>
+          )}
         </div>
-        <ol className={cn("relative pl-9 pr-4 py-3 min-h-[212px] transition-opacity duration-500", inFlight && !still ? "opacity-40" : "opacity-100")}>
-          <span aria-hidden className="absolute left-[19px] top-4 bottom-4 w-px bg-border" />
-          <span aria-hidden className="absolute left-[19px] top-4 w-px bg-gradient-to-b from-accent via-signal to-success origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 3})` }} />
-          <Node on={still || inFlight || phase >= 1} kind="signal" label={CHANNELS.find((c) => c.key === shown)!.name}>
-            <span className="font-semibold">{s.who}</span> <span className="text-ink/70">“{s.msg}”</span>
-          </Node>
-          <Node on={still || inFlight || phase >= 2} kind="thinking" label="Daythread knows">
-            {s.ctx}
-          </Node>
-          <Node on={still || inFlight || phase >= 3} kind="outcome" label="Done">
-            {s.next}
-          </Node>
-        </ol>
+
+        {/* Daythread */}
+        <div
+          className={cn("relative rounded-[22px] border border-border bg-white overflow-hidden shadow-[0_32px_80px_-32px_rgba(16,17,20,0.35),0_2px_6px_rgba(16,17,20,0.05)]", phase === 1 && !still && "dt-pulse")}
+          style={{ ["--dt-pulse" as string]: `${brand}55` }}
+        >
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-paper/70">
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
+            <span className="text-[13px] font-extrabold tracking-tight text-ink">Daythread</span>
+            <span className="text-[11px] text-ink/40">Inbox</span>
+            <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5 transition-colors", inFlight ? "bg-accent-soft text-accent-text" : phase < 4 ? "bg-signal-soft text-signal-text" : "bg-success-soft text-success-text")}>
+              {inFlight ? "Incoming" : phase < 4 ? "Reading" : "Handled"}
+            </span>
+          </div>
+
+          <div className={cn("grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_200px] lg:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_200px] transition-opacity duration-500", inFlight ? "opacity-40" : "opacity-100")}>
+            <ol className="relative pl-9 pr-4 py-4 min-h-[300px]">
+              <span aria-hidden className="absolute left-[19px] top-4 bottom-4 w-px bg-border" />
+              <span aria-hidden className="absolute left-[19px] top-4 w-px bg-gradient-to-b from-accent via-signal to-success origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 4})` }} />
+              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}`} labelClass="text-accent-text">
+                <span className="font-semibold">{s.who}</span> <span className="text-ink/70">“{s.msg}”</span>
+                <span className="mt-1.5 flex flex-wrap gap-1.5">
+                  {s.extracted.map(([k, v]) => (
+                    <span key={k} className="inline-flex items-center gap-1 rounded-md bg-signal-soft/70 px-1.5 py-0.5 text-[10px] font-semibold text-signal-text"><span className="text-signal-text/60">{k}</span>{v}</span>
+                  ))}
+                </span>
+              </Node>
+              <Node on={on(2)} dot="bg-signal" label="Daythread knows" labelClass="text-signal-text">
+                <span className="font-semibold">{s.ctx}</span>
+                <span className="block text-xs text-ink/60">{s.ctxMeta}</span>
+              </Node>
+              <Node on={on(3)} dot="bg-ink/75" label="Done for you" labelClass="text-ink/55">
+                {s.action}
+              </Node>
+              <Node on={on(4)} dot="bg-success" label="Outcome" labelClass="text-success-text">
+                {s.outcome}
+              </Node>
+            </ol>
+            <aside className="hidden md:flex lg:hidden xl:flex flex-col border-l border-border bg-paper/60 p-4">
+              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45 mb-2">{s.who.split(" ")[0]}</div>
+              <div className="text-xs text-ink/70 leading-relaxed">{s.ctx}</div>
+              <div className="mt-auto pt-4">
+                <div className={cn("rounded-2xl border px-3 py-2.5 transition-all duration-500", on(4) ? "border-accent/35 bg-gradient-to-br from-accent-soft/80 to-white opacity-100 translate-y-0" : "border-border opacity-0 translate-y-1")}>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-accent-text mb-0.5">Next</div>
+                  <div className="text-[13px] font-semibold text-ink leading-snug">{s.next}</div>
+                  <div className="text-[11px] text-ink/60 mt-0.5 leading-snug">{s.nextWhy}</div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-const DOT = { signal: "bg-accent", thinking: "bg-signal", outcome: "bg-success" } as const;
-const LABEL = { signal: "text-accent-text", thinking: "text-signal-text", outcome: "text-success-text" } as const;
-
-function Node({ on, kind, label, children }: { on: boolean; kind: keyof typeof DOT; label: string; children: React.ReactNode }) {
+function Node({ on, dot, label, labelClass, children }: { on: boolean; dot: string; label: string; labelClass: string; children: React.ReactNode }) {
   return (
-    <li className={cn("relative py-2.5 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]", on ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
-      <span aria-hidden className={cn("absolute -left-[26px] top-[15px] w-[15px] h-[15px] rounded-full border-[3px] border-white transition-transform duration-300", DOT[kind], on ? "scale-100" : "scale-0")} />
-      <div className={cn("text-[10px] font-bold uppercase tracking-[0.12em] mb-0.5", LABEL[kind])}>{label}</div>
+    <li className={cn("relative py-2 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]", on ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+      <span aria-hidden className={cn("absolute -left-[26px] top-[13px] w-[15px] h-[15px] rounded-full border-[3px] border-white transition-transform duration-300", dot, on ? "scale-100" : "scale-0")} />
+      <div className={cn("text-[10px] font-bold uppercase tracking-[0.12em] mb-0.5", labelClass)}>{label}</div>
       <div className="text-sm text-ink">{children}</div>
     </li>
   );

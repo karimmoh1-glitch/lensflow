@@ -422,7 +422,7 @@ export function Wizard({ businessName }: { businessName: string }) {
             {step === 5 && (
               <div className="space-y-5">
                 <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">Where do clients reach you?</h1>
-                <p className="text-sm text-ink/60">Turn on what you use. Watch the inbox on the left. Real account connections happen in Settings; this turns on demo mode so you can see it work first.</p>
+                <p className="text-sm text-ink/60">Turn on what you use and watch the inbox on the left read a sample message. Nothing connects here — each one connects with the provider&rsquo;s own sign-in from Settings once you&rsquo;re in.</p>
                 <div className="grid grid-cols-2 gap-3">
                   {CHANNELS.map((c) => {
                     const on = connectedChannels.includes(c.key);
@@ -440,7 +440,7 @@ export function Wizard({ businessName }: { businessName: string }) {
                         <ChannelIcon k={c.icon} size={40} active={on} />
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-semibold text-ink">{CHANNEL[c.icon].name}</span>
-                          <span className="block text-[11px] text-ink/50">{on ? "Connected" : "Tap to connect"}</span>
+                          <span className="block text-[11px] text-ink/50">{on ? "I use this — connect it after setup" : "Do you use this?"}</span>
                         </span>
                         <span className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all duration-200", on ? "bg-success text-white scale-100" : "bg-black/[0.06] scale-90")}>
                           {on && <Check className="w-3 h-3" strokeWidth={3} />}
@@ -459,7 +459,7 @@ export function Wizard({ businessName }: { businessName: string }) {
                     <span className="block text-sm font-semibold text-ink">Google / Apple Calendar</span>
                     <span className="block text-[11px] text-ink/50">Sync isn&rsquo;t built yet — this keeps the setting ready for when it is.</span>
                   </span>
-                  <span className={cn("text-[11px] font-bold rounded-full px-2 py-0.5", calendarConnected ? "bg-warning-soft text-warning-text" : "bg-black/[0.05] text-ink/55")}>{calendarConnected ? "Demo mode" : "Off"}</span>
+                  <span className={cn("text-[11px] font-bold rounded-full px-2 py-0.5", calendarConnected ? "bg-warning-soft text-warning-text" : "bg-black/[0.05] text-ink/55")}>{calendarConnected ? "Yes" : "No"}</span>
                 </button>
               </div>
             )}

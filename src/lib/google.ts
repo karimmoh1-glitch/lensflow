@@ -10,11 +10,11 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
-const SCOPES = [
-  "https://www.googleapis.com/auth/gmail.send",
-  "https://www.googleapis.com/auth/gmail.readonly",
-  "https://www.googleapis.com/auth/userinfo.email",
-].join(" ");
+const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/userinfo.email"];
+const CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.readonly", "https://www.googleapis.com/auth/userinfo.email"];
+export const SCOPES_BY_PURPOSE = { gmail: GMAIL_SCOPES.join(" "), calendar: CALENDAR_SCOPES.join(" ") } as const;
+const SCOPES = SCOPES_BY_PURPOSE.gmail;
+const REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 
 function clientId() {
   return process.env.GOOGLE_CLIENT_ID;
@@ -77,12 +77,13 @@ export async function verifyGoogleState(state: string): Promise<{ businessId: st
   }
 }
 
-export async function getGoogleAuthUrl(state: string) {
+export async function getGoogleAuthUrl(state: string, purpose: "gmail" | "calendar" = "gmail") {
   const params = new URLSearchParams({
     client_id: clientId()!,
     redirect_uri: redirectUri(),
     response_type: "code",
-    scope: SCOPES,
+    scope: purpose === "calendar" ? SCOPES_BY_PURPOSE.calendar : SCOPES,
+    include_granted_scopes: "true",
     access_type: "offline",
     prompt: "consent",
     state,
@@ -121,6 +122,16 @@ async function refreshAccessToken(refreshToken: string): Promise<{ access_token:
   });
   if (!res.ok) throw new Error(`Google token refresh failed: ${res.status} ${await res.text()}`);
   return res.json();
+}
+
+/** Tells Google to forget the grant, so disconnect really stops access (not only our copy of
+ * the token). Best-effort: a token Google already revoked returns 400, which is fine. */
+export async function revokeGoogleToken(token: string): Promise<void> {
+  try {
+    await fetch(`${REVOKE_URL}?token=${encodeURIComponent(token)}`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+  } catch {
+    /* best effort */
+  }
 }
 
 export async function getGoogleUserEmail(accessToken: string): Promise<string> {

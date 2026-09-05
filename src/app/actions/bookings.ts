@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { markPaymentPaidAndAdvanceBooking } from "@/server/payments";
 import { fireAutomationEvent } from "@/server/automationRunner";
+import { pushBookingToCalendars } from "@/server/calendarSync";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { requireClientRecord } from "./portal";
 import { revalidatePath } from "next/cache";
@@ -60,6 +61,9 @@ export async function advanceBookingStatus(bookingId: string, status: BookingSta
       completedAt: status === "COMPLETED" ? new Date() : undefined,
     },
   });
+
+  // Mirror the change on connected calendars (cancellation removes the mirror).
+  await pushBookingToCalendars(bookingId).catch(() => {});
 
   revalidatePath(`/dashboard/bookings/${bookingId}`);
   revalidatePath("/dashboard/bookings");

@@ -17,6 +17,7 @@ export async function sendOnChannel(params: {
   fromName?: string;
   replyTo?: string;
   headers?: Record<string, string>;
+  from?: string | null;
 }): Promise<SendResult> {
   const adapter = getChannelAdapter(params.channel);
   return adapter.send({
@@ -26,6 +27,7 @@ export async function sendOnChannel(params: {
     fromName: params.fromName,
     replyTo: params.replyTo,
     headers: params.headers,
+    from: params.from,
   });
 }
 

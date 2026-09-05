@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { addMinutes, isSameDay } from "date-fns";
+import { externalBusyBlocks } from "@/server/calendarSync";
 
 export type Slot = { start: Date; end: Date };
 
@@ -35,7 +36,7 @@ export async function getAvailableSlots(businessId: string, day: Date, durationM
   const dayStartUtc = zonedTimeToUtc(year, month, date, 0, business.timezone);
   const dayEndUtc = zonedTimeToUtc(year, month, date, 24 * 60, business.timezone);
 
-  const [windows, blocked, existingBookings] = await Promise.all([
+  const [windows, blocked, existingBookings, externalBusy] = await Promise.all([
     prisma.availability.findMany({ where: { businessId, weekday } }),
     prisma.blockedDate.findMany({ where: { businessId } }),
     prisma.booking.findMany({
@@ -46,7 +47,10 @@ export async function getAvailableSlots(businessId: string, day: Date, durationM
       },
       select: { startAt: true, endAt: true },
     }),
+    // Busy time on a connected Google / Apple calendar can't be booked over either.
+    externalBusyBlocks(businessId, dayStartUtc, dayEndUtc),
   ]);
+  const busy = [...existingBookings, ...externalBusy];
 
   if (blocked.some((b) => isSameDay(b.date, day))) return [];
   if (windows.length === 0) return [];
@@ -64,7 +68,7 @@ export async function getAvailableSlots(businessId: string, day: Date, durationM
       const slotStart = cursor;
       const slotEnd = addMinutes(cursor, durationMins);
 
-      const conflicts = existingBookings.some((b) => {
+      const conflicts = busy.some((b) => {
         const bufferedStart = addMinutes(b.startAt, -buffer);
         const bufferedEnd = addMinutes(b.endAt, buffer);
         return slotStart < bufferedEnd && slotEnd > bufferedStart;

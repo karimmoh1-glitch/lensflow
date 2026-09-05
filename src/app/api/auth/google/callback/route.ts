@@ -1,76 +1,92 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyGoogleState, exchangeCodeForTokens, getGoogleUserEmail } from "@/lib/google";
+import { getSession } from "@/lib/auth";
+import { exchangeCodeForTokens, getGoogleUserEmail, revokeGoogleToken } from "@/lib/google";
+import { verifyOAuthState } from "@/lib/integrations/oauthState";
+import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
+import { reportFailure } from "@/lib/observe";
+import { track } from "@/lib/analytics";
+import { syncCalendarIn } from "@/server/calendarSync";
+import { listCalendars } from "@/lib/googleCalendar";
 
 /**
- * Where Google redirects back to after the owner approves (or denies) access on the
- * real consent screen. Exchanges the one-time code for real tokens and stores them on
- * that business's EMAIL integration — this is the only place Integration.status ever
- * becomes CONNECTED for email via Gmail, and it only happens after a genuine OAuth
- * round trip, never as a UI toggle.
+ * Where Google sends the owner back after the consent screen, for both Gmail and Google
+ * Calendar (the state carries which). Nothing here trusts the query string alone: the
+ * state must verify (signed, unexpired, single-use, bound to this browser's nonce), the
+ * signed-in session must belong to the business the flow was started for, and the
+ * provider account is recorded so later events can be matched to it. This is the only
+ * place an EMAIL / GOOGLE_CALENDAR row becomes CONNECTED.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
+  const back = new URL("/dashboard/settings", url.origin);
+  back.searchParams.set("tab", "connections");
+  const fail = (reason: string, provider = "google") => {
+    back.searchParams.set("connect_error", reason);
+    back.searchParams.set("provider", provider);
+    return NextResponse.redirect(back);
+  };
 
-  const settingsUrl = new URL("/dashboard/settings", url.origin);
-  settingsUrl.searchParams.set("tab", "connections");
+  if (error) return fail(error === "access_denied" ? "denied" : "provider");
+  const verified = await verifyOAuthState("google", state);
+  if (!verified.ok) return fail(verified.reason === "expired" ? "expired" : "state");
+  if (!code) return fail("provider");
+  const purpose = verified.state.purpose === "calendar" ? "calendar" : "gmail";
+  const providerKey = purpose === "calendar" ? "GOOGLE_CALENDAR" : "EMAIL";
 
-  if (error) {
-    settingsUrl.searchParams.set("google_error", error === "access_denied" ? "denied" : "error");
-    return NextResponse.redirect(settingsUrl);
-  }
-  if (!code || !state) {
-    settingsUrl.searchParams.set("google_error", "error");
-    return NextResponse.redirect(settingsUrl);
-  }
-
-  const verified = await verifyGoogleState(state);
-  if (!verified) {
-    settingsUrl.searchParams.set("google_error", "expired");
-    return NextResponse.redirect(settingsUrl);
+  // Tenant binding: the browser finishing this flow must be signed in to the business that started it.
+  const session = await getSession();
+  if (!session || session.userId !== verified.state.userId) return fail("session", providerKey);
+  const membership = await prisma.orgMembership.findFirst({ where: { userId: session.userId, businessId: verified.state.businessId, status: "ACTIVE", role: { in: ["OWNER", "ADMIN"] } } });
+  if (!membership) return fail("tenant", providerKey);
+  if (process.env.NODE_ENV === "production" && !tokenCryptoConfigured()) {
+    await reportFailure("oauth", "Refused to store Google tokens: INTEGRATION_TOKEN_ENCRYPTION_KEY missing", { businessId: verified.state.businessId, provider: providerKey });
+    return fail("encryption", providerKey);
   }
 
   try {
     const tokens = await exchangeCodeForTokens(code);
     const email = await getGoogleUserEmail(tokens.access_token);
-
     if (!tokens.refresh_token) {
-      // Google only issues a refresh token on first consent (or when prompt=consent
-      // forces re-approval) — without one there's no way to stay connected past the
-      // first access token's ~1hr lifetime, so this is a real failure, not a nitpick.
-      settingsUrl.searchParams.set("google_error", "no_refresh_token");
-      return NextResponse.redirect(settingsUrl);
+      await revokeGoogleToken(tokens.access_token);
+      return fail("no_refresh_token", providerKey);
+    }
+    const granted = tokens.scope ?? "";
+    const needed = purpose === "calendar" ? /calendar/ : /gmail/;
+    if (!needed.test(granted)) {
+      await revokeGoogleToken(tokens.access_token);
+      return fail("scopes", providerKey);
     }
 
-    await prisma.integration.upsert({
-      where: { businessId_provider: { businessId: verified.businessId, provider: "EMAIL" } },
-      create: {
-        businessId: verified.businessId,
-        provider: "EMAIL",
-        status: "CONNECTED",
-        externalAccount: email,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
-        lastSyncedAt: new Date(),
-      },
-      update: {
-        status: "CONNECTED",
-        externalAccount: email,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
-      },
+    // Reconnect replaces stale credentials; the old grant is told to go away.
+    const existing = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: verified.state.businessId, provider: providerKey } } });
+    if (existing?.refreshToken && existing.refreshToken !== tokens.refresh_token) await revokeGoogleToken(existing.refreshToken);
+
+    const base = { status: "CONNECTED" as const, externalAccount: email, externalId: email, accessToken: tokens.access_token, refreshToken: tokens.refresh_token, tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000), scopes: granted, lastError: null, lastErrorAt: null, lastSyncStatus: null, syncCursor: null, wanted: false };
+    const row = await prisma.integration.upsert({
+      where: { businessId_provider: { businessId: verified.state.businessId, provider: providerKey } },
+      create: { businessId: verified.state.businessId, provider: providerKey, ...base, lastSyncedAt: purpose === "gmail" ? new Date() : null },
+      update: base,
     });
 
-    settingsUrl.searchParams.set("google_connected", "1");
-    return NextResponse.redirect(settingsUrl);
+    if (purpose === "calendar") {
+      // Pick the primary calendar by default and pull busy time right away.
+      const calendars = await listCalendars(tokens.access_token).catch(() => []);
+      const primary = calendars.find((c) => c.primary) ?? calendars[0];
+      await prisma.integration.update({ where: { id: row.id }, data: { settings: { calendarId: primary?.id ?? "primary", calendarName: primary?.summary ?? "Primary", timeZone: primary?.timeZone ?? null } } });
+      const fresh = await prisma.integration.findUnique({ where: { id: row.id } });
+      if (fresh) await syncCalendarIn(fresh);
+    }
+
+    await track("integration_connected", { businessId: verified.state.businessId, properties: { provider: providerKey } });
+    back.searchParams.set("connected", providerKey);
+    return NextResponse.redirect(back);
   } catch (err) {
-    console.error("[google-oauth-callback] failed", err);
-    settingsUrl.searchParams.set("google_error", "error");
-    return NextResponse.redirect(settingsUrl);
+    await reportFailure("oauth", `Google ${purpose} connect failed`, { businessId: verified.state.businessId, provider: providerKey, error: err });
+    await track("integration_failed", { businessId: verified.state.businessId, properties: { provider: providerKey, stage: "callback" } });
+    return fail("provider", providerKey);
   }
 }

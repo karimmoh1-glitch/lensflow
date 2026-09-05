@@ -24,6 +24,8 @@ export type OutboundMessage = {
   replyTo?: string;
   /** Raw provider headers, e.g. In-Reply-To / References for email threading. */
   headers?: Record<string, string>;
+  /** The business's own sending identity on this channel (its Twilio number). */
+  from?: string | null;
 };
 
 export type SendResult =

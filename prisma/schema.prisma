@@ -497,6 +497,13 @@ model Message {
   // never rendered anywhere in the conversation UI, only `body` is.
   rawBody String?
 
+  // Provider thread id (Gmail threadId, Instagram conversation id) and the provider's own
+  // delivery detail ("delivered", "read", "failed: 131047 …") — shown honestly, never inferred.
+  externalThreadId String?
+  statusDetail     String?
+  deliveredAt      DateTime?
+  readAt           DateTime?
+
   @@index([conversationId, createdAt])
   @@index([providerMessageId])
 }
@@ -549,6 +556,9 @@ model Booking {
   deliveryUrl  String?
   deliveryNote String?
   deliveredAt  DateTime?
+  // Mirror of this booking on a connected external calendar (Google event id / CalDAV href).
+  externalEventId       String?
+  externalCalendarProvider IntegrationProvider?
 
   questionnaire         Questionnaire?
   createdAt DateTime @default(now())
@@ -766,15 +776,19 @@ enum IntegrationProvider {
   WHATSAPP
   PHONE
   WEBSITE
-  CALENDAR
+  CALENDAR // legacy row from early onboarding; superseded by GOOGLE_CALENDAR / APPLE_CALENDAR
+  GOOGLE_CALENDAR
+  APPLE_CALENDAR
   STRIPE
 }
 
 enum IntegrationStatus {
   NOT_CONNECTED
   CONNECTED
+  NEEDS_ATTENTION // credentials revoked / expired — reconnect
+  SYNC_ERROR // connected, but the last sync failed — retry
   ERROR
-  DEMO
+  DEMO // legacy; no longer written
 }
 
 model Integration {
@@ -796,7 +810,67 @@ model Integration {
   refreshToken   String?
   tokenExpiresAt DateTime?
 
+  // Provider-side identity of the connected account (Instagram user id, WhatsApp phone
+  // number id, Google account id, CalDAV principal) — used to reject events about other
+  // accounts and to route webhooks to the right tenant.
+  externalId String?
+  // What the user granted, as the provider reported it.
+  scopes String?
+  // Incremental sync position (Gmail historyId, Google Calendar syncToken, CalDAV sync-token).
+  syncCursor String?
+  // Provider-specific, non-secret settings: selected calendar id, page id, WABA id…
+  settings Json?
+  // Honest sync state: never "synced" if the last run failed.
+  lastSyncStatus String? // "ok" | "failed"
+  lastError      String?
+  lastErrorAt    DateTime?
+  // The user said they use this during onboarding but hasn't connected it yet.
+  wanted Boolean @default(false)
+
+  events ExternalEvent[]
+
   @@unique([businessId, provider])
+  @@index([provider, externalId])
+}
+
+/// A block of time on a connected external calendar (Google, Apple). Read for availability
+/// so Daythread never double-books over something already on the owner's calendar; never a
+/// source of truth for bookings (bookings live in Booking and are pushed out, not pulled in).
+model ExternalEvent {
+  id            String      @id @default(cuid())
+  businessId    String
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  externalId    String // provider event id (Google) or CalDAV href
+  calendarId    String
+  title         String?
+  startAt       DateTime
+  endAt         DateTime
+  allDay        Boolean     @default(false)
+  status        String      @default("confirmed") // confirmed | tentative | cancelled
+  transparent   Boolean     @default(false) // "free" events don't block availability
+  etag          String?
+  bookingId     String? // set when this is the mirror of a Daythread booking
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([integrationId, externalId])
+  @@index([businessId, startAt])
+}
+
+/// Operational failures worth seeing: OAuth, webhooks, sync, delivery, billing. Never a
+/// message body, never a token — a category, a safe message, and ids.
+model OpsEvent {
+  id         String   @id @default(cuid())
+  area       String // oauth | webhook | sync | delivery | billing | job | db
+  level      String   @default("error") // error | warn
+  message    String
+  businessId String?
+  provider   String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([area, createdAt])
 }
 
 // ─────────────────────────────────────────────────────────────────────────

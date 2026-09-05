@@ -2,8 +2,8 @@ import type { ChannelAdapter, ChannelCapabilities, OutboundMessage, SendResult }
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const fromNumber = process.env.TWILIO_FROM_NUMBER;
-const configured = Boolean(accountSid && authToken && fromNumber);
+const fromNumber = process.env.TWILIO_FROM_NUMBER; // platform fallback; businesses normally send from their own number
+const configured = Boolean(accountSid && authToken);
 
 /**
  * Real Twilio integration, not a stub — send() genuinely calls the Twilio API when
@@ -21,23 +21,23 @@ export class SmsAdapter implements ChannelAdapter {
       live: configured,
       setupNote: configured
         ? "Sending live via Twilio."
-        : "Add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER, then point your Twilio number's messaging webhook at /api/webhooks/twilio/sms.",
+        : "Add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN; each business then gets its own number from Settings → Integrations.",
     };
   }
 
   async send(message: OutboundMessage): Promise<SendResult> {
-    if (!configured || !message.to) {
-      console.log(`[sms-adapter:demo] to ${message.to ?? "unknown"}: ${message.body}`);
+    const from = message.from ?? fromNumber;
+    if (!configured || !message.to || !from) {
       return { ok: true, simulated: true };
     }
     try {
-      // Lazy import so the twilio SDK only initializes when actually configured.
       const twilio = (await import("twilio")).default;
       const client = twilio(accountSid, authToken);
-      await client.messages.create({ to: message.to, from: fromNumber, body: message.body });
-      return { ok: true, simulated: false };
+      const sent = await client.messages.create({ to: message.to, from, body: message.body, statusCallback: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/status` });
+      if (sent.status === "failed" || sent.status === "undelivered") return { ok: false, error: `SMS failed (Twilio ${sent.errorCode ?? ""})`.trim() };
+      return { ok: true, simulated: false, providerMessageId: sent.sid };
     } catch (err) {
-      console.error("[sms-adapter] twilio send failed", err);
+      console.error("[sms-adapter] twilio send failed", err instanceof Error ? err.message : err);
       return { ok: false, error: "SMS provider error" };
     }
   }

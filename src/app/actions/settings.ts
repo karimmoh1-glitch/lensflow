@@ -69,3 +69,33 @@ export async function saveAvailability(windows: { weekday: number; startMin: num
   });
   revalidatePath("/dashboard/settings");
 }
+
+/**
+ * Deletes the workspace, owner only, after the name is retyped. Connected providers are
+ * told to stop first (Google revocation; Twilio number released), then the business row is
+ * deleted and every child row cascades. Other workspaces the owner belongs to are untouched.
+ */
+export async function deleteWorkspace(confirmName: string): Promise<{ error?: string } | never> {
+  const ctx = await requireRole(["OWNER"]);
+  if (!ctx) throw new Error("unauthorized");
+  const { business } = ctx;
+  if (confirmName.trim() !== business.name) return { error: "The name doesn't match." };
+  const { revokeGoogleToken } = await import("@/lib/google");
+  const { releaseNumber, twilioConfigured } = await import("@/lib/twilio");
+  const { pushBookingToCalendars } = await import("@/server/calendarSync");
+  // Remove mirror events we created on external calendars, while we still have credentials.
+  const mirrored = await prisma.booking.findMany({ where: { businessId: business.id, externalEventId: { not: null } }, select: { id: true } });
+  for (const b of mirrored) {
+    await prisma.booking.update({ where: { id: b.id }, data: { status: "CANCELED" } });
+    await pushBookingToCalendars(b.id).catch(() => {});
+  }
+  const integrations = await prisma.integration.findMany({ where: { businessId: business.id } });
+  for (const i of integrations) {
+    if ((i.provider === "EMAIL" || i.provider === "GOOGLE_CALENDAR") && i.refreshToken) await revokeGoogleToken(i.refreshToken);
+    if (i.provider === "SMS" && i.externalId && twilioConfigured()) await releaseNumber(i.externalId);
+  }
+  await prisma.business.delete({ where: { id: business.id } });
+  const { logout } = await import("@/app/actions/auth");
+  await logout();
+  return {};
+}

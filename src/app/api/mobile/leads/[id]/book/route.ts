@@ -3,6 +3,7 @@ import { z } from "zod";
 import { addMinutes } from "date-fns";
 import { prisma } from "@/lib/db";
 import { fireAutomationEvent } from "@/server/automationRunner";
+import { pushBookingToCalendars } from "@/server/calendarSync";
 import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
 import { isSlotStillAvailable } from "@/lib/availability";
 
@@ -75,6 +76,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     data: { businessId: business.id, actorId: ctx.session.userId, action: "mobile_booking_created", targetType: "booking", targetId: booking.id },
   });
   await fireAutomationEvent({ businessId: business.id, trigger: "BOOKING_CREATED", targetType: "booking", targetId: booking.id });
+  await pushBookingToCalendars(booking.id).catch(() => {});
 
   return NextResponse.json({
     bookingId: booking.id,

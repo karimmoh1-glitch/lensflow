@@ -121,12 +121,15 @@ export function AppShell({
   handle,
   role,
   workspaces = [],
+  wantedIntegrations = [],
   children,
 }: {
   businessName: string;
   handle: string;
   role: Role;
   workspaces?: WorkspaceOption[];
+  /** Names of tools chosen during onboarding that aren't connected yet. */
+  wantedIntegrations?: string[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -237,7 +240,15 @@ export function AppShell({
         </div>
       )}
 
-      <main className="flex-1 min-w-0 pb-16 md:pb-0">{children}</main>
+      <main className="flex-1 min-w-0 pb-16 md:pb-0">
+        {wantedIntegrations.length > 0 && !pathname.startsWith("/dashboard/settings") && (
+          <div className="mx-4 md:mx-8 mt-4 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink/80">
+            <span><span className="font-semibold text-ink">Connect {wantedIntegrations.join(", ")}</span> and your first real conversations arrive here.</span>
+            <Link href="/dashboard/settings?tab=connections" className="text-signal-text font-semibold hover:underline">Connect now →</Link>
+          </div>
+        )}
+        {children}
+      </main>
 
       {/* Phone: the four places that matter, always under the thumb. */}
       <nav aria-label="Primary" className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">

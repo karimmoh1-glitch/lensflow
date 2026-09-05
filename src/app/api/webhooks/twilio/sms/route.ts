@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     return new NextResponse("<Response></Response>", { status: 400, headers: { "Content-Type": "text/xml" } });
   }
 
+  // Route by the destination number; it belongs to exactly one business (unique).
   const business = await prisma.business.findUnique({ where: { twilioPhoneNumber: to } });
   if (!business) {
     // Unknown destination number — acknowledge so Twilio doesn't retry, but do nothing.

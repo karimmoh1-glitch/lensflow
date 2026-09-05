@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
 import { fireAutomationEvent } from "@/server/automationRunner";
+import { pushBookingToCalendars } from "@/server/calendarSync";
 import { getAvailableSlots, isSlotStillAvailable } from "@/lib/availability";
 import { createCardCheckout } from "@/lib/payments";
 import { addMinutes } from "date-fns";
@@ -72,6 +73,7 @@ export async function createPublicBooking(params: {
     data: { businessId: business.id, action: "public_booking_created", targetType: "booking", targetId: booking.id },
   });
   await fireAutomationEvent({ businessId: business.id, trigger: "BOOKING_CREATED", targetType: "booking", targetId: booking.id });
+  await pushBookingToCalendars(booking.id).catch(() => {});
   if ((await prisma.booking.count({ where: { businessId: business.id } })) === 1) await track("first_booking_created", { businessId: business.id, properties: { via: "booking_page" } });
 
   let checkoutUrl: string | null = null;

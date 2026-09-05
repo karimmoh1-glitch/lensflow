@@ -67,21 +67,17 @@ export async function completeOnboarding(payload: OnboardingPayload) {
       })),
     });
 
-    const allProviders: IntegrationProvider[] = ["INSTAGRAM", "EMAIL", "SMS", "WHATSAPP", "CALENDAR", "STRIPE"];
-    for (const provider of allProviders) {
-      const connected = payload.connectedChannels.includes(provider) || provider === "STRIPE";
+    // What the owner said they use. Nothing is "connected" here — a real authorization
+    // happens later from Settings → Integrations; this only remembers what to guide them to.
+    const wantedKeys = new Set(payload.connectedChannels.map((c) => (c === "CALENDAR" ? "GOOGLE_CALENDAR" : c)));
+    const guidable: IntegrationProvider[] = ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS", "GOOGLE_CALENDAR", "APPLE_CALENDAR"];
+    for (const provider of guidable) {
+      const existing = await tx.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider } } });
+      if (existing && existing.status !== "NOT_CONNECTED" && existing.status !== "DEMO") continue; // never touch a real connection
       await tx.integration.upsert({
         where: { businessId_provider: { businessId: business.id, provider } },
-        create: {
-          businessId: business.id,
-          provider,
-          status: connected ? "DEMO" : "NOT_CONNECTED",
-          lastSyncedAt: connected ? new Date() : null,
-        },
-        update: {
-          status: connected ? "DEMO" : "NOT_CONNECTED",
-          lastSyncedAt: connected ? new Date() : null,
-        },
+        create: { businessId: business.id, provider, status: "NOT_CONNECTED", wanted: wantedKeys.has(provider) },
+        update: { status: "NOT_CONNECTED", wanted: wantedKeys.has(provider), lastSyncedAt: null },
       });
     }
 

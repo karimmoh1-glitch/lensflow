@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { runScheduledAutomations } from "@/server/automationRunner";
+import { runIntegrationMaintenance } from "@/server/integrationMaintenance";
 
 /**
  * Daily sweep of time-based automations (see vercel.json — daily so it runs on every Vercel
@@ -22,7 +23,8 @@ export async function GET(req: Request) {
 
   try {
     const summary = await runScheduledAutomations(new Date());
-    return NextResponse.json({ ok: true, ...summary });
+    const maintenance = await runIntegrationMaintenance();
+    return NextResponse.json({ ok: true, ...summary, maintenance });
   } catch (err) {
     console.error("[cron/automations] failed", err);
     return NextResponse.json({ error: "Run failed" }, { status: 500 });

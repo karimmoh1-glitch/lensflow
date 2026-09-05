@@ -4,6 +4,7 @@ import { extractLeadInfo } from "@/lib/ai";
 import { scoreLead } from "@/lib/leadScoring";
 import { cleanEmailBody } from "@/lib/emailText";
 import { classifyMessage } from "@/lib/classifyMessage";
+import { findKnownClient } from "@/server/identity";
 import type { ChannelType } from "@prisma/client";
 
 /**
@@ -60,15 +61,16 @@ export async function ingestInboundMessage(params: {
   // a client: only a message that reads as a person writing to this business (PRIORITY)
   // creates a client record and a lead. Everything else is stored as a conversation with
   // its category — visible in All Inbox, absent from Priority and from the CRM.
-  const identityWhere = clientEmail ? { businessId, email: clientEmail } : { businessId, name: senderName };
-  const senderEmail = clientEmail ?? (channel === "EMAIL" ? senderHandle : null);
-  const [knownClient, rules, owners, priorInboundCount] = await Promise.all([
-    prisma.client.findFirst({ where: identityWhere, include: { _count: { select: { bookings: true, payments: true } } } }),
+  // Who is this? Strong identifiers only (email, E.164 phone, Instagram id), tenant-scoped.
+  const identity = await findKnownClient({ businessId, channel, senderHandle, senderName, email: clientEmail, phone: clientPhone });
+  const senderEmail = identity.email ?? (channel === "EMAIL" ? senderHandle : null);
+  const [rules, owners, priorInboundCount] = await Promise.all([
     // Only this business's corrections — never another tenant's.
     prisma.senderRule.findMany({ where: { businessId }, select: { kind: true, value: true, category: true } }),
     prisma.orgMembership.findMany({ where: { businessId, role: { in: ["OWNER", "ADMIN"] } }, select: { user: { select: { email: true } } } }),
     senderHandle ? prisma.message.count({ where: { direction: "INBOUND", conversation: { businessId, externalHandle: senderHandle } } }) : Promise.resolve(0),
   ]);
+  const knownClient = identity.client;
   const priorOutbound = knownClient
     ? (await prisma.message.count({ where: { direction: "OUTBOUND", conversation: { businessId, clientId: knownClient.id } } })) > 0
     : false;

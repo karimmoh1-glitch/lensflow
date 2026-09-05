@@ -135,7 +135,8 @@ async function runOne(automation: { id: string; businessId: string; name: string
     return "skipped";
   }
 
-  const delivery = await deliverToCustomer({ businessId, businessName: business.name, businessHandle: business.handle, channel, to, body, subject: `${business.name}: ${automation.name}` }).catch((err) => {
+  const lastInbound = ctx.conversation ? await prisma.message.findFirst({ where: { conversationId: ctx.conversation.id, direction: "INBOUND" }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }) : null;
+  const delivery = await deliverToCustomer({ businessId, businessName: business.name, businessHandle: business.handle, channel, to, body, subject: `${business.name}: ${automation.name}`, lastInboundAt: lastInbound?.createdAt ?? null }).catch((err) => {
     console.error("[automations] send failed", err);
     return { status: "FAILED", error: "Send failed", via: "none", providerMessageId: undefined } as Delivery;
   });

@@ -47,15 +47,18 @@ async function dav(client: CalDavClient, method: string, path: string, body?: st
 export function parseMultistatus(xml: string): Array<{ href: string; props: Record<string, string>; status: string | null }> {
   const out: Array<{ href: string; props: Record<string, string>; status: string | null }> = [];
   const responses = xml.split(/<(?:[A-Za-z0-9]+:)?response\b[^>]*>/i).slice(1);
-  for (const chunk of responses) {
-    const href = /<(?:[A-Za-z0-9]+:)?href>([^<]+)<\/(?:[A-Za-z0-9]+:)?href>/i.exec(chunk)?.[1];
+  for (const rawChunk of responses) {
+    const href = /<(?:[A-Za-z0-9]+:)?href>([^<]+)<\/(?:[A-Za-z0-9]+:)?href>/i.exec(rawChunk)?.[1];
     if (!href) continue;
+    // Containers (propstat / prop / response) are removed so their children are seen as
+    // properties instead of being swallowed as one block.
+    const chunk = rawChunk.replace(/<\/?(?:[A-Za-z0-9]+:)?(?:propstat|prop|response)\b[^>]*>/gi, "");
     const props: Record<string, string> = {};
     const propRe = /<(?:[A-Za-z0-9]+:)?([A-Za-z-]+)(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z0-9]+:)?\1>/g;
     let m: RegExpExecArray | null;
     while ((m = propRe.exec(chunk))) {
       const name = m[1].toLowerCase();
-      if (name === "response" || name === "propstat" || name === "prop") continue;
+      if (name === "href" && props.href) continue;
       props[name] = m[2].trim();
     }
     const status = /<(?:[A-Za-z0-9]+:)?status>([^<]+)<\/(?:[A-Za-z0-9]+:)?status>/i.exec(chunk)?.[1] ?? null;

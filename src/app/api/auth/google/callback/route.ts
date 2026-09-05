@@ -6,7 +6,7 @@ import { verifyOAuthState } from "@/lib/integrations/oauthState";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
-import { syncCalendarIn } from "@/server/calendarSync";
+import { syncCalendarIn, readCalendarSettings } from "@/server/calendarSync";
 import { listCalendars } from "@/lib/googleCalendar";
 
 /**
@@ -73,12 +73,20 @@ export async function GET(req: Request) {
     });
 
     if (purpose === "calendar") {
-      // Pick the primary calendar by default and pull busy time right away.
+      // Discover the account's calendars; the primary one is pre-selected so busy time
+      // starts blocking right away. The user chooses the rest on the setup screen.
       const calendars = await listCalendars(tokens.access_token).catch(() => []);
-      const primary = calendars.find((c) => c.primary) ?? calendars[0];
-      await prisma.integration.update({ where: { id: row.id }, data: { settings: { calendarId: primary?.id ?? "primary", calendarName: primary?.summary ?? "Primary", timeZone: primary?.timeZone ?? null } } });
+      const available = calendars.map((c) => ({ id: c.id, name: c.summary, primary: Boolean(c.primary), timeZone: c.timeZone ?? null, readOnly: !/owner|writer/.test(c.accessRole) }));
+      const prior = readCalendarSettings(existing ?? { settings: null });
+      const primary = available.find((c) => c.primary) ?? available[0];
+      const selected = prior.selected.filter((id) => available.some((c) => c.id === id));
+      const chosen = selected.length ? selected : primary ? [primary.id] : [];
+      await prisma.integration.update({ where: { id: row.id }, data: { settings: { available, selected: chosen, bookingCalendar: prior.bookingCalendar && chosen.includes(prior.bookingCalendar) ? prior.bookingCalendar : (chosen[0] ?? null), cursors: {} } } });
       const fresh = await prisma.integration.findUnique({ where: { id: row.id } });
       if (fresh) await syncCalendarIn(fresh);
+      await track("integration_connected", { businessId: verified.state.businessId, properties: { provider: providerKey } });
+      back.searchParams.set("setup", providerKey);
+      return NextResponse.redirect(back);
     }
 
     await track("integration_connected", { businessId: verified.state.businessId, properties: { provider: providerKey } });

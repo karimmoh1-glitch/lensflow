@@ -128,5 +128,6 @@ export async function completeOnboarding(payload: OnboardingPayload) {
     properties: { moduleCount: payload.connectedChannels.length, serviceCount: payload.services.length },
   });
 
-  redirect("/dashboard");
+  // Straight into connecting what they said they use; skippable.
+  redirect(payload.connectedChannels.length > 0 ? "/onboarding/connect" : "/dashboard");
 }

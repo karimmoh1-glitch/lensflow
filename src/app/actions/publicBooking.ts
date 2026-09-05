@@ -98,6 +98,7 @@ export async function createPublicBooking(params: {
         successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/book/${params.handle}/confirmed?booking=${booking.id}`,
         cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/book/${params.handle}`,
         metadata: { bookingId: booking.id, businessId: business.id, paymentId: payment.id },
+        customerEmail: client.email,
       });
       checkoutUrl = result.url;
     }

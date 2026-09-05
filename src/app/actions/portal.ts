@@ -36,6 +36,7 @@ export async function payOutstanding(paymentId: string): Promise<{ checkoutUrl?:
     successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal?paid=1`,
     cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal`,
     metadata: { paymentId: payment.id, businessId: ctx.business.id },
+    customerEmail: ctx.client.email,
   });
 
   return { checkoutUrl: result.url };

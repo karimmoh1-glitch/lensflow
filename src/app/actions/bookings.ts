@@ -6,7 +6,7 @@ import { fireAutomationEvent } from "@/server/automationRunner";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { requireClientRecord } from "./portal";
 import { revalidatePath } from "next/cache";
-import { createCardCheckout } from "@/lib/payments";
+import { createCardCheckout, stripeIsLive } from "@/lib/payments";
 import { sendOnChannel } from "@/lib/messaging";
 import type { BookingStatus, PaymentMethodType, PaymentPurpose } from "@prisma/client";
 
@@ -107,7 +107,7 @@ export async function requestPayment(params: {
       successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/bookings/${booking.id}`,
       cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/bookings/${booking.id}`,
       metadata: { bookingId: booking.id, businessId: business.id, paymentId: payment.id },
-    });
+    customerEmail: booking.client.email, });
     checkoutUrl = result.url;
   }
 
@@ -140,6 +140,9 @@ export async function confirmPayment(paymentId: string, session?: SessionPayload
  * client mark their own or someone else's invoice paid without money changing hands.
  */
 export async function completeCardCheckout(paymentId: string, session?: SessionPayload | null) {
+  // When Stripe is configured, a card payment is only ever marked paid by the signature-
+  // verified webhook. This simulated path exists for deployments without a key.
+  if (stripeIsLive) throw new Error("Card payments are confirmed by Stripe, not by this page.");
   const staffCtx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (staffCtx) {
     const payment = await prisma.payment.findFirst({ where: { id: paymentId, businessId: staffCtx.business.id, method: "CARD" } });

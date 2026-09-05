@@ -9,12 +9,14 @@ import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { instagramConfigured, instagramAuthUrl } from "@/lib/meta/instagram";
 import { whatsappConfigured, whatsappAuthUrl } from "@/lib/meta/whatsapp";
 import { makeClient, discover, listCalendars as caldavCalendars } from "@/lib/caldav";
-import { syncCalendarIn } from "@/server/calendarSync";
+import { syncCalendarIn, readCalendarSettings, type CalendarChoice } from "@/server/calendarSync";
 import { twilioConfigured, searchNumbers, provisionNumber, releaseNumber } from "@/lib/twilio";
 import { smsEntitled } from "@/lib/billing";
 import { track } from "@/lib/analytics";
 import { reportFailure } from "@/lib/observe";
-import { disconnectGoogle, syncGoogleCalendarNow } from "@/app/actions/googleAuth";
+import { disconnectGoogle } from "@/app/actions/googleAuth";
+import { syncCalendarNow } from "@/app/actions/calendars";
+import { z } from "zod";
 import type { IntegrationProvider } from "@prisma/client";
 
 const ADMIN = ["OWNER", "ADMIN"] as const;
@@ -51,65 +53,51 @@ export async function connectWhatsApp() {
  * clients — never their Apple ID password. It is verified by a real discovery call before
  * anything is stored, stored encrypted, and revocable from Apple's side at any time.
  */
-export async function connectAppleCalendar(appleId: string, appSpecificPassword: string, session?: SessionPayload | null): Promise<{ error?: string; calendars?: Array<{ href: string; name: string }> }> {
+const AppleSchema = z.object({
+  appleId: z.string().trim().toLowerCase().email("Enter the email address of your Apple ID."),
+  appSpecificPassword: z.string().trim().regex(/^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$/i, "That isn't an app-specific password. They look like abcd-efgh-ijkl-mnop — create one at appleid.apple.com → Sign-In and Security → App-Specific Passwords."),
+});
+
+export type AppleConnectResult = { error?: string; calendars?: CalendarChoice[]; selected?: string[] };
+
+export async function connectAppleCalendar(appleId: string, appSpecificPassword: string, session?: SessionPayload | null): Promise<AppleConnectResult> {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   guardEncryption();
-  const id = appleId.trim().toLowerCase();
-  const pw = appSpecificPassword.trim();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(id)) return { error: "Enter the email address of your Apple ID." };
-  if (!/^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$/i.test(pw)) return { error: "That doesn't look like an app-specific password (they look like abcd-efgh-ijkl-mnop). Generate one at appleid.apple.com → Sign-In and Security → App-Specific Passwords." };
+  const parsed = AppleSchema.safeParse({ appleId, appSpecificPassword });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the details and try again." };
+  const { appleId: id, appSpecificPassword: pw } = parsed.data;
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "APPLE_CALENDAR" } });
   try {
     const client = makeClient(id, pw);
     const found = await discover(client);
-    const calendars = (await caldavCalendars({ ...client, baseUrl: found.baseUrl }, found.calendarHome)).filter((c) => !c.readOnly);
-    if (calendars.length === 0) return { error: "Apple accepted the sign-in but returned no writable calendars." };
-    const first = calendars[0];
+    const cals = await caldavCalendars({ ...client, baseUrl: found.baseUrl }, found.calendarHome);
+    if (cals.length === 0) return { error: "Apple accepted the sign-in but returned no calendars. Make sure iCloud Calendar is turned on for this Apple ID." };
+    const available: CalendarChoice[] = cals.map((c) => ({ id: c.href, name: c.name, readOnly: c.readOnly }));
+    const prior = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "APPLE_CALENDAR" } } });
+    const priorSettings = readCalendarSettings(prior ?? { settings: null });
+    const keep = priorSettings.selected.filter((h) => available.some((c) => c.id === h));
+    const firstWritable = available.find((c) => !c.readOnly) ?? available[0];
+    const selected = keep.length ? keep : [firstWritable.id];
+    const settings = { available, selected, bookingCalendar: priorSettings.bookingCalendar && selected.includes(priorSettings.bookingCalendar) ? priorSettings.bookingCalendar : selected[0], cursors: {}, baseUrl: found.baseUrl, principal: found.principal, calendarHome: found.calendarHome };
     await prisma.integration.upsert({
       where: { businessId_provider: { businessId: ctx.business.id, provider: "APPLE_CALENDAR" } },
-      create: { businessId: ctx.business.id, provider: "APPLE_CALENDAR", status: "CONNECTED", externalAccount: id, externalId: found.principal, accessToken: pw, settings: { baseUrl: found.baseUrl, principal: found.principal, calendarHome: found.calendarHome, calendarHref: first.href, calendarName: first.name }, lastError: null, lastErrorAt: null, wanted: false },
-      update: { status: "CONNECTED", externalAccount: id, externalId: found.principal, accessToken: pw, settings: { baseUrl: found.baseUrl, principal: found.principal, calendarHome: found.calendarHome, calendarHref: first.href, calendarName: first.name }, lastError: null, lastErrorAt: null, lastSyncStatus: null, syncCursor: null, wanted: false },
+      create: { businessId: ctx.business.id, provider: "APPLE_CALENDAR", status: "CONNECTED", externalAccount: id, externalId: found.principal, accessToken: pw, settings, lastError: null, lastErrorAt: null, wanted: false },
+      update: { status: "CONNECTED", externalAccount: id, externalId: found.principal, accessToken: pw, settings, lastError: null, lastErrorAt: null, lastSyncStatus: null, syncCursor: null, wanted: false },
     });
     const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "APPLE_CALENDAR" } } });
     if (row) await syncCalendarIn(row);
     await track("integration_connected", { businessId: ctx.business.id, properties: { provider: "APPLE_CALENDAR" } });
     revalidatePath("/dashboard/settings");
-    return { calendars: calendars.map((c) => ({ href: c.href, name: c.name })) };
+    return { calendars: available, selected };
   } catch (err) {
     await reportFailure("oauth", "Apple Calendar connect failed", { businessId: ctx.business.id, provider: "APPLE_CALENDAR", error: err });
     await track("integration_failed", { businessId: ctx.business.id, properties: { provider: "APPLE_CALENDAR", stage: "discover" } });
     const msg = err instanceof Error ? err.message : "";
-    return { error: /rejected the sign-in/i.test(msg) ? "Apple rejected the sign-in. Check the Apple ID and generate a fresh app-specific password." : "Couldn't reach iCloud just now. Nothing was saved — try again in a minute." };
+    if (/rejected the sign-in/i.test(msg)) return { error: "Apple Calendar authentication failed. Make sure you're using an Apple app-specific password, not your normal Apple ID password, and that the Apple ID is right." };
+    if (/principal|calendar home/i.test(msg)) return { error: "Authentication succeeded but calendar discovery failed. Check that iCloud Calendar is enabled for this Apple ID, then try again." };
+    return { error: "Couldn't reach iCloud just now. Nothing was saved — try again in a minute." };
   }
-}
-
-export async function listAppleCalendarsForSettings(): Promise<{ calendars: Array<{ href: string; name: string }>; selected: string | null; error?: string }> {
-  const ctx = await requireRole([...ADMIN]);
-  if (!ctx) return { calendars: [], selected: null, error: "unauthorized" };
-  const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "APPLE_CALENDAR" } } });
-  if (!row || row.status === "NOT_CONNECTED" || !row.accessToken || !row.externalAccount) return { calendars: [], selected: null };
-  const settings = (row.settings as { baseUrl?: string; calendarHome?: string; calendarHref?: string } | null) ?? {};
-  try {
-    const client = makeClient(row.externalAccount, row.accessToken, settings.baseUrl);
-    const cals = await caldavCalendars(client, settings.calendarHome ?? "/");
-    return { calendars: cals.filter((c) => !c.readOnly).map((c) => ({ href: c.href, name: c.name })), selected: settings.calendarHref ?? null };
-  } catch (err) {
-    return { calendars: [], selected: settings.calendarHref ?? null, error: err instanceof Error ? err.message : "Couldn't list calendars" };
-  }
-}
-
-export async function selectAppleCalendar(href: string, name: string): Promise<{ error?: string }> {
-  const ctx = await requireRole([...ADMIN]);
-  if (!ctx) throw new Error("unauthorized");
-  const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "APPLE_CALENDAR" } } });
-  if (!row) return { error: "Apple Calendar isn't connected." };
-  await prisma.externalEvent.deleteMany({ where: { integrationId: row.id, bookingId: null } });
-  await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...((row.settings as object) ?? {}), calendarHref: href, calendarName: name }, syncCursor: null } });
-  const fresh = await prisma.integration.findUnique({ where: { id: row.id } });
-  if (fresh) await syncCalendarIn(fresh);
-  revalidatePath("/dashboard/settings");
-  return {};
 }
 
 /** Disconnect for every provider: credentials erased, sync stopped, provider grant revoked
@@ -118,7 +106,7 @@ export async function disconnectIntegration(provider: IntegrationProvider, sessi
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (provider === "EMAIL" || provider === "GOOGLE_CALENDAR") {
-    await disconnectGoogle(provider);
+    await disconnectGoogle(provider, session);
     return {};
   }
   const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider } } });
@@ -132,16 +120,7 @@ export async function disconnectIntegration(provider: IntegrationProvider, sessi
 }
 
 export async function retrySync(provider: IntegrationProvider): Promise<{ ok: boolean; error?: string }> {
-  const ctx = await requireRole([...ADMIN]);
-  if (!ctx) return { ok: false, error: "unauthorized" };
-  if (provider === "GOOGLE_CALENDAR") return syncGoogleCalendarNow();
-  if (provider === "APPLE_CALENDAR") {
-    const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider } } });
-    if (!row || row.status === "NOT_CONNECTED") return { ok: false, error: "Apple Calendar isn't connected." };
-    const r = await syncCalendarIn(row);
-    revalidatePath("/dashboard/settings");
-    return r.ok ? { ok: true } : { ok: false, error: r.error };
-  }
+  if (provider === "GOOGLE_CALENDAR" || provider === "APPLE_CALENDAR") return syncCalendarNow(provider);
   return { ok: false, error: "This integration syncs by webhook; nothing to retry." };
 }
 

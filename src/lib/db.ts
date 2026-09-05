@@ -74,6 +74,12 @@ const basePrisma = new PrismaClient({
         const results = await query(args);
         return results.map(decryptTokenFields);
       },
+      async findUniqueOrThrow({ args, query }) {
+        return decryptTokenFields(await query(args));
+      },
+      async findFirstOrThrow({ args, query }) {
+        return decryptTokenFields(await query(args));
+      },
     },
   },
 });

@@ -18,11 +18,15 @@ export async function createCardCheckout(params: {
   successUrl: string;
   cancelUrl: string;
   metadata: Record<string, string>;
+  customerEmail?: string | null;
 }): Promise<{ url: string; demo: boolean }> {
   if (stripe) {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      // Let Stripe offer whatever the customer's device supports (card, Apple Pay, Link…).
+      ...(params.customerEmail ? { customer_email: params.customerEmail } : {}),
+      client_reference_id: params.metadata.paymentId,
+      payment_intent_data: { metadata: params.metadata },
       line_items: [
         {
           price_data: {

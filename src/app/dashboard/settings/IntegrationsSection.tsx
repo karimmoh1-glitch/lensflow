@@ -49,9 +49,13 @@ export async function IntegrationsSection({ business, connected, connectError, e
   const model = (provider: IntegrationProvider): CardModel => {
     const spec = PROVIDERS[provider as keyof typeof PROVIDERS];
     const row = byProvider.get(provider) ?? null;
-    const configured = providerConfigured(spec) && (spec.auth !== "oauth" || encryptionOk);
+    // Whether the provider works on this deployment (drives the status) is separate from
+    // whether a NEW credential can be stored right now (drives the Connect button): an
+    // existing Gmail connection keeps reading while the operator adds the encryption key.
+    const configured = providerConfigured(spec);
     const status = displayStatus(spec, row, configured);
-    const entitled = provider === "SMS" ? smsEntitled(business) : true;
+    const canStore = spec.auth === "oauth" || spec.auth === "app_password" ? encryptionOk : true;
+    const entitled = (provider === "SMS" ? smsEntitled(business) : true) && canStore;
     const settings = (row?.settings as Record<string, string> | null) ?? null;
     return {
       provider,
@@ -61,7 +65,7 @@ export async function IntegrationsSection({ business, connected, connectError, e
       account: provider === "SMS" ? business.twilioPhoneNumber : (row?.externalAccount ?? null),
       lastSyncedAt: row?.lastSyncedAt ? `${formatDistanceToNowStrict(row.lastSyncedAt)} ago` : null,
       lastError: row?.lastError ?? null,
-      detail: !encryptionOk && spec.auth === "oauth" ? "Paused until the deployment's encryption key is set." : !entitled ? "Part of the Pro plan and above." : !configured ? `Daythread's operator hasn't enabled ${spec.name} on this deployment yet.` : settings?.calendarName ? `Calendar: ${settings.calendarName}` : null,
+      detail: !canStore ? "New connections are paused until Daythread's operator sets the deployment's encryption key." : !entitled ? "Part of the Pro plan and above." : !configured ? `Daythread's operator hasn't enabled ${spec.name} on this deployment yet.` : settings?.calendarName ? `Calendar: ${settings.calendarName}` : null,
       approval: spec.approval ?? null,
       capabilities: spec.capabilities,
       entitled,
@@ -115,7 +119,7 @@ export async function IntegrationsSection({ business, connected, connectError, e
             const connectedNow = m.status === "connected" || m.status === "sync_issue";
             return (
               <IntegrationCard key={provider} model={m} icon={icon} connect={provider === "GOOGLE_CALENDAR" ? connectGoogleCalendar : undefined}>
-                {provider === "APPLE_CALENDAR" && (m.status === "disconnected" || m.status === "needs_attention") && <AppleCalendarForm />}
+                {provider === "APPLE_CALENDAR" && (m.status === "disconnected" || m.status === "needs_attention") && (m.entitled ? <AppleCalendarForm /> : <p className="text-xs text-ink/55">{m.detail}</p>)}
                 {connectedNow && <CalendarPicker provider={provider as "GOOGLE_CALENDAR" | "APPLE_CALENDAR"} selectedName={settings?.calendarName ?? null} />}
               </IntegrationCard>
             );

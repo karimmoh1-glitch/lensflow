@@ -93,6 +93,17 @@ export default async function BillingSetupPage() {
       <p className="mt-8 text-xs text-ink/45">
         Client deposits and balances (your customers paying you) use the same Stripe account and webhook, but are a separate thing from this subscription: they attach to bookings and show up under Payments, marked paid only when Stripe confirms.
       </p>
+
+      <section aria-label="Apple Pay and Google Pay" className="mt-8 rounded-2xl border border-border bg-white px-5 py-5">
+        <h2 className="text-sm font-semibold text-ink">Apple Pay and Google Pay</h2>
+        <p className="mt-1.5 text-sm text-ink/65 leading-relaxed">Every Daythread payment — a client&rsquo;s deposit or balance, and your own subscription — goes through Stripe-hosted Checkout with dynamic payment methods. Stripe shows Apple Pay on Safari (iPhone, iPad, Mac with a card in Wallet) and Google Pay on Chrome/Android when they are enabled on the account, and falls back to card. Daythread never sees or stores card details; the webhook, not the return page, marks a payment paid.</p>
+        <ol className="mt-3 space-y-1.5 text-sm text-ink/75 list-decimal pl-5">
+          <li>Stripe Dashboard → Settings → Payments → <span className="font-semibold text-ink">Payment methods</span>: turn on Apple Pay and Google Pay (they are on by default for new accounts; wallets need &ldquo;Cards&rdquo; on too).</li>
+          <li>Hosted Checkout runs on checkout.stripe.com, so no Apple Pay domain registration is needed for it. If Daythread ever embeds the Payment Element on <span className="font-mono text-xs">{appUrl.replace(/^https?:\/\//, "")}</span>, register that domain under Settings → Payments → Payment method domains first.</li>
+          <li>Test on a real iPhone in Safari with a card in Wallet: the Checkout page shows an Apple Pay button above the card form. Stripe test mode supports Apple Pay with any Wallet card (nothing is charged).</li>
+        </ol>
+        <p className="mt-3 text-[11px] text-ink/45">Status here reflects code and configuration only. A wallet button can only be confirmed by paying on a real device with live or test keys present.</p>
+      </section>
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import { Children, useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { X, Check, ArrowRight, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { X, Check, ArrowRight, RefreshCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { useToast } from "@/components/Toaster";
@@ -12,6 +13,7 @@ import { CalendarSetup } from "./CalendarSetup";
 import { AppleConnectDialog } from "./AppleConnectDialog";
 import type { IntegrationProvider } from "@prisma/client";
 import type { DisplayStatus } from "@/lib/integrations/registry";
+export type { DisplayStatus };
 
 /**
  * One integration, one honest state, one obvious action. The status comes from the
@@ -31,11 +33,15 @@ export type CardModel = {
   approval: string | null;
   capabilities: string[];
   entitled: boolean;
+  /** The status pill, decided on the server from the row, the deployment and the plan. */
+  pill: { label: string; tone: "success" | "warning" | "accent" | "signal" | "neutral" };
+  /** Why Connect is withheld by the plan, and where to fix it. */
+  limit: { message: string; upgradePlan: string | null; upgradeHref: string } | null;
   calendarsConnected?: number;
   accent: string;
 };
 
-const LABEL: Record<DisplayStatus, string> = { connected: "Connected", needs_attention: "Needs attention", sync_issue: "Sync issue", disconnected: "Not connected", unavailable: "Not available yet", always_on: "Always on" };
+const PILL: Record<CardModel["pill"]["tone"], string> = { success: "bg-success-soft text-success-text", warning: "bg-warning-soft text-warning-text", accent: "bg-accent-soft text-accent-text", signal: "bg-signal-soft text-signal-text", neutral: "bg-black/[0.05] text-ink/55" };
 
 export function IntegrationCard({ model, icon, connect, children }: { model: CardModel; icon: React.ReactNode; connect?: (formData: FormData) => Promise<void>; children?: React.ReactNode }) {
   const [open, setOpen] = useState<null | "manage" | "apple" | "setup">(null);
@@ -91,16 +97,26 @@ export function IntegrationCard({ model, icon, connect, children }: { model: Car
   }
 
   const statusPill = (
-    <span className={cn("inline-flex items-center gap-1.5 text-[11px] font-bold rounded-full px-2 py-0.5", model.status === "connected" || model.status === "always_on" ? "bg-success-soft text-success-text" : model.status === "needs_attention" ? "bg-accent-soft text-accent-text" : model.status === "sync_issue" ? "bg-warning-soft text-warning-text" : "bg-black/[0.05] text-ink/55")}>
+    <span className={cn("inline-flex items-center gap-1.5 text-[11px] font-bold rounded-full px-2 py-0.5", PILL[model.pill.tone])}>
       {(model.status === "connected" || model.status === "always_on") && <Check className="w-3 h-3" strokeWidth={3} aria-hidden />}
-      {LABEL[model.status]}
+      {model.pill.tone === "signal" && <Lock className="w-3 h-3" strokeWidth={2.5} aria-hidden />}
+      {model.pill.label}
     </span>
   );
 
   const primary = (() => {
     if (model.status === "always_on") return null;
     if (model.status === "unavailable") return null;
-    if (!model.entitled) return null;
+    if (!model.entitled) {
+      if (model.limit) {
+        return (
+          <Link href={model.limit.upgradeHref} className="inline-flex items-center justify-center h-8 px-3.5 rounded-full text-[13px] font-semibold border border-signal/30 text-signal-text bg-signal-soft/40 hover:bg-signal-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50 whitespace-nowrap">
+            {model.limit.upgradePlan ? `Upgrade to ${model.limit.upgradePlan}` : "See plans"}
+          </Link>
+        );
+      }
+      return null;
+    }
     if (model.status === "needs_attention") {
       if (model.provider === "APPLE_CALENDAR") return <Button size="sm" onClick={() => setOpen("apple")}>Reconnect</Button>;
       if (connect) return <form action={connect} onSubmit={() => setConnecting(true)}><Button type="submit" size="sm" loading={connecting} loadingLabel="Opening">Reconnect</Button></form>;
@@ -136,7 +152,13 @@ export function IntegrationCard({ model, icon, connect, children }: { model: Car
             {model.status === "sync_issue" && <p className="mt-2 text-[11px] text-warning-text">Calendar sync temporarily failed. Daythread will retry automatically{model.lastSyncedAt ? ` · last good sync ${model.lastSyncedAt}` : ""}.</p>}
             {model.status === "needs_attention" && <p className="mt-2 text-[11px] text-accent-text">Your {model.name} connection needs to be renewed.</p>}
             {model.status === "unavailable" && <p className="mt-2 text-[11px] text-ink/50">{model.detail}</p>}
-            {model.status === "disconnected" && !model.entitled && model.detail && <p className="mt-2 text-[11px] text-ink/50">{model.detail}</p>}
+            {model.limit && (model.status === "disconnected" || model.status === "needs_attention") && (
+              <div className="mt-2.5 rounded-xl border border-signal/20 bg-signal-soft/40 px-3 py-2">
+                <p className="text-xs font-semibold text-ink">{/limit reached/i.test(model.limit.message) ? "Integration limit reached" : "Upgrade required"}</p>
+                <p className="mt-0.5 text-[11px] text-ink/65 leading-relaxed">{model.limit.message.replace(/^Integration limit reached\.\s*/i, "")}</p>
+              </div>
+            )}
+            {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && <p className="mt-2 text-[11px] text-ink/50">{model.detail}</p>}
             {model.adminNote && <p className="mt-2 text-[11px] text-warning-text">{model.adminNote}</p>}
           </div>
           <div className="shrink-0 flex flex-col items-end gap-2">

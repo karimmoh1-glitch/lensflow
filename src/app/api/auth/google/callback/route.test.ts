@@ -50,7 +50,7 @@ describe("Google Calendar callback", () => {
     const stamp = Date.now();
     businessId = (await prisma.business.create({ data: { name: "GCal", handle: `gcal-${stamp}` } })).id;
     otherBusinessId = (await prisma.business.create({ data: { name: "GCal Other", handle: `gcal-other-${stamp}` } })).id;
-    userId = (await prisma.user.create({ data: { name: "Owner", email: `gcal-owner-${stamp}@example.com`, passwordHash: "x" } })).id;
+    userId = (await prisma.user.create({ data: { name: "Owner", email: `gcal-own-${stamp}@example.com`, passwordHash: "x" } })).id;
     strangerId = (await prisma.user.create({ data: { name: "Stranger", email: `gcal-stranger-${stamp}@example.com`, passwordHash: "x" } })).id;
     await prisma.orgMembership.create({ data: { userId, businessId, role: "OWNER" } });
     await prisma.orgMembership.create({ data: { userId: strangerId, businessId: otherBusinessId, role: "OWNER" } });
@@ -122,6 +122,26 @@ describe("Google Calendar callback", () => {
     session.current = { userId, activeBusinessId: businessId };
     expect(location(await hit({ code: "c", state: s2 })).searchParams.get("connect_error")).toBe("tenant");
     expect(await prisma.integration.count({ where: { businessId: otherBusinessId } })).toBe(0);
+  });
+
+  it("enforces the plan's connected-integrations allowance at the callback: a full Free workspace is refused and the grant is revoked", async () => {
+    // Fill Free's two slots with other providers, then finish a genuine Google flow.
+    await prisma.integration.upsert({ where: { businessId_provider: { businessId, provider: "APPLE_CALENDAR" } }, create: { businessId, provider: "APPLE_CALENDAR", status: "CONNECTED", accessToken: "abcd-efgh-ijkl-mnop" }, update: { status: "CONNECTED", accessToken: "abcd-efgh-ijkl-mnop" } });
+    await prisma.integration.upsert({ where: { businessId_provider: { businessId, provider: "SMS" } }, create: { businessId, provider: "SMS", status: "CONNECTED", externalAccount: "+15550001111" }, update: { status: "CONNECTED" } });
+    await prisma.integration.updateMany({ where: { businessId, provider: "GOOGLE_CALENDAR" }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null } });
+    session.current = { userId, activeBusinessId: businessId };
+    const { state, nonce } = await signOAuthStateRaw({ provider: "google", purpose: "calendar", businessId, userId });
+    cookieStore.nonce = nonce;
+    calls.length = 0;
+    const r = await hit({ code: "auth-code", state });
+    const back = location(r);
+    expect(back.searchParams.get("connect_error")).toBe("limit");
+    expect(back.searchParams.get("provider")).toBe("GOOGLE_CALENDAR");
+    expect(calls.some((c) => c.includes("oauth2.googleapis.com/revoke"))).toBe(true);
+    const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId, provider: "GOOGLE_CALENDAR" } } });
+    expect(row?.status).toBe("NOT_CONNECTED");
+    expect(row?.refreshToken).toBeNull();
+    await prisma.integration.deleteMany({ where: { businessId, provider: { in: ["APPLE_CALENDAR", "SMS"] } } });
   });
 
   it("a canceled authorization connects nothing and explains itself", async () => {

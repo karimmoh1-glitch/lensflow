@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/db";
 import { formatDistanceToNowStrict } from "date-fns";
 import { PROVIDERS, providerConfigured, displayStatus, type ProviderSpec } from "@/lib/integrations/registry";
-import { smsEntitled } from "@/lib/billing";
+import { smsEntitled, PLANS, limitLabel } from "@/lib/billing";
+import { usageFor, countsTowardQuota, limitMessage } from "@/server/integrationQuota";
 import { stripeIsLive } from "@/lib/payments";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { readCalendarSettings } from "@/server/calendarSync";
@@ -56,6 +57,7 @@ const ERRORS: Record<string, string> = {
   no_waba: "returned no WhatsApp Business Account for that login.",
   no_phone: "has no phone number on that WhatsApp Business Account yet — add one in Meta Business Manager, then connect again.",
   provider: "could not be connected. The provider returned an error and nothing was saved — try again in a minute.",
+  limit: "could not be connected: your plan's connected-integrations limit is reached. Disconnect one, or upgrade to connect more.",
 };
 
 export async function IntegrationsHub({ business, role, connected, connectError, errorProvider }: { business: Business; role: string; connected?: string; connectError?: string; errorProvider?: string }) {
@@ -63,6 +65,11 @@ export async function IntegrationsHub({ business, role, connected, connectError,
   const byProvider = new Map(rows.map((r) => [r.provider, r]));
   const encryptionOk = process.env.NODE_ENV !== "production" || tokenCryptoConfigured();
   const owner = role === "OWNER";
+  // The same arithmetic the server uses to refuse a connection — shown, never decided, here.
+  const usage = usageFor(business, rows);
+  const planName = PLANS[usage.plan].name;
+  const nextPlanName = usage.nextPlan ? PLANS[usage.nextPlan].name : null;
+  const limitCopy = usage.atLimit ? limitMessage(usage) : null;
 
   const model = (provider: IntegrationProvider): CardModel => {
     const spec: ProviderSpec = PROVIDERS[provider as keyof typeof PROVIDERS];
@@ -72,6 +79,19 @@ export async function IntegrationsHub({ business, role, connected, connectError,
     const canStore = spec.auth === "oauth" || spec.auth === "app_password" ? encryptionOk : true;
     const planOk = provider === "SMS" ? smsEntitled(business) : true;
     const cal = row && (provider === "GOOGLE_CALENDAR" || provider === "APPLE_CALENDAR") ? readCalendarSettings(row) : null;
+    // A provider that is not currently holding a slot needs a free one to (re)connect.
+    const holdsSlot = Boolean(row && countsTowardQuota(row));
+    const needsSlot = (status === "disconnected" || status === "needs_attention") && !holdsSlot;
+    const limitReached = needsSlot && usage.atLimit;
+    const pill: CardModel["pill"] =
+      status === "connected" ? { label: "Connected", tone: "success" }
+      : status === "always_on" ? { label: "Always on", tone: "success" }
+      : status === "sync_issue" ? { label: "Sync issue", tone: "warning" }
+      : status === "needs_attention" ? { label: "Needs attention", tone: "accent" }
+      : status === "unavailable" ? { label: owner ? "Configuration required" : "Not available yet", tone: "neutral" }
+      : !canStore ? { label: "Configuration required", tone: "neutral" }
+      : !planOk || limitReached ? { label: "Upgrade required", tone: "signal" }
+      : { label: "Available", tone: "neutral" };
     return {
       provider,
       name: spec.name,
@@ -84,7 +104,9 @@ export async function IntegrationsHub({ business, role, connected, connectError,
       adminNote: owner && !canStore && (status === "disconnected" || status === "unavailable") ? "Daythread configuration required: the deployment's credential encryption key isn't set, so new connections are paused. See Billing → Setup." : owner && !configured && spec.env.length > 0 && status === "unavailable" ? `Daythread configuration required: ${spec.name} credentials aren't set on this deployment.` : null,
       approval: spec.approval ?? null,
       capabilities: CAPS[provider] ?? [],
-      entitled: planOk && canStore,
+      entitled: planOk && canStore && !limitReached,
+      pill,
+      limit: limitReached && limitCopy ? { message: limitCopy, upgradePlan: nextPlanName, upgradeHref: "/dashboard/billing" } : !planOk ? { message: `${spec.name} is part of the Pro plan and above.`, upgradePlan: "Pro", upgradeHref: "/dashboard/billing" } : null,
       calendarsConnected: cal?.selected.length,
       accent: ACCENT[provider] ?? "#101114",
     };
@@ -96,7 +118,9 @@ export async function IntegrationsHub({ business, role, connected, connectError,
       ? { tone: "warning" as const, text: `${errorProvider && PROVIDERS[errorProvider as keyof typeof PROVIDERS] ? PROVIDERS[errorProvider as keyof typeof PROVIDERS].name : "The integration"} ${ERRORS[connectError] ?? ERRORS.provider}` }
       : null;
   const wanted = rows.filter((r) => r.wanted && r.status === "NOT_CONNECTED").map((r) => PROVIDERS[r.provider as keyof typeof PROVIDERS]?.name).filter(Boolean);
-  const connectedCount = rows.filter((r) => r.status === "CONNECTED" || r.status === "SYNC_ERROR").length;
+  const connectedCount = usage.active;
+  const unlimited = !Number.isFinite(usage.limit);
+  const pct = unlimited ? 0 : Math.min(100, Math.round((usage.active / usage.limit) * 100));
   const icon = (provider: IntegrationProvider) =>
     provider === "GOOGLE_CALENDAR" ? <CalendarDays className="w-5 h-5 text-[#4285F4]" strokeWidth={2} aria-hidden /> : provider === "APPLE_CALENDAR" ? <Apple className="w-5 h-5 text-ink" strokeWidth={2} aria-hidden /> : ICON[provider] ? <ChannelIcon k={ICON[provider]!} size={24} /> : null;
 
@@ -106,11 +130,34 @@ export async function IntegrationsHub({ business, role, connected, connectError,
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Integrations</p>
         <h2 className="mt-2 font-sans font-extrabold text-[1.6rem] md:text-[1.9rem] leading-[1.05] tracking-[-0.03em] text-ink">Connect the tools your business already uses.</h2>
         <p className="mt-2 max-w-xl text-sm text-ink/65 leading-relaxed">Daythread brings your conversations, calendar, clients and workflows together. Every connection uses the provider&rsquo;s own sign-in — there is never a key to paste.</p>
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-ink/55">
-          <span><span className="font-semibold text-ink">{connectedCount}</span> connected</span>
-          {wanted.length > 0 && <span className="text-signal-text font-semibold">You said you use {wanted.join(", ")} — connect {wanted.length === 1 ? "it" : "them"} below.</span>}
+        <div className="mt-5 rounded-2xl border border-border bg-white/80 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3" aria-label="Connected integrations">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="font-sans font-extrabold text-[1.25rem] tracking-[-0.02em] text-ink tabular-nums">{unlimited ? "Unlimited" : `${connectedCount} / ${usage.limit}`}</span>
+              <span className="text-sm text-ink/60">{unlimited ? `integrations on ${planName}` : "integrations connected"}</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/40 ml-auto">{planName} plan</span>
+            </div>
+            {!unlimited && (
+              <div className="mt-2 h-1.5 rounded-full bg-black/[0.06] overflow-hidden" role="progressbar" aria-valuenow={connectedCount} aria-valuemin={0} aria-valuemax={usage.limit} aria-label="Connected integrations used">
+                <div className={cn2("h-full rounded-full transition-[width]", usage.overQuota ? "bg-warning" : usage.atLimit ? "bg-signal" : "bg-ink")} style={{ width: `${pct}%` }} />
+              </div>
+            )}
+            {!unlimited && !usage.atLimit && <p className="mt-1.5 text-[11px] text-ink/50">{usage.limit - connectedCount} more can be connected on {planName}.{nextPlanName ? ` ${PLANS[usage.nextPlan!].name} includes ${limitLabel(PLANS[usage.nextPlan!].maxIntegrations).toLowerCase()}.` : ""}</p>}
+            {usage.atLimit && !usage.overQuota && <p className="mt-1.5 text-[11px] text-signal-text font-semibold">Integration limit reached. {planName} includes {usage.limit} connected integration{usage.limit === 1 ? "" : "s"}.{nextPlanName ? ` Upgrade to ${nextPlanName} to connect more.` : ""}</p>}
+          </div>
+          {usage.atLimit && nextPlanName && (
+            <Link href="/dashboard/billing" className="inline-flex items-center justify-center h-9 px-4 rounded-full bg-signal text-white text-sm font-bold shrink-0 hover:bg-signal-text transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50">Upgrade to {nextPlanName} →</Link>
+          )}
         </div>
+        {wanted.length > 0 && <p className="mt-3 text-xs text-signal-text font-semibold">You said you use {wanted.join(", ")} — connect {wanted.length === 1 ? "it" : "them"} below.</p>}
       </header>
+
+      {usage.overQuota && (
+        <div role="alert" className="rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3.5 text-sm text-ink/80">
+          <span className="font-semibold text-ink">You have {connectedCount} connected integrations; {planName} includes {usage.limit}.</span> Nothing was disconnected and everything keeps working. New connections are paused until you disconnect down to {usage.limit}{nextPlanName ? `, or upgrade to ${nextPlanName}` : ""}.
+          {nextPlanName && <Link href="/dashboard/billing" className="ml-2 font-semibold text-signal-text hover:underline">See plans →</Link>}
+        </div>
+      )}
 
       {banner && (
         <div role={banner.tone === "warning" ? "alert" : "status"} className={cn2(banner.tone === "success" ? "rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-3 text-sm text-success-text" : "rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80")}>{banner.text}</div>

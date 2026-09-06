@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { deliverToCustomer, type Delivery } from "@/server/deliver";
-import { automationsEntitled } from "@/lib/billing";
+import { automationsEntitled, planLimits } from "@/lib/billing";
 import { toZonedDisplayDate } from "@/lib/utils";
 import { format, subHours, addHours, subDays } from "date-fns";
 import type { AutomationTrigger, Prisma } from "@prisma/client";
@@ -114,10 +114,20 @@ async function runOne(automation: { id: string; businessId: string; name: string
   const record = (result: RunResult) =>
     prisma.automationExecution.create({ data: { businessId, automationId: automation.id, targetType: target.targetType, targetId: target.targetId, result } });
 
-  // Server-side entitlement at run time: a downgraded business's automations stop.
+  // Server-side entitlement at run time: a downgraded business's automations stop, and a
+  // plan with a count cap runs only its oldest N switched-on automations — the rest stay
+  // configured but paused until something is turned off or the plan changes.
   if (!automationsEntitled(business)) {
     await record("skipped");
     return "skipped";
+  }
+  const cap = planLimits(business).maxAutomations;
+  if (Number.isFinite(cap)) {
+    const allowed = await prisma.automation.findMany({ where: { businessId, enabled: true }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: cap, select: { id: true } });
+    if (!allowed.some((a) => a.id === automation.id)) {
+      await record("skipped");
+      return "skipped";
+    }
   }
 
   const ctx = await loadContext(businessId, target);

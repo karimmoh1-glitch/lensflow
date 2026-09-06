@@ -6,6 +6,7 @@ import { Thread, ThreadNode } from "@/components/Thread";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNowStrict } from "date-fns";
 import { AutomationToggle } from "./AutomationToggle";
+import { NewAutomationButton, EditAutomationButton } from "./AutomationEditor";
 import Link from "next/link";
 import { planLimits, effectivePlan, PLANS, limitLabel } from "@/lib/billing";
 
@@ -63,8 +64,14 @@ export default async function AutomationsPage() {
       <PageHeader
         title="Automations"
         description="The repetitive parts of your business, handled while you work."
-        action={<span className="text-xs font-semibold text-ink/55 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/40">· {PLANS[plan].name}</span></span>}
+        action={
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-xs font-semibold text-ink/55 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/40">· {PLANS[plan].name}</span></span>
+            <NewAutomationButton />
+          </div>
+        }
       />
+      <p className="sm:hidden -mt-4 mb-5 text-xs font-semibold text-ink/55 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/40">· {PLANS[plan].name}</span></p>
       {capped && on >= limits.maxAutomations && !overCap && (
         <div className="mb-5 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span><span className="font-semibold text-ink">Automation limit reached.</span> {PLANS[plan].name} includes {limits.maxAutomations} switched on at once. Turn one off to enable another, or upgrade to Pro for {limitLabel(PLANS.PRO.maxAutomations).toLowerCase()} automations.</span>
@@ -79,8 +86,9 @@ export default async function AutomationsPage() {
 
       {automations.length === 0 ? (
         <EmptyState
-          title="No automations yet"
-          description="Confirmations, reminders, and follow-ups can send themselves the moment a booking or payment changes."
+          title="Nothing runs on its own yet"
+          description="Confirmations, reminders, thank-yous and follow-ups can send themselves the moment a booking or payment changes. Start from a recipe; every message is yours to edit."
+          action={<NewAutomationButton />}
         />
       ) : (
         <div className="space-y-3 mb-10">
@@ -92,7 +100,10 @@ export default async function AutomationsPage() {
                     <span className="truncate">{a.name}</span>
                     {a.enabled && !running.has(a.id) && <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.1em] text-warning-text bg-warning-soft rounded-full px-1.5 py-0.5">Paused by plan</span>}
                   </span>
-                  <AutomationToggle id={a.id} enabled={a.enabled} />
+                  <div className="flex items-center gap-2 shrink-0">
+                    <EditAutomationButton automation={{ id: a.id, name: a.name, trigger: a.trigger, action: a.action, offsetHours: a.offsetHours, messageTemplate: a.messageTemplate }} />
+                    <AutomationToggle id={a.id} enabled={a.enabled} />
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
                   <Beat label="When" tone="signal" text={TRIGGER[a.trigger]?.label ?? a.trigger.toLowerCase()} />

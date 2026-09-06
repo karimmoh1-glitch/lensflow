@@ -6,6 +6,8 @@ import { Thread, ThreadNode } from "@/components/Thread";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNowStrict } from "date-fns";
 import { AutomationToggle } from "./AutomationToggle";
+import Link from "next/link";
+import { planLimits, effectivePlan, PLANS, limitLabel } from "@/lib/billing";
 
 // Every automation reads as one sentence in three beats — WHEN something happens, IF a
 // condition holds, THEN Daythread acts — colored with the same meanings as everywhere
@@ -48,9 +50,32 @@ export default async function AutomationsPage() {
     prisma.automationExecution.findMany({ where: { businessId: business.id }, orderBy: { ranAt: "desc" }, take: 8, include: { automation: true } }),
   ]);
 
+  const limits = planLimits(business);
+  const plan = effectivePlan(business);
+  const on = automations.filter((a) => a.enabled).length;
+  const capped = Number.isFinite(limits.maxAutomations);
+  const overCap = capped && on > limits.maxAutomations;
+  // Which switched-on automations actually run under a count cap: the oldest N, same rule as the runner.
+  const running = new Set(automations.filter((a) => a.enabled).slice(0, capped ? limits.maxAutomations : undefined).map((a) => a.id));
+
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title="Automations" description="The repetitive parts of your business, handled while you work." />
+      <PageHeader
+        title="Automations"
+        description="The repetitive parts of your business, handled while you work."
+        action={<span className="text-xs font-semibold text-ink/55 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/40">· {PLANS[plan].name}</span></span>}
+      />
+      {capped && on >= limits.maxAutomations && !overCap && (
+        <div className="mb-5 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span><span className="font-semibold text-ink">Automation limit reached.</span> {PLANS[plan].name} includes {limits.maxAutomations} switched on at once. Turn one off to enable another, or upgrade to Pro for {limitLabel(PLANS.PRO.maxAutomations).toLowerCase()} automations.</span>
+          <Link href="/dashboard/billing" className="text-signal-text font-semibold hover:underline">See plans →</Link>
+        </div>
+      )}
+      {overCap && (
+        <div role="alert" className="mb-5 rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">
+          <span className="font-semibold text-ink">{on} automations are on; {PLANS[plan].name} runs {limits.maxAutomations}.</span> Nothing was deleted — the {limits.maxAutomations} oldest keep running and the rest are paused (marked below) until you turn some off or upgrade. <Link href="/dashboard/billing" className="text-signal-text font-semibold hover:underline">See plans →</Link>
+        </div>
+      )}
 
       {automations.length === 0 ? (
         <EmptyState
@@ -63,10 +88,13 @@ export default async function AutomationsPage() {
             <Card key={a.id} className={cn(!a.enabled && "opacity-60")}>
               <div className="px-5 py-4">
                 <div className="flex items-center justify-between gap-4 mb-3">
-                  <span className="text-sm font-medium text-ink">{a.name}</span>
+                  <span className="text-sm font-medium text-ink flex items-center gap-2 min-w-0">
+                    <span className="truncate">{a.name}</span>
+                    {a.enabled && !running.has(a.id) && <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.1em] text-warning-text bg-warning-soft rounded-full px-1.5 py-0.5">Paused by plan</span>}
+                  </span>
                   <AutomationToggle id={a.id} enabled={a.enabled} />
                 </div>
-                <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
                   <Beat label="When" tone="signal" text={TRIGGER[a.trigger]?.label ?? a.trigger.toLowerCase()} />
                   <Arrow />
                   <Beat label="If" tone="thinking" text={condition(a.trigger, a.offsetHours)} />
@@ -127,7 +155,7 @@ function Beat({ label, tone, text }: { label: string; tone: keyof typeof BEAT; t
 
 function Arrow() {
   return (
-    <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden className="text-ink/25 shrink-0">
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden className="text-ink/25 shrink-0 hidden sm:block">
       <path d="M1 6h14m0 0-4-4m4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );

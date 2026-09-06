@@ -7,6 +7,7 @@ import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { ingestInboundMessage } from "@/server/leadIngestion";
+import { activateIntegration } from "@/server/integrationQuota";
 
 /** Instagram Login callback: code → long-lived token → profile → subscribed to webhooks →
  * first pull of recent conversations. Only a professional account can complete this. */
@@ -39,11 +40,17 @@ export async function GET(req: Request) {
     const elsewhere = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: profile.id, businessId: { not: verified.state.businessId }, status: { not: "NOT_CONNECTED" } } });
     if (elsewhere) return fail("in_use");
     await subscribeInstagramWebhooks(tokens.accessToken, profile.id).catch((err) => reportFailure("oauth", "Instagram webhook subscription failed", { businessId: verified.state.businessId, provider: "INSTAGRAM", error: err, level: "warn" }));
-    const row = await prisma.integration.upsert({
-      where: { businessId_provider: { businessId: verified.state.businessId, provider: "INSTAGRAM" } },
-      create: { businessId: verified.state.businessId, provider: "INSTAGRAM", status: "CONNECTED", externalAccount: `@${profile.username}`, externalId: profile.id, accessToken: tokens.accessToken, tokenExpiresAt: tokens.expiresAt, scopes: "instagram_business_basic,instagram_business_manage_messages", lastError: null, lastErrorAt: null, wanted: false },
-      update: { status: "CONNECTED", externalAccount: `@${profile.username}`, externalId: profile.id, accessToken: tokens.accessToken, tokenExpiresAt: tokens.expiresAt, lastError: null, lastErrorAt: null, lastSyncStatus: null, wanted: false },
+    const activation = await activateIntegration({
+      businessId: verified.state.businessId,
+      provider: "INSTAGRAM",
+      create: { externalAccount: `@${profile.username}`, externalId: profile.id, accessToken: tokens.accessToken, tokenExpiresAt: tokens.expiresAt, scopes: "instagram_business_basic,instagram_business_manage_messages", lastError: null, lastErrorAt: null, wanted: false },
+      update: { externalAccount: `@${profile.username}`, externalId: profile.id, accessToken: tokens.accessToken, tokenExpiresAt: tokens.expiresAt, lastError: null, lastErrorAt: null, lastSyncStatus: null, wanted: false },
     });
+    if (!activation.ok) {
+      await track("integration_limit_reached", { businessId: verified.state.businessId, properties: { provider: "INSTAGRAM", plan: activation.usage.plan } });
+      return fail("limit");
+    }
+    const row = activation.row;
     // First sync: recent DMs, so the inbox isn't empty until someone writes.
     try {
       const convos = await listInstagramConversations(tokens.accessToken, 20);

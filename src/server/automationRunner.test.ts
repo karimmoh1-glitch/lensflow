@@ -70,12 +70,19 @@ describe("automation runner", () => {
     expect(await prisma.automationExecution.count({ where: { automationId: reminder.id } })).toBe(1);
   });
 
-  it("stops running for a business whose plan lapsed — server-side, not just the toggle", async () => {
+  it("a lapsed plan is held to Free's cap at run time: the oldest 3 switched-on automations run, the rest are skipped — server-side, not just the toggle", async () => {
     await prisma.business.update({ where: { id: businessId }, data: { billingStatus: "CANCELED" } });
+    // Two already exist and are on; add a third filler so the thank-you is the fourth.
+    await prisma.automation.create({ data: { businessId, name: "Filler", trigger: "LEAD_INACTIVE", offsetHours: 72, action: "SEND_FOLLOW_UP", messageTemplate: "Still there?" } });
     const lapsed = await prisma.automation.create({ data: { businessId, name: "Thank-you", trigger: "SHOOT_COMPLETED", offsetHours: 0, action: "SEND_THANK_YOU", messageTemplate: "Thank you!" } });
     await fireAutomationEvent({ businessId, trigger: "SHOOT_COMPLETED", targetType: "booking", targetId: bookingId });
     const exec = await prisma.automationExecution.findFirst({ where: { automationId: lapsed.id } });
     expect(exec?.result).toBe("skipped");
     expect(await prisma.message.count({ where: { direction: "OUTBOUND", conversation: { businessId, clientId } } })).toBe(2);
+    // Turn an older one off and it is within the cap again.
+    await prisma.automation.updateMany({ where: { businessId, name: "Filler" }, data: { enabled: false } });
+    await prisma.automationExecution.deleteMany({ where: { automationId: lapsed.id } });
+    await fireAutomationEvent({ businessId, trigger: "SHOOT_COMPLETED", targetType: "booking", targetId: bookingId });
+    expect((await prisma.automationExecution.findFirst({ where: { automationId: lapsed.id } }))?.result).toBe("not_configured");
   });
 });

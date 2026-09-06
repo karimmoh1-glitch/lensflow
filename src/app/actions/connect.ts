@@ -15,6 +15,7 @@ import { smsEntitled } from "@/lib/billing";
 import { track } from "@/lib/analytics";
 import { reportFailure } from "@/lib/observe";
 import { disconnectGoogle } from "@/app/actions/googleAuth";
+import { activateIntegration, canActivate, limitMessage } from "@/server/integrationQuota";
 import { syncCalendarNow } from "@/app/actions/calendars";
 import { z } from "zod";
 import type { IntegrationProvider } from "@prisma/client";
@@ -25,12 +26,22 @@ function guardEncryption() {
   if (process.env.NODE_ENV === "production" && !tokenCryptoConfigured()) throw new Error("Connections are paused until the deployment's encryption key is configured.");
 }
 
+/** Before sending someone to a provider: if the plan has no free slot, come straight back
+ * with the reason instead of a wasted trip. The callback enforces it again, atomically. */
+async function guardQuotaOrRedirect(businessId: string, provider: IntegrationProvider) {
+  const check = await canActivate(businessId, provider);
+  if (check.ok) return;
+  await track("integration_limit_reached", { businessId, properties: { provider, plan: check.usage.plan, stage: "start" } });
+  redirect(`/dashboard/settings?tab=connections&connect_error=limit&provider=${provider}`);
+}
+
 /** Instagram: Meta's own authorization screen. Professional accounts only. */
 export async function connectInstagram() {
   const ctx = await requireRole([...ADMIN]);
   if (!ctx) throw new Error("unauthorized");
   if (!instagramConfigured()) throw new Error("Instagram isn't configured on this deployment.");
   guardEncryption();
+  await guardQuotaOrRedirect(ctx.business.id, "INSTAGRAM");
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "INSTAGRAM" } });
   const state = await signOAuthState({ provider: "instagram", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId });
   redirect(instagramAuthUrl(state));
@@ -42,6 +53,7 @@ export async function connectWhatsApp() {
   if (!ctx) throw new Error("unauthorized");
   if (!whatsappConfigured()) throw new Error("WhatsApp isn't configured on this deployment.");
   guardEncryption();
+  await guardQuotaOrRedirect(ctx.business.id, "WHATSAPP");
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "WHATSAPP" } });
   const state = await signOAuthState({ provider: "whatsapp", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId });
   redirect(whatsappAuthUrl(state));
@@ -67,6 +79,11 @@ export async function connectAppleCalendar(appleId: string, appSpecificPassword:
   const parsed = AppleSchema.safeParse({ appleId, appSpecificPassword });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the details and try again." };
   const { appleId: id, appSpecificPassword: pw } = parsed.data;
+  const slot = await canActivate(ctx.business.id, "APPLE_CALENDAR");
+  if (!slot.ok) {
+    await track("integration_limit_reached", { businessId: ctx.business.id, properties: { provider: "APPLE_CALENDAR", plan: slot.usage.plan, stage: "start" } });
+    return { error: limitMessage(slot.usage) };
+  }
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "APPLE_CALENDAR" } });
   try {
     const client = makeClient(id, pw);
@@ -80,11 +97,16 @@ export async function connectAppleCalendar(appleId: string, appSpecificPassword:
     const firstWritable = available.find((c) => !c.readOnly) ?? available[0];
     const selected = keep.length ? keep : [firstWritable.id];
     const settings = { available, selected, bookingCalendar: priorSettings.bookingCalendar && selected.includes(priorSettings.bookingCalendar) ? priorSettings.bookingCalendar : selected[0], cursors: {}, baseUrl: found.baseUrl, principal: found.principal, calendarHome: found.calendarHome };
-    await prisma.integration.upsert({
-      where: { businessId_provider: { businessId: ctx.business.id, provider: "APPLE_CALENDAR" } },
-      create: { businessId: ctx.business.id, provider: "APPLE_CALENDAR", status: "CONNECTED", externalAccount: id, externalId: found.principal, accessToken: pw, settings, lastError: null, lastErrorAt: null, wanted: false },
-      update: { status: "CONNECTED", externalAccount: id, externalId: found.principal, accessToken: pw, settings, lastError: null, lastErrorAt: null, lastSyncStatus: null, syncCursor: null, wanted: false },
+    const activation = await activateIntegration({
+      businessId: ctx.business.id,
+      provider: "APPLE_CALENDAR",
+      create: { externalAccount: id, externalId: found.principal, accessToken: pw, settings, lastError: null, lastErrorAt: null, wanted: false },
+      update: { externalAccount: id, externalId: found.principal, accessToken: pw, settings, lastError: null, lastErrorAt: null, lastSyncStatus: null, syncCursor: null, wanted: false },
     });
+    if (!activation.ok) {
+      await track("integration_limit_reached", { businessId: ctx.business.id, properties: { provider: "APPLE_CALENDAR", plan: activation.usage.plan } });
+      return { error: limitMessage(activation.usage) };
+    }
     const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "APPLE_CALENDAR" } } });
     if (row) await syncCalendarIn(row);
     await track("integration_connected", { businessId: ctx.business.id, properties: { provider: "APPLE_CALENDAR" } });
@@ -145,14 +167,26 @@ export async function claimSmsNumber(phoneNumber: string): Promise<{ error?: str
   if (!smsEntitled(ctx.business)) return { error: "A text number is part of the Pro plan and above." };
   if (ctx.business.twilioPhoneNumber) return { error: "This business already has a number." };
   if (!/^\+\d{8,15}$/.test(phoneNumber)) return { error: "Choose a number from the list." };
+  const slot = await canActivate(ctx.business.id, "SMS");
+  if (!slot.ok) {
+    await track("integration_limit_reached", { businessId: ctx.business.id, properties: { provider: "SMS", plan: slot.usage.plan, stage: "start" } });
+    return { error: limitMessage(slot.usage) };
+  }
   try {
     const bought = await provisionNumber(phoneNumber, ctx.business.name);
-    await prisma.business.update({ where: { id: ctx.business.id }, data: { twilioPhoneNumber: bought.phoneNumber } });
-    await prisma.integration.upsert({
-      where: { businessId_provider: { businessId: ctx.business.id, provider: "SMS" } },
-      create: { businessId: ctx.business.id, provider: "SMS", status: "CONNECTED", externalAccount: bought.phoneNumber, externalId: bought.sid, lastSyncedAt: new Date(), lastSyncStatus: "ok", wanted: false },
-      update: { status: "CONNECTED", externalAccount: bought.phoneNumber, externalId: bought.sid, lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, wanted: false },
+    const activation = await activateIntegration({
+      businessId: ctx.business.id,
+      provider: "SMS",
+      create: { externalAccount: bought.phoneNumber, externalId: bought.sid, lastSyncedAt: new Date(), lastSyncStatus: "ok", wanted: false },
+      update: { externalAccount: bought.phoneNumber, externalId: bought.sid, lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, wanted: false },
     });
+    if (!activation.ok) {
+      // Lost the race with another connection: give the number back, keep nothing.
+      await releaseNumber(bought.sid).catch((err) => reportFailure("oauth", "Twilio release after quota refusal failed", { businessId: ctx.business.id, provider: "SMS", error: err, level: "warn" }));
+      await track("integration_limit_reached", { businessId: ctx.business.id, properties: { provider: "SMS", plan: activation.usage.plan } });
+      return { error: limitMessage(activation.usage) };
+    }
+    await prisma.business.update({ where: { id: ctx.business.id }, data: { twilioPhoneNumber: bought.phoneNumber } });
     await track("integration_connected", { businessId: ctx.business.id, properties: { provider: "SMS" } });
     revalidatePath("/dashboard/settings");
     return { phoneNumber: bought.phoneNumber };

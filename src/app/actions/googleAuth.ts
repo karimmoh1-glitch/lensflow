@@ -10,16 +10,25 @@ import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { ingestInboundMessage } from "@/server/leadIngestion";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
+import { canActivate } from "@/server/integrationQuota";
 
 /** Kicks off Google's real consent screen for Gmail (default) or Google Calendar. Never a
  * toggle. Only reachable when Daythread's Google OAuth client is configured, and only when
  * tokens can be stored encrypted. */
-export async function connectGoogle(purpose: "gmail" | "calendar" = "gmail") {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function connectGoogle(purpose: "gmail" | "calendar" = "gmail", session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
   if (!googleOAuthConfigured()) throw new Error("Google sign-in isn't configured on this deployment.");
   if (process.env.NODE_ENV === "production" && !tokenCryptoConfigured()) throw new Error("Connections are paused until the deployment's encryption key is configured.");
-  await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: purpose === "calendar" ? "GOOGLE_CALENDAR" : "EMAIL" } });
+  const provider = purpose === "calendar" ? "GOOGLE_CALENDAR" : "EMAIL";
+  // No free slot on the plan: say so now rather than after Google's consent screen. The
+  // callback enforces the same limit atomically regardless.
+  const slot = await canActivate(ctx.business.id, provider);
+  if (!slot.ok) {
+    await track("integration_limit_reached", { businessId: ctx.business.id, properties: { provider, plan: slot.usage.plan, stage: "start" } });
+    redirect(`/dashboard/settings?tab=connections&connect_error=limit&provider=${provider}`);
+  }
+  await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider } });
   const state = await signOAuthState({ provider: "google", purpose, businessId: ctx.business.id, userId: ctx.session.userId });
   redirect(await getGoogleAuthUrl(state, purpose));
 }

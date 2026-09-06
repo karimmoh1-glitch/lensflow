@@ -12,17 +12,17 @@ import { ValueLadder } from "./landing/ValueLadder";
 const LADDER: Record<PlanKey, { who: string; why?: string; gets: string[] }> = {
   FREE: {
     who: "Get your business onto one thread.",
-    gets: ["Every conversation, booking and payment in one place", "Automated and promotional mail kept out of your way", "Booking page with deposits", "Payment tracking"],
+    gets: ["2 connected integrations — your inbox and your calendar, to start", "3 automations and a booking page that takes deposits", "Priority inbox: automated and promotional mail kept out of your way", "Limited AI — a few Copilot questions a day"],
   },
   PRO: {
     who: "Know what deserves your attention.",
     why: "For people who are serious about running their business without living inside their inbox.",
-    gets: ["Priority inbox that says what needs you, by name", "Automations that actually run — confirmations, reminders, follow-ups", "Summaries and reply drafts, grounded in your prices", "Where every relationship stands, and what to do next"],
+    gets: ["6 connected integrations — Gmail, Instagram, WhatsApp, SMS, Google and Apple Calendar", "Unlimited automations that actually run", "Full AI and Copilot — summaries and reply drafts, grounded in your prices", "Up to 3 team members"],
   },
   BUSINESS: {
-    who: "Run the business from one intelligent operating system.",
-    why: "For operators with a team, real volume, and no time to inspect everything by hand.",
-    gets: ["Your business in one glance — what's at risk, what's converting, how fast you respond", "Revenue sitting in open conversations, priced from what people asked for", "Unlimited seats, roles and partner assignment", "Business memory — who's most valuable, who's going cold, who's due a follow-up"],
+    who: "Let Daythread run more of the business.",
+    why: "For businesses that want Daythread to operate their workflow, not just organize it.",
+    gets: ["Daythread Business Agent — proposes and carries out the day's work across conversations, bookings, calendars, follow-ups and payments", "Unlimited connected integrations, automations and team members", "Advanced analytics — what's at risk, what's converting, how fast you respond", "Advanced and custom workflows"],
   },
 };
 

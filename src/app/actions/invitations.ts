@@ -88,7 +88,7 @@ export async function invitePartner(formData: FormData): Promise<{ error?: strin
   ]);
   if (!canAddTeamSeat(business, activeSeats + pendingPartnerInvites)) {
     const limit = planLimits(business).maxTeamSeats;
-    return { error: `Your plan is limited to ${limit} team seat${limit === 1 ? "" : "s"}. Upgrade in Billing to invite more people.` };
+    return { error: `Your plan includes ${limit} team member${limit === 1 ? "" : "s"}. Upgrade in Billing to invite more people.` };
   }
 
   await prisma.invitation.updateMany({

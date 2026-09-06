@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { effectivePlan, planLimits, canAddTeamSeat, smsEntitled, automationsEntitled, aiEntitled, PLANS } from "./billing";
+import { effectivePlan, planLimits, canAddTeamSeat, canConnectIntegration, canEnableAutomation, businessAgentEntitled, planForIntegrations, smsEntitled, automationsEntitled, aiEntitled, limitLabel, PLANS } from "./billing";
 
 // A business is never trusted by planTier alone — billingStatus (mirrored from Stripe via
 // the webhook) gates whether that tier is actually entitled right now. These tests exist
@@ -41,10 +41,10 @@ describe("canAddTeamSeat", () => {
     expect(canAddTeamSeat(free, 0)).toBe(true);
   });
 
-  it("allows up to 5 seats on an active Pro plan, blocks the 6th", () => {
+  it("allows up to 3 seats on an active Pro plan, blocks the 4th", () => {
     const pro = { planTier: "PRO" as const, billingStatus: "ACTIVE" as const };
-    expect(canAddTeamSeat(pro, 4)).toBe(true);
-    expect(canAddTeamSeat(pro, 5)).toBe(false);
+    expect(canAddTeamSeat(pro, 2)).toBe(true);
+    expect(canAddTeamSeat(pro, 3)).toBe(false);
   });
 
   it("a canceled Pro subscription is held to Free's seat limit, not Pro's", () => {
@@ -72,18 +72,61 @@ describe("smsEntitled", () => {
 // These two guard the entitlement checks actually wired into toggleAutomation
 // (src/app/actions/automations.ts) and generateDraftAction (src/app/actions/inbox.ts) —
 // a regression here silently turns a paid feature free for every business on Free.
-describe("automationsEntitled", () => {
-  it("Free never gets automations", () => {
-    expect(automationsEntitled({ planTier: "FREE", billingStatus: null })).toBe(false);
+describe("automations", () => {
+  const free = { planTier: "FREE" as const, billingStatus: null };
+  it("Free gets 3 automations, not a 4th", () => {
+    expect(automationsEntitled(free)).toBe(true);
+    expect(canEnableAutomation(free, 0)).toBe(true);
+    expect(canEnableAutomation(free, 2)).toBe(true);
+    expect(canEnableAutomation(free, 3)).toBe(false);
   });
 
-  it("Pro and Business get automations while actually entitled", () => {
-    expect(automationsEntitled({ planTier: "PRO", billingStatus: "ACTIVE" })).toBe(true);
-    expect(automationsEntitled({ planTier: "BUSINESS", billingStatus: "TRIALING" })).toBe(true);
+  it("Pro and Business are unlimited while actually entitled", () => {
+    expect(canEnableAutomation({ planTier: "PRO", billingStatus: "ACTIVE" }, 500)).toBe(true);
+    expect(canEnableAutomation({ planTier: "BUSINESS", billingStatus: "TRIALING" }, 500)).toBe(true);
   });
 
-  it("a lapsed Pro subscription loses automations entitlement", () => {
-    expect(automationsEntitled({ planTier: "PRO", billingStatus: "CANCELED" })).toBe(false);
+  it("a lapsed Pro subscription is held to Free's cap", () => {
+    expect(canEnableAutomation({ planTier: "PRO", billingStatus: "CANCELED" }, 3)).toBe(false);
+  });
+});
+
+describe("connected integrations", () => {
+  const free = { planTier: "FREE" as const, billingStatus: null };
+  const pro = { planTier: "PRO" as const, billingStatus: "ACTIVE" as const };
+  const business = { planTier: "BUSINESS" as const, billingStatus: "ACTIVE" as const };
+  it("Free: 0, 1 and 2 may connect; the third is refused", () => {
+    expect(canConnectIntegration(free, 0)).toBe(true);
+    expect(canConnectIntegration(free, 1)).toBe(true);
+    expect(canConnectIntegration(free, 2)).toBe(false);
+  });
+  it("Pro: up to 6; the seventh is refused", () => {
+    for (let n = 0; n < 6; n++) expect(canConnectIntegration(pro, n)).toBe(true);
+    expect(canConnectIntegration(pro, 6)).toBe(false);
+  });
+  it("Business: unlimited", () => {
+    expect(canConnectIntegration(business, 60)).toBe(true);
+  });
+  it("a Business tier whose subscription lapsed is held to Free's 2", () => {
+    expect(canConnectIntegration({ planTier: "BUSINESS", billingStatus: "CANCELED" }, 2)).toBe(false);
+  });
+  it("names the smallest plan that fits a count", () => {
+    expect(planForIntegrations(2)).toBe("FREE");
+    expect(planForIntegrations(3)).toBe("PRO");
+    expect(planForIntegrations(6)).toBe("PRO");
+    expect(planForIntegrations(7)).toBe("BUSINESS");
+    expect(limitLabel(PLANS.BUSINESS.maxIntegrations)).toBe("Unlimited");
+  });
+});
+
+describe("businessAgentEntitled", () => {
+  it("Free denied, Pro denied, Business allowed", () => {
+    expect(businessAgentEntitled({ planTier: "FREE", billingStatus: null })).toBe(false);
+    expect(businessAgentEntitled({ planTier: "PRO", billingStatus: "ACTIVE" })).toBe(false);
+    expect(businessAgentEntitled({ planTier: "BUSINESS", billingStatus: "ACTIVE" })).toBe(true);
+  });
+  it("a lapsed Business subscription is denied", () => {
+    expect(businessAgentEntitled({ planTier: "BUSINESS", billingStatus: "UNPAID" })).toBe(false);
   });
 });
 

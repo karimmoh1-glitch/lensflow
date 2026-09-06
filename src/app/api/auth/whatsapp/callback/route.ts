@@ -6,6 +6,7 @@ import { exchangeWhatsAppCode, discoverWabas, listPhoneNumbers, subscribeWabaWeb
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
+import { activateIntegration } from "@/server/integrationQuota";
 
 /** Embedded Signup callback: code → business token → WABA and phone number → webhooks
  * subscribed. Registration (two-step PIN) is left to Meta's own flow when a number is new. */
@@ -43,11 +44,16 @@ export async function GET(req: Request) {
     const elsewhere = await prisma.integration.findFirst({ where: { provider: "WHATSAPP", externalId: chosen.phone.id, businessId: { not: verified.state.businessId }, status: { not: "NOT_CONNECTED" } } });
     if (elsewhere) return fail("in_use");
     await subscribeWabaWebhooks(tokens.accessToken, chosen.wabaId);
-    await prisma.integration.upsert({
-      where: { businessId_provider: { businessId: verified.state.businessId, provider: "WHATSAPP" } },
-      create: { businessId: verified.state.businessId, provider: "WHATSAPP", status: "CONNECTED", externalAccount: `${chosen.phone.verified_name} · ${chosen.phone.display_phone_number}`, externalId: chosen.phone.id, accessToken: tokens.accessToken, tokenExpiresAt: tokens.expiresAt, settings: { wabaId: chosen.wabaId, phoneNumberId: chosen.phone.id, displayPhoneNumber: chosen.phone.display_phone_number }, scopes: "whatsapp_business_management,whatsapp_business_messaging", lastSyncedAt: new Date(), lastSyncStatus: "ok", wanted: false },
-      update: { status: "CONNECTED", externalAccount: `${chosen.phone.verified_name} · ${chosen.phone.display_phone_number}`, externalId: chosen.phone.id, accessToken: tokens.accessToken, tokenExpiresAt: tokens.expiresAt, settings: { wabaId: chosen.wabaId, phoneNumberId: chosen.phone.id, displayPhoneNumber: chosen.phone.display_phone_number }, lastError: null, lastErrorAt: null, lastSyncedAt: new Date(), lastSyncStatus: "ok", wanted: false },
+    const activation = await activateIntegration({
+      businessId: verified.state.businessId,
+      provider: "WHATSAPP",
+      create: { externalAccount: `${chosen.phone.verified_name} · ${chosen.phone.display_phone_number}`, externalId: chosen.phone.id, accessToken: tokens.accessToken, tokenExpiresAt: tokens.expiresAt, settings: { wabaId: chosen.wabaId, phoneNumberId: chosen.phone.id, displayPhoneNumber: chosen.phone.display_phone_number }, scopes: "whatsapp_business_management,whatsapp_business_messaging", lastSyncedAt: new Date(), lastSyncStatus: "ok", wanted: false },
+      update: { externalAccount: `${chosen.phone.verified_name} · ${chosen.phone.display_phone_number}`, externalId: chosen.phone.id, accessToken: tokens.accessToken, tokenExpiresAt: tokens.expiresAt, settings: { wabaId: chosen.wabaId, phoneNumberId: chosen.phone.id, displayPhoneNumber: chosen.phone.display_phone_number }, lastError: null, lastErrorAt: null, lastSyncedAt: new Date(), lastSyncStatus: "ok", wanted: false },
     });
+    if (!activation.ok) {
+      await track("integration_limit_reached", { businessId: verified.state.businessId, properties: { provider: "WHATSAPP", plan: activation.usage.plan } });
+      return fail("limit");
+    }
     await track("integration_connected", { businessId: verified.state.businessId, properties: { provider: "WHATSAPP" } });
     back.searchParams.set("connected", "WHATSAPP");
     return NextResponse.redirect(back);

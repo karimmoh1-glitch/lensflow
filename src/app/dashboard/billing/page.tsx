@@ -4,7 +4,9 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader, Badge } from "@/components/ui";
 import { formatMoney, cn } from "@/lib/utils";
-import { PLANS, effectivePlan, type PlanKey } from "@/lib/billing";
+import { PLANS, effectivePlan, limitLabel, type PlanKey } from "@/lib/billing";
+import { usageFor } from "@/server/integrationQuota";
+import { MobileUpgradeBar } from "./MobileUpgradeBar";
 import { subscriptionBillingIsLive, getBillingSnapshot } from "@/lib/subscriptionBilling";
 import { PlanButton, ManageBillingButton, CheckoutReturn } from "./PlanActions";
 import { format } from "date-fns";
@@ -34,10 +36,16 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
 
   const current = effectivePlan(business);
   const plan = PLANS[current];
-  const [seatCount, snapshot] = await Promise.all([
+  const [seatCount, snapshot, integrationRows, automationsOn] = await Promise.all([
     prisma.orgMembership.count({ where: { businessId: business.id, role: { not: "CLIENT" }, status: "ACTIVE" } }),
     getBillingSnapshot(business),
+    prisma.integration.findMany({ where: { businessId: business.id }, select: { provider: true, status: true } }),
+    prisma.automation.count({ where: { businessId: business.id, enabled: true } }),
   ]);
+  const usage = usageFor(business, integrationRows);
+  const seatsOver = plan.maxTeamSeats !== Infinity && seatCount > plan.maxTeamSeats;
+  const automationsOver = Number.isFinite(plan.maxAutomations) && automationsOn > plan.maxAutomations;
+  const nextPlan: PlanKey | null = current === "FREE" ? "PRO" : current === "PRO" ? "BUSINESS" : null;
   const status = business.billingStatus ? STATUS[business.billingStatus] : null;
   const live = business.billingStatus && ["ACTIVE", "TRIALING", "PAST_DUE"].includes(business.billingStatus);
   const pastDue = business.billingStatus === "PAST_DUE" || business.billingStatus === "UNPAID";
@@ -70,7 +78,15 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       )}
       {lapsed && (
         <div role="alert" className="mb-6 rounded-2xl border border-danger/30 bg-danger-soft/50 px-4 py-3.5 text-sm text-ink/80">
-          <span className="font-semibold text-ink">Your {PLANS[business.planTier].name} subscription has ended.</span> You&rsquo;re on Free now — nothing was deleted, but automations, AI and team features are paused until you choose a plan again.
+          <span className="font-semibold text-ink">Your {PLANS[business.planTier].name} subscription has ended.</span> You&rsquo;re on Free now — nothing was deleted. Connected integrations, automations and team members above Free&rsquo;s limits are kept but paused for new additions until you choose a plan again.
+        </div>
+      )}
+      {(usage.overQuota || seatsOver || automationsOver) && (
+        <div role="alert" className="mb-6 rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3.5 text-sm text-ink/80 space-y-1">
+          <div className="font-semibold text-ink">Over {plan.name}&rsquo;s limits — nothing was removed.</div>
+          {usage.overQuota && <div>{usage.active} connected integrations; {plan.name} includes {usage.limit}. All keep working; new connections are paused until you disconnect down to {usage.limit}{nextPlan ? ` or upgrade to ${PLANS[nextPlan].name}` : ""}.</div>}
+          {seatsOver && <div>{seatCount} team members; {plan.name} includes {plan.maxTeamSeats}. Everyone keeps access; new invitations are paused.</div>}
+          {automationsOver && <div>{automationsOn} automations on; {plan.name} runs {plan.maxAutomations}. The oldest {plan.maxAutomations} keep running; the rest are paused.</div>}
         </div>
       )}
 
@@ -93,11 +109,13 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
             {business.stripeCustomerId && subscriptionBillingIsLive && <div className="mt-2"><ManageBillingButton /></div>}
           </div>
         </div>
-        <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border border-t border-border">
-          <Fact label={business.cancelAtPeriodEnd ? "Ends" : "Next charge"} value={live && business.currentPeriodEnd ? format(business.currentPeriodEnd, "MMM d, yyyy") : "—"} sub={live && business.stripeCustomerId && !business.cancelAtPeriodEnd ? formatMoney(snapshot?.nextInvoice?.amountCents ?? plan.priceCents) : undefined} />
+        <dl className="grid grid-cols-2 md:grid-cols-3 gap-px bg-border border-t border-border">
+          <Fact label={business.cancelAtPeriodEnd ? "Ends" : "Next charge"} value={live && business.currentPeriodEnd ? format(business.currentPeriodEnd, "MMM d, yyyy") : "—"} sub={live && business.stripeCustomerId && !business.cancelAtPeriodEnd ? formatMoney(snapshot?.nextInvoice?.amountCents ?? plan.priceCents) : current === "FREE" ? "Free never renews" : undefined} />
           <Fact label="Payment method" value={snapshot?.paymentMethod ? `${cap(snapshot.paymentMethod.brand)} ···· ${snapshot.paymentMethod.last4}` : business.stripeCustomerId ? "None on file" : "—"} sub={snapshot?.paymentMethod ? `Expires ${String(snapshot.paymentMethod.expMonth).padStart(2, "0")}/${String(snapshot.paymentMethod.expYear).slice(-2)}` : undefined} tone={pastDue ? "warning" : undefined} />
-          <Fact label="Seats" value={plan.maxTeamSeats === Infinity ? `${seatCount} used` : `${seatCount} of ${plan.maxTeamSeats}`} sub={plan.maxTeamSeats !== Infinity && seatCount > plan.maxTeamSeats ? "Over the limit — invites paused" : undefined} tone={plan.maxTeamSeats !== Infinity && seatCount > plan.maxTeamSeats ? "warning" : undefined} />
-          <Fact label="Billing" value={business.stripeCustomerId ? "Through Stripe" : "Not started"} sub={business.stripeCustomerId ? "Card, invoices and cancellation in the portal" : undefined} />
+          <Fact label="Billing" value={business.stripeCustomerId ? "Through Stripe" : "Not started"} sub={business.stripeCustomerId ? "Card, invoices and cancellation in the portal" : "Card, Apple Pay or Google Pay at checkout"} />
+          <Fact label="Connected integrations" value={Number.isFinite(usage.limit) ? `${usage.active} of ${usage.limit}` : `${usage.active} · unlimited`} sub={usage.overQuota ? "Over the limit — new connections paused" : usage.atLimit && nextPlan ? `Limit reached · ${PLANS[nextPlan].name} includes ${limitLabel(PLANS[nextPlan].maxIntegrations).toLowerCase()}` : undefined} tone={usage.overQuota || usage.atLimit ? "warning" : undefined} />
+          <Fact label="Automations" value={Number.isFinite(plan.maxAutomations) ? `${automationsOn} of ${plan.maxAutomations} on` : `${automationsOn} on · unlimited`} sub={automationsOver ? "Over the limit — extras paused" : undefined} tone={automationsOver ? "warning" : undefined} />
+          <Fact label="Team members" value={plan.maxTeamSeats === Infinity ? `${seatCount} · unlimited` : `${seatCount} of ${plan.maxTeamSeats}`} sub={seatsOver ? "Over the limit — invites paused" : undefined} tone={seatsOver ? "warning" : undefined} />
         </dl>
       </section>
 
@@ -140,7 +158,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
             );
           })}
         </div>
-        <p className="mt-3 text-xs text-ink/45">Prices in USD, billed monthly, cancel anytime. Plan changes are prorated by Stripe.</p>
+        <p className="mt-3 text-xs text-ink/45">Prices in USD, billed monthly, cancel anytime. Plan changes are prorated by Stripe. Downgrading never deletes anything: integrations, automations and team members above the new limit are kept and paused for new additions.</p>
       </section>
 
       {/* History */}
@@ -160,6 +178,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           </ul>
         </section>
       )}
+      {nextPlan && subscriptionBillingIsLive && !pastDue && <MobileUpgradeBar planKey={nextPlan} label={`Upgrade to ${PLANS[nextPlan].name}`} price={formatMoney(PLANS[nextPlan].priceCents)} />}
     </div>
   );
 }

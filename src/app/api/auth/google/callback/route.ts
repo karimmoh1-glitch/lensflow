@@ -8,6 +8,7 @@ import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { syncCalendarIn, readCalendarSettings } from "@/server/calendarSync";
 import { listCalendars } from "@/lib/googleCalendar";
+import { activateIntegration } from "@/server/integrationQuota";
 
 /**
  * Where Google sends the owner back after the consent screen, for both Gmail and Google
@@ -65,12 +66,17 @@ export async function GET(req: Request) {
     const existing = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: verified.state.businessId, provider: providerKey } } });
     if (existing?.refreshToken && existing.refreshToken !== tokens.refresh_token) await revokeGoogleToken(existing.refreshToken);
 
-    const base = { status: "CONNECTED" as const, externalAccount: email, externalId: email, accessToken: tokens.access_token, refreshToken: tokens.refresh_token, tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000), scopes: granted, lastError: null, lastErrorAt: null, lastSyncStatus: null, syncCursor: null, wanted: false };
-    const row = await prisma.integration.upsert({
-      where: { businessId_provider: { businessId: verified.state.businessId, provider: providerKey } },
-      create: { businessId: verified.state.businessId, provider: providerKey, ...base, lastSyncedAt: purpose === "gmail" ? new Date() : null },
-      update: base,
-    });
+    const base = { externalAccount: email, externalId: email, accessToken: tokens.access_token, refreshToken: tokens.refresh_token, tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000), scopes: granted, lastError: null, lastErrorAt: null, lastSyncStatus: null, syncCursor: null, wanted: false };
+    // The plan's connected-integrations allowance is enforced here, inside a row-locked
+    // transaction — the one place this row can become CONNECTED. Refused: the grant Google
+    // just issued is revoked so nothing is left dangling on either side.
+    const activation = await activateIntegration({ businessId: verified.state.businessId, provider: providerKey, create: { ...base, lastSyncedAt: purpose === "gmail" ? new Date() : null }, update: base });
+    if (!activation.ok) {
+      await revokeGoogleToken(tokens.refresh_token);
+      await track("integration_limit_reached", { businessId: verified.state.businessId, properties: { provider: providerKey, plan: activation.usage.plan } });
+      return fail("limit", providerKey);
+    }
+    const row = activation.row;
 
     if (purpose === "calendar") {
       // Discover the account's calendars; the primary one is pre-selected so busy time

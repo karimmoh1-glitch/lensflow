@@ -19,8 +19,12 @@ import {
   LogOut,
   Menu,
   X,
+  Bot,
+  LayoutGrid,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
+import { BottomSheet } from "@/components/BottomSheet";
 import { logout } from "@/app/actions/auth";
 import { initials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -42,6 +46,7 @@ const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; r
   { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-warning/70" },
   { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-signal-text/70" },
   { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles, tone: "text-signal-text/70" },
+  { href: "/dashboard/agent", label: "Agent", icon: Bot, tone: "text-signal-text/70" },
   { href: "/dashboard/team", label: "Team", icon: UserCog, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
   { href: "/dashboard/billing", label: "Billing", icon: Receipt, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
   { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
@@ -134,10 +139,12 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const visibleNav = BASE_NAV.filter((item) => !item.roles || item.roles.includes(role));
   const current = visibleNav.find((item) => isActive(pathname, item.href));
   const drawerRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => setMoreOpen(false), [pathname]);
 
   // Focus management for the mobile drawer: move focus in on open, trap Tab within it so
   // keyboard users can't tab into the page content hidden behind the overlay, close on
@@ -197,19 +204,24 @@ export function AppShell({
         <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} />
       </aside>
 
-      {/* Mobile top bar */}
-      <div className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 border-b border-border bg-white">
+      {/* Mobile top bar: where you are, search, and the More sheet under the avatar. */}
+      <div className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-3 border-b border-border bg-white/95 backdrop-blur pt-[env(safe-area-inset-top)]">
         <button
           ref={menuButtonRef}
           aria-label="Open navigation"
           onClick={() => setMobileOpen(true)}
-          className="w-9 h-9 -ml-2 flex items-center justify-center rounded-md text-ink/60 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+          className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/60 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
         >
           <Menu className="w-5 h-5" strokeWidth={2} />
         </button>
-        <span className="text-sm font-medium text-ink">{current?.label ?? "Daythread"}</span>
-        <div className="w-9 h-9 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-semibold">
-          {initials(businessName)}
+        <span className="text-[15px] font-semibold text-ink">{current?.label ?? "Daythread"}</span>
+        <div className="flex items-center">
+          <button type="button" aria-label="Find anything" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/60 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <Search className="w-5 h-5" strokeWidth={2} />
+          </button>
+          <button type="button" aria-label="Account and more" onClick={() => setMoreOpen(true)} className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <span className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-semibold">{initials(businessName)}</span>
+          </button>
         </div>
       </div>
 
@@ -240,43 +252,82 @@ export function AppShell({
         </div>
       )}
 
-      <main className="flex-1 min-w-0 pb-16 md:pb-0">
+      <main className="flex-1 min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         {wantedIntegrations.length > 0 && !pathname.startsWith("/dashboard/settings") && (
-          <div className="mx-4 md:mx-8 mt-4 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink/80">
-            <span><span className="font-semibold text-ink">Connect {wantedIntegrations.join(", ")}</span> and your first real conversations arrive here.</span>
-            <Link href="/dashboard/settings?tab=connections" className="text-signal-text font-semibold hover:underline">Connect now →</Link>
-          </div>
+          <Link href="/dashboard/settings?tab=connections" className="mx-4 md:mx-8 mt-3 md:mt-4 rounded-2xl border border-signal/25 bg-signal-soft/40 px-3.5 md:px-4 py-2.5 md:py-3 flex items-center gap-3 text-sm text-ink/80 hover:bg-signal-soft/60 transition-colors">
+            <span className="min-w-0 flex-1 truncate md:whitespace-normal"><span className="font-semibold text-ink">Connect {wantedIntegrations.join(", ")}</span><span className="hidden md:inline"> and your first real conversations arrive here.</span></span>
+            <span className="text-signal-text font-semibold shrink-0">Connect →</span>
+          </Link>
         )}
         {children}
       </main>
 
-      {/* Phone: the four places that matter, always under the thumb. */}
+      {/* Phone: the four places that matter, always under the thumb — and More for the rest. */}
       <nav aria-label="Primary" className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
         <ul className="grid grid-cols-5">
           {[
             { href: "/dashboard", label: "Home", icon: Home },
             { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon },
-            { href: "/dashboard/clients", label: "Clients", icon: Users },
+            { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
             { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck },
           ].map((item) => {
             const active = isActive(pathname, item.href);
             return (
               <li key={item.href}>
-                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors", active ? "text-ink" : "text-ink/45")}>
-                  <span className={cn("w-9 h-6 rounded-full flex items-center justify-center transition-colors", active && "bg-ink text-white")}><item.icon className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
+                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", active ? "text-ink" : "text-ink/45 active:text-ink")}>
+                  <span className={cn("w-10 h-7 rounded-full flex items-center justify-center transition-colors", active && "bg-ink text-white")}><item.icon className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
                   {item.label}
                 </Link>
               </li>
             );
           })}
           <li>
-            <button type="button" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-full flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold text-ink/45">
-              <span className="w-9 h-6 rounded-full flex items-center justify-center"><Search className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
-              Find
+            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", moreOpen || (current && !["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"].includes(current.href)) ? "text-ink" : "text-ink/45")}>
+              <span className={cn("w-10 h-7 rounded-full flex items-center justify-center transition-colors", moreOpen || (current && !["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"].includes(current.href)) ? "bg-ink text-white" : "")}><LayoutGrid className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
+              More
             </button>
           </li>
         </ul>
       </nav>
+
+      {/* More: everything else, one tap away, as a native-feeling sheet. */}
+      <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)} title={businessName} subtitle="Everything else in Daythread" icon={<LogoMark className="w-4 h-4" />}>
+        <ul className="grid grid-cols-3 gap-2">
+          {visibleNav
+            .filter((item) => !["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"].includes(item.href))
+            .map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <li key={item.href}>
+                  <Link href={item.href} onClick={() => setMoreOpen(false)} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", active ? "border-ink bg-ink text-white" : "border-border bg-white text-ink/80 hover:bg-black/[0.03] active:bg-black/[0.05]")}>
+                    <item.icon className={cn("w-5 h-5", !active && item.tone)} strokeWidth={2} aria-hidden />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          <li>
+            <Link href="/dashboard/settings?tab=connections" onClick={() => setMoreOpen(false)} className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border bg-white px-2 py-3.5 text-xs font-semibold text-ink/80 hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <LayoutGrid className="w-5 h-5 text-signal-text/70" strokeWidth={2} aria-hidden />
+              Integrations
+            </Link>
+          </li>
+        </ul>
+        <div className="mt-4 rounded-2xl border border-border divide-y divide-border overflow-hidden">
+          <button type="button" onClick={() => { setMoreOpen(false); window.dispatchEvent(new Event("dt-open-palette")); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-black/[0.03]">
+            <Search className="w-4 h-4 text-ink/50" strokeWidth={2} aria-hidden /><span className="flex-1 text-left">Find anything</span><ChevronRight className="w-4 h-4 text-ink/30" aria-hidden />
+          </button>
+          <Link href={`/book/${handle}`} target="_blank" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-black/[0.03]">
+            <ExternalLink className="w-4 h-4 text-ink/50" strokeWidth={2} aria-hidden /><span className="flex-1">View my booking page</span><ChevronRight className="w-4 h-4 text-ink/30" aria-hidden />
+          </Link>
+          {workspaces.length > 1 && <div className="px-4 py-3"><WorkspaceSwitcher current={businessName} workspaces={workspaces} /></div>}
+          <form action={logout}>
+            <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink/70 hover:bg-black/[0.03]">
+              <LogOut className="w-4 h-4 text-ink/50" strokeWidth={2} aria-hidden /><span className="flex-1 text-left">Log out</span>
+            </button>
+          </form>
+        </div>
+      </BottomSheet>
       <CommandPalette />
     </div>
   );

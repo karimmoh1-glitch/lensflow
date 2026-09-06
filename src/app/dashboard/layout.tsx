@@ -4,6 +4,12 @@ import { AppShell } from "./AppShell";
 import { Toaster } from "@/components/Toaster";
 import { prisma } from "@/lib/db";
 import { PROVIDERS } from "@/lib/integrations/registry";
+import type { Metadata, Viewport } from "next";
+
+/** The dashboard as an installed app: standalone on iPhone, no double-tap zoom on controls,
+ * and the tab bar's safe-area padding honoured (viewport-fit=cover). */
+export const metadata: Metadata = { appleWebApp: { capable: true, statusBarStyle: "default", title: "Daythread" } };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 1, viewportFit: "cover", themeColor: "#FFFFFF" };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();

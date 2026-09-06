@@ -5,8 +5,6 @@ import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ingestInboundMessage } from "@/server/leadIngestion";
-import { smsEntitled } from "@/lib/billing";
-import { track } from "@/lib/analytics";
 import type { ChannelType, IntegrationProvider } from "@prisma/client";
 
 /** Returns `{ error }` for the plan-limit case rather than throwing — see toggleAutomation
@@ -16,19 +14,13 @@ export async function toggleIntegration(provider: IntegrationProvider, connect: 
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 
-  // SMS is a Pro+ feature on the pricing page — enforce it here, not just by hiding the
-  // toggle in the UI, so a Free-plan business can't unlock it by calling this action
-  // directly. Disconnecting is always allowed regardless of plan.
-  if (provider === "SMS" && connect && !smsEntitled(business)) {
-    return { error: "SMS is available on the Pro plan and above. Upgrade from Billing to connect it." };
+  // There is no such thing as a toggled-on integration any more: a connection is only ever
+  // made by the provider's own sign-in (Settings → Integrations), which is where the plan's
+  // allowance is enforced. This action can only clear a legacy demo row.
+  if (connect) {
+    return { error: "Connections are made from Settings → Integrations with the provider's own sign-in." };
   }
-
-  await prisma.integration.upsert({
-    where: { businessId_provider: { businessId: business.id, provider } },
-    create: { businessId: business.id, provider, status: connect ? "DEMO" : "NOT_CONNECTED", lastSyncedAt: connect ? new Date() : null },
-    update: { status: connect ? "DEMO" : "NOT_CONNECTED", lastSyncedAt: connect ? new Date() : null },
-  });
-  if (connect) await track("integration_connected", { businessId: business.id, properties: { provider } });
+  await prisma.integration.updateMany({ where: { businessId: business.id, provider, status: "DEMO" }, data: { status: "NOT_CONNECTED", lastSyncedAt: null } });
   revalidatePath("/dashboard/settings");
   return {};
 }

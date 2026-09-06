@@ -10,6 +10,9 @@ import { summarizeCopilotAnswer } from "@/lib/ai";
 import { dbRateLimit } from "@/lib/dbRateLimit";
 
 export async function askCopilot(question: string): Promise<string> {
+  // Bounded input: a question is a sentence or two, not a document to smuggle instructions in.
+  question = String(question ?? "").trim().slice(0, 500);
+  if (!question) return "Ask a question about your leads, bookings, payments or clients.";
   // Facts include every client's payment/lead status — a client or partner asking the
   // copilot must never be able to see the rest of the org's business.
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);

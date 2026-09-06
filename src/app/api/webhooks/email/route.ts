@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readBoundedText } from "@/lib/http";
 import { Resend } from "resend";
 import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
@@ -26,7 +27,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email receiving isn't configured on this deployment." }, { status: 501 });
   }
 
-  const payload = await req.text();
+  let payload: string;
+  try {
+    payload = await readBoundedText(req, 2 * 1024 * 1024);
+  } catch {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  }
   const resend = new Resend(apiKey);
 
   let event;

@@ -116,6 +116,9 @@ model User {
   email        String   @unique
   passwordHash String
   avatarUrl    String?
+  // Bumped on password reset/change and account deletion: every session token carries the
+  // version it was issued for, and a stale one is refused on the next request.
+  sessionVersion Int @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

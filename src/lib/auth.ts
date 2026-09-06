@@ -1,11 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
+import { requiredSecret } from "@/lib/env";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import type { Business, Role } from "@prisma/client";
 
 const SESSION_COOKIE = "lf_session";
-const secret = () => new TextEncoder().encode(process.env.JWT_SECRET || "dev-only-insecure-secret");
+const secret = () => new TextEncoder().encode(requiredSecret("JWT_SECRET"));
 
 /** Roles that belong on the general staff dashboard (/dashboard/**). PARTNER and CLIENT
  * have their own dedicated, narrowly-scoped experiences (/partner, /portal) and must
@@ -17,6 +18,8 @@ export type SessionPayload = {
   /** Which organization this session is currently "in." Always re-verified server-side
    * against real OrgMembership rows — never trusted on its own. */
   activeBusinessId?: string;
+  /** The user's session version when this token was issued; see User.sessionVersion. */
+  sv?: number;
 };
 
 export async function hashPassword(password: string) {
@@ -28,7 +31,10 @@ export async function verifyPassword(password: string, hash: string) {
 }
 
 export async function createSessionToken(payload: SessionPayload) {
-  return new SignJWT(payload)
+  // Stamp the token with the user's current session version so a later password change
+  // or account deletion invalidates it — without keeping a server-side session table.
+  const sv = payload.sv ?? (await prisma.user.findUnique({ where: { id: payload.userId }, select: { sessionVersion: true } }))?.sessionVersion ?? 0;
+  return new SignJWT({ ...payload, sv })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
@@ -62,6 +68,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     return {
       userId: payload.userId,
       activeBusinessId: typeof payload.activeBusinessId === "string" ? payload.activeBusinessId : undefined,
+      sv: typeof payload.sv === "number" ? payload.sv : 0,
     };
   } catch {
     return null;
@@ -118,13 +125,15 @@ export async function requireBusiness(session?: SessionPayload | null) {
 
   const memberships = await getUserMemberships(session.userId);
   if (memberships.length === 0) return null;
+  // A token issued before the last password change / deletion is dead, whatever it says.
+  if ((memberships[0].user.sessionVersion ?? 0) !== (session.sv ?? 0)) return null;
 
   let active = session.activeBusinessId ? memberships.find((m) => m.businessId === session.activeBusinessId) : undefined;
 
   if (!active) {
     if (memberships.length === 1) {
       active = memberships[0];
-      await setSessionCookie({ userId: session.userId, activeBusinessId: active.businessId });
+      await setSessionCookie({ userId: session.userId, activeBusinessId: active.businessId, sv: session.sv });
     } else {
       return null;
     }

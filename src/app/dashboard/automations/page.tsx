@@ -91,7 +91,7 @@ export default async function AutomationsPage() {
           action={<NewAutomationButton />}
         />
       ) : (
-        <div className="space-y-3 mb-10">
+        <div className="space-y-3 mb-10 dt-rows">
           {automations.map((a) => (
             <Card key={a.id} className={cn(!a.enabled && "opacity-60")}>
               <div className="px-5 py-4">

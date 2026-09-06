@@ -56,6 +56,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const isSelectedToday = isSameDay(selected, today);
   const attention = agenda.calendars.filter((c) => c.status === "NEEDS_ATTENTION" || c.status === "SYNC_ERROR");
   const nextFree = agenda.free.find((f) => f.endAt > new Date()) ?? agenda.free[0];
+  // Where "now" falls in today's list: the first item that hasn't started yet carries the marker.
+  const nowIndex = agenda.items.findIndex((i) => i.startAt > new Date());
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
@@ -109,13 +111,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           {agenda.items.length === 0 ? (
             <div className="px-5 py-10 text-center">
               <div className="mx-auto w-10 h-10 rounded-full bg-success-soft text-success-text flex items-center justify-center"><CalendarDays className="w-5 h-5" strokeWidth={2} aria-hidden /></div>
-              <p className="mt-3 text-sm font-semibold text-ink">{agenda.blocked ? "Blocked off." : agenda.working.length === 0 ? "Not a working day." : "Clear all day."}</p>
+              <p className="mt-3 text-sm font-semibold text-ink">{agenda.blocked ? "Blocked off." : agenda.working.length === 0 ? "Not a working day." : "Your day is clear."}</p>
               <p className="mt-1 text-xs text-ink/55">{agenda.blocked ? "This date is blocked in Availability." : agenda.working.length === 0 ? "No working hours set for this weekday." : `Working ${agenda.working.map((w) => `${t(w.startAt)}–${t(w.endAt)}`).join(", ")}.`}</p>
             </div>
           ) : (
-            <ol className="divide-y divide-border">
-              {agenda.items.map((item) => (
-                <li key={`${item.kind}-${item.id}`}>
+            <ol className="divide-y divide-border dt-rows">
+              {agenda.items.map((item, idx) => (
+                <li key={`${item.kind}-${item.id}`} className={cn(isSelectedToday && nowIndex === idx && "dt-now")}>
                   {item.kind === "booking" ? (
                     <Link href={`/dashboard/bookings/${item.id}`} className="flex gap-4 px-5 py-3.5 hover:bg-black/[0.02] active:bg-black/[0.04]">
                       <div className="w-[4.5rem] shrink-0 text-right">

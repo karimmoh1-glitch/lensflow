@@ -34,13 +34,14 @@ import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/app/dashboard/WorkspaceSwitcher";
 import { LogoMark } from "@/components/Logo";
+import { DaythreadLogo, DaythreadMark } from "@/components/brand/DaythreadLogo";
 import { CommandPalette } from "./CommandPalette";
 import { Search } from "lucide-react";
 
 // Icon tone shows only in the item's resting state (active state is always solid ink/white
 // for clear legibility) — the same terracotta/signal/semantic language used on the
 // marketing site's module showcase, so the two feel like one product.
-const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[]; group: "work" | "automate" | "workspace" }[] = [
+const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[]; group: "work" | "automate" | "workspace"; lower?: boolean }[] = [
   { href: "/dashboard", label: "Today", icon: Home, tone: "text-ink/65", group: "work" },
   { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-signal-text/70", group: "work" },
   { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-success/70", group: "work" },
@@ -54,9 +55,9 @@ const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; r
   { href: "/dashboard/settings?tab=connections", label: "Integrations", icon: Plug, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"] },
   { href: "/dashboard/team", label: "Team", icon: UserCog, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"] },
   { href: "/dashboard/billing", label: "Billing", icon: Receipt, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"] },
-  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"], lower: true },
 ];
-const GROUP_LABEL: Record<"work" | "automate" | "workspace", string> = { work: "Work", automate: "Automate", workspace: "Workspace" };
+const GROUP_LABEL: Record<"work" | "automate" | "workspace", string> = { work: "", automate: "Operations", workspace: "Workspace" };
 const TAB_HREFS = ["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"];
 
 function isActive(pathname: string, href: string, search = "") {
@@ -71,34 +72,47 @@ function isActive(pathname: string, href: string, search = "") {
 
 function NavLinks({ pathname, search, role, onNavigate }: { pathname: string; search: string; role: Role; onNavigate?: () => void }) {
   const items = BASE_NAV.filter((item) => !item.roles || item.roles.includes(role));
-  const groups = (["work", "automate", "workspace"] as const).map((g) => ({ g, items: items.filter((i) => i.group === g) })).filter((x) => x.items.length > 0);
+  const groups = (["work", "automate", "workspace"] as const).map((g) => ({ g, items: items.filter((i) => i.group === g && !i.lower) })).filter((x) => x.items.length > 0);
+  const lower = items.filter((i) => i.lower);
+  // The active pill is one element that slides between links (transform only), so moving
+  // through the product reads as one selection travelling, not a series of highlights.
+  const navRef = useRef<HTMLElement>(null);
+  const [indicator, setIndicator] = useState<{ y: number; visible: boolean }>({ y: 0, visible: false });
+  useEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !active) return setIndicator((i) => ({ ...i, visible: false }));
+    const y = active.getBoundingClientRect().top - nav.getBoundingClientRect().top + nav.scrollTop;
+    setIndicator({ y, visible: true });
+  }, [pathname, search]);
+  const link = (item: (typeof items)[number]) => {
+    const active = isActive(pathname, item.href, search);
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "dt-nav-link flex items-center gap-2.5 rounded-[10px] px-3 h-[34px] text-[13.5px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+          active ? "text-white font-semibold" : "text-ink/65 font-medium hover:text-ink hover:bg-black/[0.04]"
+        )}
+      >
+        <item.icon className={cn("w-4 h-4 shrink-0", !active && item.tone)} strokeWidth={2} aria-hidden />
+        {item.label}
+      </Link>
+    );
+  };
   return (
-    <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-thin">
+    <nav ref={navRef} className="dt-nav flex-1 px-3 py-3 overflow-y-auto scrollbar-thin flex flex-col">
+      <div aria-hidden className="dt-nav-indicator" style={{ transform: `translateY(${indicator.y}px)`, opacity: indicator.visible ? 1 : 0 }} />
       {groups.map(({ g, items }, gi) => (
-        <div key={g} className={cn(gi > 0 && "mt-4")}>
-          <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink/35">{GROUP_LABEL[g]}</div>
-          <div className="space-y-0.5">
-            {items.map((item) => {
-              const active = isActive(pathname, item.href, search);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13.5px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-                    active ? "bg-ink text-white shadow-[0_6px_16px_-10px_rgba(16,17,20,0.6)]" : "text-ink/65 hover:bg-black/[0.05] hover:text-ink hover:translate-x-0.5"
-                  )}
-                >
-                  <item.icon className={cn("w-4 h-4 shrink-0", !active && item.tone)} strokeWidth={2} aria-hidden />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
+        <div key={g} className={cn(gi > 0 && "mt-5")}>
+          {GROUP_LABEL[g] && <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-ink/35">{GROUP_LABEL[g]}</div>}
+          <div className="space-y-0.5">{items.map(link)}</div>
         </div>
       ))}
+      {lower.length > 0 && <div className="mt-auto pt-5 space-y-0.5">{lower.map(link)}</div>}
     </nav>
   );
 }
@@ -132,6 +146,7 @@ function AccountFooter({
 }) {
   return (
     <div className="px-3 py-4 border-t border-border space-y-3">
+      <div className="px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink/35">Account</div>
       <PlanPill plan={plan} role={role} />
       <Link
         href={`/book/${handle}`}
@@ -234,9 +249,8 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-white flex-col">
         <div className="px-5 py-5 border-b border-border">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-ink">
-            <LogoMark className="w-5 h-5" />
-            <span className="font-sans font-extrabold text-[17px] tracking-tight">Daythread</span>
+          <Link href="/dashboard" className="inline-flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-md">
+            <DaythreadLogo />
           </Link>
           <div className="text-xs text-ink/55 mt-1 truncate">{businessName}</div>
           <button
@@ -263,7 +277,7 @@ export function AppShell({
         >
           <Menu className="w-5 h-5" strokeWidth={2} />
         </button>
-        <span className="text-[15px] font-semibold text-ink">{current?.label ?? "Daythread"}</span>
+        <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-ink"><DaythreadMark className="w-[18px] h-[18px] text-ink" />{current?.label ?? "Daythread"}</span>
         <div className="flex items-center">
           <button type="button" aria-label="Find anything" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/60 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
             <Search className="w-5 h-5" strokeWidth={2} />
@@ -286,7 +300,7 @@ export function AppShell({
             className="absolute inset-y-0 left-0 w-64 bg-white flex flex-col shadow-popover"
           >
             <div className="flex items-center justify-between px-5 py-5 border-b border-border">
-              <span className="inline-flex items-center gap-2 text-ink"><LogoMark className="w-5 h-5" /><span className="font-sans font-extrabold text-[17px] tracking-tight">Daythread</span></span>
+              <DaythreadLogo />
               <button
                 aria-label="Close navigation"
                 onClick={() => setMobileOpen(false)}
@@ -340,7 +354,7 @@ export function AppShell({
       </nav>
 
       {/* More: everything else, one tap away, as a native-feeling sheet. */}
-      <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)} title={businessName} subtitle="Everything else in Daythread" icon={<LogoMark className="w-4 h-4" />}>
+      <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)} title={businessName} subtitle="Everything else in Daythread" icon={<DaythreadMark className="w-4 h-4 text-ink" />}>
         <div className="mb-4"><PlanPill plan={plan} role={role} /></div>
         <ul className="grid grid-cols-3 gap-2">
           {visibleNav

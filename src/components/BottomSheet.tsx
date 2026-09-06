@@ -31,7 +31,7 @@ export function BottomSheet({ open, onClose, title, subtitle, icon, children, si
     <div className="fixed inset-0 z-[80] overflow-y-auto" role="presentation">
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
       <div className="relative min-h-full flex items-end sm:items-center justify-center p-0 sm:p-6">
-        <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={cn("relative w-full max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-[26px] bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] dt-land pb-[env(safe-area-inset-bottom)]", size === "lg" ? "sm:max-w-2xl" : "sm:max-w-lg", className)}>
+        <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={cn("relative w-full max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-[26px] bg-white shadow-elev-3 dt-land pb-[env(safe-area-inset-bottom)]", size === "lg" ? "sm:max-w-2xl" : "sm:max-w-lg", className)}>
           <div className="sm:hidden pt-2.5 flex justify-center" aria-hidden><span className="w-10 h-1 rounded-full bg-black/15" /></div>
           <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-border px-5 py-3.5 flex items-center gap-3">
             {icon && <span className="w-8 h-8 rounded-lg border border-border bg-paper flex items-center justify-center shrink-0">{icon}</span>}

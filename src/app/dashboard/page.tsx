@@ -41,7 +41,7 @@ export default async function TodayPage() {
   const top = waitingOnReply[0];
 
   return (
-    <div className="max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10">
+    <div className="max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10 dt-stagger">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-2">{format(new Date(), "EEEE, MMMM d")}</p>

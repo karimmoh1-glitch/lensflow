@@ -1,5 +1,5 @@
-import { PageSkeleton } from "@/components/ui";
+import { RouteLoading } from "@/components/brand/RouteLoading";
 
 export default function Loading() {
-  return <PageSkeleton />;
+  return <RouteLoading label="Gathering clients" />;
 }

@@ -1,0 +1,27 @@
+/* The signature loader: a thread travels a path through five points (inbox, calendar,
+   bookings, automation, business), lighting each as it passes, then settles into the mark's
+   node. Pure SVG + CSS: stroke-dashoffset for the travel, transform/opacity for the nodes.
+   Nothing in JS runs per frame. */
+.wrap { display: inline-flex; flex-direction: column; align-items: center; gap: 10px; color: currentColor; }
+.svg { overflow: visible; }
+.rail { stroke: currentColor; opacity: 0.12; }
+.thread { stroke: currentColor; stroke-dasharray: 60 260; stroke-dashoffset: 320; animation: dtThread 1.9s cubic-bezier(0.45, 0.05, 0.25, 1) infinite; }
+.node { fill: currentColor; opacity: 0.18; transform-box: fill-box; transform-origin: center; animation: dtNode 1.9s ease-in-out infinite; }
+.node:nth-of-type(1) { animation-delay: 0.05s; }
+.node:nth-of-type(2) { animation-delay: 0.35s; }
+.node:nth-of-type(3) { animation-delay: 0.65s; }
+.node:nth-of-type(4) { animation-delay: 0.95s; }
+.node:nth-of-type(5) { animation-delay: 1.25s; }
+.end { fill: #F0524D; transform-box: fill-box; transform-origin: center; animation: dtEnd 1.9s ease-in-out infinite; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.55; }
+@keyframes dtThread { 0% { stroke-dashoffset: 320; } 70%, 100% { stroke-dashoffset: 0; } }
+@keyframes dtNode { 0%, 100% { opacity: 0.18; transform: scale(1); } 25% { opacity: 1; transform: scale(1.35); } 55% { opacity: 0.35; transform: scale(1); } }
+@keyframes dtEnd { 0%, 60% { transform: scale(0.85); opacity: 0.6; } 78% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+/* Inline (button-sized) variant: the same idea in 18px. */
+.mini { display: inline-block; vertical-align: middle; overflow: visible; }
+.mini .thread { stroke-dasharray: 22 90; stroke-dashoffset: 112; animation-duration: 1.4s; }
+@media (prefers-reduced-motion: reduce) {
+  .thread { animation: none; stroke-dashoffset: 0; opacity: 0.6; }
+  .node { animation: none; opacity: 0.6; }
+  .end { animation: none; transform: none; opacity: 1; }
+}

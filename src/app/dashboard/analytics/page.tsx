@@ -74,7 +74,7 @@ export default async function AnalyticsPage() {
   const CHANNEL: Record<string, string> = { EMAIL: "Email", INSTAGRAM: "Instagram", WHATSAPP: "WhatsApp", SMS: "SMS", WEBSITE: "Booking page", PHONE: "Phone" };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
+    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10 dt-stagger">
       <PageHeader title="Analytics" description="From your records, right now. Nothing here is estimated." action={<span className="text-[11px] font-bold uppercase tracking-[0.12em] text-signal-text bg-signal-soft rounded-full px-2.5 py-1">Business</span>} />
 
       <SectionLabel hint="last 90 days · last 30 days">How you&rsquo;re doing</SectionLabel>

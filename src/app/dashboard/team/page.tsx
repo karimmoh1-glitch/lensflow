@@ -46,7 +46,7 @@ export default async function TeamPage() {
   const nextPlan = plan === "FREE" ? "PRO" : plan === "PRO" ? "BUSINESS" : null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
+    <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10 dt-stagger">
       <PageHeader
         title="Team"
         description="Your team and partners with access to this business."

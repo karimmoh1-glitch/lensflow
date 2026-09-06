@@ -59,15 +59,20 @@ export function Composer({ conversationId }: { conversationId: string }) {
   }
 
   return (
-    <div className="border-t border-border bg-white px-6 py-4">
+    <div className="sticky bottom-0 border-t border-border bg-white px-4 md:px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:py-4">
       <Textarea
         value={body}
         onChange={(e) => {
           setBody(e.target.value);
           setWasAiDrafted(false);
         }}
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") send();
+        }}
         placeholder="Write a reply, or let AI draft one…"
         rows={3}
+        aria-label="Reply"
+        className="text-[16px] md:text-sm"
       />
       {error && <div className="mt-2"><EntitlementNotice message={error} /></div>}
       <div className="flex items-center justify-between mt-2.5">
@@ -81,7 +86,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
           {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} /> : <Sparkles className="w-3.5 h-3.5" strokeWidth={2} />}
           {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}
         </Button>
-        <Button size="sm" onClick={send} disabled={!body.trim() || pending}>
+        <Button size="sm" onClick={send} disabled={!body.trim() || pending} loading={pending && !drafting} loadingLabel="Sending" className="min-w-[5.5rem]">
           Send
         </Button>
       </div>

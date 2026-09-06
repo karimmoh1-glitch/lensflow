@@ -360,3 +360,32 @@ export function PageSkeleton({ rows = 5 }: { rows?: number }) {
     </div>
   );
 }
+
+// ── Numbers ─────────────────────────────────────────────────────────────────
+
+/** One number that means something, with the words that make it mean it. Tone colors the
+ * number only, so a row of tiles reads as a sentence, not a scoreboard. */
+export function StatTile({ label, value, sub, tone = "neutral", href }: { label: string; value: string; sub?: string; tone?: "neutral" | "accent" | "success" | "warning" | "signal" | "danger"; href?: string }) {
+  const color = { neutral: "text-ink", accent: "text-accent-text", success: "text-success-text", warning: "text-warning-text", signal: "text-signal-text", danger: "text-danger-text" }[tone];
+  const body = (
+    <>
+      <div className={cn("font-sans font-extrabold text-[1.6rem] leading-none tracking-[-0.03em] tabular-nums", color)}>{value}</div>
+      <div className="mt-1.5 text-sm font-medium text-ink">{label}</div>
+      {sub && <div className="mt-0.5 text-[11px] text-ink/50 leading-snug">{sub}</div>}
+    </>
+  );
+  const cls = "block bg-white px-5 py-4 min-w-0";
+  return href ? <Link href={href} className={cn(cls, "hover:bg-black/[0.02] transition-colors")}>{body}</Link> : <div className={cls}>{body}</div>;
+}
+
+/** A section's eyebrow: small caps, optional hint, optional action on the right. */
+export function SectionLabel({ children, hint, action, tone = "neutral" }: { children: ReactNode; hint?: string; action?: ReactNode; tone?: "neutral" | "accent" | "signal" | "success" }) {
+  const color = { neutral: "text-ink/45", accent: "text-accent-text", signal: "text-signal-text", success: "text-success-text" }[tone];
+  return (
+    <div className="flex items-baseline gap-3 mb-2.5 px-1">
+      <h2 className={cn("text-[11px] font-bold uppercase tracking-[0.14em]", color)}>{children}</h2>
+      {hint && <span className="text-[11px] text-ink/40">{hint}</span>}
+      {action && <span className="ml-auto text-xs">{action}</span>}
+    </div>
+  );
+}

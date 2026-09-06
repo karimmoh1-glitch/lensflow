@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { businessAgentEntitled, effectivePlan, PLANS } from "@/lib/billing";
 import { buildAgentBrief, findProposal, draftForProposal, executeProposal, type AgentBrief, type AgentProposal } from "@/server/businessAgent";
-import { rateLimit } from "@/lib/rateLimit";
+import { dbRateLimit } from "@/lib/dbRateLimit";
 import { track } from "@/lib/analytics";
 import { z } from "zod";
 
@@ -47,7 +47,7 @@ export async function approveAgentProposal(input: { proposalId: string; body: st
   if (!businessAgentEntitled(ctx.business)) return denial(effectivePlan(ctx.business) as "FREE" | "PRO");
   const parsed = ApproveSchema.safeParse(input);
   if (!parsed.success) return { allowed: true, ok: false, error: parsed.error.issues[0]?.message ?? "Check the message." };
-  if (!rateLimit(`agent:${ctx.business.id}`, { limit: 60, windowMs: 60 * 60 * 1000 }).ok) return { allowed: true, ok: false, error: "The agent has sent a lot in the last hour. Try again in a bit." };
+  if (!(await dbRateLimit(ctx.business.id, "agent_action_approved", { limit: 60, windowMs: 60 * 60 * 1000 })).ok) return { allowed: true, ok: false, error: "The agent has sent 60 messages in the last hour, which is its cap. Nothing was sent; try again in a while." };
   const proposal = await findProposal(ctx.business.id, parsed.data.proposalId);
   if (!proposal) return { allowed: true, ok: false, error: "That suggestion is no longer current — the situation changed." };
   await track("agent_action_approved", { businessId: ctx.business.id, properties: { kind: proposal.kind } });

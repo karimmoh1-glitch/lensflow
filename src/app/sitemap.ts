@@ -13,6 +13,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/signup`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/login`, changeFrequency: "monthly", priority: 0.3 },
     { url: `${BASE_URL}/demo`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${BASE_URL}/support`, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${BASE_URL}/privacy`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${BASE_URL}/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
   // Each completed-onboarding business has a real public booking page — that's Daythread's

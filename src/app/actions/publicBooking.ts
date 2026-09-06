@@ -39,32 +39,38 @@ export async function createPublicBooking(params: {
   if (!service) throw new Error("Service not found");
 
   const start = new Date(params.startISO);
+  if (Number.isNaN(start.getTime())) throw new Error("Pick a time from the list.");
   const end = addMinutes(start, service.durationMins);
-
-  const stillAvailable = await isSlotStillAvailable(business.id, start, end);
-  if (!stillAvailable) throw new Error("That time is no longer available. Please pick another slot.");
-
-  const client =
-    (await prisma.client.findFirst({ where: { businessId: business.id, email: params.email } })) ??
-    (await prisma.client.create({
-      data: { businessId: business.id, name: params.name, email: params.email, phone: params.phone || undefined },
-    }));
-
   const depositCents = Math.round((service.priceCents * business.depositPercent) / 100);
 
-  const booking = await prisma.booking.create({
-    data: {
-      businessId: business.id,
-      clientId: client.id,
-      serviceId: service.id,
-      startAt: start,
-      endAt: end,
-      location: params.location || undefined,
-      status: "BOOKED",
-      totalCents: service.priceCents,
-      depositCents,
+  // Two people picking the same slot at the same moment: the business row is locked for
+  // the check-and-create, so the second attempt waits, re-reads, and is refused. Without
+  // this, both reads would pass and both bookings would land.
+  const booking = await prisma.$transaction(
+    async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${business.id} FOR UPDATE`;
+      const stillAvailable = await isSlotStillAvailable(business.id, start, end);
+      if (!stillAvailable) throw new Error("That time is no longer available. Please pick another slot.");
+      const client =
+        (await tx.client.findFirst({ where: { businessId: business.id, email: params.email } })) ??
+        (await tx.client.create({ data: { businessId: business.id, name: params.name, email: params.email, phone: params.phone || undefined } }));
+      return tx.booking.create({
+        data: {
+          businessId: business.id,
+          clientId: client.id,
+          serviceId: service.id,
+          startAt: start,
+          endAt: end,
+          location: params.location || undefined,
+          status: "BOOKED",
+          totalCents: service.priceCents,
+          depositCents,
+        },
+      });
     },
-  });
+    { timeout: 15_000 }
+  );
+  const client = { id: booking.clientId, email: params.email };
 
   // Booking through the public page is the relationship — promote (or confirm) customer.
   await prisma.client.update({ where: { id: client.id }, data: { relationship: "CUSTOMER" } });

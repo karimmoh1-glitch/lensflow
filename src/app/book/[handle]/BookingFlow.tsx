@@ -10,7 +10,14 @@ import { format } from "date-fns";
 type Service = { id: string; name: string; priceCents: number; durationMins: number };
 type Slot = { start: string; end: string };
 
-export function BookingFlow({ handle, services, depositPercent }: { handle: string; services: Service[]; depositPercent: number }) {
+
+/** Times on this page are the business's local times — the session happens where they are —
+ * so they are formatted in the business's timezone, not the visitor's, and the zone is named. */
+function inZone(iso: string, timeZone: string, opts: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone, ...opts }).format(new Date(iso));
+}
+
+export function BookingFlow({ handle, services, depositPercent, timezone }: { handle: string; services: Service[]; depositPercent: number; timezone: string }) {
   const [step, setStep] = useState(0);
   const [service, setService] = useState<Service | null>(null);
   const [date, setDate] = useState("");
@@ -67,7 +74,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
           <CheckCircle2 className="w-9 h-9 text-success mx-auto mb-3" strokeWidth={1.75} />
           <h2 className="font-display text-2xl mb-2">You&apos;re booked!</h2>
           <p className="text-sm text-ink/75 mb-6">
-            {service?.name} on {slot && format(new Date(slot.start), "EEEE, MMMM d 'at' h:mm a")}
+            {service?.name} on {slot && `${inZone(slot.start, timezone, { weekday: "long", month: "long", day: "numeric" })} at ${inZone(slot.start, timezone, { hour: "numeric", minute: "2-digit", timeZoneName: "short" })}`}
           </p>
 
           {result.depositCents > 0 && (
@@ -156,7 +163,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
                         slot?.start === s.start ? "bg-ink text-white border-ink" : "border-border hover:border-ink/20"
                       )}
                     >
-                      {format(new Date(s.start), "h:mm a")}
+                      {inZone(s.start, timezone, { hour: "numeric", minute: "2-digit" })}
                     </button>
                   ))}
                 </div>
@@ -172,7 +179,7 @@ export function BookingFlow({ handle, services, depositPercent }: { handle: stri
           <div className="space-y-4">
             <button onClick={() => setStep(1)} className="flex items-center gap-1 text-xs text-ink/60 hover:text-ink mb-1">
               <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
-              {format(new Date(slot.start), "MMM d, h:mm a")}
+              {inZone(slot.start, timezone, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}
             </button>
             <h2 className="font-display text-xl">Your details</h2>
             <div>

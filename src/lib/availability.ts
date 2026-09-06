@@ -26,7 +26,7 @@ function zonedTimeToUtc(year: number, month: number, date: number, minutesFromMi
  * working hours with blocked dates and existing bookings (+ buffer), and enforces
  * the minimum lead time. Never returns static/fake slots.
  */
-export async function getAvailableSlots(businessId: string, day: Date, durationMins: number): Promise<Slot[]> {
+export async function getAvailableSlots(businessId: string, day: Date, durationMins: number, opts: { excludeBookingId?: string } = {}): Promise<Slot[]> {
   const business = await prisma.business.findUniqueOrThrow({ where: { id: businessId } });
   const weekday = day.getDay();
   const year = day.getFullYear();
@@ -44,6 +44,7 @@ export async function getAvailableSlots(businessId: string, day: Date, durationM
         businessId,
         status: { notIn: ["CANCELED"] },
         startAt: { gte: dayStartUtc, lt: dayEndUtc },
+        ...(opts.excludeBookingId ? { id: { not: opts.excludeBookingId } } : {}),
       },
       select: { startAt: true, endAt: true },
     }),
@@ -84,7 +85,7 @@ export async function getAvailableSlots(businessId: string, day: Date, durationM
   return slots;
 }
 
-export async function isSlotStillAvailable(businessId: string, start: Date, end: Date): Promise<boolean> {
-  const slots = await getAvailableSlots(businessId, start, (end.getTime() - start.getTime()) / 60_000);
+export async function isSlotStillAvailable(businessId: string, start: Date, end: Date, opts: { excludeBookingId?: string } = {}): Promise<boolean> {
+  const slots = await getAvailableSlots(businessId, start, (end.getTime() - start.getTime()) / 60_000, opts);
   return slots.some((s) => s.start.getTime() === start.getTime());
 }

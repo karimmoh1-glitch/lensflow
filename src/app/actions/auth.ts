@@ -159,6 +159,13 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
     return { sent: false, error: TOO_MANY_ATTEMPTS };
   }
 
+  // Without a live email provider the link has nowhere safe to go. In development it is
+  // shown on screen for convenience; in production that would let anyone reset anyone's
+  // password by typing their address, so the flow refuses instead of pretending.
+  if (!messagingIsLive("EMAIL") && process.env.NODE_ENV === "production") {
+    return { sent: false, error: "Password reset by email isn't switched on for this deployment yet. Write to support@daythread.org from your account's address and we'll reset it for you." };
+  }
+
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   let devLink: string | undefined;
   if (user) {

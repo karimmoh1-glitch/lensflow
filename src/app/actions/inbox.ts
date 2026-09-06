@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { track } from "@/lib/analytics";
 import { requireRole } from "@/lib/auth";
 import type { SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -103,6 +104,10 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
     ...(delivery.status === "SENT" ? [prisma.lead.updateMany({ where: { conversationId }, data: { respondedAt: new Date(), status: "CONTACTED" as const } })] : []),
   ]);
 
+  // Activation signal: the first reply that actually reached a customer. Channel only.
+  if (delivery.status === "SENT" && (await prisma.message.count({ where: { direction: "OUTBOUND", status: "SENT", conversation: { businessId: business.id } } })) === 1) {
+    await track("first_reply_sent", { businessId: business.id, properties: { channel: conversation.channel } });
+  }
   revalidatePath("/dashboard/inbox");
   revalidatePath("/dashboard");
   return result;

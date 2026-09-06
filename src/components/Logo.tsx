@@ -1,26 +1,27 @@
 import { cn } from "@/lib/utils";
+import { DaythreadMark } from "@/components/brand/DaythreadLogo";
 
 /**
- * The brand mark: a single continuous thread, drawn in one color (currentColor) with no
- * gradient and no container badge — the glyph itself is the mark, the way Linear or
- * Stripe's icon reads on its own. Works identically in ink-on-paper or paper-on-ink
- * contexts; the caller sets color via className.
+ * Brand entry points used across the marketing site and the app. The mark itself lives in
+ * components/brand/DaythreadLogo (three strands converging into one thread, ending in the
+ * coral node). Kept here so every existing import keeps working.
  */
 export function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="none">
-      <path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
-  );
+  return <DaythreadMark className={className} />;
 }
 
-/** App-icon / favicon variant — a solid square badge, for contexts (favicon, OG image)
- * where a glyph alone would be illegible or context-less. Solid ink fill, no gradient. */
+/** App-icon / favicon variant — the mark on a solid ink badge, for contexts (favicon, OG
+ * image) where a glyph alone would be illegible or context-less. */
 export function LogoBadge({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
       <rect width="32" height="32" rx="8" fill="#101114" />
-      <path d="M6 24C12 24 12 8 19 8C21.5 8 23.5 10 25 12" stroke="#FAFAF9" strokeWidth="2.25" strokeLinecap="round" fill="none" />
+      <g fill="none" stroke="#FAFAF9" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 10C11.5 10 12.5 16 17 16" />
+        <path d="M7 16H17" />
+        <path d="M7 22C11.5 22 12.5 16 17 16" />
+      </g>
+      <circle cx="23" cy="16" r="3" fill="#F0524D" />
     </svg>
   );
 }

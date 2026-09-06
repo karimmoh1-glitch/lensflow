@@ -52,7 +52,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   const lapsed = business.planTier !== "FREE" && current === "FREE"; // paid tier on record, no longer entitled
 
   return (
-    <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
+    <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10 dt-stagger">
       <PageHeader title="Billing" description="What your business pays for Daythread." />
 
       {(sp.checkout === "success" || sp.checkout === "canceled") && (

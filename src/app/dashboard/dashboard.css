@@ -1,0 +1,52 @@
+/* Daythread authenticated surface — motion and navigation language.
+   Every rule here answers "what just happened?"; nothing loops except the loader. */
+
+/* Children arrive in order: heading, key figure, attention, schedule, suggestions. */
+.dt-stagger > * { animation: dtStagger 460ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dt-stagger > :nth-child(1) { animation-delay: 0ms; }
+.dt-stagger > :nth-child(2) { animation-delay: 45ms; }
+.dt-stagger > :nth-child(3) { animation-delay: 90ms; }
+.dt-stagger > :nth-child(4) { animation-delay: 135ms; }
+.dt-stagger > :nth-child(5) { animation-delay: 180ms; }
+.dt-stagger > :nth-child(6) { animation-delay: 225ms; }
+.dt-stagger > :nth-child(n + 7) { animation-delay: 260ms; }
+@keyframes dtStagger { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Rows of a list settle in with a shorter, tighter version of the same motion. */
+.dt-rows > * { animation: dtRow 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dt-rows > :nth-child(2) { animation-delay: 30ms; }
+.dt-rows > :nth-child(3) { animation-delay: 60ms; }
+.dt-rows > :nth-child(4) { animation-delay: 90ms; }
+.dt-rows > :nth-child(5) { animation-delay: 120ms; }
+.dt-rows > :nth-child(n + 6) { animation-delay: 150ms; }
+@keyframes dtRow { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Sidebar: the active pill slides between items instead of jumping. */
+.dt-nav { position: relative; }
+.dt-nav-indicator { position: absolute; top: 0; left: 12px; right: 12px; height: 34px; border-radius: 10px; background: #101114; box-shadow: 0 8px 18px -12px rgba(16, 17, 20, 0.7); transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 160ms; pointer-events: none; z-index: 0; }
+.dt-nav-link { position: relative; z-index: 1; }
+.dt-nav-link svg { transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1); }
+.dt-nav-link:hover svg { transform: translateX(1px); }
+
+/* A quiet confirmation: the element breathes once when its state changed for the better. */
+@keyframes dtConfirm { 0% { transform: scale(1); } 35% { transform: scale(1.03); } 100% { transform: scale(1); } }
+.dt-confirm { animation: dtConfirm 420ms cubic-bezier(0.22, 1.2, 0.36, 1); }
+
+/* Something went wrong with what you just did: a small, one-time shake. */
+@keyframes dtNudge { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.dt-nudge { animation: dtNudge 260ms ease-in-out; }
+
+/* Surfaces: three levels, used deliberately. */
+.dt-surface { background: #fff; border: 1px solid rgba(16, 17, 20, 0.08); }
+.dt-surface-raised { background: #fff; border: 1px solid rgba(16, 17, 20, 0.06); box-shadow: 0 1px 2px rgba(16, 17, 20, 0.04), 0 12px 32px -24px rgba(16, 17, 20, 0.35); }
+.dt-surface-quiet { background: rgba(16, 17, 20, 0.025); }
+
+/* The current moment on the calendar. */
+.dt-now { position: relative; }
+.dt-now::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #F0524D; opacity: 0.8; }
+.dt-now::after { content: ""; position: absolute; left: -3px; top: 50%; width: 7px; height: 7px; margin-top: -3px; border-radius: 999px; background: #F0524D; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-stagger > *, .dt-rows > *, .dt-confirm, .dt-nudge { animation: none !important; opacity: 1; transform: none; }
+  .dt-nav-indicator, .dt-nav-link svg { transition: none; }
+}

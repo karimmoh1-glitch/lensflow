@@ -133,7 +133,7 @@ export function AgentBoard({ initial }: { initial: { generatedAt: string; propos
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 dt-stagger">
       <section aria-label="What I noticed" className="rounded-[22px] border border-border bg-white px-5 py-4">
         <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-signal-text">What I noticed</div>
         {noticed.length === 0 ? (

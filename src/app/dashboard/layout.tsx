@@ -1,3 +1,4 @@
+import "./dashboard.css";
 import { redirect } from "next/navigation";
 import { getSession, requireBusiness, getUserMemberships } from "@/lib/auth";
 import { AppShell } from "./AppShell";

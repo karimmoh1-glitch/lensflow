@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { ThreadDots } from "@/components/brand/DaythreadLoader";
+import { DaythreadMark } from "@/components/brand/DaythreadLogo";
 import { forwardRef } from "react";
 import type {
   ButtonHTMLAttributes,
@@ -49,16 +51,10 @@ const sizeClasses: Record<ButtonSize, string> = {
 const PHYSICAL_FEEL =
   "transition-transform duration-150 hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0";
 
-/** Three dots breathing in sequence — the product's own "working" signal, used instead of a
- * spinner inside buttons. Inherits the button's text color. */
+/** The product's own "working" signal inside buttons: a short thread travelling its path
+ * (see components/brand/DaythreadLoader). Inherits the button's text color. */
 export function WorkingDots({ className }: { className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center gap-1", className)} aria-hidden>
-      {[0, 1, 2].map((i) => (
-        <span key={i} className="w-1.5 h-1.5 rounded-full bg-current animate-[dtDot_900ms_ease-in-out_infinite]" style={{ animationDelay: `${i * 150}ms` }} />
-      ))}
-    </span>
-  );
+  return <ThreadDots className={className} />;
 }
 
 export const Button = forwardRef<
@@ -315,13 +311,11 @@ export function EmptyState({
   action?: ReactNode;
   tone?: "neutral" | "success" | "accent";
 }) {
-  const node = tone === "success" ? "bg-success" : tone === "accent" ? "bg-accent" : "bg-ink/20";
+  const markColor = tone === "success" ? "text-success" : tone === "accent" ? "text-accent" : "text-ink/30";
   return (
-    <div className="flex flex-col items-center justify-center text-center py-12 px-6 rounded-2xl border border-border bg-white/60">
-      <div aria-hidden className="flex flex-col items-center mb-4">
-        <span className="w-px h-5 bg-ink/10" />
-        <span className={cn("w-[11px] h-[11px] rounded-full ring-[3px] ring-paper", node)} />
-        <span className="w-px h-5 bg-gradient-to-b from-ink/10 to-transparent" />
+    <div className="flex flex-col items-center justify-center text-center py-12 px-6 rounded-3xl border border-dashed border-border bg-white/50">
+      <div aria-hidden className={cn("mb-4 w-10 h-10 rounded-2xl bg-paper border border-border flex items-center justify-center", markColor)}>
+        <DaythreadMark className="w-5 h-5" node={tone === "neutral" ? "rgba(16,17,20,0.25)" : "#F0524D"} />
       </div>
       <p className="text-sm font-semibold text-ink">{title}</p>
       {description && <p className="mt-1 text-sm text-ink/60 max-w-sm leading-relaxed">{description}</p>}

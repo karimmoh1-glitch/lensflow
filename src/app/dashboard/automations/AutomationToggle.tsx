@@ -45,7 +45,7 @@ export function AutomationToggle({ id, enabled }: { id: string; enabled: boolean
         }}
         className={cn(
           "w-11 h-6 rounded-full transition-colors duration-200 relative shrink-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2",
-          on ? "bg-success" : "bg-black/15",
+          on ? "bg-success dt-confirm" : "bg-black/15",
           pending && "opacity-70"
         )}
       >

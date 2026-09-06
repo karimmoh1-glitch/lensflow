@@ -19,7 +19,8 @@ export default function Icon() {
         }}
       >
         <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-          <path d="M6 24C12 24 12 8 19 8C21.5 8 23.5 10 25 12" stroke="#FAFAF9" strokeWidth="3" strokeLinecap="round" />
+          <g stroke="#FAFAF9" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 8.5C11 8.5 12.5 16 18 16" /><path d="M5 16H18" /><path d="M5 23.5C11 23.5 12.5 16 18 16" /></g>
+          <circle cx="24.5" cy="16" r="3.5" fill="#F0524D" />
         </svg>
       </div>
     ),

@@ -46,6 +46,10 @@ const config: Config = {
       },
       boxShadow: {
         xs: "0 1px 2px rgba(16,17,20,0.05)",
+        // Elevation scale: flat (none) → resting → raised → floating. Used deliberately, not everywhere.
+        "elev-1": "0 1px 2px rgba(16,17,20,0.04), 0 1px 1px rgba(16,17,20,0.03)",
+        "elev-2": "0 1px 2px rgba(16,17,20,0.04), 0 12px 32px -24px rgba(16,17,20,0.35)",
+        "elev-3": "0 24px 64px -32px rgba(16,17,20,0.45), 0 2px 6px rgba(16,17,20,0.06)",
         card: "0 1px 2px rgba(16,17,20,0.04), 0 1px 1px rgba(16,17,20,0.03)",
         popover: "0 4px 16px rgba(16,17,20,0.10), 0 1px 2px rgba(16,17,20,0.06)",
       },
@@ -55,6 +59,9 @@ const config: Config = {
         md: "8px",
         lg: "10px",
         xl: "12px",
+        "2xl": "16px",
+        "3xl": "22px",
+        "4xl": "26px",
       },
     },
   },

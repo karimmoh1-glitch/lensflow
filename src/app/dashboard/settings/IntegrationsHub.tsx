@@ -9,6 +9,11 @@ import { readCalendarSettings } from "@/server/calendarSync";
 import { ChannelIcon, type ChannelKey } from "@/app/landing/ChannelIcon";
 import { IntegrationCard, type CardModel } from "./IntegrationCard";
 import { SmsNumberPicker } from "./SmsNumberPicker";
+import { MetaConfigPanel } from "./MetaConfigPanel";
+import { WhatsAppManage, type WhatsAppManageModel } from "./WhatsAppManage";
+import { InstagramManage, type InstagramManageModel } from "./InstagramManage";
+import { templatesEnabled } from "@/lib/meta/whatsapp";
+import { connectionState } from "@/lib/meta/config";
 import { SimulateInbound } from "../integrations/SimulateInbound";
 import { connectGoogle } from "@/app/actions/googleAuth";
 import { connectInstagram, connectWhatsApp } from "@/app/actions/connect";
@@ -50,6 +55,7 @@ const ERRORS: Record<string, string> = {
   session: "could not be connected. Finish connecting from the browser you started in, signed in to this workspace.",
   tenant: "could not be connected. Only an owner or admin of this workspace can connect it.",
   encryption: "could not be connected. Daythread configuration is incomplete — the operator has been notified.",
+  configuration: "could not be connected. This deployment doesn't have the provider credentials set — see Deployment → Meta configuration below.",
   no_refresh_token: "could not be connected. Google didn't grant long-term access — try again and approve everything it asks.",
   scopes: "could not be connected. The permissions Daythread needs weren't granted — try again and approve everything it asks.",
   account_type: "only allows messaging for professional accounts (Business or Creator). Switch your account type in Instagram, then try again.",
@@ -94,6 +100,9 @@ export async function IntegrationsHub({ business, role, connected, connectError,
       : { label: "Available", tone: "neutral" };
     return {
       provider,
+      // The five product-level states, derived from the row and the deployment. Rendered as
+      // a data attribute so what the page claims can be asserted directly in a browser test.
+      configState: connectionState(row, configured && canStore),
       name: spec.name,
       description: DESCRIPTION[provider] ?? spec.summary,
       status,
@@ -111,6 +120,49 @@ export async function IntegrationsHub({ business, role, connected, connectError,
       accent: ACCENT[provider] ?? "#101114",
     };
   };
+
+  // The Manage sheet reads only what the callback stored after Meta confirmed it: the WABA,
+  // the number, and every number Meta granted this workspace. No secret is in `settings`.
+  const waRow = byProvider.get("WHATSAPP");
+  const waSettings = (waRow?.settings ?? null) as null | {
+    wabaId?: string;
+    wabaName?: string | null;
+    phoneNumberId?: string;
+    displayPhoneNumber?: string;
+    verifiedName?: string;
+    qualityRating?: string | null;
+    codeVerificationStatus?: string | null;
+    webhooksSubscribed?: boolean;
+    availableNumbers?: Array<{ id: string; displayPhoneNumber: string; verifiedName: string; codeVerificationStatus?: string | null }>;
+  };
+  const waManage: WhatsAppManageModel | null =
+    waRow && waSettings?.phoneNumberId && waSettings.wabaId
+      ? {
+          wabaId: waSettings.wabaId,
+          wabaName: waSettings.wabaName ?? null,
+          phoneNumberId: waSettings.phoneNumberId,
+          displayPhoneNumber: waSettings.displayPhoneNumber ?? waRow.externalAccount ?? "",
+          verifiedName: waSettings.verifiedName ?? "",
+          qualityRating: waSettings.qualityRating ?? null,
+          codeVerificationStatus: waSettings.codeVerificationStatus ?? null,
+          webhooksSubscribed: waSettings.webhooksSubscribed !== false,
+          availableNumbers: waSettings.availableNumbers ?? [],
+          templatesEnabled: templatesEnabled(),
+        }
+      : null;
+
+  const igRow = byProvider.get("INSTAGRAM");
+  const igSettings = (igRow?.settings ?? null) as null | { username?: string; accountType?: string | null; webhooksSubscribed?: boolean; scopes?: string[] };
+  const igManage: InstagramManageModel | null = igRow
+    ? {
+        username: igSettings?.username ?? igRow.externalAccount ?? null,
+        accountType: igSettings?.accountType ?? null,
+        scopes: igSettings?.scopes ?? (igRow.scopes ? igRow.scopes.split(",").map((x) => x.trim()).filter(Boolean) : []),
+        webhooksSubscribed: igSettings?.webhooksSubscribed !== false,
+        tokenExpiresAt: igRow.tokenExpiresAt,
+        lastSyncedAt: igRow.lastSyncedAt,
+      }
+    : null;
 
   const banner = connected
     ? { tone: "success" as const, text: `${PROVIDERS[connected as keyof typeof PROVIDERS]?.name ?? connected} is connected.` }
@@ -167,8 +219,13 @@ export async function IntegrationsHub({ business, role, connected, connectError,
         {(["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS"] as IntegrationProvider[]).map((provider) => {
           const m = model(provider);
           const connect = provider === "EMAIL" ? connectGoogleGmail : provider === "INSTAGRAM" ? connectInstagramAction : provider === "WHATSAPP" ? connectWhatsAppAction : undefined;
+          const live = m.status !== "disconnected" && m.status !== "unavailable";
+          const manage =
+            provider === "WHATSAPP" && waManage && live ? <WhatsAppManage model={waManage} />
+            : provider === "INSTAGRAM" && igManage && live ? <InstagramManage model={igManage} />
+            : undefined;
           return (
-            <IntegrationCard key={provider} model={m} icon={icon(provider)} connect={connect}>
+            <IntegrationCard key={provider} model={m} icon={icon(provider)} connect={connect} manage={manage}>
               {provider === "SMS" && m.entitled && m.status !== "unavailable" ? <SmsNumberPicker current={business.twilioPhoneNumber} /> : null}
               {provider === "EMAIL" && m.status === "connected" ? <p className="text-xs text-ink/55">New mail is pulled while Daythread is open and classified before it reaches you. Replies send from this account.</p> : null}
               {provider === "WHATSAPP" && m.status === "connected" ? <p className="text-xs text-ink/55">Free-form replies are allowed within 24 hours of a customer&rsquo;s message; later ones need an approved template, and Daythread says so instead of sending.</p> : null}
@@ -198,6 +255,16 @@ export async function IntegrationsHub({ business, role, connected, connectError,
           </div>
         </article>
       </Group>
+
+      {owner && (
+        <section aria-label="Deployment configuration">
+          <div className="flex items-baseline gap-3 mb-3 px-1">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/50">Deployment</h3>
+            <span className="text-[11px] text-ink/40">What the operator sets, not the business</span>
+          </div>
+          <MetaConfigPanel />
+        </section>
+      )}
 
       <details className="group">
         <summary className="cursor-pointer select-none text-[11px] font-bold uppercase tracking-[0.14em] text-ink/40 hover:text-ink/60">Demo tool</summary>

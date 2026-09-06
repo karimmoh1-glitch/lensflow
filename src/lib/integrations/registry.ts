@@ -1,4 +1,5 @@
 import type { IntegrationProvider, IntegrationStatus } from "@prisma/client";
+import { metaProductReady } from "@/lib/meta/config";
 
 /**
  * What each integration is, what it can genuinely do, and what has to be true on this
@@ -51,7 +52,7 @@ export const PROVIDERS: Record<Exclude<IntegrationProvider, "CALENDAR" | "PHONE"
     kind: "channel",
     auth: "oauth",
     capabilities: ["READ_MESSAGES", "SEND_MESSAGES", "THREADS", "WEBHOOKS", "MEDIA"],
-    env: ["INSTAGRAM_APP_ID", "INSTAGRAM_APP_SECRET", "META_WEBHOOK_VERIFY_TOKEN"],
+    env: ["INSTAGRAM_APP_ID", "INSTAGRAM_APP_SECRET", "META_WEBHOOK_VERIFY_TOKEN", "NEXT_PUBLIC_APP_URL"],
     approval: "Meta App Review for instagram_business_manage_messages. Until approved, only accounts added as testers on the Meta app can connect. Professional (Business or Creator) accounts only.",
     summary: "DMs to your professional account, in one thread with everything else.",
   },
@@ -61,7 +62,7 @@ export const PROVIDERS: Record<Exclude<IntegrationProvider, "CALENDAR" | "PHONE"
     kind: "channel",
     auth: "oauth",
     capabilities: ["READ_MESSAGES", "SEND_MESSAGES", "WEBHOOKS", "MEDIA", "DELIVERY_STATUS"],
-    env: ["META_APP_ID", "META_APP_SECRET", "WHATSAPP_CONFIG_ID", "META_WEBHOOK_VERIFY_TOKEN"],
+    env: ["META_APP_ID", "META_APP_SECRET", "WHATSAPP_CONFIG_ID", "META_WEBHOOK_VERIFY_TOKEN", "NEXT_PUBLIC_APP_URL"],
     approval: "WhatsApp Business Platform (Cloud API) via Meta's Embedded Signup: needs a Meta Business, a phone number not on the consumer app, and Business verification for volume beyond the starter tier. Free-form replies only within 24h of the customer's last message; anything later needs an approved template.",
     summary: "WhatsApp Business messages, with real delivery and read receipts.",
   },
@@ -116,8 +117,15 @@ export const PROVIDERS: Record<Exclude<IntegrationProvider, "CALENDAR" | "PHONE"
 export const CHANNEL_PROVIDERS: IntegrationProvider[] = ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS", "WEBSITE"];
 export const CALENDAR_PROVIDERS: IntegrationProvider[] = ["GOOGLE_CALENDAR", "APPLE_CALENDAR"];
 
-/** Whether the deployment has what this provider needs. Never reads a value, only presence. */
+/**
+ * Whether the deployment has what this provider needs. Never returns a value, only whether
+ * one is present and well-formed. Meta's two providers defer to the Meta configuration
+ * layer, which is the single authority on what "configured" means for them (it also
+ * validates shape and rejects a localhost or preview app URL that Meta could never call).
+ */
 export function providerConfigured(spec: ProviderSpec): boolean {
+  if (spec.key === "INSTAGRAM") return metaProductReady("instagram");
+  if (spec.key === "WHATSAPP") return metaProductReady("whatsapp");
   return spec.env.every((k) => Boolean(process.env[k]));
 }
 

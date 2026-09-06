@@ -259,7 +259,7 @@ export async function executeProposal(params: { businessId: string; userId: stri
   const conversationId = conversation?.id ?? (clientId ? (await prisma.conversation.create({ data: { businessId, clientId, channel, externalHandle: to, lastMessageAt: new Date(), category: "PRIORITY", categoryReason: "Existing customer.", categorySource: "rules" } })).id : null);
   if (conversationId) {
     await prisma.$transaction([
-      prisma.message.create({ data: { conversationId, direction: "OUTBOUND", body, aiDrafted: proposal.kind === "reply", status: delivery.status, sentByUserId: userId, providerMessageId: delivery.providerMessageId } }),
+      prisma.message.create({ data: { conversationId, direction: "OUTBOUND", body, aiDrafted: proposal.kind === "reply", status: delivery.status, statusDetail: delivery.statusDetail, sentByUserId: userId, providerMessageId: delivery.providerMessageId } }),
       prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
       ...(delivery.status === "SENT" && (proposal.kind === "reply" || proposal.kind === "follow_up") ? [prisma.lead.updateMany({ where: { conversationId, businessId }, data: { respondedAt: new Date(), status: "CONTACTED" as const } })] : []),
     ]);

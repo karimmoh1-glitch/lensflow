@@ -40,9 +40,18 @@ export async function findKnownClient(input: IdentityInput) {
   if (phone) {
     const byPhone = await prisma.client.findFirst({ where: { businessId, phone }, include });
     if (byPhone) return { client: byPhone, matchedOn: "phone" as const, email, phone };
-    // Older rows may hold the number in a different format.
-    const loose = await prisma.client.findFirst({ where: { businessId, phone: { not: null } }, include, orderBy: { updatedAt: "desc" }, ...(phone ? {} : {}) });
-    if (loose && normalizePhone(loose.phone) === phone) return { client: loose, matchedOn: "phone" as const, email, phone };
+    // Older rows may hold the same number in a different format — "(512) 555-0148" written
+    // by hand, a WhatsApp wa_id with no plus. Narrow to rows whose stored number contains
+    // the same national tail, then confirm on the normalized value: the tail only chooses
+    // candidates, it never decides a match, so two different people can't be merged.
+    // The last four digits survive every human format ("(512) 555-0199", "512.555.0199"),
+    // so they pick the candidates; the normalized comparison below is what decides.
+    const tail = phone.replace(/\D/g, "").slice(-4);
+    if (tail.length === 4) {
+      const candidates = await prisma.client.findMany({ where: { businessId, phone: { contains: tail } }, include, orderBy: { updatedAt: "desc" }, take: 50 });
+      const hit = candidates.find((c) => normalizePhone(c.phone) === phone);
+      if (hit) return { client: hit, matchedOn: "phone" as const, email, phone };
+    }
   }
   if (channel === "INSTAGRAM") {
     const byIg = await prisma.client.findFirst({ where: { businessId, instagram: input.senderHandle }, include });

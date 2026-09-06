@@ -1,31 +1,34 @@
 import type { ChannelAdapter, ChannelCapabilities, OutboundMessage, SendResult } from "./types";
+import { instagramConfigured } from "@/lib/meta/instagram";
 
 /**
- * Not connected to real Instagram — and cannot be, without a registered Meta app.
+ * Instagram is a per-business connection, not a platform account: each workspace authorizes
+ * its own professional account through Instagram Login, and sends go out with that
+ * workspace's own token. That means the send path needs the business's Integration row, so
+ * it lives in `src/server/deliver.ts` and this adapter never sends.
  *
- * What's actually required to go live: Instagram messaging is exposed through the
- * Meta "Instagram Messaging API," which requires (1) a Facebook Page linked to a
- * Professional/Business Instagram account, (2) a Meta developer app with the
- * instagram_manage_messages permission, which needs App Review before it works for
- * accounts outside the developer's own team, and (3) a webhook subscription for
- * inbound messages. None of that can be provisioned from inside this codebase — it
- * needs a real Meta Business account and a completed review process.
+ * `live` here says only whether the deployment has a Meta app configured at all — the thing
+ * an operator controls. Whether a given business is connected is a property of its
+ * Integration row, shown on its own card in Settings → Integrations.
  */
 export class InstagramAdapter implements ChannelAdapter {
   readonly channel = "INSTAGRAM" as const;
 
   capabilities(): ChannelCapabilities {
+    const configured = instagramConfigured();
     return {
-      canSend: false,
-      canReceive: false,
-      live: false,
-      setupNote:
-        "Requires a Meta Business app with instagram_manage_messages access (subject to Meta App Review) and a Professional Instagram account linked to a Facebook Page.",
+      canSend: configured,
+      canReceive: configured,
+      live: configured,
+      setupNote: configured
+        ? "Each business connects its own professional Instagram account from Settings → Integrations; DMs arrive on the Meta webhook."
+        : "Set INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET and META_WEBHOOK_VERIFY_TOKEN, and point the Meta app's webhook at /api/webhooks/meta.",
     };
   }
 
-  async send(message: OutboundMessage): Promise<SendResult> {
-    console.log(`[instagram-adapter:demo] to ${message.to ?? "unknown"}: ${message.body}`);
-    return { ok: true, simulated: true };
+  /** Never a simulated success: an Instagram send that did not go through the connected
+   * account's own token did not happen. */
+  async send(_message: OutboundMessage): Promise<SendResult> {
+    return { ok: false, error: "Instagram messages are sent with the business's own connected account — see server/deliver.ts." };
   }
 }

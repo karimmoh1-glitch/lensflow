@@ -8,7 +8,14 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toaster";
 import { EntitlementNotice } from "@/components/UpgradePrompt";
 
-export function Composer({ conversationId }: { conversationId: string }) {
+/**
+ * The WhatsApp 24-hour customer service window, told to the person *before* they write.
+ * The server refuses the send either way; this only means they find out first rather than
+ * after composing a reply that Meta will not carry.
+ */
+export type WindowNotice = { open: false; text: string } | { open: true; endsIn: string } | null;
+
+export function Composer({ conversationId, windowNotice = null }: { conversationId: string; windowNotice?: WindowNotice }) {
   const [body, setBody] = useState("");
   const [wasAiDrafted, setWasAiDrafted] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -48,7 +55,9 @@ export function Composer({ conversationId }: { conversationId: string }) {
         return;
       }
       if (result.simulated) {
-        toast({ tone: "signal", title: "Saved, not delivered", body: "This channel isn't connected on this deployment yet, so nothing was sent. Connect it in Settings → Connections.", ttl: 7000 });
+        // The exact reason from the server — the 24-hour WhatsApp window, a connection that
+        // needs renewing, a channel that was never connected. Never a generic guess.
+        toast({ tone: "signal", title: "Saved, not delivered", body: result.reason ?? "This channel isn't connected yet, so nothing was sent. Connect it in Settings → Integrations.", ttl: 9000 });
       } else {
         toast({ tone: "outcome", title: "Sent" });
       }
@@ -58,8 +67,18 @@ export function Composer({ conversationId }: { conversationId: string }) {
     });
   }
 
+  const closed = windowNotice !== null && windowNotice.open === false;
+
   return (
     <div className="sticky bottom-0 border-t border-border bg-white px-4 md:px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:py-4">
+      {closed && (
+        <p role="status" className="mb-2.5 rounded-xl border border-warning/40 bg-warning-soft/50 px-3 py-2 text-[12px] leading-snug text-ink/80">
+          {windowNotice.text}
+        </p>
+      )}
+      {windowNotice?.open && (
+        <p className="mb-2 text-[11px] text-ink/45">WhatsApp reply window closes in {windowNotice.endsIn}.</p>
+      )}
       <Textarea
         value={body}
         onChange={(e) => {
@@ -69,7 +88,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
         onKeyDown={(e) => {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") send();
         }}
-        placeholder="Write a reply, or let AI draft one…"
+        placeholder={closed ? "Write a note — it will be saved to the thread, not delivered…" : "Write a reply, or let AI draft one…"}
         rows={3}
         aria-label="Reply"
         className="text-[16px] md:text-sm"
@@ -86,8 +105,8 @@ export function Composer({ conversationId }: { conversationId: string }) {
           {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} /> : <Sparkles className="w-3.5 h-3.5" strokeWidth={2} />}
           {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}
         </Button>
-        <Button size="sm" onClick={send} disabled={!body.trim() || pending} loading={pending && !drafting} loadingLabel="Sending" className="min-w-[5.5rem]">
-          Send
+        <Button size="sm" onClick={send} disabled={!body.trim() || pending} loading={pending && !drafting} loadingLabel={closed ? "Saving" : "Sending"} className="min-w-[5.5rem]">
+          {closed ? "Save to thread" : "Send"}
         </Button>
       </div>
     </div>

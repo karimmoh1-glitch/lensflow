@@ -35,6 +35,22 @@ describe("identity", () => {
     const inB = await findKnownClient({ businessId: bId, channel: "INSTAGRAM", senderHandle: "ig_17841", senderName: "@sarah" });
     expect(inB.client).toBeNull(); // B never linked that Instagram id
   });
+  it("joins a WhatsApp number to a client whose phone was stored in a different format", async () => {
+    // The WhatsApp webhook supplies a bare wa_id, and the client may have been typed in by
+    // hand. Both normalize to the same E.164 number, so it is one person — not two.
+    const stamp = Date.now();
+    const b = await prisma.business.create({ data: { name: "Id C", handle: `id-c-${stamp}` } });
+    const typed = await prisma.client.create({ data: { businessId: b.id, name: "Ana Reyes", phone: "(512) 555-0199" } });
+    // Rows written after it, so the old "most recently updated row" shortcut would miss.
+    for (let i = 0; i < 5; i++) await prisma.client.create({ data: { businessId: b.id, name: `Other ${i}`, phone: `+1512555${1000 + i}` } });
+    const found = await findKnownClient({ businessId: b.id, channel: "WHATSAPP", senderHandle: "+15125550199", senderName: "Ana", phone: "+15125550199" });
+    expect(found.client?.id).toBe(typed.id);
+    expect(found.matchedOn).toBe("phone");
+    // A different number that merely shares a prefix is not the same person.
+    const other = await findKnownClient({ businessId: b.id, channel: "WHATSAPP", senderHandle: "+15125550198", senderName: "Someone", phone: "+15125550198" });
+    expect(other.client).toBeNull();
+    await prisma.business.delete({ where: { id: b.id } });
+  });
   it("never merges on a name alone across channels", async () => {
     const r = await findKnownClient({ businessId: aId, channel: "WHATSAPP", senderHandle: "+15550000000", senderName: "Sarah Kim" });
     expect(r.client).toBeNull();

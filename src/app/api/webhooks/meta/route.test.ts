@@ -100,4 +100,132 @@ describe("Meta webhook", () => {
     expect(conv?.client?.name).toBe("Sam Okafor");
     expect(conv?.client?.phone).toBe("+15550002222");
   });
+  it("brakes a script that keeps forging signatures from one address", async () => {
+    const raw = JSON.stringify({ object: "instagram", entry: [] });
+    const attempt = () => POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": "sha256=" + "0".repeat(64), "x-forwarded-for": "192.0.2.77" } }));
+    const codes: number[] = [];
+    for (let i = 0; i < 24; i++) codes.push((await attempt()).status);
+    expect(codes.filter((c) => c === 401).length).toBeGreaterThan(0);
+    expect(codes[codes.length - 1]).toBe(429);
+    // A correctly signed delivery from a different address is unaffected.
+    expect((await post({ object: "instagram", entry: [] })).status).toBe(200);
+  });
+
+  it("rejects a forged signature that is the right length but not hex, with 401 and not a 500", async () => {
+    // The regression: Buffer.from(…, "hex") truncates at the first bad character, which made
+    // the constant-time compare throw and turned a forged request into a 500 Meta retries.
+    const raw = JSON.stringify({ object: "instagram", entry: [] });
+    // Each probe comes from its own address so the per-IP brake (which is what a real
+    // forging script would hit) doesn't turn a later assertion into a 429.
+    let ip = 0;
+    const forged = (sig: string) => POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sig, "x-forwarded-for": `198.51.100.${++ip}` } }));
+    expect((await forged("sha256=" + "z".repeat(64))).status).toBe(401);
+    expect((await forged("sha256=" + "0z".repeat(32))).status).toBe(401);
+    expect((await forged("sha256=" + "0".repeat(63) + "!")).status).toBe(401);
+    expect((await forged("sha256=")).status).toBe(401);
+    expect((await forged("garbage")).status).toBe(401);
+    expect((await POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-forwarded-for": "198.51.100.200" } }))).status).toBe(401);
+  });
+
+  it("rejects a body modified after signing", async () => {
+    const original = JSON.stringify({ object: "instagram", entry: [{ id: igA, messaging: [] }] });
+    const tampered = JSON.stringify({ object: "instagram", entry: [{ id: "ig_someone_else", messaging: [] }] });
+    const r = await POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: tampered, headers: { "x-hub-signature-256": sign(original), "x-forwarded-for": "203.0.113.9" } }));
+    expect(r.status).toBe(401);
+  });
+
+  it("refuses a WhatsApp event that only the Instagram secret signed", async () => {
+    // WhatsApp Business Account events are signed by the Meta app that owns the
+    // subscription. One product's secret must never be able to inject into the other.
+    vi.stubEnv("INSTAGRAM_APP_SECRET", "instagram_app_secret_test");
+    const raw = JSON.stringify({ object: "whatsapp_business_account", entry: [{ id: "waba", changes: [{ field: "messages", value: { metadata: { phone_number_id: waB }, messages: [{ from: "15550009999", id: `wamid.forged_${Date.now()}`, type: "text", text: { body: "injected" } }] } }] }] });
+    const igSigned = "sha256=" + createHmac("sha256", "instagram_app_secret_test").update(raw).digest("hex");
+    const r = await POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": igSigned, "x-forwarded-for": "203.0.113.10" } }));
+    expect(r.status).toBe(401);
+    expect(await prisma.conversation.count({ where: { businessId: bId, externalHandle: "+15550009999" } })).toBe(0);
+    vi.stubEnv("INSTAGRAM_APP_SECRET", "");
+  });
+
+  it("refuses a payload far larger than Meta ever sends", async () => {
+    const raw = JSON.stringify({ object: "instagram", entry: [], pad: "x".repeat(1_100_000) });
+    const r = await POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sign(raw) } }));
+    expect(r.status).toBe(413);
+  });
+
+  it("acknowledges a well-formed event for an object it doesn't handle", async () => {
+    const r = await post({ object: "page", entry: [{ id: "page_1" }] });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ handled: 0 });
+  });
+
+  it("rejects malformed shapes that are correctly signed", async () => {
+    for (const body of [{ object: "instagram" }, { entry: [] }, { object: 5, entry: [] }, { object: "instagram", entry: "not-an-array" }]) {
+      const raw = JSON.stringify(body);
+      const r = await POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sign(raw) } }));
+      expect(r.status).toBe(400);
+    }
+  });
+
+  it("ignores a WhatsApp message for a phone number nobody has connected, and writes nothing", async () => {
+    const before = await prisma.conversation.count();
+    const r = await post({ object: "whatsapp_business_account", entry: [{ id: "waba", changes: [{ field: "messages", value: { metadata: { phone_number_id: "pn_never_connected" }, contacts: [{ wa_id: "15550008888", profile: { name: "Nobody" } }], messages: [{ from: "15550008888", id: `wamid.unknown_${Date.now()}`, type: "text", text: { body: "hello?" } }] } }] }] });
+    expect(await r.json()).toMatchObject({ handled: 0 });
+    expect(await prisma.conversation.count()).toBe(before);
+  });
+
+  it("ignores an Instagram DM for an account whose integration has been disconnected", async () => {
+    await prisma.integration.updateMany({ where: { businessId: aId, provider: "INSTAGRAM" }, data: { status: "NOT_CONNECTED" } });
+    const mid = `mid_disconnected_${Date.now()}`;
+    const r = await post({ object: "instagram", entry: [{ id: igA, messaging: [{ sender: { id: "igsid_888" }, recipient: { id: igA }, message: { mid, text: "still there?" } }] }] });
+    expect(await r.json()).toMatchObject({ handled: 0 });
+    expect(await prisma.message.count({ where: { providerMessageId: mid } })).toBe(0);
+    await prisma.integration.updateMany({ where: { businessId: aId, provider: "INSTAGRAM" }, data: { status: "CONNECTED" } });
+  });
+
+  it("applies a read receipt and never rolls a status backwards", async () => {
+    const client = await prisma.client.create({ data: { businessId: bId, name: "WA Read", phone: "+15550003333" } });
+    const conv = await prisma.conversation.create({ data: { businessId: bId, clientId: client.id, channel: "WHATSAPP", externalHandle: "+15550003333", lastMessageAt: new Date() } });
+    const id = `wamid.read_${Date.now()}`;
+    const msg = await prisma.message.create({ data: { conversationId: conv.id, direction: "OUTBOUND", body: "On my way", status: "SENT", providerMessageId: id } });
+    const status = (s: string, ts: string) => post({ object: "whatsapp_business_account", entry: [{ id: "waba", changes: [{ field: "messages", value: { metadata: { phone_number_id: waB }, statuses: [{ id, status: s, timestamp: ts }] } }] }] });
+    await status("delivered", "1788600000");
+    await status("read", "1788600060");
+    const read = await prisma.message.findUnique({ where: { id: msg.id } });
+    expect(read?.status).toBe("DELIVERED");
+    expect(read?.statusDetail).toBe("read");
+    expect(read?.readAt).toBeTruthy();
+    expect(read?.deliveredAt).toBeTruthy();
+    // Meta can redeliver an earlier status; it must not un-read the message.
+    await status("sent", "1788599000");
+    await status("delivered", "1788599500");
+    const after = await prisma.message.findUnique({ where: { id: msg.id } });
+    expect(after?.statusDetail).toBe("read");
+    expect(after?.readAt?.getTime()).toBe(read?.readAt?.getTime());
+  });
+
+  it("acknowledges an account-level WhatsApp change without treating it as a message", async () => {
+    const r = await post({ object: "whatsapp_business_account", entry: [{ id: "waba", changes: [{ field: "account_update", value: { phone_number: "+1555", event: "VERIFIED_ACCOUNT" } }] }] });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ handled: 0 });
+  });
+
+  it("normalizes a WhatsApp image with a caption instead of dropping the message", async () => {
+    const id = `wamid.media_${Date.now()}`;
+    await post({ object: "whatsapp_business_account", entry: [{ id: "waba", changes: [{ field: "messages", value: { metadata: { phone_number_id: waB }, contacts: [{ wa_id: "15550004444", profile: { name: "Mia" } }], messages: [{ from: "15550004444", id, type: "image", image: { id: "media123", caption: "Is this the right dress?" } }] } }] }] });
+    const message = await prisma.message.findFirst({ where: { providerMessageId: id } });
+    expect(message?.body).toBe("[image] Is this the right dress?");
+  });
+
+  it("reads an Instagram DM delivered under the changes shape as well as the messaging shape", async () => {
+    const mid = `mid_changes_${Date.now()}`;
+    await post({ object: "instagram", entry: [{ id: igA, changes: [{ field: "messages", value: { messaging: [{ sender: { id: "igsid_999" }, recipient: { id: igA }, message: { mid, text: "Do you shoot weddings?" } }] } }] }] });
+    const message = await prisma.message.findFirst({ where: { providerMessageId: mid, conversation: { businessId: aId } } });
+    expect(message?.body).toBe("Do you shoot weddings?");
+  });
+
+  it("answers the handshake only for a subscribe with a challenge", async () => {
+    expect((await GET(new Request("http://localhost/api/webhooks/meta?hub.mode=unsubscribe&hub.verify_token=verify-me&hub.challenge=1"))).status).toBe(403);
+    expect((await GET(new Request("http://localhost/api/webhooks/meta?hub.mode=subscribe&hub.verify_token=verify-me"))).status).toBe(403);
+    expect((await GET(new Request("http://localhost/api/webhooks/meta"))).status).toBe(403);
+  });
 });

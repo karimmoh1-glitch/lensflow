@@ -161,7 +161,7 @@ async function runOne(automation: { id: string; businessId: string; name: string
       : null);
   if (conversationId) {
     await prisma.$transaction([
-      prisma.message.create({ data: { conversationId, direction: "OUTBOUND", body, status: delivery.status, providerMessageId } }),
+      prisma.message.create({ data: { conversationId, direction: "OUTBOUND", body, status: delivery.status, statusDetail: delivery.statusDetail, providerMessageId } }),
       prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
     ]);
   }

@@ -85,3 +85,29 @@ Xcode-side, before archiving:
 2. Run the commands above; open the project; set signing.
 3. Decide the subscription approach for iOS (hide upgrade in-app vs StoreKit).
 4. Archive → Distribute → App Store Connect → TestFlight → Submit.
+
+## Checklist snapshot (2026-09-06)
+
+| Item | State |
+|---|---|
+| Xcode project | none in repo; this Mac has Command Line Tools only |
+| Capacitor | not installed (config drafted above) |
+| Signing | not set up (needs Apple Developer team) |
+| Bundle identifier | proposed `org.daythread.app` |
+| Display name | Daythread |
+| App icons | 180px and 512px generated at `/apple-icon` and `/pwa-icon`; 1024px App Store icon to export from the same mark |
+| Splash / launch | solid `#FAFAF9` with the mark (drafted) |
+| Associated domains | `applinks:daythread.org` — needs Team ID and `/.well-known/apple-app-site-association` |
+| Push notifications | none; no notification architecture in the app today |
+| Privacy URL / Terms / Support | live: `/privacy`, `/terms`, `/support` |
+| Account deletion in app | Settings → Profile → Delete workspace |
+
+## TestFlight checklist
+
+1. Archive in Xcode with the Release scheme; Distribute → App Store Connect → Upload.
+2. App Store Connect → TestFlight → add internal testers; fill Export Compliance (no
+   custom encryption; HTTPS only).
+3. Install on a real iPhone; verify: login persists across relaunch, standalone
+   navigation, Google OAuth opens in the system browser and returns, sheets and keyboard
+   behavior, calendar day view, booking detail reschedule sheet, inbox composer.
+4. Fix anything found, re-upload, then submit for review with the reviewer notes above.

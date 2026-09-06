@@ -43,6 +43,7 @@ export default async function PublicBookingPage({ params }: { params: Promise<{ 
         <BookingFlow
           handle={business.handle}
           depositPercent={business.depositPercent}
+          timezone={business.timezone}
           services={business.services.map((s) => ({ id: s.id, name: s.name, priceCents: s.priceCents, durationMins: s.durationMins }))}
         />
       </div>

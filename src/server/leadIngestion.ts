@@ -44,6 +44,11 @@ export async function ingestInboundMessage(params: {
   headers?: { listUnsubscribe?: string | null; listId?: string | null; precedence?: string | null; autoSubmitted?: string | null; replyTo?: string | null; messageId?: string | null } | null;
 }) {
   const { businessId, channel, senderName, senderHandle, subject, clientEmail, clientPhone, providerMessageId, rawBody, headers } = params;
+  // Activation signal: the first real inbound message this workspace ever received. Only
+  // the channel is recorded, never the sender or the text.
+  if ((await prisma.message.count({ where: { direction: "INBOUND", conversation: { businessId } } })) === 0) {
+    await track("first_message_received", { businessId, properties: { channel } });
+  }
   const body = channel === "EMAIL" ? cleanEmailBody(params.body) : params.body;
 
   // Idempotency: a webhook can legitimately be redelivered (provider retry after a slow

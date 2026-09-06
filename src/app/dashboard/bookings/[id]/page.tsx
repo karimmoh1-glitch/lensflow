@@ -7,6 +7,7 @@ import { Badge, Card, CardBody, PageHeader } from "@/components/ui";
 import { formatMoney, toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { BookingActions } from "./BookingActions";
+import { RescheduleCancel } from "./RescheduleCancel";
 import { AssignPartner } from "./AssignPartner";
 import { DeliveryPanel } from "./DeliveryPanel";
 
@@ -175,6 +176,9 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               paymentMethods={business.paymentMethods}
               hasQuestionnaire={Boolean(booking.questionnaire)}
             />
+            {role !== "PARTNER" && !["CANCELED", "COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"].includes(booking.status) && (
+              <div className="mt-4 rounded-2xl border border-border bg-white px-5 py-4"><RescheduleCancel bookingId={booking.id} canCancel canReschedule timezone={business.timezone} currentStartISO={booking.startAt.toISOString()} /></div>
+            )}
           </div>
         </div>
       </div>

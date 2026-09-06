@@ -126,7 +126,7 @@ export async function syncSubscription(subscription: Stripe.Subscription): Promi
     return;
   }
   const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
-  const business = await prisma.business.findUnique({ where: { id: businessId }, select: { stripeCustomerId: true, stripeSubscriptionId: true } });
+  const business = await prisma.business.findUnique({ where: { id: businessId }, select: { stripeCustomerId: true, stripeSubscriptionId: true, planTier: true, billingStatus: true } });
   if (!business) return;
   // Tenant guard: the subscription's customer must be this business's customer (or the
   // business has none yet and is being linked by its own checkout).
@@ -139,6 +139,10 @@ export async function syncSubscription(subscription: Stripe.Subscription): Promi
     return;
   }
   const billingStatus = STRIPE_STATUS_MAP[subscription.status] ?? "CANCELED";
+  // Funnel signal: the first time this workspace becomes a paying subscriber.
+  const entitledNow = billingStatus === "ACTIVE" || billingStatus === "TRIALING";
+  const entitledBefore = business.planTier !== "FREE" && (business.billingStatus === "ACTIVE" || business.billingStatus === "TRIALING" || business.billingStatus === "PAST_DUE");
+  if (entitledNow && !entitledBefore) await track("subscription_started", { businessId, properties: { planKey: planTier } });
   await prisma.business.updateMany({
     where: { id: businessId },
     data: {

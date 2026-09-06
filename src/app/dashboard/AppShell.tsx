@@ -230,6 +230,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-paper md:flex">
+      <a href="#dt-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-full focus:bg-ink focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold">Skip to content</a>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-white flex-col">
         <div className="px-5 py-5 border-b border-border">
@@ -300,7 +301,7 @@ export function AppShell({
         </div>
       )}
 
-      <main className="flex-1 min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+      <main id="dt-main" tabIndex={-1} className="flex-1 min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 focus:outline-none">
         {wantedIntegrations.length > 0 && !pathname.startsWith("/dashboard/settings") && (
           <Link href="/dashboard/settings?tab=connections" className="mx-4 md:mx-8 mt-3 md:mt-4 rounded-2xl border border-signal/25 bg-signal-soft/40 px-3.5 md:px-4 py-2.5 md:py-3 flex items-center gap-3 text-sm text-ink/80 hover:bg-signal-soft/60 transition-colors">
             <span className="min-w-0 flex-1 truncate md:whitespace-normal"><span className="font-semibold text-ink">Connect {wantedIntegrations.join(", ")}</span><span className="hidden md:inline"> and your first real conversations arrive here.</span></span>

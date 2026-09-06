@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { PageHeader, Card, Badge } from "@/components/ui";
+import { PageHeader, Card, Badge, SectionLabel } from "@/components/ui";
+import Link from "next/link";
+import { planLimits, effectivePlan, PLANS, limitLabel } from "@/lib/billing";
 import { initials } from "@/lib/utils";
 import { format } from "date-fns";
 import { PartnerInviteForm } from "./PartnerInviteForm";
@@ -34,12 +36,37 @@ export default async function TeamPage() {
     }),
   ]);
 
+  const limits = planLimits(business);
+  const plan = effectivePlan(business);
+  const seats = members.filter((m) => m.status === "ACTIVE").length;
+  const pendingSeats = invitations.filter((i) => i.status === "PENDING").length;
+  const capped = Number.isFinite(limits.maxTeamSeats);
+  const full = capped && seats + pendingSeats >= limits.maxTeamSeats;
+  const over = capped && seats > limits.maxTeamSeats;
+  const nextPlan = plan === "FREE" ? "PRO" : plan === "PRO" ? "BUSINESS" : null;
+
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title="Team" description="Your team and partners with access to this business." />
+      <PageHeader
+        title="Team"
+        description="Your team and partners with access to this business."
+        action={<span className="text-xs font-semibold text-ink/55 tabular-nums">{capped ? `${seats} of ${limits.maxTeamSeats}` : `${seats} · unlimited`} <span className="text-ink/40">· {PLANS[plan].name}</span></span>}
+      />
+
+      {over && (
+        <div role="alert" className="mb-5 rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">
+          <span className="font-semibold text-ink">{seats} team members; {PLANS[plan].name} includes {limits.maxTeamSeats}.</span> Everyone keeps access. New invitations are paused until you upgrade or deactivate someone.{nextPlan && <Link href="/dashboard/billing" className="ml-2 font-semibold text-signal-text hover:underline">See plans →</Link>}
+        </div>
+      )}
+      {full && !over && nextPlan && (
+        <div className="mb-5 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span><span className="font-semibold text-ink">Team is full.</span> {PLANS[plan].name} includes {limits.maxTeamSeats} team member{limits.maxTeamSeats === 1 ? "" : "s"}{pendingSeats ? ` (${pendingSeats} invitation${pendingSeats === 1 ? "" : "s"} pending)` : ""}. {PLANS[nextPlan].name} includes {limitLabel(PLANS[nextPlan].maxTeamSeats).toLowerCase()}.</span>
+          <Link href="/dashboard/billing" className="text-signal-text font-semibold hover:underline">Upgrade →</Link>
+        </div>
+      )}
 
       <div className="mb-10">
-        <h2 className="text-sm font-medium text-ink mb-2.5">Members</h2>
+        <SectionLabel hint={`${seats} active`}>Members</SectionLabel>
         <Card>
           <div className="divide-y divide-border">
             {members.map((m) => (
@@ -73,7 +100,7 @@ export default async function TeamPage() {
 
       {joinRequests.length > 0 && (
         <div className="mb-10">
-          <h2 className="text-sm font-medium text-ink mb-2.5">Join requests</h2>
+          <SectionLabel tone="accent" hint="people who asked to join">Join requests</SectionLabel>
           <Card>
             <div className="divide-y divide-border">
               {joinRequests.map((r) => (
@@ -85,13 +112,13 @@ export default async function TeamPage() {
       )}
 
       <div className="mb-10">
-        <h2 className="text-sm font-medium text-ink mb-2.5">Invite a partner</h2>
+        <SectionLabel hint="a photographer or vendor you hand bookings to">Invite a partner</SectionLabel>
         <PartnerInviteForm />
       </div>
 
       {invitations.length > 0 && (
         <div>
-          <h2 className="text-sm font-medium text-ink mb-2.5">Invitations</h2>
+          <SectionLabel>Invitations</SectionLabel>
           <Card>
             <div className="divide-y divide-border">
               {invitations.map((inv) => (

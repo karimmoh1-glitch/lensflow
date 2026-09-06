@@ -29,7 +29,15 @@ export type OutboundMessage = {
 };
 
 export type SendResult =
-  | { ok: true; simulated: boolean; providerMessageId?: string }
+  | {
+      ok: true;
+      /** True when nothing actually left the building: the channel isn't connected, or the
+       * provider's own rules (WhatsApp's 24-hour window) forbid this send. `reason` says
+       * which, in words a person can act on — the UI must never call this "sent". */
+      simulated: boolean;
+      providerMessageId?: string;
+      reason?: string;
+    }
   | { ok: false; error: string };
 
 /** One normalized shape for a message arriving from any channel — the unified inbox never

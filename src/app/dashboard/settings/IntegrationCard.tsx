@@ -13,6 +13,7 @@ import { CalendarSetup } from "./CalendarSetup";
 import { AppleConnectDialog } from "./AppleConnectDialog";
 import type { IntegrationProvider } from "@prisma/client";
 import type { DisplayStatus } from "@/lib/integrations/registry";
+import type { ConnectionState } from "@/lib/meta/config";
 export type { DisplayStatus };
 
 /**
@@ -22,6 +23,8 @@ export type { DisplayStatus };
  */
 export type CardModel = {
   provider: IntegrationProvider;
+  /** CONNECTED | NOT_CONNECTED | CONFIGURATION_REQUIRED | REAUTH_REQUIRED | ERROR. */
+  configState: ConnectionState;
   name: string;
   description: string;
   status: DisplayStatus;
@@ -43,7 +46,7 @@ export type CardModel = {
 
 const PILL: Record<CardModel["pill"]["tone"], string> = { success: "bg-success-soft text-success-text", warning: "bg-warning-soft text-warning-text", accent: "bg-accent-soft text-accent-text", signal: "bg-signal-soft text-signal-text", neutral: "bg-black/[0.05] text-ink/55" };
 
-export function IntegrationCard({ model, icon, connect, children }: { model: CardModel; icon: React.ReactNode; connect?: (formData: FormData) => Promise<void>; children?: React.ReactNode }) {
+export function IntegrationCard({ model, icon, connect, manage, children }: { model: CardModel; icon: React.ReactNode; connect?: (formData: FormData) => Promise<void>; /** Detail shown in the Manage sheet for a non-calendar provider (WhatsApp's number and window rules). */ manage?: React.ReactNode; children?: React.ReactNode }) {
   const [open, setOpen] = useState<null | "manage" | "apple" | "setup">(null);
   const [pending, start] = useTransition();
   const [confirm, setConfirm] = useState(false);
@@ -51,6 +54,7 @@ export function IntegrationCard({ model, icon, connect, children }: { model: Car
   const router = useRouter();
   const { toast } = useToast();
   const isCalendar = model.provider === "GOOGLE_CALENDAR" || model.provider === "APPLE_CALENDAR";
+  const hasManage = isCalendar || Boolean(manage);
   const connected = model.status === "connected" || model.status === "sync_issue" || model.status === "needs_attention";
 
   // Auto-open the setup sheet when the callback sent us back with ?setup=PROVIDER.
@@ -130,11 +134,47 @@ export function IntegrationCard({ model, icon, connect, children }: { model: Car
     return null;
   })();
 
+  const actions = (
+    <>
+      {primary}
+      {connected && (
+        <div className="flex flex-wrap items-center gap-1 sm:justify-end">
+          {hasManage && (
+            <button type="button" onClick={() => setOpen("manage")} className="text-[13px] sm:text-xs font-semibold text-ink/60 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              Manage
+            </button>
+          )}
+          {/* A working connection can still be renewed — a re-grant is the fix for a
+              permission the business later removed, or a webhook Meta never accepted. */}
+          {!isCalendar && connect && model.status !== "needs_attention" && !confirm && (
+            <form action={connect} onSubmit={() => setConnecting(true)}>
+              <button type="submit" disabled={connecting} className="text-[13px] sm:text-xs font-semibold text-ink/60 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-60">
+                {connecting ? "Opening…" : "Reconnect"}
+              </button>
+            </form>
+          )}
+          {!isCalendar && !confirm && (
+            <button type="button" onClick={() => setConfirm(true)} disabled={pending} className="text-[13px] sm:text-xs font-semibold text-ink/50 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05]">
+              Disconnect
+            </button>
+          )}
+          {!isCalendar && confirm && (
+            <span className="inline-flex items-center gap-1">
+              <Button size="sm" variant="danger" onClick={disconnect} loading={pending} loadingLabel="Disconnecting">Disconnect</Button>
+              <button type="button" onClick={() => setConfirm(false)} className="text-[13px] sm:text-xs text-ink/50 px-3 py-2 sm:px-2.5 sm:py-1.5">Keep</button>
+            </span>
+          )}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <>
-      <article aria-label={model.name} className="group relative rounded-[22px] border border-border bg-white transition-all duration-200 hover:border-ink/20 hover:shadow-[0_18px_44px_-30px_rgba(16,17,20,0.35)] hover:-translate-y-px">
+      <article aria-label={model.name} data-provider={model.provider} data-connection-state={model.configState} className="group relative rounded-[22px] border border-border bg-white transition-all duration-200 hover:border-ink/20 hover:shadow-[0_18px_44px_-30px_rgba(16,17,20,0.35)] hover:-translate-y-px">
         <div aria-hidden className="absolute inset-x-0 top-0 h-[3px] rounded-t-[22px] opacity-80" style={{ background: connected || model.status === "always_on" ? model.accent : "transparent" }} />
-        <div className="px-5 pt-5 pb-4 flex gap-4">
+        <div className="px-4 sm:px-5 pt-5 pb-4">
+          <div className="flex gap-3.5 sm:gap-4">
           <span className="shrink-0 mt-0.5 w-10 h-10 rounded-xl border border-border bg-paper flex items-center justify-center">{icon}</span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -149,7 +189,12 @@ export function IntegrationCard({ model, icon, connect, children }: { model: Car
               ))}
             </ul>
             {model.status === "connected" && model.lastSyncedAt && <p className="mt-2 text-[11px] text-ink/45">Last synced {model.lastSyncedAt}</p>}
-            {model.status === "sync_issue" && <p className="mt-2 text-[11px] text-warning-text">Calendar sync temporarily failed. Daythread will retry automatically{model.lastSyncedAt ? ` · last good sync ${model.lastSyncedAt}` : ""}.</p>}
+            {model.status === "sync_issue" && !model.lastError && (
+              <p className="mt-2 text-[11px] text-warning-text">
+                {isCalendar ? "Calendar sync temporarily failed. Daythread will retry automatically" : `The last sync with ${model.name} failed. Messages already received are unaffected`}
+                {model.lastSyncedAt ? ` · last good sync ${model.lastSyncedAt}` : ""}.
+              </p>
+            )}
             {model.status === "needs_attention" && <p className="mt-2 text-[11px] text-accent-text">Your {model.name} connection needs to be renewed.</p>}
             {model.status === "unavailable" && <p className="mt-2 text-[11px] text-ink/50">{model.detail}</p>}
             {model.limit && (model.status === "disconnected" || model.status === "needs_attention") && (
@@ -159,27 +204,18 @@ export function IntegrationCard({ model, icon, connect, children }: { model: Car
               </div>
             )}
             {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && <p className="mt-2 text-[11px] text-ink/50">{model.detail}</p>}
+            {model.lastError && model.status !== "unavailable" && <p className="mt-2 text-[11px] text-warning-text leading-snug">{model.lastError}</p>}
             {model.adminNote && <p className="mt-2 text-[11px] text-warning-text">{model.adminNote}</p>}
           </div>
-          <div className="shrink-0 flex flex-col items-end gap-2">
-            {primary}
-            {connected && (
-              <div className="flex items-center gap-1">
-                {isCalendar && <button type="button" onClick={() => setOpen("manage")} className="text-xs font-semibold text-ink/60 hover:text-ink px-2 py-1 rounded-md hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Manage</button>}
-                {!isCalendar && !confirm && <button type="button" onClick={() => setConfirm(true)} disabled={pending} className="text-xs font-semibold text-ink/50 hover:text-ink px-2 py-1 rounded-md hover:bg-black/[0.05]">Disconnect</button>}
-                {!isCalendar && confirm && (
-                  <span className="inline-flex items-center gap-1">
-                    <Button size="sm" variant="danger" onClick={disconnect} loading={pending} loadingLabel="Disconnecting">Disconnect</Button>
-                    <button type="button" onClick={() => setConfirm(false)} className="text-xs text-ink/50 px-2 py-1">Keep</button>
-                  </span>
-                )}
-              </div>
-            )}
+          <div className="hidden sm:flex shrink-0 flex-col items-end gap-2">{actions}</div>
           </div>
+          {/* On a phone the actions get their own full-width row: 44px targets, never a
+              cramped column squeezed beside the text. */}
+          <div className="sm:hidden mt-3.5 flex flex-wrap items-center gap-2">{actions}</div>
         </div>
-        {Children.toArray(children).some(Boolean) && <div className="border-t border-border bg-paper/60 px-5 py-3 rounded-b-[22px]">{children}</div>}
+        {Children.toArray(children).some(Boolean) && <div className="border-t border-border bg-paper/60 px-4 sm:px-5 py-3 rounded-b-[22px]">{children}</div>}
         {model.approval && model.status !== "always_on" && (
-          <details className="border-t border-border px-5 py-2.5 text-[11px] text-ink/45">
+          <details className="border-t border-border px-4 sm:px-5 py-2.5 text-[11px] text-ink/45">
             <summary className="cursor-pointer select-none hover:text-ink/70">What {model.name} requires</summary>
             <p className="mt-1 leading-relaxed">{model.approval}</p>
           </details>
@@ -197,10 +233,13 @@ export function IntegrationCard({ model, icon, connect, children }: { model: Car
                 <div className="text-sm font-semibold text-ink">{model.name}</div>
                 <div className="text-[11px] text-ink/50">{open === "manage" ? "Manage connection" : open === "apple" ? "Connect with an app-specific password" : "Choose calendars"}</div>
               </div>
-              <button type="button" onClick={closeSheet} aria-label="Close" className="w-8 h-8 rounded-md flex items-center justify-center text-ink/55 hover:text-ink hover:bg-black/[0.05]"><X className="w-4 h-4" strokeWidth={2} /></button>
+              <button type="button" onClick={closeSheet} aria-label="Close" className="w-11 h-11 sm:w-8 sm:h-8 -mr-1.5 sm:mr-0 rounded-lg flex items-center justify-center text-ink/55 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-4 h-4" strokeWidth={2} /></button>
             </div>
-            <div className="px-5 py-5">
+            {/* Bottom sheet on a phone: the home-indicator inset is part of the padding so
+                the last control is never under it. */}
+            <div className="px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5">
               {open === "apple" && <AppleConnectDialog onClose={closeSheet} />}
+              {open === "manage" && !isCalendar && manage}
               {(open === "manage" || open === "setup") && isCalendar && (
                 <CalendarSetup provider={model.provider as "GOOGLE_CALENDAR" | "APPLE_CALENDAR"} mode={open} onDone={closeSheet} reconnect={model.provider === "APPLE_CALENDAR" ? <Button size="sm" onClick={() => setOpen("apple")}>Reconnect</Button> : connect ? <form action={connect}><Button type="submit" size="sm">Reconnect</Button></form> : null} />
               )}

@@ -6,8 +6,8 @@ import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { signOAuthState } from "@/lib/integrations/oauthState";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
-import { instagramConfigured, instagramAuthUrl } from "@/lib/meta/instagram";
-import { whatsappConfigured, whatsappAuthUrl } from "@/lib/meta/whatsapp";
+import { instagramConfigured, instagramAuthUrl, unsubscribeInstagramWebhooks } from "@/lib/meta/instagram";
+import { whatsappConfigured, whatsappAuthUrl, unsubscribeWabaWebhooks, listPhoneNumbers, tokenOwnsWaba } from "@/lib/meta/whatsapp";
 import { makeClient, discover, listCalendars as caldavCalendars } from "@/lib/caldav";
 import { syncCalendarIn, readCalendarSettings, type CalendarChoice } from "@/server/calendarSync";
 import { twilioConfigured, searchNumbers, provisionNumber, releaseNumber } from "@/lib/twilio";
@@ -36,8 +36,8 @@ async function guardQuotaOrRedirect(businessId: string, provider: IntegrationPro
 }
 
 /** Instagram: Meta's own authorization screen. Professional accounts only. */
-export async function connectInstagram() {
-  const ctx = await requireRole([...ADMIN]);
+export async function connectInstagram(session?: SessionPayload | null) {
+  const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!instagramConfigured()) throw new Error("Instagram isn't configured on this deployment.");
   guardEncryption();
@@ -48,8 +48,8 @@ export async function connectInstagram() {
 }
 
 /** WhatsApp: Meta's Embedded Signup (Facebook Login for Business). */
-export async function connectWhatsApp() {
-  const ctx = await requireRole([...ADMIN]);
+export async function connectWhatsApp(session?: SessionPayload | null) {
+  const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!whatsappConfigured()) throw new Error("WhatsApp isn't configured on this deployment.");
   guardEncryption();
@@ -133,6 +133,14 @@ export async function disconnectIntegration(provider: IntegrationProvider, sessi
   }
   const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider } } });
   if (!row) return { error: "Nothing to disconnect." };
+  // Tell Meta to stop delivering first, while the credential still works. Best effort: a
+  // provider that refuses must never leave the user unable to disconnect locally, and the
+  // webhook ignores events for a row that is no longer connected either way.
+  if ((provider === "INSTAGRAM" || provider === "WHATSAPP") && row.accessToken) {
+    await revokeMetaSubscription(provider, row).catch((err) =>
+      reportFailure("oauth", `${provider} webhook unsubscribe failed on disconnect`, { businessId: ctx.business.id, provider, error: err, level: "warn" })
+    );
+  }
   await prisma.externalEvent.deleteMany({ where: { integrationId: row.id } });
   await prisma.integration.update({ where: { id: row.id }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null, tokenExpiresAt: null, externalAccount: null, externalId: null, scopes: null, syncCursor: null, settings: undefined, lastSyncStatus: null, lastError: null, lastErrorAt: null } });
   if (provider === "APPLE_CALENDAR") await prisma.booking.updateMany({ where: { businessId: ctx.business.id, externalCalendarProvider: "APPLE_CALENDAR" }, data: { externalEventId: null, externalCalendarProvider: null } });
@@ -207,4 +215,65 @@ export async function releaseSmsNumber(): Promise<{ error?: string }> {
   await track("integration_disconnected", { businessId: ctx.business.id, properties: { provider: "SMS" } });
   revalidatePath("/dashboard/settings");
   return {};
+}
+
+/**
+ * Stops Meta sending this account's events to Daythread. Instagram unsubscribes the
+ * connected account; WhatsApp unsubscribes the WABA the phone number belongs to.
+ * Meta offers no token-revocation endpoint for Instagram Login, so the stored credential is
+ * erased here and the user can also remove Daythread from their Instagram settings — the
+ * disconnect UI says so rather than implying a revocation that did not happen.
+ */
+async function revokeMetaSubscription(provider: IntegrationProvider, row: { accessToken: string | null; externalId: string | null; settings: unknown }): Promise<void> {
+  if (!row.accessToken) return;
+  if (provider === "INSTAGRAM" && row.externalId) {
+    await unsubscribeInstagramWebhooks(row.accessToken, row.externalId);
+    return;
+  }
+  if (provider === "WHATSAPP") {
+    const wabaId = (row.settings as { wabaId?: string } | null)?.wabaId;
+    if (wabaId) await unsubscribeWabaWebhooks(row.accessToken, wabaId);
+  }
+}
+
+/**
+ * Switch the connected WhatsApp number. The id arrives from the browser, so it is only
+ * accepted after Meta itself confirms — through the token's granular scopes and the WABA's
+ * own phone list — that this workspace's token owns it. A number connected to another
+ * workspace is refused.
+ */
+export async function selectWhatsAppNumber(phoneNumberId: string, session?: SessionPayload | null): Promise<{ error?: string; displayPhoneNumber?: string }> {
+  const ctx = await requireRole([...ADMIN], session);
+  if (!ctx) throw new Error("unauthorized");
+  if (!/^\d{5,25}$/.test(phoneNumberId)) return { error: "That isn't a WhatsApp phone number id." };
+  const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "WHATSAPP" } } });
+  if (!row || row.status === "NOT_CONNECTED" || !row.accessToken) return { error: "WhatsApp isn't connected." };
+  const settings = (row.settings ?? {}) as { wabaId?: string; availableNumbers?: Array<{ id: string; wabaId: string }> };
+  const candidate = settings.availableNumbers?.find((n) => n.id === phoneNumberId);
+  if (!candidate) return { error: "That number isn't one of the numbers Meta granted this workspace. Reconnect WhatsApp to refresh the list." };
+  try {
+    // Re-check with Meta rather than trusting what we stored earlier: access can be removed.
+    if (!(await tokenOwnsWaba(row.accessToken, candidate.wabaId))) return { error: "Meta no longer grants this workspace access to that WhatsApp Business Account. Reconnect WhatsApp." };
+    const phones = await listPhoneNumbers(row.accessToken, candidate.wabaId);
+    const phone = phones.find((p) => p.id === phoneNumberId);
+    if (!phone) return { error: "Meta no longer lists that number on this WhatsApp Business Account." };
+    const elsewhere = await prisma.integration.findFirst({ where: { provider: "WHATSAPP", externalId: phone.id, businessId: { not: ctx.business.id }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
+    if (elsewhere) return { error: "That number is already connected to another Daythread workspace." };
+    await prisma.integration.update({
+      where: { id: row.id },
+      data: {
+        externalId: phone.id,
+        externalAccount: `${phone.verified_name} · ${phone.display_phone_number}`,
+        settings: { ...settings, wabaId: candidate.wabaId, phoneNumberId: phone.id, displayPhoneNumber: phone.display_phone_number, verifiedName: phone.verified_name, qualityRating: phone.quality_rating ?? null, codeVerificationStatus: phone.code_verification_status ?? null },
+        lastError: null,
+        lastErrorAt: null,
+      },
+    });
+    await track("integration_connected", { businessId: ctx.business.id, properties: { provider: "WHATSAPP", change: "number" } });
+    revalidatePath("/dashboard/settings");
+    return { displayPhoneNumber: phone.display_phone_number };
+  } catch (err) {
+    await reportFailure("oauth", "WhatsApp number switch failed", { businessId: ctx.business.id, provider: "WHATSAPP", error: err });
+    return { error: "Meta couldn't confirm that number just now. Nothing was changed — try again." };
+  }
 }

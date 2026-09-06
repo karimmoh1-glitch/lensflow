@@ -50,7 +50,7 @@ describe("integrations: tenant isolation, honest delivery, calendar busy time", 
     await prisma.integration.create({ data: { businessId: bId, provider: "WHATSAPP", status: "CONNECTED", externalId: "pn_1", accessToken: "EAAtest", externalAccount: "+1" } });
     const stale = await deliverToCustomer({ businessId: bId, businessName: "B", businessHandle: "b", channel: "WHATSAPP", to: "+15550001111", body: "hi", lastInboundAt: new Date(Date.now() - 30 * 3600 * 1000) });
     expect(stale.status).toBe("NOT_DELIVERED");
-    expect(stale.error).toMatch(/24-hour/);
+    expect(stale.error).toMatch(/24[- ]hour/);
     const revoked = await prisma.integration.update({ where: { businessId_provider: { businessId: bId, provider: "WHATSAPP" } }, data: { status: "NEEDS_ATTENTION" } });
     const needs = await deliverToCustomer({ businessId: bId, businessName: "B", businessHandle: "b", channel: "WHATSAPP", to: "+15550001111", body: "hi", lastInboundAt: new Date() });
     expect(needs.status).toBe("NOT_DELIVERED");

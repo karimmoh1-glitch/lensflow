@@ -44,9 +44,11 @@ export async function findKnownClient(input: IdentityInput) {
     // by hand, a WhatsApp wa_id with no plus. Narrow to rows whose stored number contains
     // the same national tail, then confirm on the normalized value: the tail only chooses
     // candidates, it never decides a match, so two different people can't be merged.
-    const tail = phone.replace(/^\+/, "").slice(-9);
-    if (tail.length >= 7) {
-      const candidates = await prisma.client.findMany({ where: { businessId, phone: { contains: tail } }, include, orderBy: { updatedAt: "desc" }, take: 20 });
+    // The last four digits survive every human format ("(512) 555-0199", "512.555.0199"),
+    // so they pick the candidates; the normalized comparison below is what decides.
+    const tail = phone.replace(/\D/g, "").slice(-4);
+    if (tail.length === 4) {
+      const candidates = await prisma.client.findMany({ where: { businessId, phone: { contains: tail } }, include, orderBy: { updatedAt: "desc" }, take: 50 });
       const hit = candidates.find((c) => normalizePhone(c.phone) === phone);
       if (hit) return { client: hit, matchedOn: "phone" as const, email, phone };
     }

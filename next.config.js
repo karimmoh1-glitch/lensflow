@@ -34,7 +34,13 @@ const securityHeaders = [
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    // The embeddable lead form (/embed/:handle) is meant to live inside a customer's own
+    // website, so it alone may be framed; everything else refuses framing entirely.
+    const embedCsp = cspHeader.replace("frame-ancestors 'none'", "frame-ancestors *");
+    return [
+      { source: "/:path((?!embed).*)", headers: securityHeaders },
+      { source: "/embed/:path*", headers: securityHeaders.filter((h) => h.key !== "X-Frame-Options" && h.key !== "Content-Security-Policy").concat([{ key: "Content-Security-Policy", value: embedCsp }]) },
+    ];
   },
 };
 export default nextConfig;

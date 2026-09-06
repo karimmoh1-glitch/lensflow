@@ -209,8 +209,11 @@ export async function resetPassword(token: string, formData: FormData): Promise<
   const passwordHash = await hashPassword(parsed.data.password);
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash } }),
+    // New password, and every existing session — including whoever might have been using a
+    // stolen one — is signed out.
+    prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash, sessionVersion: { increment: 1 } } }),
     prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
+    prisma.passwordResetToken.updateMany({ where: { userId: resetToken.userId, usedAt: null, id: { not: resetToken.id } }, data: { usedAt: new Date() } }),
   ]);
 
   redirect("/login?reset=1");

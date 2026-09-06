@@ -84,6 +84,20 @@ setting, URL and variable.
 
 ## 7. SECURITY RESULTS
 
+Final launch audit additions (2026-09-06):
+- Fixed: `JWT_SECRET` no longer falls back to a public placeholder in production; a missing
+  value throws at first use (sessions, middleware, Google state).
+- Fixed: sessions are versioned. Password reset and password change bump the version, so
+  every previously issued token — cookie or mobile bearer — is refused.
+- Added: change password (current password required) in Settings → Profile.
+- Fixed: the build no longer passes `--accept-data-loss` to Prisma; a destructive schema
+  change fails the build instead of dropping data.
+- Fixed: framing is refused everywhere except the embeddable lead form (`/embed/:handle`).
+- Added: webhook body ceilings (Stripe 512KB, Twilio 64KB, Resend 2MB) → 413 before parsing.
+- Added: AI prompts mark customer text as untrusted and forbid claiming actions; Copilot
+  questions are capped at 500 characters; model calls time out at 20s with one retry.
+- Fixed: the "simulate inbound message" tool is refused for real workspaces on production.
+
 - Fixed: production password-reset link disclosure (account takeover) — `src/app/actions/auth.ts`.
 - Fixed: public booking race (two customers could take one slot) — row-locked transaction.
 - Verified by tests: OAuth state replay/expiry/forgery/wrong session/wrong tenant for

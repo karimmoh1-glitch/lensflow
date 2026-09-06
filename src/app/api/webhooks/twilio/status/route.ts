@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readBoundedText } from "@/lib/http";
 import { validateRequest } from "twilio";
 import { prisma } from "@/lib/db";
 import { reportFailure } from "@/lib/observe";
@@ -12,7 +13,12 @@ import { reportFailure } from "@/lib/observe";
 export async function POST(req: Request) {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   if (!authToken) return NextResponse.json({ error: "SMS isn't configured on this deployment." }, { status: 501 });
-  const raw = await req.text();
+  let raw: string;
+  try {
+    raw = await readBoundedText(req, 64 * 1024);
+  } catch {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  }
   const form = new URLSearchParams(raw);
   const params = Object.fromEntries(form.entries());
   if (!validateRequest(authToken, req.headers.get("x-twilio-signature") ?? "", req.url, params)) return NextResponse.json({ error: "Invalid signature" }, { status: 403 });

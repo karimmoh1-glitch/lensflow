@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import { requiredSecret } from "@/lib/env";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
@@ -34,7 +35,7 @@ export function googleOAuthConfigured() {
 // callback route, so it has to be self-verifying (not a DB lookup keyed by something
 // guessable) — a short-lived signed token is the standard way to carry the initiating
 // business's id through the redirect without an extra table.
-const stateSecret = () => new TextEncoder().encode(process.env.JWT_SECRET || "dev-only-insecure-secret");
+const stateSecret = () => new TextEncoder().encode(requiredSecret("JWT_SECRET"));
 
 const NONCE_COOKIE = "google_oauth_nonce";
 

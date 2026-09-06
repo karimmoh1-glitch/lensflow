@@ -9,6 +9,7 @@ import { PaymentSettingsForm } from "./PaymentSettingsForm";
 import { IntegrationsHub } from "./IntegrationsHub";
 import { SettingsTabs } from "./SettingsTabs";
 import { DangerZone } from "./DangerZone";
+import { PasswordForm } from "./PasswordForm";
 
 export default async function SettingsPage({
   searchParams,
@@ -33,6 +34,7 @@ export default async function SettingsPage({
         profile={
           <>
             <BusinessProfileForm business={business} />
+            <PasswordForm email={ctx.user.email} />
             {ctx.role === "OWNER" && <DangerZone businessName={business.name} />}
           </>
         }

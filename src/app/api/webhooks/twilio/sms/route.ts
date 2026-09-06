@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readBoundedText } from "@/lib/http";
 import { validateRequest } from "twilio";
 import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
@@ -18,7 +19,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "SMS receiving isn't configured on this deployment." }, { status: 501 });
   }
 
-  const rawBody = await req.text();
+  let rawBody: string;
+  try {
+    rawBody = await readBoundedText(req, 64 * 1024);
+  } catch {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  }
   const form = new URLSearchParams(rawBody);
   const params = Object.fromEntries(form.entries());
 

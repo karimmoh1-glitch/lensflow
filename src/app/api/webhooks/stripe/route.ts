@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readBoundedText } from "@/lib/http";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/payments";
 import { prisma } from "@/lib/db";
@@ -24,7 +25,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Stripe billing isn't configured on this deployment." }, { status: 501 });
   }
 
-  const payload = await req.text();
+  let payload: string;
+  try {
+    payload = await readBoundedText(req, 512 * 1024);
+  } catch {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  }
   const signature = req.headers.get("stripe-signature") ?? "";
 
   let event: Stripe.Event;

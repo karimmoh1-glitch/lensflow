@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { requiredSecret } from "@/lib/env";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const secret = () => new TextEncoder().encode(process.env.JWT_SECRET || "dev-only-insecure-secret");
+const secret = () => new TextEncoder().encode(requiredSecret("JWT_SECRET"));
 
 async function hasValidSession(req: NextRequest) {
   const token = req.cookies.get("lf_session")?.value;

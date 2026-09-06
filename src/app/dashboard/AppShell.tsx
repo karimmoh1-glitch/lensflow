@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Home,
   Inbox as InboxIcon,
@@ -22,6 +22,9 @@ import {
   Bot,
   LayoutGrid,
   ChevronRight,
+  BarChart3,
+  Plug,
+  ArrowUpRight,
   type LucideIcon,
 } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
@@ -37,49 +40,80 @@ import { Search } from "lucide-react";
 // Icon tone shows only in the item's resting state (active state is always solid ink/white
 // for clear legibility) — the same terracotta/signal/semantic language used on the
 // marketing site's module showcase, so the two feel like one product.
-const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[] }[] = [
-  { href: "/dashboard", label: "Home", icon: Home, tone: "text-ink/65" },
-  { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-signal-text/70" },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-success/70" },
-  { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-info/70" },
-  { href: "/dashboard/clients", label: "Clients", icon: Users, tone: "text-accent/70" },
-  { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-warning/70" },
-  { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-signal-text/70" },
-  { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles, tone: "text-signal-text/70" },
-  { href: "/dashboard/agent", label: "Agent", icon: Bot, tone: "text-signal-text/70" },
-  { href: "/dashboard/team", label: "Team", icon: UserCog, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
-  { href: "/dashboard/billing", label: "Billing", icon: Receipt, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
-  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/65", roles: ["OWNER", "ADMIN"] },
+const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[]; group: "work" | "automate" | "workspace" }[] = [
+  { href: "/dashboard", label: "Today", icon: Home, tone: "text-ink/65", group: "work" },
+  { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-signal-text/70", group: "work" },
+  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-success/70", group: "work" },
+  { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-info/70", group: "work" },
+  { href: "/dashboard/clients", label: "Clients", icon: Users, tone: "text-accent/70", group: "work" },
+  { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-warning/70", group: "work" },
+  { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-signal-text/70", group: "automate" },
+  { href: "/dashboard/copilot", label: "Copilot", icon: Sparkles, tone: "text-signal-text/70", group: "automate" },
+  { href: "/dashboard/agent", label: "Business Agent", icon: Bot, tone: "text-signal-text/70", group: "automate" },
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, tone: "text-ink/65", group: "workspace" },
+  { href: "/dashboard/settings?tab=connections", label: "Integrations", icon: Plug, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/team", label: "Team", icon: UserCog, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/billing", label: "Billing", icon: Receipt, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"] },
+  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/65", group: "workspace", roles: ["OWNER", "ADMIN"] },
 ];
+const GROUP_LABEL: Record<"work" | "automate" | "workspace", string> = { work: "Work", automate: "Automate", workspace: "Workspace" };
+const TAB_HREFS = ["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"];
 
-function isActive(pathname: string, href: string) {
+function isActive(pathname: string, href: string, search = "") {
   if (href === "/dashboard") return pathname === "/dashboard";
+  if (href.includes("?")) {
+    const [path, qs] = href.split("?");
+    return pathname.startsWith(path) && search.includes(qs);
+  }
+  if (href === "/dashboard/settings") return pathname.startsWith(href) && !search.includes("tab=connections");
   return pathname.startsWith(href);
 }
 
-function NavLinks({ pathname, role, onNavigate }: { pathname: string; role: Role; onNavigate?: () => void }) {
+function NavLinks({ pathname, search, role, onNavigate }: { pathname: string; search: string; role: Role; onNavigate?: () => void }) {
   const items = BASE_NAV.filter((item) => !item.roles || item.roles.includes(role));
+  const groups = (["work", "automate", "workspace"] as const).map((g) => ({ g, items: items.filter((i) => i.group === g) })).filter((x) => x.items.length > 0);
   return (
-    <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-      {items.map((item) => {
-        const active = isActive(pathname, item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-              active ? "bg-ink text-white" : "text-ink/60 hover:bg-black/[0.05] hover:text-ink hover:translate-x-0.5"
-            )}
-          >
-            <item.icon className={cn("w-4 h-4 shrink-0", !active && item.tone)} strokeWidth={2} aria-hidden />
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-thin">
+      {groups.map(({ g, items }, gi) => (
+        <div key={g} className={cn(gi > 0 && "mt-4")}>
+          <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink/35">{GROUP_LABEL[g]}</div>
+          <div className="space-y-0.5">
+            {items.map((item) => {
+              const active = isActive(pathname, item.href, search);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13.5px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+                    active ? "bg-ink text-white shadow-[0_6px_16px_-10px_rgba(16,17,20,0.6)]" : "text-ink/65 hover:bg-black/[0.05] hover:text-ink hover:translate-x-0.5"
+                  )}
+                >
+                  <item.icon className={cn("w-4 h-4 shrink-0", !active && item.tone)} strokeWidth={2} aria-hidden />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
+  );
+}
+
+function PlanPill({ plan, role, compact }: { plan: PlanLabel; role: Role; compact?: boolean }) {
+  const canBill = role === "OWNER" || role === "ADMIN";
+  const next = plan === "Free" ? "Pro" : plan === "Pro" ? "Business" : null;
+  return (
+    <div className={cn("rounded-xl border px-3 py-2.5 flex items-center gap-2", plan === "Business" ? "border-signal/25 bg-signal-soft/50" : "border-border bg-paper/70")}>
+      <span className={cn("text-[10px] font-extrabold uppercase tracking-[0.14em] rounded-full px-2 py-0.5", plan === "Business" ? "bg-signal text-white" : plan === "Pro" ? "bg-ink text-white" : "bg-black/[0.06] text-ink/60")}>{plan}</span>
+      <span className="text-[11px] text-ink/55 flex-1 min-w-0 truncate">{plan === "Free" ? "Try Daythread" : plan === "Pro" ? "Run your business" : "Daythread runs it"}</span>
+      {next && canBill && !compact && (
+        <Link href="/dashboard/billing" className="text-[11px] font-bold text-signal-text hover:underline inline-flex items-center gap-0.5 shrink-0">{next} <ArrowUpRight className="w-3 h-3" strokeWidth={2.5} aria-hidden /></Link>
+      )}
+    </div>
   );
 }
 
@@ -87,13 +121,18 @@ function AccountFooter({
   businessName,
   handle,
   workspaces,
+  plan,
+  role,
 }: {
   businessName: string;
   handle: string;
   workspaces: WorkspaceOption[];
+  plan: PlanLabel;
+  role: Role;
 }) {
   return (
     <div className="px-3 py-4 border-t border-border space-y-3">
+      <PlanPill plan={plan} role={role} />
       <Link
         href={`/book/${handle}`}
         target="_blank"
@@ -121,10 +160,13 @@ function AccountFooter({
   );
 }
 
+export type PlanLabel = "Free" | "Pro" | "Business";
+
 export function AppShell({
   businessName,
   handle,
   role,
+  plan = "Free",
   workspaces = [],
   wantedIntegrations = [],
   children,
@@ -132,19 +174,25 @@ export function AppShell({
   businessName: string;
   handle: string;
   role: Role;
+  /** The plan the workspace is actually entitled to, from the server. */
+  plan?: PlanLabel;
   workspaces?: WorkspaceOption[];
   /** Names of tools chosen during onboarding that aren't connected yet. */
   wantedIntegrations?: string[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams?.toString() ?? "";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const visibleNav = BASE_NAV.filter((item) => !item.roles || item.roles.includes(role));
-  const current = visibleNav.find((item) => isActive(pathname, item.href));
+  const current = visibleNav.find((item) => isActive(pathname, item.href, search));
   const drawerRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => setMoreOpen(false), [pathname]);
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
 
   // Focus management for the mobile drawer: move focus in on open, trap Tab within it so
   // keyboard users can't tab into the page content hidden behind the overlay, close on
@@ -200,8 +248,8 @@ export function AppShell({
             <kbd className="text-[10px] font-semibold text-ink/40">⌘K</kbd>
           </button>
         </div>
-        <NavLinks pathname={pathname} role={role} />
-        <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} />
+        <NavLinks pathname={pathname} search={search} role={role} />
+        <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} plan={plan} role={role} />
       </aside>
 
       {/* Mobile top bar: where you are, search, and the More sheet under the avatar. */}
@@ -246,8 +294,8 @@ export function AppShell({
                 <X className="w-[18px] h-[18px]" strokeWidth={2} />
               </button>
             </div>
-            <NavLinks pathname={pathname} role={role} onNavigate={() => setMobileOpen(false)} />
-            <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} />
+            <NavLinks pathname={pathname} search={search} role={role} onNavigate={() => setMobileOpen(false)} />
+            <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} plan={plan} role={role} />
           </div>
         </div>
       )}
@@ -266,7 +314,7 @@ export function AppShell({
       <nav aria-label="Primary" className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
         <ul className="grid grid-cols-5">
           {[
-            { href: "/dashboard", label: "Home", icon: Home },
+            { href: "/dashboard", label: "Today", icon: Home },
             { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon },
             { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
             { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck },
@@ -282,8 +330,8 @@ export function AppShell({
             );
           })}
           <li>
-            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", moreOpen || (current && !["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"].includes(current.href)) ? "text-ink" : "text-ink/45")}>
-              <span className={cn("w-10 h-7 rounded-full flex items-center justify-center transition-colors", moreOpen || (current && !["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"].includes(current.href)) ? "bg-ink text-white" : "")}><LayoutGrid className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
+            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "text-ink" : "text-ink/45")}>
+              <span className={cn("w-10 h-7 rounded-full flex items-center justify-center transition-colors", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "bg-ink text-white" : "")}><LayoutGrid className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
               More
             </button>
           </li>
@@ -292,26 +340,21 @@ export function AppShell({
 
       {/* More: everything else, one tap away, as a native-feeling sheet. */}
       <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)} title={businessName} subtitle="Everything else in Daythread" icon={<LogoMark className="w-4 h-4" />}>
+        <div className="mb-4"><PlanPill plan={plan} role={role} /></div>
         <ul className="grid grid-cols-3 gap-2">
           {visibleNav
-            .filter((item) => !["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"].includes(item.href))
+            .filter((item) => !TAB_HREFS.includes(item.href))
             .map((item) => {
-              const active = isActive(pathname, item.href);
+              const active = isActive(pathname, item.href, search);
               return (
                 <li key={item.href}>
                   <Link href={item.href} onClick={() => setMoreOpen(false)} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", active ? "border-ink bg-ink text-white" : "border-border bg-white text-ink/80 hover:bg-black/[0.03] active:bg-black/[0.05]")}>
                     <item.icon className={cn("w-5 h-5", !active && item.tone)} strokeWidth={2} aria-hidden />
-                    {item.label}
+                    <span className="text-center leading-tight">{item.label === "Business Agent" ? "Agent" : item.label}</span>
                   </Link>
                 </li>
               );
             })}
-          <li>
-            <Link href="/dashboard/settings?tab=connections" onClick={() => setMoreOpen(false)} className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border bg-white px-2 py-3.5 text-xs font-semibold text-ink/80 hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
-              <LayoutGrid className="w-5 h-5 text-signal-text/70" strokeWidth={2} aria-hidden />
-              Integrations
-            </Link>
-          </li>
         </ul>
         <div className="mt-4 rounded-2xl border border-border divide-y divide-border overflow-hidden">
           <button type="button" onClick={() => { setMoreOpen(false); window.dispatchEvent(new Event("dt-open-palette")); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-black/[0.03]">

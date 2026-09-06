@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 import { startOfDay } from "date-fns";
 import { gatherBusinessFacts } from "@/server/copilotFacts";
 import { summarizeCopilotAnswer } from "@/lib/ai";
-import { rateLimit } from "@/lib/rateLimit";
+import { dbRateLimit } from "@/lib/dbRateLimit";
 
 export async function askCopilot(question: string): Promise<string> {
   // Facts include every client's payment/lead status — a client or partner asking the
@@ -24,9 +24,10 @@ export async function askCopilot(question: string): Promise<string> {
   await track("copilot_question", { businessId: ctx.business.id });
 
   // Every call spends real OpenAI tokens — cap per-business usage so one account can't
-  // run up the API bill or be used to hammer the model.
-  if (!rateLimit(`copilot:${ctx.business.id}`, { limit: 40, windowMs: 60 * 60 * 1000 }).ok) {
-    throw new Error("You've hit the copilot's hourly limit. Try again in a bit.");
+  // run up the API bill or be used to hammer the model. Counted in the database, so the
+  // cap holds across serverless instances, not just within one process.
+  if (!(await dbRateLimit(ctx.business.id, "copilot_question", { limit: 40, windowMs: 60 * 60 * 1000 })).ok) {
+    return "You've hit the Copilot's hourly limit (40 questions). It resets within the hour — nothing was lost.";
   }
 
   const facts = await gatherBusinessFacts(ctx.business.id);

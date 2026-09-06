@@ -4,6 +4,7 @@ import { AppShell } from "./AppShell";
 import { Toaster } from "@/components/Toaster";
 import { prisma } from "@/lib/db";
 import { PROVIDERS } from "@/lib/integrations/registry";
+import { PLANS, effectivePlan } from "@/lib/billing";
 import type { Metadata, Viewport } from "next";
 
 /** The dashboard as an installed app: standalone on iPhone, no double-tap zoom on controls,
@@ -32,7 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <Toaster>
-      <AppShell businessName={business.name} handle={business.handle} role={role} workspaces={workspaces} wantedIntegrations={wanted}>
+      <AppShell businessName={business.name} handle={business.handle} role={role} plan={PLANS[effectivePlan(business)].name as "Free" | "Pro" | "Business"} workspaces={workspaces} wantedIntegrations={wanted}>
         {children}
       </AppShell>
     </Toaster>

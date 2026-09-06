@@ -44,7 +44,7 @@ export function FinalCta() {
           >
             Start for free <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
           </Link>
-          <span className="text-sm text-paper/45">No card. Pro is $29 when you need it.</span>
+          <span className="text-sm text-paper/45">No card. Pro is $20 a month when you need it.</span>
         </div>
       </div>
       <footer className="relative max-w-[1200px] mx-auto mt-28 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-paper/40">

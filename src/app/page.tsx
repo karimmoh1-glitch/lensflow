@@ -7,6 +7,7 @@ import { ProductDemo } from "./landing/ProductDemo";
 import { Workflow } from "./landing/Workflow";
 import { PricingSection } from "./PricingSection";
 import { FinalCta } from "./landing/FinalCta";
+import { Footer } from "./landing/Footer";
 
 /**
  * One film, in this order:
@@ -50,6 +51,7 @@ export default function LandingPage() {
       </div>
 
       <FinalCta />
+      <Footer />
     </main>
   );
 }

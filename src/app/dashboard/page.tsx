@@ -15,6 +15,9 @@ import { format, formatDistanceToNowStrict } from "date-fns";
 import { FixMyDayButton } from "./FixMyDayButton";
 import { OneThingCard } from "./OneThingCard";
 import { Priorities } from "./Priorities";
+import { AttentionList } from "./AttentionList";
+import { AutoGmailSync } from "./inbox/AutoGmailSync";
+import { prisma } from "@/lib/db";
 import { effectivePlan } from "@/lib/billing";
 
 /**
@@ -33,6 +36,8 @@ export default async function TodayPage() {
   const { business, user } = ctx;
 
   const agentOn = businessAgentEntitled(business);
+  const gmail = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "EMAIL" } }, select: { refreshToken: true, status: true } });
+  const gmailConnected = Boolean(gmail?.refreshToken) && gmail?.status !== "NOT_CONNECTED";
   const [brief, week, firstLook, agent] = await Promise.all([getTodayBrief(business.id), getWeekStrip(business.id), getFirstLook(business.id), agentOn ? buildAgentBrief(business.id).catch(() => null) : Promise.resolve(null)]);
   const proposals = agent?.proposals.filter((p) => p.kind !== "reconnect_calendar") ?? [];
   // The first minute: show what Daythread found until the owner has replied to something.
@@ -48,6 +53,7 @@ export default async function TodayPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10 dt-stagger">
+      {gmailConnected && <AutoGmailSync immediate />}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2">{format(new Date(), "EEEE, MMMM d")}</p>
@@ -111,31 +117,11 @@ export default async function TodayPage() {
               detail={top.service ? `Asked about ${top.service.name}${top.requestedDateText ? ` for ${top.requestedDateText}` : ""}` : top.requestedDateText ? `Asked for ${top.requestedDateText}` : "New inquiry"}
               more={Math.max(0, brief.leads.needsResponse.length - 1)}
             />
-            {waitingOnReply.slice(1).map((lead) => (
-              <Link
-                key={lead.id}
-                href={lead.conversationId ? `/dashboard/inbox?c=${lead.conversationId}` : "/dashboard/inbox"}
-                className="group flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-2.5 transition-all duration-150 hover:border-ink/20 hover:translate-x-0.5"
-              >
-                <span className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-bold shrink-0">{initials(lead.extractedName || "?")}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-ink truncate">{lead.extractedName || "Unknown"}</span>
-                  <span className="block text-xs text-ink/70 truncate">
-                    {lead.lastInboundAt ? `Waiting ${formatDistanceToNowStrict(lead.lastInboundAt)}` : "New inquiry"}
-                    {lead.service && ` · ${lead.service.name}`}
-                  </span>
-                </span>
-                <ArrowRight className="w-4 h-4 text-ink/30 shrink-0 transition-all group-hover:text-ink group-hover:translate-x-0.5" strokeWidth={2} />
-              </Link>
-            ))}
-            {brief.leads.needsResponse.length > waitingOnReply.length && (
-              <Link href="/dashboard/inbox" className="inline-block text-xs font-semibold text-ink/70 hover:text-ink transition-colors pl-1">
-                See all {brief.leads.needsResponse.length} in the inbox →
-              </Link>
-            )}
           </div>
         )}
       </section>
+
+      <AttentionList businessId={business.id} timezone={business.timezone} skipLeadId={top?.id ?? null} />
 
       {/* TODAY + ASSISTANT */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 mt-10">

@@ -8,6 +8,7 @@ import { withLock } from "@/lib/dbLock";
 import { cookies } from "next/headers";
 import { parseAnswers, savePersonalization } from "@/server/personalization";
 import { planSchema } from "@/lib/personalization";
+import { attributeReferral } from "@/server/referral";
 
 /**
  * "Continue with Google" — sign in or sign up with a Google account, on the same OAuth
@@ -64,6 +65,7 @@ export async function completeGoogleSignIn(code: string): Promise<{ ok: true; re
       const had = user.created ? null : await prisma.onboardingProfile.findUnique({ where: { businessId: b }, select: { id: true } });
       if (!had) await savePersonalization(b, start.answers, { selectedPlan: start.selectedPlan, anonymousId: start.anonymousId, source: "google" }).catch((err) => console.error("[personalization] save failed", err));
     }
+    if (user.created && start?.ref && memberships[0]) await attributeReferral(memberships[0].businessId, start.ref, start.anonymousId).catch((err) => console.error("[referral] attribution failed", err));
     if (memberships.length === 0) return { ok: false, reason: "provider" };
     if (memberships.length > 1) {
       await setSessionCookie({ userId: user.row.id });
@@ -80,16 +82,16 @@ export async function completeGoogleSignIn(code: string): Promise<{ ok: true; re
   }
 }
 
-async function readStartCookie(): Promise<{ answers: ReturnType<typeof parseAnswers>; selectedPlan: "FREE" | "PRO" | "BUSINESS" | null; anonymousId: string | null } | null> {
+async function readStartCookie(): Promise<{ answers: ReturnType<typeof parseAnswers>; selectedPlan: "FREE" | "PRO" | "BUSINESS" | null; anonymousId: string | null; ref: string | null } | null> {
   try {
     const jar = await cookies();
     const raw = jar.get("dt_start")?.value;
     jar.delete({ name: "dt_start", path: "/api/auth/google" });
     if (!raw) return null;
-    const obj = JSON.parse(raw) as { answers?: unknown; selectedPlan?: unknown; anonymousId?: unknown };
+    const obj = JSON.parse(raw) as { answers?: unknown; selectedPlan?: unknown; anonymousId?: unknown; ref?: unknown };
     const plan = planSchema.safeParse(obj.selectedPlan);
     const anon = typeof obj.anonymousId === "string" && /^[a-z0-9]{8,40}$/i.test(obj.anonymousId) ? obj.anonymousId : null;
-    return { answers: parseAnswers(obj.answers), selectedPlan: plan.success ? plan.data : null, anonymousId: anon };
+    return { answers: parseAnswers(obj.answers), selectedPlan: plan.success ? plan.data : null, anonymousId: anon, ref: typeof obj.ref === "string" && /^[a-z2-9]{8}$/.test(obj.ref) ? obj.ref : null };
   } catch {
     return null;
   }

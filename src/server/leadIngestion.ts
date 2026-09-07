@@ -182,6 +182,7 @@ async function ingestUnlocked(params: {
           estimatedValueCents: mergedServicePrice ?? lead.estimatedValueCents,
           lastInboundAt: new Date(),
           respondedAt: null,
+          followUpAt: null,
         },
       });
     }

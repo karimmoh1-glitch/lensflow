@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * "Continue with Google" for the login and signup pages. Rendered only when the server says
  * the Google OAuth client is configured, so it never promises a sign-in that can't happen.
  */
-export function GoogleButton({ intent, className, personalization, divider = "or with email" }: { intent: "login" | "signup"; className?: string; personalization?: { answers: string; selectedPlan?: string; anonymousId?: string }; divider?: string | null }) {
+export function GoogleButton({ intent, className, personalization, divider = "or with email" }: { intent: "login" | "signup"; className?: string; personalization?: { answers?: string; selectedPlan?: string; anonymousId?: string; ref?: string }; divider?: string | null }) {
   const [pending, startTransition] = useTransition();
   return (
     <div className={cn("space-y-4", className)}>

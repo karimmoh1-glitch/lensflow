@@ -75,3 +75,7 @@ The app offers it only to a business that has never had a subscription (`trialUs
 and no `stripeSubscriptionId`), only for Pro, and decides that server-side; the webhook records
 `trialEndsAt` / `trialUsedAt`. Requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, like
 every other billing feature; without them the trial is not offered anywhere.
+
+## Founder dashboard
+
+`FOUNDER_EMAILS` — comma-separated email addresses of the people who may open `/admin/growth`. Unset (the default) means the page returns 404 for everyone. The signed-in user's email is compared case-insensitively; there is no other way in. Set it on production to the founders' own Daythread logins.

@@ -23,6 +23,10 @@ cookie, no IP, no fingerprint.
 | Workspace created | `workspace_created` | same |
 | Profile saved | `personalization_created` / `personalization_updated` (anonymousId on the first, `source`, `recommendedPlan`, `selectedPlan`, `priorities`, `channelCount`, `businessStatus`, `userType`, `workCategory`, `usesBookings`, `usesTeam`) | `savePersonalization()` |
 | Onboarding | `onboarding_started` (businessId, `personalized`), `onboarding_completed` (`connected`, `via` inbox/checkout), `onboarding_to_product` | onboarding page and actions |
+| Channel connect | `integration_connect_started`, `integration_connected`, `integration_failed`, `integration_limit_reached`, `integration_disconnected` (`provider`) | connect actions and callbacks |
+| First conversation | `first_conversation_viewed` (`channel`) | inbox, first thread opened within 45 days |
+| Follow-ups | `first_followup_created` / `followup_created` (`daysAhead`), `followup_cleared` | `setFollowUp()` |
+| Referral | `referral_started` (anonymousId, `ref`), `referral_signup`, `referral_activated` (`provider`), `referral_converted` (`planKey`) — each carries `referrerBusinessId` | landing beacon, signup, first channel, first paid subscription |
 | First channel | `first_channel_connected` (`provider`) | `activateIntegration()` — the only CONNECTED path |
 | First conversation | `first_message_received` (`channel`) | ingestion |
 | First reply | `first_reply_sent` (`channel`) | send reply |
@@ -98,6 +102,10 @@ SELECT
   (SELECT COUNT(DISTINCT "businessId") FROM "AnalyticsEvent" WHERE name='subscription_started' AND (properties->>'trial') IS DISTINCT FROM 'true') AS paid_direct,
   (SELECT COUNT(DISTINCT "businessId") FROM "AnalyticsEvent" WHERE name='plan_changed' OR name='subscription_started') AS any_paid;
 ```
+
+"First meaningful action" on the founder dashboard is the first of `first_reply_sent`, `first_booking_created`, `first_followup_created`, `first_priority_action` or `first_ai_action` per workspace. The spec names `paywall_cta_clicked`, `subscription_created` and `subscription_cancelled`; the events are `paywall_cta`, `subscription_started` and `subscription_canceled`, unchanged so existing rows stay comparable.
+
+The founder dashboard at `/admin/growth` (gated by `FOUNDER_EMAILS`) shows every one of these as counts over 7/30/90 days, the persona mix from `OnboardingProfile`, referrals, and one workspace in depth — names, connection states, counts and event names only.
 
 Events are append-only. There is no dashboard on purpose; these queries run against the
 production database read-only.

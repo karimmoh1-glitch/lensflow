@@ -10,6 +10,7 @@ import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { track } from "@/lib/analytics";
 import { parseAnswers, savePersonalization } from "@/server/personalization";
 import { planSchema } from "@/lib/personalization";
+import { attributeReferral } from "@/server/referral";
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
 
@@ -92,6 +93,7 @@ export async function signup(formData: FormData): Promise<FormState> {
   await track("signup_completed", { businessId: business.id, anonymousId, properties: { method: "password", personalized: Boolean(answers) } });
   await track("workspace_created", { businessId: business.id });
   if (answers) await savePersonalization(business.id, answers, { selectedPlan, anonymousId, source: "signup" }).catch((err) => console.error("[personalization] save failed", err));
+  await attributeReferral(business.id, formData.get("ref"), anonymousId).catch((err) => console.error("[referral] attribution failed", err));
   await setSessionCookie({ userId: user.id, activeBusinessId: business.id });
   redirect(homeRouteFor("OWNER", business));
 }

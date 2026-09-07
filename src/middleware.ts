@@ -16,7 +16,7 @@ async function hasValidSession(req: NextRequest) {
   }
 }
 
-const PROTECTED_PREFIXES = ["/dashboard", "/onboarding", "/portal", "/partner", "/workspaces"];
+const PROTECTED_PREFIXES = ["/dashboard", "/onboarding", "/portal", "/partner", "/workspaces", "/admin"];
 
 // The mobile API is authenticated by bearer token, not cookies, so cross-origin requests
 // carry no ambient credential a browser needs to guard — CORS restrictions here would only
@@ -62,6 +62,7 @@ export const config = {
     "/portal/:path*",
     "/partner/:path*",
     "/workspaces/:path*",
+    "/admin/:path*",
     "/login",
     "/signup",
     "/api/mobile/:path*",

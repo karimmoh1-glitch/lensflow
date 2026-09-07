@@ -31,7 +31,6 @@ export function Hero() {
 
         <div className="dt-hero-visual relative" style={{ transform: "translate(calc(var(--mx) * -6px), calc(var(--my) * -4px))", transition: "transform 600ms cubic-bezier(0.16,1,0.3,1)" }}>
           <HeroThread />
-          <p className="mt-3 text-[11px] text-ink/65 text-center lg:text-right">One example studio, followed through the whole page. The people are made up; everything Daythread does with them is real.</p>
         </div>
       </div>
     </PointerField>

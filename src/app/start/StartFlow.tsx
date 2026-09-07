@@ -104,6 +104,7 @@ function Flow({ google, billingLive, prices }: { google: boolean; billingLive: b
   const [ready, setReady] = useState(false);
   // Captured once: the URL is rewritten to the step position right after mount.
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [ref, setRef] = useState<string | null>(null);
   const anon = useRef<string | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const advancing = useRef(false);
@@ -128,6 +129,12 @@ function Flow({ google, billingLive, prices }: { google: boolean; billingLive: b
     const max = reachable(vis, d);
     const google = sp.get("google");
     if (google) setGoogleError(google);
+    try {
+      const fromUrl = sp.get("ref");
+      if (fromUrl && /^[a-z2-9]{8}$/.test(fromUrl)) localStorage.setItem("dt-ref", fromUrl);
+      const stored = localStorage.getItem("dt-ref");
+      if (stored && /^[a-z2-9]{8}$/.test(stored)) setRef(stored);
+    } catch {}
     const fromUrl = google ? vis.length - 1 : Number(sp.get("s") ?? 0);
     const i = Math.max(0, Math.min(Number.isFinite(fromUrl) ? fromUrl : 0, max, vis.length - 1));
     if (!d.startedAt) {
@@ -253,7 +260,7 @@ function Flow({ google, billingLive, prices }: { google: boolean; billingLive: b
 
             {step.kind === "summary" && (personalization ? <Summary p={personalization} name={draft.displayName ?? ""} billingLive={billingLive} prices={prices} onChoose={(plan) => choosePlan(personalization, plan)} onShown={() => event("recommended_plan_shown", { recommendedPlan: personalization.recommendedPlan })} /> : <p className="text-sm text-ink/70">Answer the questions above and we&rsquo;ll set Daythread up around them.</p>)}
 
-            {step.kind === "account" && <Account google={google} draft={draft} answersJson={parsedAnswers.success ? JSON.stringify(parsedAnswers.data) : null} anonymousId={anon.current} googleError={googleError} />}
+            {step.kind === "account" && <Account google={google} draft={draft} answersJson={parsedAnswers.success ? JSON.stringify(parsedAnswers.data) : null} anonymousId={anon.current} googleError={googleError} referral={ref} />}
           </div>
         </section>
       </div>
@@ -349,7 +356,7 @@ function Summary({ p, name, billingLive, prices, onChoose, onShown }: { p: Perso
   );
 }
 
-function Account({ google, draft, answersJson, anonymousId, googleError }: { google: boolean; draft: Draft; answersJson: string | null; anonymousId: string | null; googleError: string | null }) {
+function Account({ google, draft, answersJson, anonymousId, googleError, referral }: { google: boolean; draft: Draft; answersJson: string | null; anonymousId: string | null; googleError: string | null; referral: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const [duplicateEmail, setDuplicateEmail] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -374,11 +381,12 @@ function Account({ google, draft, answersJson, anonymousId, googleError }: { goo
     <div className="max-w-sm">
       <p className="-mt-2 mb-6 text-[15px] text-ink/70 leading-relaxed">{answersJson ? "Your answers are ready. Your workspace is built from them the moment your account exists." : "A name, an email and a password. You can tell us how you work later, under Settings."}</p>
       {googleMessage && <FormError>{googleMessage}</FormError>}
-      {google && <GoogleButton intent="signup" className={cn("mb-5", googleMessage && "mt-4")} personalization={answersJson ? { answers: answersJson, selectedPlan, anonymousId: anonymousId ?? undefined } : undefined} />}
+      {google && <GoogleButton intent="signup" className={cn("mb-5", googleMessage && "mt-4")} personalization={answersJson || referral ? { answers: answersJson ?? undefined, selectedPlan, anonymousId: anonymousId ?? undefined, ref: referral ?? undefined } : undefined} />}
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {answersJson && <input type="hidden" name="answers" value={answersJson} />}
         {selectedPlan && <input type="hidden" name="selectedPlan" value={selectedPlan} />}
         {anonymousId && <input type="hidden" name="anonymousId" value={anonymousId} />}
+        {referral && <input type="hidden" name="ref" value={referral} />}
         <Field id="name" label="Your name">
           <Input id="name" name="name" autoComplete="name" placeholder="Alex Rivera" required maxLength={80} defaultValue={draft.displayName ?? ""} />
         </Field>

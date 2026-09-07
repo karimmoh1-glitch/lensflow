@@ -8,9 +8,9 @@ import { rateLimit, getClientIp } from "@/lib/rateLimit";
  * id the browser keeps in session storage — no cookie, no fingerprint, no IP stored —
  * so drop-off from landing to signup can be measured without knowing who anyone is.
  */
-export async function recordLandingEvent(name: "landing_view" | "landing_cta", anonymousId: string, source?: string): Promise<void> {
+export async function recordLandingEvent(name: "landing_view" | "landing_cta" | "referral_started", anonymousId: string, source?: string): Promise<void> {
   if (!/^[a-z0-9]{8,40}$/i.test(anonymousId)) return;
   const ip = await getClientIp();
   if (!rateLimit(`landing:${ip}`, { limit: 60, windowMs: 10 * 60 * 1000 }).ok) return;
-  await track(name, { anonymousId, properties: source ? { source: source.slice(0, 40) } : undefined });
+  await track(name, { anonymousId, properties: source ? (name === "referral_started" ? { ref: source.slice(0, 12) } : { source: source.slice(0, 40) }) : undefined });
 }

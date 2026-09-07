@@ -9,6 +9,8 @@ export function Footer() {
         <Link href="/" className="inline-flex items-center gap-2 text-paper"><LogoMark className="w-5 h-5" /><span className="font-sans font-extrabold text-[17px] tracking-tight">Daythread</span></Link>
         <p className="text-sm max-w-md md:flex-1">Every conversation, booking and calendar on one thread — and what to do next.</p>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          <Link href="/photographers" className="hover:text-paper transition-colors">For photographers</Link>
+          <Link href="/service-businesses" className="hover:text-paper transition-colors">For service businesses</Link>
           <Link href="/#pricing" className="hover:text-paper transition-colors">Pricing</Link>
           <Link href="/support" className="hover:text-paper transition-colors">Support</Link>
           <Link href="/status" className="hover:text-paper transition-colors">Status</Link>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { runIntegrationMaintenance } from "@/server/integrationMaintenance";
+import { syncAllGmail } from "@/server/gmailSync";
 
 /**
  * Daily maintenance for connected channels (see vercel.json): refresh Instagram tokens before
@@ -21,7 +22,10 @@ export async function GET(req: Request) {
 
   try {
     const maintenance = await runIntegrationMaintenance();
-    return NextResponse.json({ ok: true, maintenance });
+    // Pull every connected Gmail so "waiting for your reply" and follow-ups reflect today's
+    // mail even for a workspace nobody opened; the inbox and Today also pull on open.
+    const gmail = await syncAllGmail();
+    return NextResponse.json({ ok: true, maintenance, gmail });
   } catch (err) {
     console.error("[cron/automations] failed", err);
     return NextResponse.json({ error: "Run failed" }, { status: 500 });

@@ -302,3 +302,21 @@ export async function probeStripe(): Promise<{ ok: boolean; mode: "live" | "test
     return { ok: false, mode, accountLabel: null, error: err instanceof Error ? err.message : "invalid" };
   }
 }
+
+/**
+ * Ends the workspace's Daythread subscription immediately — used when the workspace itself
+ * is deleted, so a deleted account can never keep being billed. Safe when nothing is live:
+ * a missing subscription, a subscription already canceled, or no Stripe client are all fine.
+ */
+export async function cancelSubscriptionNow(stripeSubscriptionId: string | null | undefined): Promise<"canceled" | "none" | "failed"> {
+  if (!stripe || !stripeSubscriptionId) return "none";
+  try {
+    const sub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    if (sub.status === "canceled") return "none";
+    await stripe.subscriptions.cancel(stripeSubscriptionId, { prorate: false });
+    return "canceled";
+  } catch (err) {
+    console.error("[stripe] could not cancel subscription on workspace deletion", stripeSubscriptionId, err instanceof Error ? err.message : err);
+    return "failed";
+  }
+}

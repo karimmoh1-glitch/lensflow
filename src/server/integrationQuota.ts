@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
+import { trackReferralMilestone } from "@/server/referral";
 import { PLANS, effectivePlan, planForIntegrations, type PlanKey } from "@/lib/billing";
 import type { Integration, IntegrationProvider, IntegrationStatus, Prisma } from "@prisma/client";
 
@@ -108,7 +109,10 @@ export async function activateIntegration(params: {
   );
   // After commit, never inside: the event row references the Business row the transaction
   // held FOR UPDATE, and its foreign-key check would wait on that lock.
-  if (result.ok && result.firstEver) await track("first_channel_connected", { businessId, properties: { provider } });
+  if (result.ok && result.firstEver) {
+    await track("first_channel_connected", { businessId, properties: { provider } });
+    await trackReferralMilestone(businessId, "referral_activated", { provider });
+  }
   return result;
 }
 

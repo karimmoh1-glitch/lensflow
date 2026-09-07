@@ -55,7 +55,7 @@ export function ValueLadder() {
           })}
         </svg>
       </div>
-      <div className="rounded-[22px] border border-border bg-white shadow-[0_24px_64px_-28px_rgba(16,17,20,0.3)] p-5" style={{ opacity: 0.4 + seg(p, 0.3, 0.7) * 0.6, transform: `translateY(${(1 - seg(p, 0.3, 0.7)) * 12}px)` }}>
+      <div className="rounded-[22px] border border-border bg-white shadow-[0_24px_64px_-28px_rgba(16,17,20,0.3)] p-5" style={{ opacity: seg(p, 0.3, 0.7), transform: `translateY(${(1 - seg(p, 0.3, 0.7)) * 12}px)` }}>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text mb-3">What you get instead</p>
         <ol className="relative pl-6">
           <span aria-hidden className="absolute left-[5px] top-2 bottom-2 w-px bg-border" />

@@ -57,7 +57,7 @@ export function Workflow() {
                 <Arrow />
                 <Lit t={then} color="rgba(30,142,90,0.4)"><Beat label="Then" tone="outcome" text="send a confirmation" /></Lit>
               </div>
-              <div className="mt-3 flex items-start gap-2" style={{ opacity: 0.35 + then * 0.65, transform: `translateY(${(1 - then) * 4}px)` }}>
+              <div className="mt-3 flex items-start gap-2" style={{ opacity: then, transform: `translateY(${(1 - then) * 4}px)` }}>
                 <ChannelIcon k="whatsapp" size={18} />
                 <p className="text-xs text-ink/70 leading-relaxed">“Hi Sarah — you&rsquo;re booked for Friday at 2:30. Reply here if anything changes. See you then!”</p>
               </div>
@@ -95,7 +95,7 @@ export function Workflow() {
 
 function Lit({ t, color, children }: { t: number; color: string; children: React.ReactNode }) {
   return (
-    <div className={cn("rounded-xl transition-transform duration-200")} style={{ boxShadow: `0 0 0 ${t * 2}px ${color}`, transform: `scale(${1 + (t > 0 && t < 1 ? Math.sin(t * Math.PI) * 0.03 : 0)})`, opacity: 0.55 + t * 0.45 }}>
+    <div className={cn("rounded-xl transition-transform duration-200")} style={{ boxShadow: `0 0 0 ${t * 2}px ${color}`, transform: `scale(${1 + (t > 0 && t < 1 ? Math.sin(t * Math.PI) * 0.03 : 0)})` }}>
       {children}
     </div>
   );

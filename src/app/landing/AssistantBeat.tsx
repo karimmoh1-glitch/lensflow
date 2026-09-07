@@ -39,7 +39,7 @@ export function AssistantBeat() {
         </Reveal>
 
         <div className="relative">
-          <div className="rounded-[22px] border border-border bg-white shadow-[0_32px_80px_-32px_rgba(16,17,20,0.3)] overflow-hidden" style={{ opacity: 0.4 + arrive * 0.6, transform: `translateY(${(1 - arrive) * 12}px)` }}>
+          <div className="rounded-[22px] border border-border bg-white shadow-[0_32px_80px_-32px_rgba(16,17,20,0.3)] overflow-hidden" style={{ opacity: arrive, transform: `translateY(${(1 - arrive) * 12}px)` }}>
             <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">
               <div className="flex items-center gap-2"><span className="w-7 h-7 rounded-full bg-signal-soft text-signal-text flex items-center justify-center"><Sparkles className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /></span><span className="text-sm font-extrabold text-ink">What I&rsquo;d do next</span></div>
               <div className="flex items-center gap-3 text-[11px] font-semibold text-ink/65">

@@ -52,6 +52,7 @@ export async function completeGoogleSignIn(code: string): Promise<{ ok: true; re
 
     const memberships = await getUserMemberships(user.row.id);
     await track(user.created ? "signup_completed" : "login_completed", { businessId: memberships[0]?.businessId ?? null, properties: { method: "google" } });
+    if (user.created && memberships[0]) await track("workspace_created", { businessId: memberships[0].businessId, properties: { method: "google" } });
     if (memberships.length === 0) return { ok: false, reason: "provider" };
     if (memberships.length > 1) {
       await setSessionCookie({ userId: user.row.id });

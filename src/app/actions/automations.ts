@@ -85,6 +85,7 @@ export async function createAutomation(input: AutomationInput, session?: Session
     return { row, enabled, limit: planLimits(fresh).maxAutomations, plan: effectivePlan(fresh) };
   });
   await track("automation_created", { businessId: ctx.business.id, properties: { trigger: data.trigger, action: data.action, enabled: result.enabled } });
+  if ((await prisma.automation.count({ where: { businessId: ctx.business.id } })) === 1) await track("first_automation_created", { businessId: ctx.business.id, properties: { trigger: data.trigger, action: data.action } });
   revalidatePath("/dashboard/automations");
   return { id: result.row.id, paused: result.enabled ? undefined : `${PLANS[result.plan].name} runs ${result.limit} automations at once. Turn one off to enable this one, or upgrade to Pro for unlimited.` };
 }

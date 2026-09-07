@@ -160,3 +160,23 @@ Final launch audit additions (2026-09-06):
   Enter/Space, login submits with Enter, ⌘K opens the palette, arrows move the selection,
   Escape closes it, Enter opens a conversation, the composer is reachable, the phone "More"
   sheet traps focus and restores it on Escape. Fixed: palette now restores focus on close.
+
+## Conversion war room (2026-09-07, PR #53)
+
+- Plan shape: Free (2 channels, 1 person) · Pro $20 (every channel, text number, AI, assistant,
+  unlimited automations, up to 5 people with assignment) · Business $50 (business-wide view,
+  60 assistant actions/hour, business memory, up to 10 people with roles and notes, priority
+  support). Team is a Pro capability now; tests updated.
+- Contextual paywall (`src/components/Paywall.tsx`, copy in `src/lib/paywall.ts`): one dialog
+  keyed on the feature reached for (channels, sms, ai_draft, ai_summary, assistant, automations,
+  team, intelligence), price and interval on it, the trial's first-charge date when the
+  workspace still has the trial, one CTA, "Not now", Escape closes. Wired into the assistant
+  page, team tab, channel cards at the limit, the composer's AI draft, the summary card, the
+  automation toggle and every inline entitlement notice. Events: paywall_shown / paywall_cta /
+  paywall_dismissed with feature + source + plan; checkout_started carries the source.
+  Verified as a Free user with real clicks: assistant, team, draft, channels-at-limit.
+- Landing: "Why Daythread" (the cost of the scattered way, one message becoming a booking /
+  automation / proposal / assignment), Trust (six things the code actually does), hero note
+  that the example studio is one cast. FAQ extended: trial end, cancel, delete, AI scope,
+  without AI. Pricing carries the plan philosophy lines.
+- Status page adds the assistant model and email sending rows.

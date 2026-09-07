@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { toggleAutomation } from "@/app/actions/automations";
 import { cn } from "@/lib/utils";
 import { EntitlementNotice } from "@/components/UpgradePrompt";
+import { usePaywall } from "@/components/Paywall";
 import { useToast } from "@/components/Toaster";
 
 export function AutomationToggle({ id, enabled, name }: { id: string; enabled: boolean; name?: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const paywall = usePaywall();
   // Optimistic: the switch reflects the click immediately and can't be double-toggled while
   // the server round-trip and refresh are still in flight.
   const [on, setOn] = useState(enabled);
@@ -34,6 +36,7 @@ export function AutomationToggle({ id, enabled, name }: { id: string; enabled: b
               if (res?.error) {
                 setOn(!next);
                 setError(res.error);
+                if (/runs \d+ automations|daythread pro/i.test(res.error)) paywall?.open("automations", "automation-toggle");
                 return;
               }
               toast({ tone: next ? "thinking" : "neutral", title: next ? "Automation on" : "Automation paused", body: next ? "Daythread will handle this from now on." : "It won't send anything until you turn it back on." });

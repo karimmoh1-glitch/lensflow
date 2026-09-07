@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const ctx = await requireMobileRole(req, ["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (isErrorResponse(ctx)) return ctx;
   if (!businessAgentEntitled(ctx.business)) {
-    return NextResponse.json({ error: "The Daythread Business Agent is part of the Business plan.", plan: effectivePlan(ctx.business), requiredPlan: "BUSINESS" }, { status: 403 });
+    return NextResponse.json({ error: "The Daythread assistant is part of Daythread Pro.", plan: effectivePlan(ctx.business), requiredPlan: "BUSINESS" }, { status: 403 });
   }
   const brief = await buildAgentBrief(ctx.business.id);
   return NextResponse.json({ plan: "BUSINESS", generatedAt: brief.generatedAt, proposals: brief.proposals, activity: brief.activity });

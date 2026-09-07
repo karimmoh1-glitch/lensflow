@@ -17,7 +17,7 @@ export async function toggleAutomation(id: string, enabled: boolean): Promise<{ 
   // stays allowed regardless of plan, so a downgraded business isn't stuck unable to
   // disable something that's already running.
   if (enabled && !automationsEntitled(ctx.business)) {
-    return { error: "Automations are available on the Pro plan and above. Upgrade from Billing to turn this on." };
+    return { error: "Automations beyond three are part of Daythread Pro. Upgrade under Settings → Subscription." };
   }
   if (enabled) {
     // Count-based allowance (Free: 3 switched on at once), decided from the database row

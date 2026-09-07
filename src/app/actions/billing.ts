@@ -25,7 +25,7 @@ export async function startUpgradeCheckout(
   planKey: Extract<PlanKey, "PRO" | "BUSINESS">,
   interval: "month" | "year" = "month",
   session?: SessionPayload | null,
-  opts: { trial?: boolean } = {}
+  opts: { trial?: boolean; source?: string } = {}
 ): Promise<{ url?: string; changed?: boolean; error?: string }> {
   if (planKey !== "PRO" && planKey !== "BUSINESS") return { error: "Unknown plan." };
   if (interval !== "month" && interval !== "year") return { error: "Unknown billing interval." };
@@ -65,7 +65,7 @@ export async function startUpgradeCheckout(
       successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?checkout=success&plan=${planKey.toLowerCase()}`,
       cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?checkout=canceled`,
     });
-    await track("checkout_started", { businessId: business.id, properties: { planKey, interval, trial } });
+    await track("checkout_started", { businessId: business.id, properties: { planKey, interval, trial, source: (opts.source ?? "subscription").slice(0, 80) } });
     return { url };
   } catch (err) {
     console.error("[billing] checkout creation failed", err instanceof Error ? err.message : err);

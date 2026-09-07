@@ -44,6 +44,8 @@ export default async function StatusPage() {
     { name: "WhatsApp", configured: whatsappConfigured(), status: "https://metastatus.com/whatsapp-business-api" },
     { name: "SMS", configured: twilioConfigured(), status: "https://status.twilio.com/" },
     { name: "Apple Calendar", configured: true, status: "https://www.apple.com/support/systemstatus/", note: "Connects with an app-specific password; nothing to configure on Daythread's side." },
+    { name: "Assistant language model", configured: Boolean(process.env.OPENAI_API_KEY), status: "https://status.openai.com/", note: process.env.OPENAI_API_KEY ? "Drafts and summaries are written by the model; the rules fallback still works without it." : "Not configured: drafts and summaries come from rules, honestly labeled." },
+    { name: "Email sending (Resend)", configured: Boolean(process.env.RESEND_API_KEY), status: "https://resend-status.com/" },
     { name: "Subscription billing", configured: subscriptionBillingIsLive, status: "https://status.stripe.com/" },
   ];
 

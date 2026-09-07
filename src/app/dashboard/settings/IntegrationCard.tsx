@@ -1,5 +1,7 @@
 "use client";
 
+import { PaywallTrigger } from "@/components/Paywall";
+
 import { Children, useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -114,9 +116,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
     if (!model.entitled) {
       if (model.limit) {
         return (
-          <Link href={model.limit.upgradeHref} className="inline-flex items-center justify-center h-8 px-3.5 rounded-full text-[13px] font-semibold border border-signal/30 text-signal-text bg-signal-soft/40 hover:bg-signal-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50 whitespace-nowrap">
-            {model.limit.upgradePlan ? `Upgrade to ${model.limit.upgradePlan}` : "See plans"}
-          </Link>
+          <PaywallTrigger feature={model.provider === "SMS" ? "sms" : "channels"} source="settings-channels" className="inline-flex items-center justify-center h-8 px-3.5 rounded-full text-[13px] font-semibold border border-signal/30 text-signal-text bg-signal-soft/40 hover:bg-signal-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50 whitespace-nowrap">{model.limit.upgradePlan ? `Unlock with ${model.limit.upgradePlan}` : "See plans"}</PaywallTrigger>
         );
       }
       return null;

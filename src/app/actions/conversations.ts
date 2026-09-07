@@ -171,7 +171,7 @@ export async function assignConversation(conversationId: string, membershipId: s
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
-  if (!teamEntitled(business)) return { error: "Assigning conversations to teammates is part of Daythread Business." };
+  if (!teamEntitled(business)) return { error: "Assigning conversations to teammates is part of Daythread Pro. Upgrade under Settings → Subscription." };
   const conv = await prisma.conversation.findFirst({ where: { id: conversationId, businessId: business.id }, select: { id: true } });
   if (!conv) return { error: "Conversation not found." };
   let assigneeName: string | null = null;

@@ -10,6 +10,8 @@ import { AssistantBeat } from "./landing/AssistantBeat";
 import { Spine } from "./landing/Spine";
 import { Proof } from "./landing/Proof";
 import { Faq, FAQ } from "./landing/Faq";
+import { Why } from "./landing/Why";
+import { Trust } from "./landing/Trust";
 import { PLANS } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { PricingSection } from "./PricingSection";
@@ -89,8 +91,16 @@ export default function LandingPage() {
         <AssistantBeat />
       </section>
 
+      <section id="why" className="relative py-20 md:py-28 bg-white border-t border-border overflow-hidden scroll-mt-16">
+        <Why />
+      </section>
+
       <section id="proof" className="relative py-20 md:py-24 bg-paper border-t border-border scroll-mt-16">
         <Proof />
+      </section>
+
+      <section id="trust" className="relative py-20 md:py-24 bg-white border-t border-border scroll-mt-16">
+        <Trust />
       </section>
 
       <div id="pricing" className="bg-white border-t border-border scroll-mt-16">

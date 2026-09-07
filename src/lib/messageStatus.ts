@@ -53,7 +53,7 @@ function notDeliveredDetail(detail: string, channelName: string): string {
     case "window_closed":
       return "WhatsApp only allows a free-form reply within 24 hours of the customer's last message. This was saved to the thread but not sent; an approved template is required after that.";
     case "reauth_required":
-      return `${channelName} needs to be reconnected before replies can be sent. Reconnect it in Settings → Integrations.`;
+      return `${channelName} needs to be reconnected before replies can be sent. Reconnect it in Settings → Channels.`;
     case "not_connected":
       return `${channelName} isn't connected, so nothing was sent.`;
     case "no_recipient":

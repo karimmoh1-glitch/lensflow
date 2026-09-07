@@ -3,24 +3,30 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { format, formatDistanceToNowStrict, differenceInMinutes } from "date-fns";
-import { ChevronLeft, Mail, Phone, AtSign } from "lucide-react";
+import { ChevronLeft, Mail, Phone, AtSign, CalendarDays } from "lucide-react";
 import { cn, initials, toZonedDisplayDate } from "@/lib/utils";
 import { Composer, type WindowNotice } from "./Composer";
 import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
 import { MessageBody } from "./MessageBody";
+import { MessageBubble } from "@/components/inbox/MessageBubble";
 import { ConversationTools, MarkReadOnOpen } from "./ConversationTools";
 import { SummaryCard } from "./SummaryCard";
+import { UnderstandingCard } from "./UnderstandingCard";
+import { LeadBooking } from "./LeadBooking";
+import { MarkLostButton } from "./MarkLostButton";
 import { AssignMenu } from "./AssignMenu";
 import { teamEntitled } from "@/lib/billing";
 import { splitMessage } from "@/lib/cleanMessage";
-import { readMessage, type ConversationSummary } from "@/lib/summarize";
+import { understand } from "@/lib/understand";
+import { readRelationship } from "@/lib/relationshipState";
 import { labelFor } from "@/lib/classifyMessage";
+import type { ConversationSummary } from "@/lib/summarize";
 
 /**
- * One conversation, and beside it what you need to answer it: who this is and how to
- * reach them, what they mentioned (read from their own words), a summary, and your
- * previous conversations with them. The rail is a sidebar on desktop and a disclosure on
- * phones. Every message shows whether it was actually delivered.
+ * A message is never just a message. Beside the conversation: what Daythread read from the
+ * latest message (intent, date, the next action), who this is and where you stand, what
+ * they mentioned, the summary, what's booked, and — when they're ready — the booking made
+ * straight from the thread. The rail is a sidebar on desktop and a disclosure on phones.
  */
 export async function ThreadPanel({ conversationId, autoSummarize = false, backHref = "/dashboard/inbox" }: { conversationId: string; autoSummarize?: boolean; backHref?: string }) {
   const ctx = await requireBusiness();
@@ -32,11 +38,12 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
     include: {
       client: {
         include: {
-          conversations: { where: { id: { not: conversationId }, archived: false }, orderBy: { lastMessageAt: "desc" }, take: 5, select: { id: true, channel: true, subject: true, lastMessageAt: true, messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true } } } },
+          bookings: { include: { service: true }, orderBy: { startAt: "desc" }, take: 6 },
+          conversations: { where: { id: { not: conversationId }, archived: false }, orderBy: { lastMessageAt: "desc" }, take: 4, select: { id: true, channel: true, subject: true, lastMessageAt: true, messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true } } } },
         },
       },
       messages: { orderBy: { createdAt: "asc" } },
-      lead: { include: { service: { select: { name: true } } } },
+      lead: { include: { service: true } },
     },
   });
 
@@ -44,29 +51,53 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
 
   const lead = conversation.lead;
   const client = conversation.client;
+  const now = new Date();
+  const tz = business.timezone;
   const team = teamEntitled(business);
-  const members = team
-    ? await prisma.orgMembership.findMany({ where: { businessId: business.id, status: "ACTIVE", role: { in: ["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"] } }, include: { user: { select: { name: true } } }, orderBy: { createdAt: "asc" } })
-    : [];
+  const [handled, members, services] = await Promise.all([
+    lead || client?.bookings.length
+      ? prisma.automationExecution.findMany({ where: { businessId: business.id, targetId: { in: [...(client?.bookings.map((b) => b.id) ?? []), ...(lead ? [lead.id] : [])] } }, include: { automation: { select: { name: true } } }, orderBy: { ranAt: "desc" }, take: 4 })
+      : Promise.resolve([]),
+    team ? prisma.orgMembership.findMany({ where: { businessId: business.id, status: "ACTIVE", role: { in: ["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"] } }, include: { user: { select: { name: true } } }, orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
+    lead && lead.status !== "BOOKED" && lead.status !== "LOST" ? prisma.service.findMany({ where: { businessId: business.id, active: true }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true, durationMins: true, priceCents: true } }) : Promise.resolve([]),
+  ]);
 
   const displayName = client?.name ?? lead?.extractedName ?? conversation.externalHandle ?? "Unknown";
   const isPerson = conversation.category === "PRIORITY";
   const lastInboundMsg = [...conversation.messages].reverse().find((m) => m.direction === "INBOUND");
+  const lastOutboundMsg = [...conversation.messages].reverse().find((m) => m.direction === "OUTBOUND");
   const lastMsg = conversation.messages[conversation.messages.length - 1];
   const unread = Boolean(lastInboundMsg && (!conversation.lastReadAt || conversation.lastReadAt < lastInboundMsg.createdAt));
   const waitingOnYou = isPerson && lastMsg?.direction === "INBOUND";
-  const latestText = lastInboundMsg ? splitMessage(lastInboundMsg.body).text : "";
-  const mentioned = isPerson && latestText ? readMessage(latestText) : null;
-  const cachedSummary = (conversation.summary as unknown as ConversationSummary | null) ?? null;
-  const tz = business.timezone;
+  const upcoming = client?.bookings.filter((b) => b.startAt >= now && b.status !== "CANCELED").sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0] ?? null;
+  const lastCompleted = client?.bookings.filter((b) => b.startAt < now && b.status !== "CANCELED").sort((a, b) => b.startAt.getTime() - a.startAt.getTime())[0] ?? null;
+  const upcomingLabel = upcoming ? `${upcoming.service.name} · ${format(toZonedDisplayDate(upcoming.startAt, tz), "EEE, MMM d · h:mm a")}` : null;
 
-  // WhatsApp's 24-hour customer-service window, told before the person writes. The server
-  // refuses the send either way; this only means they find out first.
+  const relationship = client
+    ? readRelationship({
+        relationship: client.relationship,
+        lead: lead ? { status: lead.status, respondedAt: lead.respondedAt, lastInboundAt: lead.lastInboundAt, createdAt: lead.createdAt, hasService: Boolean(lead.serviceId), hasDate: Boolean(lead.requestedDateText || lead.requestedDate) } : null,
+        lastInbound: lastInboundMsg?.createdAt ?? null,
+        lastOutbound: lastOutboundMsg?.createdAt ?? null,
+        lastOutboundWasProposal: Boolean(lastOutboundMsg && /\$\d|\/book\//i.test(lastOutboundMsg.body)),
+        upcomingBooking: upcoming ? { startAt: upcoming.startAt, label: upcomingLabel!, status: upcoming.status } : null,
+        lastCompletedBooking: lastCompleted ? { startAt: lastCompleted.startAt, label: lastCompleted.service.name } : null,
+        now,
+      })
+    : null;
+  const relationshipLabel = client ? (client.relationship === "CUSTOMER" ? "Customer" : client.relationship === "CONTACT" ? "Contact" : "Potential customer") : labelFor(conversation.category);
+  const latestText = lastInboundMsg ? splitMessage(lastInboundMsg.body).text : "";
+  const understanding = isPerson && lastInboundMsg ? understand({ body: latestText, relationship: client?.relationship ?? null, hasUpcomingBooking: Boolean(upcoming), upcomingBookingLabel: upcomingLabel, upcomingConfirmed: upcoming ? upcoming.status !== "BOOKED" : undefined, leadStatus: lead?.status ?? null }) : null;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const cachedSummary = (conversation.summary as unknown as ConversationSummary | null) ?? null;
+  const canBook = Boolean(lead && lead.status !== "BOOKED" && lead.status !== "LOST");
+
+  // WhatsApp's 24-hour customer-service window, told before the person writes.
   let windowNotice: WindowNotice = null;
   if (conversation.channel === "WHATSAPP") {
     if (!lastInboundMsg) windowNotice = { open: false, text: "WhatsApp only allows replies within 24 hours of a customer's message, and nobody has written yet. A note here is saved to the thread, not delivered." };
     else {
-      const minutesLeft = 24 * 60 - differenceInMinutes(new Date(), lastInboundMsg.createdAt);
+      const minutesLeft = 24 * 60 - differenceInMinutes(now, lastInboundMsg.createdAt);
       if (minutesLeft <= 0) windowNotice = { open: false, text: "WhatsApp's 24-hour reply window has closed for this conversation. A note here is saved to the thread; it will be delivered only if they write again first, or with an approved template." };
       else windowNotice = { open: true, endsIn: minutesLeft >= 60 ? `${Math.floor(minutesLeft / 60)}h ${minutesLeft % 60}m` : `${minutesLeft}m` };
     }
@@ -79,26 +110,28 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
     client?.instagram ? { icon: AtSign, value: client.instagram.replace(/^@/, ""), href: `https://instagram.com/${client.instagram.replace(/^@/, "")}` } : null,
   ].filter((x): x is NonNullable<typeof x> => x !== null && x.value.replace(/^@/, "").toLowerCase() !== handle);
   const facts = lead ? [
-    lead.service ? { label: "About", value: lead.service.name } : null,
+    lead.service ? { label: "Service", value: lead.service.name } : null,
     lead.requestedDateText ? { label: "Date", value: lead.requestedDateText } : null,
     lead.requestedLocation ? { label: "Location", value: lead.requestedLocation } : null,
-    lead.budgetCents ? { label: "Amount", value: `$${(lead.budgetCents / 100).toLocaleString()}` } : null,
-  ].filter((x): x is NonNullable<typeof x> => Boolean(x)) : [];
-  if (mentioned?.day && !facts.some((f) => f.label === "Date")) facts.push({ label: "Date", value: [mentioned.day, mentioned.time].filter(Boolean).join(" · ") });
-  if (mentioned?.amountCents && !facts.some((f) => f.label === "Amount")) facts.push({ label: "Amount", value: `$${(mentioned.amountCents / 100).toLocaleString()}` });
+    lead.budgetCents ? { label: "Budget", value: `$${(lead.budgetCents / 100).toLocaleString()}` } : null,
+  ].filter((x): x is NonNullable<typeof x> => x !== null) : [];
 
   const rail = (
     <>
       <div className="px-5 pt-5 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/50")}>
-            {initials(displayName)}
-          </div>
+          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/50")}>{initials(displayName)}</div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold truncate">{displayName}</div>
-            <div className="text-xs text-ink/65 truncate">{isPerson ? `${CHANNEL_META[conversation.channel].label}${conversation.externalHandle ? ` · ${conversation.externalHandle}` : ""}` : labelFor(conversation.category)}</div>
+            <div className="text-xs text-ink/65 truncate">{relationshipLabel}{relationship ? ` · ${relationship.label}` : ""}</div>
           </div>
         </div>
+        {relationship && (
+          <p className="mt-2.5 text-xs text-ink/70 leading-snug">
+            <span className={cn("inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle", relationship.tone === "signal" ? "bg-accent" : relationship.tone === "outcome" ? "bg-success" : relationship.tone === "warning" ? "bg-warning" : relationship.tone === "thinking" ? "bg-signal" : "bg-ink/30")} />
+            {relationship.standing}
+          </p>
+        )}
         {contact.length > 0 && (
           <ul className="mt-3 space-y-1">
             {contact.map((c) => (
@@ -112,39 +145,87 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
           </ul>
         )}
         {!isPerson && conversation.categoryReason && <p className="mt-2.5 text-xs text-ink/60">{conversation.categoryReason}</p>}
-        {waitingOnYou && lastInboundMsg && (
-          <p className="mt-3 text-xs text-ink/70 leading-snug" suppressHydrationWarning>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-1.5 align-middle" />
-            Waiting {formatDistanceToNowStrict(lastInboundMsg.createdAt)} for a reply.
-          </p>
-        )}
-        {!waitingOnYou && isPerson && lastMsg?.direction === "OUTBOUND" && (
-          <p className="mt-3 text-xs text-ink/60 leading-snug" suppressHydrationWarning>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-success mr-1.5 align-middle" />
-            You replied {formatDistanceToNowStrict(lastMsg.createdAt)} ago.
-          </p>
+        {client && (
+          <Link href={`/dashboard/clients/${client.id}`} className="inline-block mt-3 text-xs font-medium text-accent-text hover:underline">Open their history →</Link>
         )}
       </div>
 
       <div className="px-5 py-4 space-y-4">
-        {mentioned && (
-          <div className="rounded-2xl border border-border bg-paper/70 px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/55 mb-1">Latest message</div>
-            <div className="text-sm font-semibold text-ink">{mentioned.intentLabel}</div>
-            {latestText && <p className="mt-1 text-xs text-ink/60 line-clamp-3">“{latestText.replace(/\s+/g, " ").slice(0, 200)}”</p>}
-          </div>
+        {understanding && (
+          <UnderstandingCard
+            u={understanding}
+            who={displayName}
+            relationshipLabel={relationshipLabel}
+            quote={latestText.replace(/\s+/g, " ").slice(0, 160)}
+            bookingId={upcoming?.id ?? null}
+            bookingHref={upcoming ? `/dashboard/bookings/${upcoming.id}` : null}
+            bookingPageUrl={`${appUrl}/book/${business.handle}`}
+            hasService={Boolean(lead?.service)}
+          />
         )}
+
+        {upcoming && (
+          <Link href={`/dashboard/bookings/${upcoming.id}`} className="flex items-center gap-3 rounded-2xl border border-success/25 bg-success-soft/40 px-3.5 py-3 hover:bg-success-soft/70 transition-colors">
+            <span className="w-8 h-8 rounded-xl bg-white text-success-text flex items-center justify-center shrink-0"><CalendarDays className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-success-text">On the calendar</span>
+              <span className="block text-sm font-semibold text-ink truncate">{upcomingLabel}</span>
+              {upcoming.status === "BOOKED" && <span className="block text-[11px] text-warning-text font-semibold">Not confirmed yet</span>}
+            </span>
+          </Link>
+        )}
+
+        {isPerson && <SummaryCard conversationId={conversation.id} initial={cachedSummary} autoRun={autoSummarize} />}
 
         {facts.length > 0 && (
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/60 mb-2">They mentioned</div>
-            <dl className="space-y-1.5 text-sm">
-              {facts.map((f) => <Row key={f.label} label={f.label} value={f.value} />)}
-            </dl>
+            <dl className="space-y-1.5 text-sm">{facts.map((f) => <Row key={f.label} label={f.label} value={f.value} />)}</dl>
           </div>
         )}
 
-        {isPerson && <SummaryCard conversationId={conversation.id} initial={cachedSummary} autoRun={autoSummarize} />}
+        {canBook && lead && (
+          <div id="book-from-here" className="pt-4 border-t border-border space-y-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/60">Book them from here</div>
+            {waitingOnYou && lastInboundMsg && <p className="text-xs text-ink/65" suppressHydrationWarning>Waiting {formatDistanceToNowStrict(lastInboundMsg.createdAt)}. Reply below, or put a time on the calendar.</p>}
+            <LeadBooking leadId={lead.id} serviceId={lead.service?.id ?? null} services={services} timezone={tz} />
+            <MarkLostButton leadId={lead.id} />
+          </div>
+        )}
+
+        {client && client.bookings.length > 0 && (
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/60 mb-2">Bookings</div>
+            <ul className="space-y-1.5">
+              {client.bookings.slice(0, 4).map((b) => (
+                <li key={b.id}>
+                  <Link href={`/dashboard/bookings/${b.id}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 -mx-2 hover:bg-black/[0.03]">
+                    <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", b.status === "CANCELED" ? "bg-ink/25" : b.status === "COMPLETED" || b.status === "FOLLOWED_UP" ? "bg-success" : b.status === "BOOKED" ? "bg-warning" : "bg-accent")} aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs font-semibold text-ink truncate">{b.service.name}</span>
+                      <span className="block text-[11px] text-ink/55">{b.status.replaceAll("_", " ").toLowerCase()}</span>
+                    </span>
+                    <span className="text-[11px] text-ink/40 shrink-0">{format(toZonedDisplayDate(b.startAt, tz), "MMM d")}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {handled.length > 0 && (
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/60 mb-1.5">Daythread sent for you</div>
+            <ul className="space-y-1 text-xs text-ink/70">
+              {handled.map((h) => (
+                <li key={h.id} className="flex items-start gap-2">
+                  <span className={cn("mt-[5px] w-1.5 h-1.5 rounded-full shrink-0", h.result === "sent" ? "bg-success" : h.result === "failed" ? "bg-accent" : "bg-ink/30")} />
+                  <span>{h.result === "sent" ? "Sent" : h.result === "not_configured" ? "Tried to send" : h.result === "failed" ? "Failed to send" : "Skipped"} {h.automation.name.toLowerCase()} · {format(h.ranAt, "MMM d")}{h.result === "not_configured" && <span className="text-warning-text"> — channel not connected</span>}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {client && client.conversations.length > 0 && (
           <div>
@@ -187,54 +268,58 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
             </div>
           </div>
           {waitingOnYou && (
-            <span className="hidden 2xl:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-              Waiting on you
-            </span>
+            <span className="hidden 2xl:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0"><span className="w-1.5 h-1.5 rounded-full bg-accent" />Waiting on you</span>
           )}
           {team && <AssignMenu conversationId={conversation.id} members={members.map((m) => ({ membershipId: m.id, name: m.user.name, role: m.role }))} current={conversation.assigneeMembershipId} />}
-          <ConversationTools conversationId={conversation.id} unread={unread} category={conversation.category} variant="header" />
+          <ConversationTools conversationId={conversation.id} unread={unread} category={conversation.category} clientId={client?.id ?? null} relationship={client?.relationship ?? null} variant="header" />
         </div>
 
         <details className="xl:hidden border-b border-border bg-paper/60 group/ctx">
           <summary className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-ink/70 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden min-h-[44px]">
             <span className="w-1.5 h-1.5 rounded-full bg-signal" />
             About {displayName}
-            {mentioned && <span className="ml-1 text-ink/45 font-medium truncate">· {mentioned.intentLabel}</span>}
+            {understanding && <span className="ml-1 text-ink/45 font-medium truncate">· {understanding.nextAction.label}</span>}
             <span className="ml-auto text-ink/40 transition-transform group-open/ctx:rotate-180" aria-hidden>▾</span>
           </summary>
           <div className="max-h-[60vh] overflow-y-auto scrollbar-thin bg-white border-t border-border">{rail}</div>
         </details>
 
-        <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-6 py-6 space-y-4 overscroll-contain">
-          {conversation.messages.map((m) => (
-            <div key={m.id} className={cn("max-w-md dt-swap", m.direction === "OUTBOUND" ? "ml-auto" : "")}>
-              <div
-                className={cn(
-                  "rounded-2xl px-4 py-2.5 text-sm",
-                  m.status === "FAILED"
-                    ? "bg-danger-soft text-danger-text rounded-br-sm border border-danger/30"
-                    : m.status === "NOT_DELIVERED"
-                      ? "bg-warning-soft/60 text-ink rounded-br-sm border border-warning/40"
-                    : m.direction === "OUTBOUND"
-                      ? "bg-ink text-white rounded-br-sm"
-                      : "bg-black/[0.05] text-ink rounded-bl-sm"
+        <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-6 py-6 space-y-3 overscroll-contain bg-[linear-gradient(180deg,rgba(250,250,249,0.6),#fff_120px)]">
+          {conversation.messages.map((m, i) => {
+            const prev = conversation.messages[i - 1];
+            const newDay = !prev || toZonedDisplayDate(prev.createdAt, tz).toDateString() !== toZonedDisplayDate(m.createdAt, tz).toDateString();
+            return (
+              <div key={m.id} className="space-y-3">
+                {newDay && (
+                  <div className="flex items-center gap-3 py-1" aria-hidden>
+                    <span className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink/40">{format(toZonedDisplayDate(m.createdAt, tz), "EEE, MMM d")}</span>
+                    <span className="flex-1 h-px bg-border" />
+                  </div>
                 )}
-              >
-                <MessageBody body={m.body} outbound={m.direction === "OUTBOUND"} />
+                <MessageBubble
+                  direction={m.direction}
+                  status={m.status}
+                  arrive={i >= conversation.messages.length - 2}
+                  meta={
+                    <>
+                      {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
+                      {m.status === "NOT_DELIVERED" && <span className="text-warning-text">Not delivered — {CHANNEL_META[conversation.channel].label} isn&rsquo;t connected · </span>}
+                      {m.status === "DELIVERED" && m.direction === "OUTBOUND" && <span className="text-success-text">Delivered · </span>}
+                      {m.aiDrafted && <span className="text-signal-text">AI drafted · </span>}
+                      {m.direction === "OUTBOUND" && !m.sentByUserId && !m.aiDrafted && <span className="text-signal-text">Sent by Daythread · </span>}
+                      <time dateTime={m.createdAt.toISOString()}>{format(toZonedDisplayDate(m.createdAt, tz), "h:mm a")}</time>
+                    </>
+                  }
+                >
+                  <MessageBody body={m.body} outbound={m.direction === "OUTBOUND"} />
+                </MessageBubble>
               </div>
-              <div className={cn("text-[11px] text-ink/50 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
-                {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
-                {m.status === "NOT_DELIVERED" && <span className="text-warning-text">Not delivered — {CHANNEL_META[conversation.channel].label} isn&rsquo;t connected · </span>}
-                {m.aiDrafted && <span className="text-signal-text">AI drafted · </span>}
-                {m.direction === "OUTBOUND" && !m.sentByUserId && !m.aiDrafted && <span className="text-signal-text">Sent by Daythread · </span>}
-                <time dateTime={m.createdAt.toISOString()}>{format(toZonedDisplayDate(m.createdAt, tz), "MMM d, h:mm a")}</time>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <Composer conversationId={conversation.id} windowNotice={windowNotice} />
+        <Composer conversationId={conversation.id} windowNotice={windowNotice} channelLabel={CHANNEL_META[conversation.channel].label} />
       </div>
 
       <aside className="hidden xl:flex w-80 2xl:w-[22rem] shrink-0 border-l border-border bg-white flex-col overflow-y-auto scrollbar-thin" aria-label={`About ${displayName}`}>{rail}</aside>

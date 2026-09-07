@@ -28,6 +28,10 @@
 .dt-nav-link svg { transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1); }
 .dt-nav-link:hover svg { transform: translateX(1px); }
 
+/* A message landing in the thread: a short rise, nothing bouncy. */
+@keyframes dtMsgIn { from { opacity: 0; transform: translateY(6px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.dt-msg-in { animation: dtMsgIn 360ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
 /* A quiet confirmation: the element breathes once when its state changed for the better. */
 @keyframes dtConfirm { 0% { transform: scale(1); } 35% { transform: scale(1.03); } 100% { transform: scale(1); } }
 .dt-confirm { animation: dtConfirm 420ms cubic-bezier(0.22, 1.2, 0.36, 1); }
@@ -47,6 +51,6 @@
 .dt-now::after { content: ""; position: absolute; left: -3px; top: 50%; width: 7px; height: 7px; margin-top: -3px; border-radius: 999px; background: #F0524D; }
 
 @media (prefers-reduced-motion: reduce) {
-  .dt-stagger > *, .dt-rows > *, .dt-confirm, .dt-nudge { animation: none !important; opacity: 1; transform: none; }
+  .dt-stagger > *, .dt-rows > *, .dt-confirm, .dt-nudge, .dt-msg-in { animation: none !important; opacity: 1; transform: none; }
   .dt-nav-indicator, .dt-nav-link svg { transition: none; }
 }

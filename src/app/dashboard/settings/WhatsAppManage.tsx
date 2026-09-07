@@ -69,7 +69,7 @@ export function WhatsAppManage({ model }: { model: WhatsAppManageModel }) {
 
       {model.availableNumbers.length > 1 && (
         <div>
-          <p className="font-semibold text-ink/70 mb-1.5">Numbers Meta granted this inbox</p>
+          <p className="font-semibold text-ink/70 mb-1.5">Numbers Meta granted this workspace</p>
           <ul className="space-y-1.5">
             {model.availableNumbers.map((n) => {
               const active = n.id === selected;

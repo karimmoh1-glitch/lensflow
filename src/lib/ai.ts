@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { firstName } from "./utils";
 
 // Bounded: a hung model call must not hold a server action open indefinitely.
 const client = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 20_000, maxRetries: 1 }) : null;
@@ -138,7 +139,7 @@ export async function draftReply(ctx: ReplyContext): Promise<string> {
 }
 
 function ruleBasedReply(ctx: ReplyContext): string {
-  const greeting = ctx.customerName ? `Hi ${ctx.customerName}!` : "Hi there!";
+  const greeting = ctx.customerName ? `Hi ${firstName(ctx.customerName)}!` : "Hi there!";
   const lower = ctx.customerMessage.toLowerCase();
   const mentioned = ctx.services.find((s) => lower.includes(s.name.toLowerCase().split(" ")[0]));
   if (mentioned) {
@@ -157,7 +158,8 @@ function ruleBasedReply(ctx: ReplyContext): string {
 // this just turns structured facts into a natural-language answer.
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function summarizeCopilotAnswer(question: string, facts: string): Promise<string> {
+/** Writes an answer from the fact sheet when a model is configured; null when there is no model or it failed. */
+export async function summarizeCopilotAnswer(question: string, facts: string): Promise<string | null> {
   if (client) {
     try {
       const completion = await client.chat.completions.create({
@@ -175,10 +177,10 @@ export async function summarizeCopilotAnswer(question: string, facts: string): P
       const text = completion.choices[0]?.message?.content?.trim();
       if (text) return text;
     } catch (err) {
-      console.error("[ai] copilot summarization failed, falling back to raw facts", err);
+      console.error("[ai] copilot summarization failed, falling back to rules", err);
     }
   }
-  return facts;
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

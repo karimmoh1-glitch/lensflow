@@ -7,7 +7,7 @@ export type ChannelCapabilities = {
   canReceive: boolean;
   /** True only when real provider credentials are configured — never faked. */
   live: boolean;
-  /** Human-readable note on what's required to go live, shown in Settings → Integrations. */
+  /** Human-readable note on what's required to go live, shown in Settings → Channels. */
   setupNote: string;
 };
 

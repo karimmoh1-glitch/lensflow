@@ -3,10 +3,11 @@ import { PLANS, effectivePlan, planForIntegrations, type PlanKey } from "@/lib/b
 import type { Integration, IntegrationProvider, IntegrationStatus, Prisma } from "@prisma/client";
 
 /**
- * The connected-channels quota, enforced where a channel actually becomes active.
+ * The connected-integrations quota, enforced where an integration actually becomes active.
  *
- * Every path that turns an Integration row CONNECTED — the Gmail callback, the Instagram
- * and WhatsApp callbacks and the Twilio number claim — goes through `activateIntegration`. It runs inside one database
+ * Every path that turns an Integration row CONNECTED — the Google callback (Gmail and
+ * Google Calendar), the Instagram and WhatsApp callbacks, the Apple Calendar action and the
+ * Twilio number claim — goes through `activateIntegration`. It runs inside one database
  * transaction that first takes a row lock on the Business, so concurrent attempts for the
  * same workspace serialize: the count is read after the lock, the row is written before the
  * lock is released, and the plan is read from the locked row itself (never from the
@@ -17,7 +18,7 @@ import type { Integration, IntegrationProvider, IntegrationStatus, Prisma } from
  * ERROR and legacy DEMO rows hold no slot, so a failed or abandoned connection never uses
  * up the allowance. Reconnecting an already-active provider re-uses its own slot.
  */
-export const QUOTA_PROVIDERS: IntegrationProvider[] = ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS"];
+export const QUOTA_PROVIDERS: IntegrationProvider[] = ["EMAIL", "GOOGLE_CALENDAR", "APPLE_CALENDAR", "INSTAGRAM", "WHATSAPP", "SMS"];
 export const ACTIVE_STATUSES: IntegrationStatus[] = ["CONNECTED", "SYNC_ERROR"];
 
 export function countsTowardQuota(row: { provider: IntegrationProvider; status: IntegrationStatus }): boolean {
@@ -109,6 +110,6 @@ export async function activateIntegration(params: {
 export function limitMessage(usage: IntegrationUsage): string {
   const plan = PLANS[usage.plan];
   const next = usage.nextPlan ? PLANS[usage.nextPlan].name : null;
-  const allowance = `${plan.name} includes ${usage.limit} connected channel${usage.limit === 1 ? "" : "s"}.`;
-  return next ? `Channel limit reached. ${allowance} Upgrade to ${next} to connect every channel.` : `Channel limit reached. ${allowance}`;
+  const allowance = `${plan.name} includes ${usage.limit} connection${usage.limit === 1 ? "" : "s"}.`;
+  return next ? `Connection limit reached. ${allowance} Upgrade to ${next} to connect more.` : `Connection limit reached. ${allowance}`;
 }

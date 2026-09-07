@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, EyeOff, Eye, Trash2, MoreHorizontal } from "lucide-react";
+import { Sparkles, EyeOff, Eye, Trash2, MoreHorizontal, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/Toaster";
-import { markConversationRead, reclassifyConversation, removeConversationForMe, summarizeConversation } from "@/app/actions/conversations";
+import { markConversationRead, reclassifyConversation, removeConversationForMe, setClientRelationship, summarizeConversation } from "@/app/actions/conversations";
 import type { ConversationSummary } from "@/lib/summarize";
 import type { MessageCategory } from "@/lib/classifyMessage";
 
@@ -19,13 +19,15 @@ export type ToolsProps = {
   conversationId: string;
   unread: boolean;
   category: MessageCategory;
+  clientId?: string | null;
+  relationship?: "LEAD" | "CUSTOMER" | "CONTACT" | null;
   /** Row rail (hover) or header rail (always visible). */
   variant?: "row" | "header";
   /** Called with the summary after Summarize (header only). */
   onSummary?: (s: ConversationSummary) => void;
 };
 
-export function ConversationTools({ conversationId, unread, category, variant = "row", onSummary }: ToolsProps) {
+export function ConversationTools({ conversationId, unread, category, clientId, relationship, variant = "row", onSummary }: ToolsProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
@@ -112,6 +114,18 @@ export function ConversationTools({ conversationId, unread, category, variant = 
     });
   }
 
+  function relate(e: React.SyntheticEvent, to: "CUSTOMER" | "CONTACT") {
+    stop(e);
+    setMenu(false);
+    if (!clientId) return;
+    startTransition(async () => {
+      const r = await setClientRelationship(clientId, to);
+      if (r.error) return toast({ tone: "signal", title: "Couldn't change that", body: r.error });
+      toast({ tone: to === "CUSTOMER" ? "outcome" : "neutral", title: to === "CUSTOMER" ? "Marked as a customer" : "Marked as a contact" });
+      router.refresh();
+    });
+  }
+
   const btn = (label: string, onClick: (e: React.SyntheticEvent) => void, Icon: typeof Sparkles, tone?: "accent" | "signal") => (
     <button
       type="button"
@@ -149,7 +163,14 @@ export function ConversationTools({ conversationId, unread, category, variant = 
             <>
               <Item onClick={(e) => reclassify(e, "AUTOMATED")} title="Not priority" hint="Automated · kept in All, out of the way" />
               <Item onClick={(e) => reclassify(e, "PROMOTIONAL")} title="It's marketing" hint="Promotion" />
-              <Item onClick={(e) => reclassify(e, "VENDOR")} title="It's a vendor" hint="A company you deal with, not a person writing to you" />
+              <Item onClick={(e) => reclassify(e, "VENDOR")} title="It's a vendor" hint="A business you deal with, not a customer" />
+            </>
+          )}
+          {clientId && (
+            <>
+              <div className="my-1 border-t border-border" />
+              {relationship !== "CUSTOMER" && <Item onClick={(e) => relate(e, "CUSTOMER")} title="This is a customer" hint="They've bought from you" check />}
+              {relationship !== "CONTACT" && <Item onClick={(e) => relate(e, "CONTACT")} title="Not a client" hint="Keep them, but out of the CRM" />}
             </>
           )}
         </div>
@@ -158,10 +179,11 @@ export function ConversationTools({ conversationId, unread, category, variant = 
   );
 }
 
-function Item({ onClick, title, hint }: { onClick: (e: React.SyntheticEvent) => void; title: string; hint?: string }) {
+function Item({ onClick, title, hint, check }: { onClick: (e: React.SyntheticEvent) => void; title: string; hint?: string; check?: boolean }) {
   return (
     <button type="button" role="menuitem" onClick={onClick} className="w-full text-left rounded-lg px-2.5 py-2 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.04]">
       <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+        {check && <Check className="w-3.5 h-3.5 text-success" strokeWidth={2.5} aria-hidden />}
         {title}
       </span>
       {hint && <span className="block text-[11px] text-ink/55">{hint}</span>}

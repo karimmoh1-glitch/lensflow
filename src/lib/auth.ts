@@ -8,9 +8,10 @@ import type { Business, Role } from "@prisma/client";
 const SESSION_COOKIE = "lf_session";
 const secret = () => new TextEncoder().encode(requiredSecret("JWT_SECRET"));
 
-/** Roles that work in the inbox. CLIENT is a legacy customer-portal role with no surface
- * in the product any more; it never reaches the inbox. */
-export const STAFF_ROLES: Role[] = ["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"];
+/** Roles that belong on the general staff dashboard (/dashboard/**). PARTNER and CLIENT
+ * have their own dedicated, narrowly-scoped experiences (/partner, /portal) and must
+ * never reach the staff views — even by navigating there directly. */
+export const STAFF_ROLES: Role[] = ["OWNER", "ADMIN", "PHOTOGRAPHER"];
 
 export type SessionPayload = {
   userId: string;
@@ -151,8 +152,9 @@ export type BusinessContext = NonNullable<Awaited<ReturnType<typeof requireBusin
 
 /** Where a role lands after auth — the single source of truth for role-based routing. */
 export function homeRouteFor(role: Role, business: Pick<Business, "onboardingComplete">): string {
-  if (role === "CLIENT") return "/workspaces";
-  return business.onboardingComplete ? "/dashboard/inbox" : "/onboarding";
+  if (role === "CLIENT") return "/portal";
+  if (role === "PARTNER") return "/partner";
+  return business.onboardingComplete ? "/dashboard" : "/onboarding";
 }
 
 /** Like requireBusiness(), but additionally enforces the caller's role is in the allowed

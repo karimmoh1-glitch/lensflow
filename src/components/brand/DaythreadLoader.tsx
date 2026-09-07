@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * "Daythread is bringing everything together." A single thread travels through the five
- * channels of an inbox — Gmail, Instagram, WhatsApp, SMS, the contact form — and
+ * points of a business — inbox, calendar, bookings, automation, the business itself — and
  * settles into the mark's coral node. SVG + CSS only; respects reduced motion (static
  * connected state); announces itself to assistive tech once via role="status".
  *

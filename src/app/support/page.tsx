@@ -17,11 +17,11 @@ export default function SupportPage() {
 
         <section className="mt-10 space-y-6">
           {[
-            ["Something didn't send", "Open the conversation: every outbound message shows whether it was sent, delivered, failed or not delivered, with the reason. \"Not delivered\" means that channel isn't connected for your inbox yet — connect it under Settings → Channels. Nothing is ever shown as sent unless the provider confirmed it."],
-            ["A channel needs attention", "Google, Instagram and WhatsApp revoke access from time to time. Settings → Channels shows which one and offers Reconnect. Reconnecting never deletes conversations."],
-            ["Subscription", "Your plan, next charge, card and invoices live under Settings → Subscription, all read from Stripe. Cancel any time from Manage billing; Pro stays on until the period ends. Downgrading never deletes anything."],
-            ["Plan limits", "Free includes 2 connected channels and one person. Pro ($20 a month) includes every channel, a dedicated text number, AI-drafted replies and summaries, and up to 5 people sharing the inbox."],
-            ["Delete your account", "Settings → Profile → Delete inbox removes the inbox, its conversations, people and connected credentials. This is immediate and cannot be undone."],
+            ["Something didn't send", "Open the conversation: every outbound message shows whether it was sent, delivered, failed or not delivered, with the reason. \"Not delivered\" means that channel isn't connected for your workspace yet — connect it under Settings → Channels. Nothing is ever shown as sent unless the provider confirmed it."],
+            ["A channel or calendar needs attention", "Google, Instagram and WhatsApp revoke access from time to time. Settings → Channels shows which one and offers Reconnect. Reconnecting never deletes conversations or bookings."],
+            ["Subscription", "Your plan, next charge, card and receipts live under Settings → Subscription, all read from Stripe. Cancel any time from Manage subscription; your plan stays on until the period ends. Downgrading never deletes anything."],
+            ["Plan limits", "Free includes 2 connected channels or calendars, 3 automations and one person. Pro ($20 a month) includes every channel, AI, unlimited automations and the assistant. Business ($50 a month) adds up to 10 people on a shared inbox, assignment, notes and roles."],
+            ["Delete your account", "Settings → Profile → Delete workspace removes the workspace, its conversations, people, bookings and connected credentials. This is immediate and cannot be undone."],
             ["Security", "Credentials for connected accounts are encrypted at rest and never shown in the app. Report a security concern to the address above with \"security\" in the subject."],
           ].map(([h, p]) => (
             <div key={h} className="rounded-2xl border border-border bg-white px-5 py-4">
@@ -31,7 +31,7 @@ export default function SupportPage() {
           ))}
         </section>
 
-        <p className="mt-10 text-xs text-ink/45">When you write, include the inbox name and, for a message problem, the person&rsquo;s name and the time it happened. <Link href="/privacy" className="underline">Privacy</Link> · <Link href="/terms" className="underline">Terms</Link></p>
+        <p className="mt-10 text-xs text-ink/45">When you write, include the workspace name and, for a message problem, the client&rsquo;s name and the time it happened. <Link href="/privacy" className="underline">Privacy</Link> · <Link href="/terms" className="underline">Terms</Link></p>
       </div>
     </main>
   );

@@ -10,11 +10,11 @@ import { ChannelIcon, CHANNEL, type ChannelKey } from "@/app/landing/ChannelIcon
  * next. Slow, quiet, looping. Reduced motion: the resolved frame, still.
  */
 const STORIES: { k: ChannelKey; who: string; msg: string; ctx: string; next: string }[] = [
-  { k: "instagram", who: "Maya Chen", msg: "Are you free Tuesday?", ctx: "Wrote 3 times before", next: "Reply to Maya" },
-  { k: "gmail", who: "Jordan Lee", msg: "Pricing for September?", ctx: "Waiting 9 days · no reply", next: "Reply to Jordan" },
-  { k: "sms", who: "(512) 555-0148", msg: "Anything open next week?", ctx: "New person · from a text", next: "Reply by text" },
-  { k: "whatsapp", who: "Sam Okafor", msg: "Move Thursday to 4pm?", ctx: "Always on WhatsApp", next: "Confirm 4:00 PM" },
-  { k: "website", who: "Priya Patel", msg: "Projects in October?", ctx: "From your contact form", next: "Reply by email" },
+  { k: "instagram", who: "Maya Chen", msg: "Are you free Tuesday?", ctx: "Returning · $2,150 lifetime", next: "Offer Tuesday 2:00 PM" },
+  { k: "gmail", who: "Jordan Lee", msg: "Pricing for September?", ctx: "Warm lead · asked twice", next: "Send the pricing sheet" },
+  { k: "sms", who: "(512) 555-0148", msg: "Anything open next week?", ctx: "New lead · contact created", next: "Send your booking link" },
+  { k: "whatsapp", who: "Sam Okafor", msg: "Move Thursday to 4pm?", ctx: "Client · booked Thursday", next: "Confirm 4:00 PM" },
+  { k: "website", who: "Priya Patel", msg: "Booked the Full package", ctx: "New client · on the calendar", next: "Nothing — it handled itself" },
 ];
 
 export function AuthEnvironment() {

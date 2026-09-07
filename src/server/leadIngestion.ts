@@ -90,7 +90,7 @@ export async function ingestInboundMessage(params: {
     subject,
     body,
     headers,
-    knownCustomer: Boolean(knownClient && (knownClient._count.bookings > 0 || knownClient._count.payments > 0 || knownClient.relationship === "CUSTOMER")),
+    knownCustomer: Boolean(knownClient && (knownClient._count.bookings > 0 || knownClient.relationship === "CUSTOMER")),
     priorOutbound,
     priorInboundCount,
     businessDomains,
@@ -131,7 +131,9 @@ export async function ingestInboundMessage(params: {
   const client =
     knownClient ??
     (await prisma.client.create({
-      data: { businessId, name: senderName, email: clientEmail, phone: clientPhone, instagram: channel === "INSTAGRAM" ? senderHandle : undefined },
+      // Store the normalized identifiers (E.164 phone, lower-cased email) so the next message
+      // from the same number or address finds this person instead of creating a second one.
+      data: { businessId, name: senderName, email: identity.email ?? clientEmail, phone: identity.phone ?? clientPhone, instagram: channel === "INSTAGRAM" ? senderHandle : undefined },
     }));
 
   const existingConversation = await prisma.conversation.findFirst({

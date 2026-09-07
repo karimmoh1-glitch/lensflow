@@ -4,18 +4,20 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type SettingsTab = "channels" | "profile" | "security" | "subscription" | "team";
+export type SettingsTab = "channels" | "business" | "profile" | "notifications" | "security" | "subscription" | "team";
 const TABS: Array<{ key: SettingsTab; label: string }> = [
   { key: "channels", label: "Channels" },
+  { key: "business", label: "Business" },
   { key: "profile", label: "Profile" },
+  { key: "notifications", label: "Notifications" },
   { key: "security", label: "Security" },
   { key: "subscription", label: "Subscription" },
   { key: "team", label: "Team" },
 ];
 
-/** URL-driven tabs: each is a real link, so the browser's back button and a shared link work. */
-export function SettingsTabs({ active, channels, profile, security, subscription, team }: { active: SettingsTab } & Record<SettingsTab, ReactNode>) {
-  const content: Record<SettingsTab, ReactNode> = { channels, profile, security, subscription, team };
+/** URL-driven tabs: each is a real link, so the browser's back button, a provider callback
+ * and a shared link all land on the right panel. */
+export function SettingsTabs({ active, panels }: { active: SettingsTab; panels: Record<SettingsTab, ReactNode> }) {
   return (
     <div>
       <div role="tablist" aria-label="Settings sections" className="flex items-center gap-1 mb-6 -mx-4 px-4 md:mx-0 md:px-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -36,7 +38,7 @@ export function SettingsTabs({ active, channels, profile, security, subscription
           ))}
         </div>
       </div>
-      <div role="tabpanel">{content[active]}</div>
+      <div role="tabpanel" className="dt-swap" key={active}>{panels[active]}</div>
     </div>
   );
 }

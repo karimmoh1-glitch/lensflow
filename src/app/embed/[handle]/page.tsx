@@ -12,7 +12,10 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
 
 export default async function EmbedLeadFormPage({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
-  const business = await prisma.business.findUnique({ where: { handle }, select: { name: true } });
+  const business = await prisma.business.findUnique({
+    where: { handle },
+    include: { services: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
+  });
   if (!business) notFound();
 
   return (
@@ -20,7 +23,7 @@ export default async function EmbedLeadFormPage({ params }: { params: Promise<{ 
       <div className="max-w-sm mx-auto">
         <h1 className="font-display text-lg text-ink mb-1">Get in touch with {business.name}</h1>
         <p className="text-xs text-ink/70 mb-5">We&apos;ll get back to you shortly.</p>
-        <EmbedLeadForm handle={handle} />
+        <EmbedLeadForm handle={handle} services={business.services.map((s) => ({ id: s.id, name: s.name }))} />
       </div>
     </main>
   );

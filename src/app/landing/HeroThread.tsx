@@ -5,13 +5,13 @@ import { cn } from "@/lib/utils";
 import { ChannelIcon, CHANNEL, type ChannelKey } from "./ChannelIcon";
 
 /**
- * The hero: many channels → one inbox, told by the information itself.
+ * The hero: many inputs → one system → one result, told by the information itself.
  *
  * Every few seconds one channel lights up and its actual message — a chip with the words
- * in it — travels the connector into Daythread. The inbox responds in order: it reads who
- * this is and what they mentioned, it knows the history, it shows where the thread stands,
- * and the one thing left to do surfaces. Hovering or clicking a channel makes it that
- * channel's turn.
+ * in it — travels the connector into Daythread. The product responds in order: it reads
+ * who this is (real lead extraction: service, date, intent), it acts (a booking or a
+ * booking link), the outcome lands (a confirmation, a reply), and the one thing left
+ * to do surfaces. Hovering or clicking a channel makes it that channel's turn.
  *
  * The first paint is the completed panel — the richest frame — so the hero is whole
  * before JavaScript and in any screenshot. Reduced motion: that frame, still.
@@ -34,28 +34,28 @@ type Story = {
 const STORIES: Story[] = [
   {
     k: "instagram", who: "Maya Chen", handle: "@maya.makes", msg: "Hey! Are you free Tuesday afternoon?", highlight: "Tuesday afternoon",
-    extracted: [["Date", "Tuesday PM"], ["Asking", "Availability"]], ctx: "Wrote 3 times before · Instagram and email", ctxMeta: "Last conversation 6 weeks ago",
-    action: "Sorted into Priority · marked waiting on you", outcome: "Replied from the same account", next: "Reply to Maya", nextWhy: "She's waiting. Nothing else is.",
+    extracted: [["Date", "Tuesday PM"], ["Intent", "High"]], ctx: "Returning client · $2,150 lifetime", ctxMeta: "Booked twice · prefers afternoons",
+    action: "Booked · Brand session · Tue 2:00 PM", outcome: "Confirmation sent · on your calendar", next: "Send Maya the questionnaire", nextWhy: "Booked and confirmed. This is the one thing left.",
   },
   {
     k: "gmail", who: "Jordan Lee", handle: "jordan@northloop.co", msg: "Following up on pricing for a September date.", highlight: "September",
-    extracted: [["Date", "September"], ["Asking", "Pricing"]], ctx: "Wrote 9 days ago · no reply yet", ctxMeta: "Also messaged on WhatsApp",
-    action: "Both threads under one name", outcome: "Summary written from the messages", next: "Reply to Jordan", nextWhy: "Nine days is a long time to wait.",
+    extracted: [["Date", "September"], ["Intent", "Medium"]], ctx: "Warm lead · asked twice", ctxMeta: "First wrote 9 days ago",
+    action: "Pricing sheet sent", outcome: "Follow-up set · 2 days", next: "Reply to Jordan", nextWhy: "Leads that wait 9 days usually go cold.",
   },
   {
     k: "sms", who: "(512) 555-0148", handle: "New number", msg: "Do you have anything open next week?", highlight: "next week",
-    extracted: [["Date", "Next week"], ["Asking", "Availability"]], ctx: "First message · new person", ctxMeta: "Not in your inbox until now",
-    action: "Person created from the number", outcome: "Waiting on you", next: "Reply by text", nextWhy: "From your Daythread number, in the same thread.",
+    extracted: [["Date", "Next week"], ["Intent", "Medium"]], ctx: "New lead · contact created", ctxMeta: "Not in your clients until now",
+    action: "Booking link sent", outcome: "Viewed · picking a time", next: "Nothing yet", nextWhy: "Daythread will tell you when they book.",
   },
   {
     k: "whatsapp", who: "Sam Okafor", handle: "+1 415 …", msg: "Can we move Thursday to 4pm?", highlight: "Thursday to 4pm",
-    extracted: [["Date", "Thu 4:00 PM"], ["Asking", "Different time"]], ctx: "Wrote 12 times · always on WhatsApp", ctxMeta: "Reply window open for 23 hours",
-    action: "Delivered · read receipts on", outcome: "You confirmed 4:00 PM", next: "Nothing to do", nextWhy: "Sam has your reply.",
+    extracted: [["Date", "Thu 4:00 PM"], ["Intent", "High"]], ctx: "Client · booked Thursday", ctxMeta: "Consult · $180 · confirmed",
+    action: "Moved to 4:00 PM · confirmed", outcome: "Reminder rescheduled", next: "Nothing to do", nextWhy: "Sam got the confirmation on WhatsApp.",
   },
   {
-    k: "website", who: "Priya Patel", handle: "Contact form", msg: "Hi! Do you take on projects in October?", highlight: "October",
-    extracted: [["Date", "October"], ["Asking", "Availability"]], ctx: "New person · came in from your site", ctxMeta: "Email and phone captured from the form",
-    action: "Landed in the inbox like any other message", outcome: "Waiting on you", next: "Reply by email", nextWhy: "Same inbox, same thread.",
+    k: "website", who: "Priya Patel", handle: "Booking page", msg: "Booked the Full package for Sep 18.", highlight: "Full package",
+    extracted: [["Service", "Full package"], ["Date", "Sep 18"]], ctx: "New client · $1,800", ctxMeta: "Came in through your booking page",
+    action: "Confirmation + questionnaire sent", outcome: "On your calendar · Sep 18", next: "Nothing to do", nextWhy: "Everything sent itself.",
   },
 ];
 
@@ -116,7 +116,7 @@ export function HeroThread() {
   const idx = STORIES.findIndex((x) => x.k === active);
 
   return (
-    <div className="relative w-full select-none" aria-label="Messages from Instagram, Gmail, Messages, WhatsApp and your contact form flowing into one Daythread inbox">
+    <div className="relative w-full select-none" aria-label="Messages from Instagram, Gmail, Messages, WhatsApp and your booking page flowing into one Daythread">
       {/* ambient: the active channel's color, softly, behind the product */}
       <div aria-hidden className="absolute -inset-10 rounded-[40px] blur-3xl transition-colors duration-700 pointer-events-none" style={{ background: `radial-gradient(60% 60% at 70% 50%, ${brand}22, transparent 70%)` }} />
 
@@ -215,14 +215,14 @@ export function HeroThread() {
                   ))}
                 </span>
               </Node>
-              <Node on={on(2)} dot={cn("bg-signal", phase === 1 && !still && "animate-[dtBreathe_1.1s_ease-in-out_infinite]")} label="Daythread remembers" labelClass="text-signal-text">
+              <Node on={on(2)} dot={cn("bg-signal", phase === 1 && !still && "animate-[dtBreathe_1.1s_ease-in-out_infinite]")} label="Daythread knows" labelClass="text-signal-text">
                 <span className="font-semibold">{s.ctx}</span>
                 <span className="block text-xs text-ink/60">{s.ctxMeta}</span>
               </Node>
-              <Node on={on(3)} dot="bg-ink/75" label="In your inbox" labelClass="text-ink/55">
+              <Node on={on(3)} dot="bg-ink/75" label="Done for you" labelClass="text-ink/55">
                 {s.action}
               </Node>
-              <Node on={on(4)} dot="bg-success" label="Where it stands" labelClass="text-success-text">
+              <Node on={on(4)} dot="bg-success" label="Outcome" labelClass="text-success-text">
                 {s.outcome}
               </Node>
             </ol>

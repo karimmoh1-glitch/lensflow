@@ -232,3 +232,36 @@ describe("ingestInboundMessage relationships and corrections", () => {
     await prisma.user.delete({ where: { id: owner.id } });
   });
 });
+
+describe("ingestInboundMessage identity persistence", () => {
+  let businessId: string;
+  beforeAll(async () => {
+    businessId = (await prisma.business.create({ data: { name: "Identity Fixture", handle: `identity-fixture-${Date.now()}` } })).id;
+  });
+  afterAll(async () => {
+    await prisma.business.delete({ where: { id: businessId } });
+  });
+
+  it("stores the sender's phone on first contact so the next SMS/WhatsApp from that number is the same person", async () => {
+    // Twilio-style: the handle is the number, no separate clientPhone. Regression: the phone was
+    // not saved, so every later message from the same number created a duplicate contact + thread.
+    const first = await ingestInboundMessage({ businessId, channel: "SMS", senderName: "(512) 555-0199", senderHandle: "+15125550199", body: "Do you have anything open next week?", providerMessageId: "SM_identity_1" });
+    expect(first.client?.phone).toBe("+15125550199");
+    const second = await ingestInboundMessage({ businessId, channel: "SMS", senderName: "(512) 555-0199", senderHandle: "+15125550199", body: "Following up on next week", providerMessageId: "SM_identity_2" });
+    expect(second.client?.id).toBe(first.client?.id);
+    expect(second.conversation.id).toBe(first.conversation.id);
+    expect(await prisma.client.count({ where: { businessId } })).toBe(1);
+    expect(await prisma.conversation.count({ where: { businessId } })).toBe(1);
+    // The same number on WhatsApp joins the same person (a second conversation, one contact).
+    const wa = await ingestInboundMessage({ businessId, channel: "WHATSAPP", senderName: "Sam", senderHandle: "15125550199", body: "Hi, WhatsApp here", providerMessageId: "WA_identity_1" });
+    expect(wa.client?.id).toBe(first.client?.id);
+    expect(await prisma.client.count({ where: { businessId } })).toBe(1);
+  });
+
+  it("stores a lower-cased email so a re-cased sender address is the same person", async () => {
+    const a = await ingestInboundMessage({ businessId, channel: "EMAIL", senderName: "Jordan Lee", senderHandle: "Jordan@NorthLoop.co", body: "Pricing?", subject: "Pricing", providerMessageId: "EM_identity_1" });
+    expect(a.client?.email).toBe("jordan@northloop.co");
+    const b = await ingestInboundMessage({ businessId, channel: "EMAIL", senderName: "Jordan Lee", senderHandle: "jordan@northloop.co", body: "Still curious", subject: "Pricing", providerMessageId: "EM_identity_2" });
+    expect(b.client?.id).toBe(a.client?.id);
+  });
+});

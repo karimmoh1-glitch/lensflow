@@ -30,7 +30,15 @@ provider's.
 - Assistant: proposals from real data; Recommendation → Preview → Approve → Execute;
   execution recorded honestly; dismiss; hourly cap (tests + browser).
 - Automations: create from recipes, edit, delete, Free fourth saved switched off, runner
-  respects the cap (tests + browser).
+  respects the cap; a copy of an existing automation is refused; the runner claims one
+  execution per action and person under a database lock, so the same event arriving five
+  times at once sends once (tests + browser).
+- Concurrency (src/server/concurrency.test.ts): five simultaneous automation fires, five
+  reschedules into one slot, five teammate invitations at the seat cap, five deliveries of one
+  inbound message — each leaves exactly one outcome. Locks: `withLock` (Postgres advisory
+  lock) in src/lib/dbLock.ts plus the Business row lock for bookings.
+- Calendar: day agenda, week time grid (working hours, bookings, external busy time, now
+  line) and month, all in the business timezone (browser).
 - Production deployment and read-only smoke of every dashboard page, public booking page,
   support, privacy, terms, sitemap, manifest at 390 and 1440 (browser).
 - Responsive: no horizontal overflow at 375 / 390 / 430 / 1280 / 1440 / 1728 across all

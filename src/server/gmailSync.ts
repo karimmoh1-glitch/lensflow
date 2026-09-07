@@ -33,11 +33,19 @@ export async function syncGmailForBusiness(businessId: string): Promise<GmailSyn
   }
 }
 
-/** Every connected Gmail, once — for the cron, so nightly follow-ups and reminders see today's mail even when nobody opened the app. */
-export async function syncAllGmail(limit = 200): Promise<{ workspaces: number; ingested: number; failures: number }> {
+/**
+ * Every connected Gmail, once — for the cron, so nightly follow-ups and reminders see
+ * today's mail even when nobody opened the app. Least-recently-synced first, inside a time
+ * budget that fits the cron's 60-second limit; whatever doesn't fit is first in line on the
+ * next run, so no workspace is starved and the run never times out mid-write.
+ */
+export async function syncAllGmail(opts: { limit?: number; budgetMs?: number } = {}): Promise<{ workspaces: number; ingested: number; failures: number; skipped: number }> {
+  const { limit = 200, budgetMs = 40_000 } = opts;
+  const started = Date.now();
   const rows = await prisma.integration.findMany({ where: { provider: "EMAIL", status: { in: ["CONNECTED", "SYNC_ERROR"] }, refreshToken: { not: null } }, select: { businessId: true }, orderBy: { lastSyncedAt: "asc" }, take: limit });
-  const out = { workspaces: 0, ingested: 0, failures: 0 };
+  const out = { workspaces: 0, ingested: 0, failures: 0, skipped: 0 };
   for (const r of rows) {
+    if (Date.now() - started > budgetMs) { out.skipped += 1; continue; }
     out.workspaces += 1;
     const res = await syncGmailForBusiness(r.businessId);
     if (res.ok) out.ingested += res.ingested;

@@ -57,7 +57,7 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
       )}
       <div className="flex items-baseline justify-between gap-3 mb-4">
         <h2 className="font-sans font-extrabold text-lg tracking-[-0.02em] text-ink">Team</h2>
-        <span className="text-xs font-semibold text-ink/55 tabular-nums">{capped ? `${seats} of ${limits.maxTeamSeats}` : `${seats} · unlimited`} <span className="text-ink/40">· {PLANS[plan].name}</span></span>
+        <span className="text-xs font-semibold text-ink/65 tabular-nums">{capped ? `${seats} of ${limits.maxTeamSeats}` : `${seats} · unlimited`} <span className="text-ink/60">· {PLANS[plan].name}</span></span>
       </div>
 
       {over && (

@@ -11,12 +11,13 @@ export function Footer() {
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
           <Link href="/#pricing" className="hover:text-paper transition-colors">Pricing</Link>
           <Link href="/support" className="hover:text-paper transition-colors">Support</Link>
+          <Link href="/status" className="hover:text-paper transition-colors">Status</Link>
           <Link href="/privacy" className="hover:text-paper transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-paper transition-colors">Terms</Link>
           <Link href="/login" className="hover:text-paper transition-colors">Log in</Link>
         </nav>
       </div>
-      <div className="max-w-[1200px] mx-auto px-6 pb-8 text-xs text-paper/35">© {new Date().getFullYear()} Daythread · support@daythread.org</div>
+      <div className="max-w-[1200px] mx-auto px-6 pb-8 text-xs text-paper/60">© {new Date().getFullYear()} Daythread · support@daythread.org</div>
     </footer>
   );
 }

@@ -60,7 +60,7 @@ export function OneThingCard({
       )}
     >
       <div className="flex items-center gap-4 min-w-0 flex-1">
-      <span className={cn("w-11 h-11 rounded-full text-white flex items-center justify-center text-sm font-extrabold shrink-0 transition-colors duration-500", state === "settling" ? "bg-success" : "bg-accent")}>
+      <span className={cn("w-11 h-11 rounded-full text-white flex items-center justify-center text-sm font-extrabold shrink-0 transition-colors duration-500", state === "settling" ? "bg-success" : "bg-accent-strong")}>
         {state === "settling" ? "✓" : initials(name || "?")}
       </span>
       <Link href={href} className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-lg">
@@ -79,7 +79,7 @@ export function OneThingCard({
           type="button"
           onClick={done}
           disabled={pending || state === "settling"}
-          className="h-10 px-3.5 rounded-full text-xs font-bold text-ink/55 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
+          className="h-10 px-3.5 rounded-full text-xs font-bold text-ink/65 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
           aria-label={`Mark ${first} as handled`}
         >
           Done

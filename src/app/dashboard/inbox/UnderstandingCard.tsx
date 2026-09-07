@@ -80,35 +80,35 @@ export function UnderstandingCard({
   return (
     <div className="rounded-2xl border border-border bg-white overflow-hidden">
       <div className="px-4 pt-3.5 pb-3 border-b border-border bg-paper/60">
-        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/45">Daythread read this</div>
+        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/60">Daythread read this</div>
         <p className="mt-1 text-sm text-ink/80 leading-snug">“{quote}”</p>
       </div>
       <dl className="px-4 py-3 grid grid-cols-[92px_1fr] gap-x-3 gap-y-1.5 text-sm">
         {rows.filter(([, v]) => v).map(([k, v], i) => (
           <div key={k} className="contents">
-            <dt className="text-ink/50 text-xs pt-0.5">{k}</dt>
+            <dt className="text-ink/60 text-xs pt-0.5">{k}</dt>
             <dd className={cn("font-medium text-ink", k === "Intent" && "text-signal-text", i === 0 && "font-semibold")}>{v}</dd>
           </div>
         ))}
       </dl>
       <div className="px-4 pb-4">
-        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45 mb-1.5">Next action</div>
+        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60 mb-1.5">Next action</div>
         <button
           type="button"
           onClick={act}
           disabled={pending || disabled || u.nextAction.kind === "none"}
           className={cn(
             "w-full inline-flex items-center justify-center gap-2 h-10 rounded-full text-sm font-extrabold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50",
-            u.nextAction.kind === "confirm" || u.nextAction.kind === "book" ? "bg-accent text-white hover:brightness-95 active:scale-[0.98]" : "bg-ink text-white hover:bg-graphite active:scale-[0.98]"
+            u.nextAction.kind === "confirm" || u.nextAction.kind === "book" ? "bg-accent-strong text-white hover:brightness-95 active:scale-[0.98]" : "bg-ink text-white hover:bg-graphite active:scale-[0.98]"
           )}
         >
           {u.nextAction.label}
         </button>
         {u.ifNot && u.nextAction.kind !== "none" && (
-          <p className="mt-2 text-[11px] text-ink/55 leading-snug"><span className="font-semibold text-ink/70">If you don&rsquo;t:</span> {u.ifNot}</p>
+          <p className="mt-2 text-[11px] text-ink/65 leading-snug"><span className="font-semibold text-ink/70">If you don&rsquo;t:</span> {u.ifNot}</p>
         )}
-        {disabled && u.nextAction.kind === "book" && <p className="mt-1.5 text-[11px] text-ink/50">Match a service to this lead first, below.</p>}
-        {u.confidence === "low" && <p className="mt-1.5 text-[11px] text-ink/45">Read from the message — check it before acting.</p>}
+        {disabled && u.nextAction.kind === "book" && <p className="mt-1.5 text-[11px] text-ink/60">Match a service to this lead first, below.</p>}
+        {u.confidence === "low" && <p className="mt-1.5 text-[11px] text-ink/60">Read from the message — check it before acting.</p>}
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ export default function DashboardError({ error, reset }: { error: Error & { dige
           Back to inbox
         </Link>
       </div>
-      {error.digest && <p className="mt-8 text-[11px] text-ink/35 tabular-nums">Reference {error.digest}</p>}
+      {error.digest && <p className="mt-8 text-[11px] text-ink/60 tabular-nums">Reference {error.digest}</p>}
     </div>
   );
 }

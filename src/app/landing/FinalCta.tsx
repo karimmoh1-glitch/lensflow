@@ -79,23 +79,23 @@ export function FinalCta() {
       </div>
 
       <div className={cn("relative max-w-3xl mx-auto text-center mt-16 md:mt-20", inView ? "dt-land" : "opacity-0")} style={{ animationDelay: "900ms" }}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-paper/45 mb-6">Meet Daythread</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-paper/60 mb-6">Meet Daythread</p>
         <p className="font-sans font-extrabold text-[clamp(2.6rem,6.4vw,5.5rem)] leading-[0.92] tracking-[-0.05em] text-balance">
           One inbox.<br />Everything connected.
         </p>
         <div className="mt-10 flex flex-col items-center gap-3">
           <Link
             href="/signup"
-            className="group inline-flex items-center gap-2 h-14 px-8 rounded-full bg-accent text-white text-base font-extrabold shadow-[0_16px_40px_-12px_rgba(240,82,77,0.85)] transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] hover:scale-[1.04] hover:-translate-y-0.5 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+            className="group inline-flex items-center gap-2 h-14 px-8 rounded-full bg-accent-strong text-white text-base font-extrabold shadow-[0_16px_40px_-12px_rgba(240,82,77,0.85)] transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] hover:scale-[1.04] hover:-translate-y-0.5 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
           >
             Get started <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
           </Link>
-          <span className="text-sm text-paper/45">Free to start. Pro is $20 a month when you need it.</span>
+          <span className="text-sm text-paper/60">Free to start. Pro is $20 a month when you need it.</span>
         </div>
       </div>
-      <footer className="relative max-w-[1200px] mx-auto mt-24 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-paper/40">
+      <footer className="relative max-w-[1200px] mx-auto mt-24 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-paper/60">
         <span className="inline-flex items-center gap-2 text-paper/70"><LogoMark className="w-5 h-5" /><span className="font-extrabold tracking-tight text-sm">Daythread</span></span>
-        <nav className="flex items-center gap-6">
+        <nav aria-label="Closing" className="flex items-center gap-6">
           <Link href="#pricing" className="hover:text-paper transition-colors">Pricing</Link>
           <Link href="#demo" className="hover:text-paper transition-colors">Try it</Link>
           <Link href="/login" className="hover:text-paper transition-colors">Log in</Link>

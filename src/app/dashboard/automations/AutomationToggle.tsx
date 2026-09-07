@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { EntitlementNotice } from "@/components/UpgradePrompt";
 import { useToast } from "@/components/Toaster";
 
-export function AutomationToggle({ id, enabled }: { id: string; enabled: boolean }) {
+export function AutomationToggle({ id, enabled, name }: { id: string; enabled: boolean; name?: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   // Optimistic: the switch reflects the click immediately and can't be double-toggled while
@@ -22,6 +22,7 @@ export function AutomationToggle({ id, enabled }: { id: string; enabled: boolean
       <button
         role="switch"
         aria-checked={on}
+        aria-label={name ? `${name} — ${on ? "on" : "off"}` : on ? "Automation on" : "Automation off"}
         disabled={pending}
         onClick={() => {
           const next = !on;

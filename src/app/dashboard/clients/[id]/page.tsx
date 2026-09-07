@@ -129,24 +129,24 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           <div className="px-5 md:px-6 py-5">
             <div className="flex items-center gap-2">
               <span className={cn("w-2 h-2 rounded-full", standing.tone === "signal" ? "bg-accent" : standing.tone === "outcome" ? "bg-success" : standing.tone === "warning" ? "bg-warning" : standing.tone === "thinking" ? "bg-signal" : "bg-ink/30")} />
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/45">Where we stand</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/60">Where we stand</span>
               <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5", standing.tone === "signal" ? "bg-accent-soft text-accent-text" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-signal-soft text-signal-text" : "bg-black/[0.05] text-ink/60")}>{standing.label}</span>
             </div>
             <p className="mt-2 font-sans font-extrabold text-[1.35rem] leading-tight tracking-[-0.02em] text-ink">{standing.standing}</p>
             {(standing.theyWaitFor || standing.youWaitFor) && (
               <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                {standing.theyWaitFor && <div><dt className="inline text-ink/45">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor}</dd></div>}
-                {standing.youWaitFor && <div><dt className="inline text-ink/45">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor}</dd></div>}
+                {standing.theyWaitFor && <div><dt className="inline text-ink/60">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor}</dd></div>}
+                {standing.youWaitFor && <div><dt className="inline text-ink/60">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor}</dd></div>}
               </dl>
             )}
             {lastInteraction && (
               <p className="mt-3 text-sm text-ink/60">
-                <span className="text-ink/45">Last interaction</span> · {humanAgo(lastInteraction.when, now)} ·{" "}
+                <span className="text-ink/60">Last interaction</span> · {humanAgo(lastInteraction.when, now)} ·{" "}
                 <Link href={lastInteraction.href} className="text-ink hover:underline">{lastInteraction.text}</Link>
               </p>
             )}
             {standing.nextAction && standingHref && (
-              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-full bg-accent text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-full bg-accent-strong text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
                 {standing.nextAction.label}
                 <span className="text-white/60 font-medium text-xs">· {standing.nextAction.why}</span>
               </Link>
@@ -154,20 +154,20 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           </div>
           <dl className="px-5 md:px-6 py-5 grid grid-cols-2 gap-x-4 gap-y-4 content-start">
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Upcoming</dt>
-              <dd className="mt-1 text-sm font-semibold text-ink">{nextBooking ? <Link href={`/dashboard/bookings/${nextBooking.id}`} className="hover:underline">{nextBooking.service.name} · {format(toZonedDisplayDate(nextBooking.startAt, tz), "MMM d")}</Link> : <span className="text-ink/45 font-medium">Nothing booked</span>}</dd>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/60">Upcoming</dt>
+              <dd className="mt-1 text-sm font-semibold text-ink">{nextBooking ? <Link href={`/dashboard/bookings/${nextBooking.id}`} className="hover:underline">{nextBooking.service.name} · {format(toZonedDisplayDate(nextBooking.startAt, tz), "MMM d")}</Link> : <span className="text-ink/60 font-medium">Nothing booked</span>}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Conversations</dt>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/60">Conversations</dt>
               <dd className="mt-1 text-sm font-semibold text-ink tabular-nums">{client.conversations.length}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Bookings</dt>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/60">Bookings</dt>
               <dd className="mt-1 text-sm font-semibold text-ink tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Came in via</dt>
-              <dd className="mt-1 text-sm font-semibold text-ink">{firstConversation ? `${CHANNEL_META[firstConversation.channel].label} · ${format(firstConversation.createdAt, "MMM yyyy")}` : <span className="text-ink/45 font-medium">Added by you</span>}</dd>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/60">Came in via</dt>
+              <dd className="mt-1 text-sm font-semibold text-ink">{firstConversation ? `${CHANNEL_META[firstConversation.channel].label} · ${format(firstConversation.createdAt, "MMM yyyy")}` : <span className="text-ink/60 font-medium">Added by you</span>}</dd>
             </div>
             <div className="col-span-2 pt-1">
               <RelationshipControls clientId={client.id} relationship={client.relationship} name={client.name} />

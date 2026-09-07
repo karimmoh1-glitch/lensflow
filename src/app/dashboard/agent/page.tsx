@@ -52,7 +52,7 @@ export default async function AgentPage() {
             {canBill ? (
               <Link href="/dashboard/settings?tab=subscription" className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Upgrade to Pro →</Link>
             ) : (
-              <span className="text-xs text-ink/50">Ask the workspace owner to upgrade.</span>
+              <span className="text-xs text-ink/60">Ask the workspace owner to upgrade.</span>
             )}
           </div>
         </section>

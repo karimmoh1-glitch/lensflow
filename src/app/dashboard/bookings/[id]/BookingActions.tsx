@@ -55,8 +55,8 @@ export function BookingActions({ bookingId, status, hasQuestionnaire }: { bookin
         {!hasQuestionnaire && status !== "INQUIRY" && status !== "CANCELED" && (
           <Button size="sm" variant="outline" className="w-full" onClick={doQuestionnaire} disabled={pending}>Send questionnaire</Button>
         )}
-        {status === "CANCELED" && <p className="text-xs text-ink/50">This booking was canceled.</p>}
-        {status === "FOLLOWED_UP" && <p className="text-xs text-ink/50">All done here.</p>}
+        {status === "CANCELED" && <p className="text-xs text-ink/60">This booking was canceled.</p>}
+        {status === "FOLLOWED_UP" && <p className="text-xs text-ink/60">All done here.</p>}
       </CardBody>
     </Card>
   );

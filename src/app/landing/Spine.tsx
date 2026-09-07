@@ -17,7 +17,9 @@ export const SCENES: Array<{ id: string; label: string }> = [
   { id: "calendar", label: "Calendar" },
   { id: "how", label: "Automations" },
   { id: "assistant", label: "Assistant" },
+  { id: "proof", label: "Who it's for" },
   { id: "pricing", label: "Pricing" },
+  { id: "faq", label: "Questions" },
   { id: "end", label: "Meet Daythread" },
 ];
 

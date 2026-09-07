@@ -110,7 +110,7 @@ export default async function PartnerInboxPage({ searchParams }: { searchParams:
                   >
                     {m.body}
                   </div>
-                  <div className={cn("text-[11px] text-ink/35 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
+                  <div className={cn("text-[11px] text-ink/60 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
                     {format(m.createdAt, "MMM d, h:mm a")}
                   </div>
                 </div>

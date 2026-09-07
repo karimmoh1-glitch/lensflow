@@ -14,7 +14,7 @@ import { NotificationsPanel } from "./NotificationsPanel";
 import { SubscriptionPanel } from "./SubscriptionPanel";
 import { TeamPanel } from "./TeamPanel";
 
-type Params = { tab?: string; google_connected?: string; google_error?: string; connected?: string; connect_error?: string; provider?: string; setup?: string; checkout?: string; plan?: string };
+type Params = { tab?: string; google_connected?: string; google_error?: string; connected?: string; connect_error?: string; provider?: string; setup?: string; checkout?: string; plan?: string; interval?: string };
 
 /**
  * Settings: the channels and calendars connected to this workspace, the business (name,
@@ -63,7 +63,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           ),
           notifications: <NotificationsPanel business={business} />,
           security: <PasswordForm email={ctx.user.email} />,
-          subscription: <SubscriptionPanel business={business} role={ctx.role} checkout={sp.checkout} plan={sp.plan} />,
+          subscription: <SubscriptionPanel business={business} role={ctx.role} checkout={sp.checkout} plan={sp.plan} interval={sp.interval} />,
           team: <TeamPanel business={business} role={ctx.role} />,
         }}
       />

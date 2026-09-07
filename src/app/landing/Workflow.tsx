@@ -63,7 +63,7 @@ export function Workflow() {
               </div>
             </div>
             <div className="px-5 py-3">
-              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45 mb-1">Recently ran</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60 mb-1">Recently ran</div>
               <ol className="relative pl-6">
                 <span aria-hidden className="absolute left-[5px] top-2 bottom-2 w-px bg-border" />
                 <li className="relative" style={{ opacity: sent }}>
@@ -81,7 +81,7 @@ export function Workflow() {
                   <li key={t + w} className="relative py-2 flex items-start justify-between gap-3">
                     <span aria-hidden className={`absolute -left-6 top-[13px] w-[11px] h-[11px] rounded-full border-2 border-white ${dot}`} />
                     <div className="min-w-0"><div className="text-sm font-medium text-ink truncate">{t}</div><div className="text-xs text-ink/60 truncate">{m}</div></div>
-                    <div className="text-[11px] text-ink/45 shrink-0">{w}</div>
+                    <div className="text-[11px] text-ink/60 shrink-0">{w}</div>
                   </li>
                 ))}
               </ol>

@@ -89,7 +89,7 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
           {windowNotice.text}
         </p>
       )}
-      {windowNotice?.open && <p className="mb-2 text-[11px] text-ink/45">WhatsApp reply window closes in {windowNotice.endsIn}.</p>}
+      {windowNotice?.open && <p className="mb-2 text-[11px] text-ink/60">WhatsApp reply window closes in {windowNotice.endsIn}.</p>}
       <div className={cn("rounded-[20px] border bg-white transition-[border-color,box-shadow] duration-150 focus-within:border-ink/30 focus-within:shadow-[0_0_0_4px_rgba(16,17,20,0.05)]", error ? "border-danger/40" : "border-ink/[0.14]", sentPulse && "dt-confirm")}>
         <textarea
           ref={ref}
@@ -104,7 +104,7 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
           placeholder={closed ? "Write a note — it will be saved to the thread, not delivered…" : `Reply on ${channelLabel}…`}
           rows={1}
           aria-label="Reply"
-          className="block w-full resize-none bg-transparent px-4 pt-3 pb-1 text-[16px] md:text-sm text-ink placeholder:text-ink/40 outline-none min-h-[44px]"
+          className="block w-full resize-none bg-transparent px-4 pt-3 pb-1 text-[16px] md:text-sm text-ink placeholder:text-ink/60 outline-none min-h-[44px]"
         />
         <div className="flex items-center justify-between gap-2 px-2 pb-2">
           <button
@@ -117,7 +117,7 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
             {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}
           </button>
           <div className="flex items-center gap-2">
-            <span className="hidden md:inline text-[11px] text-ink/35" aria-hidden>⌘↵</span>
+            <span className="hidden md:inline text-[11px] text-ink/60" aria-hidden>⌘↵</span>
             <Button size="sm" onClick={send} disabled={!canSend} loading={pending && !drafting} loadingLabel={closed ? "Saving" : "Sending"} aria-label={closed ? "Save to thread" : "Send"} className={cn("min-w-[2.25rem] px-3", !canSend && "bg-ink/25")}>
               {closed ? "Save" : <><span className="hidden sm:inline">Send</span><ArrowUp className="w-4 h-4 sm:ml-0.5" strokeWidth={2.5} aria-hidden /></>}
             </Button>

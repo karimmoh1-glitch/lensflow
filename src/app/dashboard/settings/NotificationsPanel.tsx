@@ -28,7 +28,7 @@ export async function NotificationsPanel({ business }: { business: Business }) {
                   <div className={cn("text-sm", n.read ? "font-medium text-ink/80" : "font-semibold text-ink")}>{n.title}</div>
                   <div className="text-xs text-ink/60 leading-relaxed">{n.body}</div>
                 </div>
-                <time dateTime={n.createdAt.toISOString()} suppressHydrationWarning className="text-[11px] text-ink/45 shrink-0 tabular-nums">{formatDistanceToNowStrict(n.createdAt)} ago</time>
+                <time dateTime={n.createdAt.toISOString()} suppressHydrationWarning className="text-[11px] text-ink/60 shrink-0 tabular-nums">{formatDistanceToNowStrict(n.createdAt)} ago</time>
               </li>
             ))}
           </ol>

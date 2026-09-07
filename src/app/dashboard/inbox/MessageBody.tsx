@@ -22,7 +22,7 @@ export function MessageBody({ body, outbound }: { body: string; outbound: boolea
           aria-expanded={showAll}
           className={cn(
             "mt-2 inline-flex items-center gap-1 text-[11px] font-semibold rounded-md px-1.5 py-0.5 -ml-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-            outbound ? "text-white/60 hover:text-white hover:bg-white/10" : "text-ink/50 hover:text-ink hover:bg-black/[0.05]"
+            outbound ? "text-white/60 hover:text-white hover:bg-white/10" : "text-ink/60 hover:text-ink hover:bg-black/[0.05]"
           )}
         >
           <span aria-hidden>{showAll ? "↑" : "↳"}</span>

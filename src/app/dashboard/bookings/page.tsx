@@ -72,8 +72,8 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
 
       <div className="flex items-center gap-1 mb-5 rounded-full bg-black/[0.04] p-1 w-fit" role="tablist" aria-label="Which bookings">
         {([["upcoming", "Upcoming", upcoming.length], ["past", "Past", past.length], ["canceled", "Canceled", canceled.length]] as const).map(([key, label, n]) => (
-          <Link key={key} href={key === "upcoming" ? "/dashboard/bookings" : `/dashboard/bookings?view=${key}`} role="tab" aria-selected={scope === key} className={cn("inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[13px] font-semibold transition-colors", scope === key ? "bg-white text-ink shadow-xs" : "text-ink/55 hover:text-ink")}>
-            {label} <span className={cn("text-[11px] tabular-nums", scope === key ? "text-ink/45" : "text-ink/35")}>{n}</span>
+          <Link key={key} href={key === "upcoming" ? "/dashboard/bookings" : `/dashboard/bookings?view=${key}`} role="tab" aria-selected={scope === key} className={cn("inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[13px] font-semibold transition-colors", scope === key ? "bg-white text-ink shadow-xs" : "text-ink/65 hover:text-ink")}>
+            {label} <span className={cn("text-[11px] tabular-nums", scope === key ? "text-ink/60" : "text-ink/60")}>{n}</span>
           </Link>
         ))}
       </div>
@@ -86,7 +86,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
         <div className="space-y-6">
           {groups.map((g) => (
             <section key={g.label} aria-label={g.label}>
-              <h2 className={cn("px-1 mb-2 text-[11px] font-bold uppercase tracking-[0.14em]", g.label === "Today" ? "text-accent-text" : "text-ink/45")}>{g.label}</h2>
+              <h2 className={cn("px-1 mb-2 text-[11px] font-bold uppercase tracking-[0.14em]", g.label === "Today" ? "text-accent-text" : "text-ink/60")}>{g.label}</h2>
               <ol className="rounded-[22px] border border-border bg-white divide-y divide-border overflow-hidden">
                 {g.items.map((b) => {
                   const start = toZonedDisplayDate(b.startAt, tz);
@@ -95,7 +95,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
                     <li key={b.id}>
                       <Link href={`/dashboard/bookings/${b.id}`} className="flex items-center gap-3.5 px-4 md:px-5 py-3.5 hover:bg-black/[0.02] active:bg-black/[0.04] transition-colors">
                         <div className="w-12 shrink-0 text-center rounded-xl border border-border bg-paper py-1.5">
-                          <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink/45 leading-none">{format(start, "EEE")}</div>
+                          <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink/60 leading-none">{format(start, "EEE")}</div>
                           <div className="text-lg font-extrabold text-ink leading-tight tabular-nums">{format(start, "d")}</div>
                         </div>
                         <span className="hidden sm:flex w-8 h-8 rounded-full bg-accent-soft text-accent-text items-center justify-center text-[11px] font-semibold shrink-0">{initials(b.client.name)}</span>
@@ -110,7 +110,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
                         </div>
                         <div className="text-right shrink-0">
                           <div className="text-sm font-semibold text-ink tabular-nums">{formatMoney(b.totalCents)}</div>
-                          <div className="text-[11px] text-ink/50">{b.service.durationMins} min</div>
+                          <div className="text-[11px] text-ink/60">{b.service.durationMins} min</div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-ink/30 shrink-0" aria-hidden />
                       </Link>

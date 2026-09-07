@@ -95,7 +95,7 @@ function NavLinks({ pathname, search, role, onNavigate }: { pathname: string; se
       <div aria-hidden className="dt-nav-indicator" style={{ transform: `translateY(${indicator.y}px)`, opacity: indicator.visible ? 1 : 0 }} />
       {groups.map(({ g, items }, gi) => (
         <div key={g} className={cn(gi > 0 && "mt-5")}>
-          {GROUP_LABEL[g] && <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-ink/35">{GROUP_LABEL[g]}</div>}
+          {GROUP_LABEL[g] && <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-ink/60">{GROUP_LABEL[g]}</div>}
           <div className="space-y-0.5">{items.map(link)}</div>
         </div>
       ))}
@@ -110,7 +110,7 @@ function PlanPill({ plan, role, compact }: { plan: PlanLabel; role: Role; compac
   return (
     <div className={cn("rounded-xl border px-3 py-2.5 flex items-center gap-2", plan === "Business" ? "border-signal/25 bg-signal-soft/50" : "border-border bg-paper/70")}>
       <span className={cn("text-[10px] font-extrabold uppercase tracking-[0.14em] rounded-full px-2 py-0.5", plan === "Business" ? "bg-signal text-white" : plan === "Pro" ? "bg-ink text-white" : "bg-black/[0.06] text-ink/60")}>{plan}</span>
-      <span className="text-[11px] text-ink/55 flex-1 min-w-0 truncate">{plan === "Free" ? "One inbox, on your own" : plan === "Pro" ? "Every channel, AI, assistant" : "Your whole team"}</span>
+      <span className="text-[11px] text-ink/65 flex-1 min-w-0 truncate">{plan === "Free" ? "One inbox, on your own" : plan === "Pro" ? "Every channel, AI, assistant" : "Your whole team"}</span>
       {next && canBill && !compact && (
         <Link href="/dashboard/settings?tab=subscription" className="text-[11px] font-bold text-signal-text hover:underline inline-flex items-center gap-0.5 shrink-0">{next} <ArrowUpRight className="w-3 h-3" strokeWidth={2.5} aria-hidden /></Link>
       )}
@@ -133,7 +133,7 @@ function AccountFooter({
 }) {
   return (
     <div className="px-3 py-4 border-t border-border space-y-3">
-      <div className="px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink/35">Account</div>
+      <div className="px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink/60">Account</div>
       <PlanPill plan={plan} role={role} />
       <Link
         href={`/book/${handle}`}
@@ -239,15 +239,15 @@ export function AppShell({
           <Link href="/dashboard" className="inline-flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-md">
             <DaythreadLogo />
           </Link>
-          <div className="text-xs text-ink/55 mt-1 truncate">{businessName}</div>
+          <div className="text-xs text-ink/65 mt-1 truncate">{businessName}</div>
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event("dt-open-palette"))}
-            className="mt-3 w-full flex items-center gap-2 rounded-lg border border-border bg-paper/70 px-2.5 py-1.5 text-xs text-ink/55 hover:text-ink hover:border-ink/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            className="mt-3 w-full flex items-center gap-2 rounded-lg border border-border bg-paper/70 px-2.5 py-1.5 text-xs text-ink/65 hover:text-ink hover:border-ink/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
           >
             <Search className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
             <span className="flex-1 text-left">Find anything</span>
-            <kbd className="text-[10px] font-semibold text-ink/40">⌘K</kbd>
+            <kbd className="text-[10px] font-semibold text-ink/60">⌘K</kbd>
           </button>
         </div>
         <NavLinks pathname={pathname} search={search} role={role} />
@@ -324,7 +324,7 @@ export function AppShell({
             const active = isActive(pathname, item.href);
             return (
               <li key={item.href}>
-                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", active ? "text-ink" : "text-ink/45 active:text-ink")}>
+                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", active ? "text-ink" : "text-ink/60 active:text-ink")}>
                   <span className={cn("w-10 h-7 rounded-full flex items-center justify-center transition-colors", active && "bg-ink text-white")}><item.icon className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
                   {item.label}
                 </Link>
@@ -332,7 +332,7 @@ export function AppShell({
             );
           })}
           <li>
-            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "text-ink" : "text-ink/45")}>
+            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "text-ink" : "text-ink/60")}>
               <span className={cn("w-10 h-7 rounded-full flex items-center justify-center transition-colors", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "bg-ink text-white" : "")}><LayoutGrid className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
               More
             </button>
@@ -360,15 +360,15 @@ export function AppShell({
         </ul>
         <div className="mt-4 rounded-2xl border border-border divide-y divide-border overflow-hidden">
           <button type="button" onClick={() => { setMoreOpen(false); window.dispatchEvent(new Event("dt-open-palette")); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-black/[0.03]">
-            <Search className="w-4 h-4 text-ink/50" strokeWidth={2} aria-hidden /><span className="flex-1 text-left">Find anything</span><ChevronRight className="w-4 h-4 text-ink/30" aria-hidden />
+            <Search className="w-4 h-4 text-ink/60" strokeWidth={2} aria-hidden /><span className="flex-1 text-left">Find anything</span><ChevronRight className="w-4 h-4 text-ink/30" aria-hidden />
           </button>
           <Link href={`/book/${handle}`} target="_blank" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-black/[0.03]">
-            <ExternalLink className="w-4 h-4 text-ink/50" strokeWidth={2} aria-hidden /><span className="flex-1">View my booking page</span><ChevronRight className="w-4 h-4 text-ink/30" aria-hidden />
+            <ExternalLink className="w-4 h-4 text-ink/60" strokeWidth={2} aria-hidden /><span className="flex-1">View my booking page</span><ChevronRight className="w-4 h-4 text-ink/30" aria-hidden />
           </Link>
           {workspaces.length > 1 && <div className="px-4 py-3"><WorkspaceSwitcher current={businessName} workspaces={workspaces} /></div>}
           <form action={logout}>
             <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink/70 hover:bg-black/[0.03]">
-              <LogOut className="w-4 h-4 text-ink/50" strokeWidth={2} aria-hidden /><span className="flex-1 text-left">Log out</span>
+              <LogOut className="w-4 h-4 text-ink/60" strokeWidth={2} aria-hidden /><span className="flex-1 text-left">Log out</span>
             </button>
           </form>
         </div>

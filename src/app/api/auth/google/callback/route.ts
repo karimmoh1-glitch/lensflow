@@ -9,6 +9,7 @@ import { track } from "@/lib/analytics";
 import { syncCalendarIn, readCalendarSettings } from "@/server/calendarSync";
 import { listCalendars } from "@/lib/googleCalendar";
 import { activateIntegration } from "@/server/integrationQuota";
+import { completeGoogleSignIn } from "@/lib/googleSignIn";
 
 /**
  * Where Google sends the owner back after the consent screen, for both Gmail and Google
@@ -31,8 +32,17 @@ export async function GET(req: Request) {
     return NextResponse.redirect(back);
   };
 
-  if (error) return fail(error === "access_denied" ? "denied" : "provider");
+  // Sign-in with Google shares this callback: its state says so, and it ends on the login
+  // page with a session (or a reason), never on the settings page.
   const verified = await verifyOAuthState("google", state);
+  if (verified.ok && verified.state.purpose === "signin") {
+    const to = new URL("/login", url.origin);
+    if (error || !code) { to.searchParams.set("google", error === "access_denied" ? "denied" : "provider"); return NextResponse.redirect(to); }
+    const result = await completeGoogleSignIn(code);
+    if (!result.ok) { to.searchParams.set("google", result.reason); return NextResponse.redirect(to); }
+    return NextResponse.redirect(new URL(result.redirectTo, url.origin));
+  }
+  if (error) return fail(error === "access_denied" ? "denied" : "provider");
   if (!verified.ok) return fail(verified.reason === "expired" ? "expired" : "state");
   if (!code) return fail("provider");
   const purpose = verified.state.purpose === "calendar" ? "calendar" : "gmail";

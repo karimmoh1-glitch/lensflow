@@ -18,6 +18,7 @@ export function Navbar() {
   return (
     <div className="sticky top-0 z-30 w-full flex justify-center px-4 pt-4">
       <nav
+        aria-label="Primary"
         className={cn(
           "w-full flex items-center justify-between transition-all duration-300 ease-out",
           scrolled

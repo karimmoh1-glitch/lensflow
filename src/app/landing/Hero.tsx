@@ -11,7 +11,7 @@ export function Hero() {
     <PointerField className="relative px-6 pt-8 md:pt-12 lg:pt-16 pb-16 md:pb-24 lg:min-h-[calc(84vh-72px)] flex items-start">
       <div className="w-full max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-12 lg:gap-10 items-center">
         <div className="dt-hero-copy max-w-lg">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-6">For freelancers &amp; small businesses</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60 mb-6">For freelancers &amp; small businesses</p>
           <h1 className="font-sans font-extrabold text-[clamp(2.6rem,5.2vw,4.75rem)] leading-[0.92] tracking-[-0.05em] text-ink">
             Every conversation.<br /><span className="whitespace-nowrap">One inbox.</span>
           </h1>
@@ -21,11 +21,11 @@ export function Hero() {
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
             <MagneticLink
               href="/signup"
-              className="group inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent text-white text-[15px] font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] hover:scale-[1.04] hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_rgba(240,82,77,0.8)] active:scale-[0.97] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+              className="group inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent-strong text-white text-[15px] font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] hover:scale-[1.04] hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_rgba(240,82,77,0.8)] active:scale-[0.97] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
             >
               Build your Daythread <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
             </MagneticLink>
-            <span className="text-sm font-semibold text-ink/50">Free to start</span>
+            <span className="text-sm font-semibold text-ink/60">Free to start</span>
           </div>
         </div>
 

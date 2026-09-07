@@ -56,7 +56,7 @@ export function ThreadNode({
           <div className="text-sm font-medium text-ink truncate">{title}</div>
           {meta && <div className="text-xs text-ink/65 mt-0.5 truncate">{meta}</div>}
         </div>
-        {when && <div className="text-[11px] text-ink/50 tabular-nums shrink-0 mt-0.5">{when}</div>}
+        {when && <div className="text-[11px] text-ink/60 tabular-nums shrink-0 mt-0.5">{when}</div>}
       </div>
       {children}
     </>

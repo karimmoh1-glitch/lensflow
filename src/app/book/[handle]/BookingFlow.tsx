@@ -77,7 +77,7 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
             {service?.name} on {slot && `${inZone(slot.start, timezone, { weekday: "long", month: "long", day: "numeric" })} at ${inZone(slot.start, timezone, { hour: "numeric", minute: "2-digit", timeZoneName: "short" })}`}
           </p>
 
-          <p className="text-xs text-ink/55">We&apos;ll confirm the details with you shortly.</p>
+          <p className="text-xs text-ink/65">We&apos;ll confirm the details with you shortly.</p>
         </CardBody>
       </Card>
     );

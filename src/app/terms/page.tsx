@@ -7,9 +7,9 @@ export default function TermsPage() {
   return (
     <main className="min-h-screen bg-paper">
       <div className="max-w-2xl mx-auto px-6 py-16">
-        <Link href="/" className="text-xs font-semibold text-ink/50 hover:text-ink">← Daythread</Link>
+        <Link href="/" className="text-xs font-semibold text-ink/60 hover:text-ink">← Daythread</Link>
         <h1 className="mt-4 font-sans font-extrabold text-3xl tracking-[-0.03em] text-ink">Terms of service</h1>
-        <p className="mt-2 text-sm text-ink/55">Last updated September 6, 2026</p>
+        <p className="mt-2 text-sm text-ink/65">Last updated September 6, 2026</p>
         {[
           ["The service", "Daythread is a workspace for customer communication: it connects the messaging and calendar accounts you choose and organizes what arrives into conversations, bookings and automations, with an assistant that proposes work for you to approve. You keep ownership of your data and your customers' data; you grant Daythread the right to process it to provide the service."],
           ["Your accounts and connections", "You are responsible for the accounts you connect and for having the right to connect them. Connections use each provider's official authorization and are subject to that provider's terms (Google, Meta, Apple, Twilio). A provider may limit or revoke access; Daythread shows that state honestly and never pretends a message was sent or a calendar synced when it wasn't."],
@@ -19,10 +19,10 @@ export default function TermsPage() {
           ["Deleting your workspace", "You can delete your workspace at any time from Settings; deletion is permanent and covers everything described in the Privacy page."],
           ["Availability and liability", "Daythread is provided as is. We work to keep it available and accurate, but connected providers can change or fail, and Daythread is not liable for messages a provider does not deliver or for indirect damages. Our total liability is limited to the fees you paid in the previous three months."],
           ["Changes", "We may update these terms; material changes are announced in the product before they take effect."],
-          ["Contact", "hello@daythread.org"],
+          ["Contact", "support@daythread.org"],
         ].map(([t, b]) => (
           <section key={t} className="mt-8">
-            <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-ink/50">{t}</h2>
+            <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-ink/60">{t}</h2>
             <p className="mt-2 text-[15px] leading-relaxed text-ink/80">{b}</p>
           </section>
         ))}

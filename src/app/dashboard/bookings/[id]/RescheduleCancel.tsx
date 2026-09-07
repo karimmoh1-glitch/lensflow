@@ -67,7 +67,7 @@ export function RescheduleCancel({ bookingId, canCancel, canReschedule, timezone
           <div>
             <div className="text-[13px] font-semibold text-ink/80 mb-1.5">Free times</div>
             {slots === null ? (
-              <p className="text-sm text-ink/50">Checking your calendar…</p>
+              <p className="text-sm text-ink/60">Checking your calendar…</p>
             ) : slots.length === 0 ? (
               <p className="text-sm text-ink/60">Nothing free that day — outside working hours, fully booked, or busy on a connected calendar.</p>
             ) : (
@@ -80,16 +80,16 @@ export function RescheduleCancel({ bookingId, canCancel, canReschedule, timezone
           </div>
           <label className="flex items-center gap-2 text-sm text-ink/75"><input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="w-4 h-4" /> Tell the customer on their thread</label>
           {error && <p role="alert" className="text-xs font-medium text-danger-text">{error}</p>}
-          <div className="flex items-center gap-2"><Button onClick={move} disabled={!picked} loading={pending} loadingLabel="Moving">Move booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-semibold text-ink/55 px-2 py-1">Cancel</button></div>
+          <div className="flex items-center gap-2"><Button onClick={move} disabled={!picked} loading={pending} loadingLabel="Moving">Move booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-semibold text-ink/65 px-2 py-1">Cancel</button></div>
         </div>
       </BottomSheet>
 
       <BottomSheet open={open === "cancel"} onClose={() => setOpen(null)} title="Cancel this booking?" subtitle="It comes off your calendars. Nothing else changes." icon={<XCircle className="w-4 h-4 text-danger-text" strokeWidth={2} aria-hidden />}>
         <p className="text-sm text-ink/70 leading-relaxed">The time becomes bookable again and the conversation is kept. Let the customer know yourself — no message is sent automatically.</p>
         {error && <p role="alert" className="mt-3 text-xs font-medium text-danger-text">{error}</p>}
-        <div className="mt-4 flex items-center gap-2"><Button variant="danger" onClick={cancel} loading={pending} loadingLabel="Canceling">Cancel booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-semibold text-ink/55 px-2 py-1">Keep it</button></div>
+        <div className="mt-4 flex items-center gap-2"><Button variant="danger" onClick={cancel} loading={pending} loadingLabel="Canceling">Cancel booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-semibold text-ink/65 px-2 py-1">Keep it</button></div>
       </BottomSheet>
-      <p className="text-[10px] text-ink/40 mt-1">Current: {new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(currentStartISO))}</p>
+      <p className="text-[10px] text-ink/60 mt-1">Current: {new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(currentStartISO))}</p>
     </div>
   );
 }

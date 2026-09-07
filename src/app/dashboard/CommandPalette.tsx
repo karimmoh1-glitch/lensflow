@@ -126,7 +126,7 @@ export function CommandPalette() {
       <div className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" onClick={() => setOpen(false)} aria-hidden />
       <div role="dialog" aria-modal="true" aria-label="Search and go" className="relative w-full max-w-xl rounded-2xl border border-ink/10 bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] overflow-hidden dt-land">
         <div className="flex items-center gap-3 px-4 border-b border-border">
-          <Search className="w-4 h-4 text-ink/40 shrink-0" strokeWidth={2} />
+          <Search className="w-4 h-4 text-ink/60 shrink-0" strokeWidth={2} />
           <input
             ref={inputRef}
             value={q}
@@ -138,9 +138,9 @@ export function CommandPalette() {
             aria-controls="cmd-list"
             role="combobox"
             aria-expanded="true"
-            className="flex-1 h-14 bg-transparent text-[15px] text-ink placeholder:text-ink/35 outline-none"
+            className="flex-1 h-14 bg-transparent text-[15px] text-ink placeholder:text-ink/60 outline-none"
           />
-          <kbd className="hidden sm:inline-flex items-center rounded-md border border-border bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-ink/50">esc</kbd>
+          <kbd className="hidden sm:inline-flex items-center rounded-md border border-border bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-ink/60">esc</kbd>
         </div>
 
         {summary && (
@@ -160,9 +160,9 @@ export function CommandPalette() {
         )}
 
         <ul id="cmd-list" role="listbox" className="max-h-[52vh] overflow-y-auto scrollbar-thin py-2">
-          {loading && items.length === 0 && <li className="px-4 py-3 text-sm text-ink/50">Looking…</li>}
+          {loading && items.length === 0 && <li className="px-4 py-3 text-sm text-ink/60">Looking…</li>}
           {!loading && q.trim().length >= 2 && hits.length === 0 && (
-            <li className="px-4 py-3 text-sm text-ink/50">Nothing on the thread matches “{q.trim()}”.</li>
+            <li className="px-4 py-3 text-sm text-ink/60">Nothing on the thread matches “{q.trim()}”.</li>
           )}
           {items.map((it, i) => {
             const header = it.group !== lastGroup;
@@ -170,7 +170,7 @@ export function CommandPalette() {
             const on = i === cursor;
             return (
               <li key={it.key} role="presentation">
-                {header && <div className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink/40">{it.group}</div>}
+                {header && <div className="px-4 pt-2 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink/60">{it.group}</div>}
                 <button
                   id={`cmd-${it.key}`}
                   role="option"
@@ -185,9 +185,9 @@ export function CommandPalette() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold text-ink truncate">{it.title}</span>
-                    {it.subtitle && <span className="block text-xs text-ink/55 truncate">{it.subtitle}</span>}
+                    {it.subtitle && <span className="block text-xs text-ink/65 truncate">{it.subtitle}</span>}
                   </span>
-                  {on && <kbd className="hidden sm:inline text-[10px] font-semibold text-ink/40">⏎</kbd>}
+                  {on && <kbd className="hidden sm:inline text-[10px] font-semibold text-ink/60">⏎</kbd>}
                 </button>
               </li>
             );

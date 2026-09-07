@@ -31,7 +31,7 @@ export default function SupportPage() {
           ))}
         </section>
 
-        <p className="mt-10 text-xs text-ink/45">When you write, include the workspace name and, for a message problem, the client&rsquo;s name and the time it happened. <Link href="/privacy" className="underline">Privacy</Link> · <Link href="/terms" className="underline">Terms</Link></p>
+        <p className="mt-10 text-xs text-ink/60">When you write, include the workspace name and, for a message problem, the client&rsquo;s name and the time it happened. <Link href="/privacy" className="underline">Privacy</Link> · <Link href="/terms" className="underline">Terms</Link></p>
       </div>
     </main>
   );

@@ -42,8 +42,8 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
               const allDay = agendas[i].items.filter((it) => it.kind === "busy" && it.allDay);
               return (
                 <Link key={dayKey(d)} href={`?view=week&day=${dayKey(d)}`} className={cn("px-2 py-2.5 text-center border-l border-border hover:bg-black/[0.02]", sel && "bg-paper")} aria-current={isToday ? "date" : undefined}>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45">{format(d, "EEE")}</div>
-                  <div className={cn("mx-auto mt-0.5 w-7 h-7 rounded-full flex items-center justify-center text-sm font-extrabold tabular-nums", isToday ? "bg-accent text-white" : "text-ink")}>{format(d, "d")}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60">{format(d, "EEE")}</div>
+                  <div className={cn("mx-auto mt-0.5 w-7 h-7 rounded-full flex items-center justify-center text-sm font-extrabold tabular-nums", isToday ? "bg-accent-strong text-white" : "text-ink")}>{format(d, "d")}</div>
                   {allDay.length > 0 && <div className="mt-1 text-[10px] font-semibold text-ink/60 truncate" title={allDay.map((a) => a.title).join(", ")}>{allDay.length === 1 ? allDay[0].title : `${allDay.length} all-day`}</div>}
                 </Link>
               );
@@ -53,7 +53,7 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
           <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]" style={{ height }}>
             <div className="relative">
               {hours.map((h) => (
-                <span key={h} className="absolute right-2 -translate-y-1/2 text-[10px] text-ink/45 tabular-nums" style={{ top: top(h * 60) }}>{h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`}</span>
+                <span key={h} className="absolute right-2 -translate-y-1/2 text-[10px] text-ink/60 tabular-nums" style={{ top: top(h * 60) }}>{h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`}</span>
               ))}
             </div>
             {week.map((d, i) => {
@@ -84,7 +84,7 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
                     return (
                       <div key={it.id} className="absolute left-1 right-1 rounded-md bg-ink/[0.07] border border-ink/10 px-1.5 py-1 overflow-hidden" style={style} title={`${it.title} · ${it.subtitle}`}>
                         <div className="text-[11px] font-semibold text-ink/70 leading-tight truncate">{it.title}</div>
-                        <div className="text-[10px] text-ink/50 leading-tight truncate">{it.subtitle}</div>
+                        <div className="text-[10px] text-ink/60 leading-tight truncate">{it.subtitle}</div>
                       </div>
                     );
                   })}

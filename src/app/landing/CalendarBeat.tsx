@@ -33,7 +33,7 @@ export function CalendarBeat() {
             <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-white shadow-popover px-3 py-2.5">
               <ChannelIcon k="whatsapp" size={30} />
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-ink">Sam Okafor <span className="font-normal text-ink/45">· now</span></div>
+                <div className="text-xs font-semibold text-ink">Sam Okafor <span className="font-normal text-ink/60">· now</span></div>
                 <div className="text-[13px] text-ink truncate">Can we move Thursday to 4pm?</div>
               </div>
             </div>
@@ -54,7 +54,7 @@ export function CalendarBeat() {
                     const t = seg(read, i * 0.2, i * 0.2 + 0.4);
                     return (
                       <div key={k} className="flex items-baseline justify-between gap-3" style={{ opacity: 0.25 + t * 0.75, transform: `translateX(${(1 - t) * -6}px)` }}>
-                        <dt className="text-ink/50">{k}</dt>
+                        <dt className="text-ink/60">{k}</dt>
                         <dd className={cn("font-medium text-right", i === 3 ? "text-success-text" : "text-ink")}>{v}</dd>
                       </div>
                     );
@@ -68,16 +68,16 @@ export function CalendarBeat() {
               {/* the week, with the booking sliding */}
               <div className="px-5 py-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45"><CalendarDays className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />This week</div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-ink/45"><span className="w-1.5 h-1.5 rounded-full bg-success" />Google Calendar · synced</div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60"><CalendarDays className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />This week</div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-ink/60"><span className="w-1.5 h-1.5 rounded-full bg-success" />Google Calendar · synced</div>
                 </div>
-                <div className="grid grid-cols-[34px_repeat(5,1fr)] text-[10px] text-ink/45 mb-1">
+                <div className="grid grid-cols-[34px_repeat(5,1fr)] text-[10px] text-ink/60 mb-1">
                   <span />
                   {DAYS.map((d) => <span key={d} className={cn("text-center font-semibold", d === "Thu" && "text-ink")}>{d}</span>)}
                 </div>
                 <div className="relative grid grid-cols-[34px_repeat(5,1fr)]" style={{ height: rowH * HOURS.length }}>
                   {HOURS.map((h, i) => (
-                    <span key={h} className="text-[10px] text-ink/40 tabular-nums" style={{ position: "absolute", left: 0, top: i * rowH - 6 }}>{h}</span>
+                    <span key={h} className="text-[10px] text-ink/60 tabular-nums" style={{ position: "absolute", left: 0, top: i * rowH - 6 }}>{h}</span>
                   ))}
                   {DAYS.map((d, di) => (
                     <div key={d} className="relative" style={{ gridColumn: di + 2 }}>

@@ -8,6 +8,9 @@ import { Workflow } from "./landing/Workflow";
 import { CalendarBeat } from "./landing/CalendarBeat";
 import { AssistantBeat } from "./landing/AssistantBeat";
 import { Spine } from "./landing/Spine";
+import { Proof } from "./landing/Proof";
+import { Faq, FAQ } from "./landing/Faq";
+import { PLANS } from "@/lib/billing";
 import { PricingSection } from "./PricingSection";
 import { FinalCta } from "./landing/FinalCta";
 import { Footer } from "./landing/Footer";
@@ -29,6 +32,29 @@ import { Footer } from "./landing/Footer";
  * Every transformation is tied to scroll position; nothing waits on a timer except the
  * opening (~1.4s) and the ambient loops that don't block anything.
  */
+const SITE = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
+
+/** Only facts: who makes it, what it is, what it costs, and the FAQ as written on the page. */
+function structuredData() {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "Organization", "@id": `${SITE}/#org`, name: "Daythread", url: SITE, logo: `${SITE}/icon`, email: "support@daythread.org" },
+      {
+        "@type": "SoftwareApplication",
+        name: "Daythread",
+        url: SITE,
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        description: "One inbox for every customer conversation — Instagram, Gmail, WhatsApp, SMS and your contact form — with the calendar, bookings, automations and an assistant built around it.",
+        publisher: { "@id": `${SITE}/#org` },
+        offers: (["FREE", "PRO", "BUSINESS"] as const).map((k) => ({ "@type": "Offer", name: `Daythread ${PLANS[k].name}`, price: (PLANS[k].priceCents / 100).toFixed(0), priceCurrency: "USD", url: `${SITE}/#pricing` })),
+      },
+      { "@type": "FAQPage", mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) },
+    ],
+  };
+}
+
 export default function LandingPage() {
   // overflow-x-clip, not hidden: hidden would make <main> the scroll container and break the
   // pinned story's position: sticky.
@@ -62,11 +88,20 @@ export default function LandingPage() {
         <AssistantBeat />
       </section>
 
+      <section id="proof" className="relative py-20 md:py-24 bg-paper border-t border-border scroll-mt-16">
+        <Proof />
+      </section>
+
       <div id="pricing" className="bg-white border-t border-border scroll-mt-16">
         <PricingSection />
       </div>
 
+      <section id="faq" className="relative py-20 md:py-24 bg-paper border-t border-border scroll-mt-16">
+        <Faq />
+      </section>
+
       <FinalCta />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()) }} />
       <Footer />
     </main>
   );

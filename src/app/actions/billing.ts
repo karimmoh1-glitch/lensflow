@@ -23,9 +23,11 @@ async function requireBillingRole(session?: SessionPayload | null) {
  */
 export async function startUpgradeCheckout(
   planKey: Extract<PlanKey, "PRO" | "BUSINESS">,
+  interval: "month" | "year" = "month",
   session?: SessionPayload | null
 ): Promise<{ url?: string; changed?: boolean; error?: string }> {
   if (planKey !== "PRO" && planKey !== "BUSINESS") return { error: "Unknown plan." };
+  if (interval !== "month" && interval !== "year") return { error: "Unknown billing interval." };
   if (!subscriptionBillingIsLive) {
     return { error: "Upgrades aren't open on this deployment yet." };
   }
@@ -35,11 +37,11 @@ export async function startUpgradeCheckout(
   if (effectivePlan(business) === planKey && business.billingStatus && LIVE_SUBSCRIPTION_STATUSES.has(business.billingStatus) && !business.cancelAtPeriodEnd) {
     return { error: `You're already on ${PLANS[planKey].name}.` };
   }
-  await track("upgrade_clicked", { businessId: business.id, properties: { planKey } });
+  await track("upgrade_clicked", { businessId: business.id, properties: { planKey, interval } });
 
   if (business.stripeSubscriptionId && business.billingStatus && LIVE_SUBSCRIPTION_STATUSES.has(business.billingStatus)) {
     try {
-      await changeSubscriptionPlan({ business, planKey });
+      await changeSubscriptionPlan({ business, planKey, interval });
       revalidatePath("/dashboard/billing");
       await track("plan_changed", { businessId: business.id, properties: { planKey } });
       return { changed: true };
@@ -54,6 +56,7 @@ export async function startUpgradeCheckout(
       business,
       ownerEmail: ctx.user.email,
       planKey,
+      interval,
       successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?checkout=success&plan=${planKey.toLowerCase()}`,
       cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?checkout=canceled`,
     });

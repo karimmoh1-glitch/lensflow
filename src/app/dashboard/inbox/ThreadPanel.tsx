@@ -120,7 +120,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
     <>
       <div className="px-5 pt-5 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/50")}>{initials(displayName)}</div>
+          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/60")}>{initials(displayName)}</div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold truncate">{displayName}</div>
             <div className="text-xs text-ink/65 truncate">{relationshipLabel}{relationship ? ` · ${relationship.label}` : ""}</div>
@@ -137,7 +137,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
             {contact.map((c) => (
               <li key={c.value}>
                 <a href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="inline-flex items-center gap-2 text-xs text-ink/70 hover:text-ink max-w-full">
-                  <c.icon className="w-3.5 h-3.5 text-ink/40 shrink-0" strokeWidth={2} aria-hidden />
+                  <c.icon className="w-3.5 h-3.5 text-ink/60 shrink-0" strokeWidth={2} aria-hidden />
                   <span className="truncate">{c.value}</span>
                 </a>
               </li>
@@ -203,9 +203,9 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
                     <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", b.status === "CANCELED" ? "bg-ink/25" : b.status === "COMPLETED" || b.status === "FOLLOWED_UP" ? "bg-success" : b.status === "BOOKED" ? "bg-warning" : "bg-accent")} aria-hidden />
                     <span className="min-w-0 flex-1">
                       <span className="block text-xs font-semibold text-ink truncate">{b.service.name}</span>
-                      <span className="block text-[11px] text-ink/55">{b.status.replaceAll("_", " ").toLowerCase()}</span>
+                      <span className="block text-[11px] text-ink/65">{b.status.replaceAll("_", " ").toLowerCase()}</span>
                     </span>
-                    <span className="text-[11px] text-ink/40 shrink-0">{format(toZonedDisplayDate(b.startAt, tz), "MMM d")}</span>
+                    <span className="text-[11px] text-ink/60 shrink-0">{format(toZonedDisplayDate(b.startAt, tz), "MMM d")}</span>
                   </Link>
                 </li>
               ))}
@@ -237,9 +237,9 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
                     <ChannelBadge channel={c.channel} className="mt-0.5" />
                     <span className="min-w-0 flex-1">
                       <span className="block text-xs font-semibold text-ink truncate">{c.subject ?? CHANNEL_META[c.channel].label}</span>
-                      <span className="block text-[11px] text-ink/55 truncate">{splitMessage(c.messages[0]?.body ?? "").text.slice(0, 80)}</span>
+                      <span className="block text-[11px] text-ink/65 truncate">{splitMessage(c.messages[0]?.body ?? "").text.slice(0, 80)}</span>
                     </span>
-                    <span className="text-[11px] text-ink/40 shrink-0">{format(toZonedDisplayDate(c.lastMessageAt, tz), "MMM d")}</span>
+                    <span className="text-[11px] text-ink/60 shrink-0">{format(toZonedDisplayDate(c.lastMessageAt, tz), "MMM d")}</span>
                   </Link>
                 </li>
               ))}
@@ -278,8 +278,8 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
           <summary className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-ink/70 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden min-h-[44px]">
             <span className="w-1.5 h-1.5 rounded-full bg-signal" />
             About {displayName}
-            {understanding && <span className="ml-1 text-ink/45 font-medium truncate">· {understanding.nextAction.label}</span>}
-            <span className="ml-auto text-ink/40 transition-transform group-open/ctx:rotate-180" aria-hidden>▾</span>
+            {understanding && <span className="ml-1 text-ink/60 font-medium truncate">· {understanding.nextAction.label}</span>}
+            <span className="ml-auto text-ink/60 transition-transform group-open/ctx:rotate-180" aria-hidden>▾</span>
           </summary>
           <div className="max-h-[60vh] overflow-y-auto scrollbar-thin bg-white border-t border-border">{rail}</div>
         </details>
@@ -293,7 +293,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
                 {newDay && (
                   <div className="flex items-center gap-3 py-1" aria-hidden>
                     <span className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink/40">{format(toZonedDisplayDate(m.createdAt, tz), "EEE, MMM d")}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink/60">{format(toZonedDisplayDate(m.createdAt, tz), "EEE, MMM d")}</span>
                     <span className="flex-1 h-px bg-border" />
                   </div>
                 )}

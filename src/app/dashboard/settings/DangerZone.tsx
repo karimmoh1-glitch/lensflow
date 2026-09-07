@@ -23,7 +23,7 @@ export function DangerZone({ businessName }: { businessName: string }) {
           {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
           <div className="flex items-center gap-2">
             <Button variant="danger" size="sm" disabled={typed !== businessName} loading={pending} loadingLabel="Deleting" onClick={() => start(async () => { const r = await deleteWorkspace(typed); if (r?.error) setError(r.error); })}>Delete permanently</Button>
-            <button type="button" onClick={() => setOpen(false)} className="text-xs text-ink/50">Cancel</button>
+            <button type="button" onClick={() => setOpen(false)} className="text-xs text-ink/60">Cancel</button>
           </div>
         </div>
       )}

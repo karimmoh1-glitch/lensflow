@@ -45,6 +45,7 @@ export function Why() {
         {/* The scattered way, and what it costs. */}
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">What the scattered way costs</p>
+          <p className="mb-5 text-lg font-extrabold tracking-tight text-ink leading-snug">One missed booking can cost more than a month of Daythread.<br /><span className="font-medium text-ink/70">If a customer can reach you in five places, you shouldn&rsquo;t have to check five places.</span></p>
           <ul className="divide-y divide-border border-y border-border">
             {COST.map(([t, d], i) => (
               <li key={t} className="py-3.5 flex items-start gap-3" style={{ opacity: seg(arrive, i * 0.15, i * 0.15 + 0.4), transform: `translateY(${(1 - seg(arrive, i * 0.15, i * 0.15 + 0.4)) * 8}px)` }}>

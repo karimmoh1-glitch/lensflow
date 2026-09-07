@@ -208,7 +208,7 @@ export function HeroThread() {
                       className={cn("inline-flex items-center gap-1 rounded-md bg-signal-soft/70 px-1.5 py-0.5 text-[10px] font-semibold text-signal-text transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
                       style={{ transitionDelay: on(2) ? `${120 + i * 110}ms` : "0ms" }}
                     >
-                      <span className="text-signal-text/60">{k}</span>
+                      <span className="text-signal-text">{k}</span>
                       {v}
                     </span>
                   ))}

@@ -87,13 +87,13 @@ describe("conversation actions are tenant-isolated", () => {
     expect((await prisma.conversation.findUnique({ where: { id: bConv.id } }))?.assigneeMembershipId).toBeNull();
   });
 
-  it("assignment is a Business capability, enforced server-side from the database plan", async () => {
-    await prisma.business.update({ where: { id: bId }, data: { planTier: "PRO", billingStatus: "ACTIVE" } });
+  it("assignment is a paid-team capability, enforced server-side from the database plan", async () => {
+    await prisma.business.update({ where: { id: bId }, data: { planTier: "FREE", billingStatus: null } });
     const bConv = await prisma.conversation.findFirst({ where: { businessId: bId } });
     const bMembership = await prisma.orgMembership.findFirst({ where: { businessId: bId } });
     const r = await assignConversation(bConv!.id, bMembership!.id, bSession);
-    expect(r.error).toMatch(/Daythread Business/);
-    await prisma.business.update({ where: { id: bId }, data: { planTier: "BUSINESS", billingStatus: "ACTIVE" } });
+    expect(r.error).toMatch(/Daythread Pro/);
+    await prisma.business.update({ where: { id: bId }, data: { planTier: "PRO", billingStatus: "ACTIVE" } });
     const ok = await assignConversation(bConv!.id, bMembership!.id, bSession);
     expect(ok.error).toBeUndefined();
   });

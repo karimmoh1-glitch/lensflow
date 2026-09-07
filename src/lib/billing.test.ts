@@ -41,10 +41,11 @@ describe("canAddTeamSeat", () => {
     expect(canAddTeamSeat(free, 0)).toBe(true);
   });
 
-  it("Pro is one person: the owner's seat only, no second", () => {
+  it("Pro seats five people; the sixth is refused", () => {
     const pro = { planTier: "PRO" as const, billingStatus: "ACTIVE" as const };
     expect(canAddTeamSeat(pro, 0)).toBe(true);
-    expect(canAddTeamSeat(pro, 1)).toBe(false);
+    expect(canAddTeamSeat(pro, 4)).toBe(true);
+    expect(canAddTeamSeat(pro, 5)).toBe(false);
   });
 
   it("a canceled Pro subscription is held to Free's seat limit, not Pro's", () => {
@@ -159,11 +160,15 @@ describe("PLANS pricing sanity", () => {
     expect(PLANS.BUSINESS.priceCents).toBeGreaterThan(PLANS.PRO.priceCents);
   });
 
-  it("only Business is a team plan", () => {
+  it("Free is one person; Pro and Business are team plans, Business the bigger one", () => {
     expect(PLANS.FREE.teamEnabled).toBe(false);
-    expect(PLANS.PRO.teamEnabled).toBe(false);
+    expect(PLANS.FREE.maxTeamSeats).toBe(1);
+    expect(PLANS.PRO.teamEnabled).toBe(true);
+    expect(PLANS.PRO.maxTeamSeats).toBe(5);
     expect(PLANS.BUSINESS.teamEnabled).toBe(true);
-    expect(PLANS.BUSINESS.maxTeamSeats).toBeGreaterThan(PLANS.PRO.maxTeamSeats);
+    expect(PLANS.BUSINESS.maxTeamSeats).toBe(10);
+    expect(PLANS.BUSINESS.intelligenceEnabled && !PLANS.PRO.intelligenceEnabled).toBe(true);
+    expect(PLANS.BUSINESS.agentHourlyLimit).toBeGreaterThan(PLANS.PRO.agentHourlyLimit);
   });
   it("prices are what the site says: Free $0, Pro $20, Business $50", () => {
     expect(PLANS.PRO.priceCents).toBe(2000);

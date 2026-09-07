@@ -1,5 +1,7 @@
 "use client";
 
+import { PaywallTrigger } from "@/components/Paywall";
+
 import { useEffect, useState, useTransition } from "react";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -63,7 +65,7 @@ export function SummaryCard({ conversationId, initial, autoRun }: { conversation
             <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">Suggested next step</div>
             <div className="text-sm font-semibold text-ink mt-0.5">{summary.nextStep}</div>
           </div>
-          <div className="mt-2 text-[10px] text-ink/65">{summary.source === "ai" ? "Sentence by AI, details from the messages" : "From the messages — AI summaries are part of Pro"}</div>
+          <div className="mt-2 text-[10px] text-ink/65">{summary.source === "ai" ? "Sentence by AI, details from the messages" : <>From the messages — <PaywallTrigger feature="ai_summary" source="summary-card" variant="link" className="text-[10px]">AI summaries are part of Pro →</PaywallTrigger></>}</div>
         </div>
       )}
     </div>

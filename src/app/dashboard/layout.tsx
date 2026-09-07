@@ -5,7 +5,9 @@ import { AppShell } from "./AppShell";
 import { Toaster } from "@/components/Toaster";
 import { prisma } from "@/lib/db";
 import { PROVIDERS } from "@/lib/integrations/registry";
-import { PLANS, effectivePlan } from "@/lib/billing";
+import { PLANS, effectivePlan, trialEligible } from "@/lib/billing";
+import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
+import { PaywallProvider } from "@/components/Paywall";
 import type { Metadata, Viewport } from "next";
 
 /** The dashboard as an installed app: standalone on iPhone, no double-tap zoom on controls,
@@ -32,11 +34,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const wanted = wantedRows.map((r) => PROVIDERS[r.provider as keyof typeof PROVIDERS]?.name).filter((n): n is string => Boolean(n));
   const workspaces = memberships.map((m) => ({ businessId: m.businessId, name: m.business.name, role: m.role }));
 
+  const paywall = {
+    plan: effectivePlan(business),
+    billingLive: subscriptionBillingIsLive,
+    trialOffered: subscriptionBillingIsLive && trialEligible(business),
+    canBill: role === "OWNER" || role === "ADMIN",
+    prices: { PRO: PLANS.PRO.priceCents, BUSINESS: PLANS.BUSINESS.priceCents },
+  };
   return (
     <Toaster>
-      <AppShell businessName={business.name} handle={business.handle} role={role} plan={PLANS[effectivePlan(business)].name as "Free" | "Pro" | "Business"} workspaces={workspaces} wantedIntegrations={wanted}>
-        {children}
-      </AppShell>
+      <PaywallProvider config={paywall}>
+        <AppShell businessName={business.name} handle={business.handle} role={role} plan={PLANS[effectivePlan(business)].name as "Free" | "Pro" | "Business"} workspaces={workspaces} wantedIntegrations={wanted}>
+          {children}
+        </AppShell>
+      </PaywallProvider>
     </Toaster>
   );
 }

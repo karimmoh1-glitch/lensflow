@@ -14,20 +14,20 @@ import { ValueLadder } from "./landing/ValueLadder";
  */
 const LADDER: Record<PlanKey, { who: string; why?: string; gets: string[]; badge?: string }> = {
   FREE: {
-    who: "Start bringing conversations together.",
+    who: "I can manage my inbox.",
     gets: ["2 connected channels or calendars", "One inbox, sorted by who's waiting on you", "Calendar, bookings and 3 automations", "Just you"],
   },
   PRO: {
-    who: "Run your customer communication.",
-    why: "For serious individual operators who want every channel, AI on every thread, and an assistant proposing the day's work.",
-    gets: ["All channels — Gmail, Instagram, WhatsApp, SMS — and both calendars", "AI summaries and reply drafts", "Unlimited automations", "The Daythread assistant, with approval on every send"],
-    badge: "Most people",
+    who: "Daythread helps me manage my work.",
+    why: "Every place people write, on one thread — with a text number, AI on every conversation, and an assistant that puts the day's work in front of you.",
+    gets: ["All channels — Gmail, Instagram, WhatsApp, SMS — and both calendars", "A dedicated text number, AI summaries and reply drafts", "The assistant: replies, confirmations and follow-ups, with your approval", "Unlimited automations · up to 5 people on one inbox"],
+    badge: "7-day trial",
   },
   BUSINESS: {
-    who: "Run your entire customer operation.",
-    why: "For teams that depend on Daythread: everyone on one shared inbox, with assignment, notes and roles.",
-    gets: ["Everything in Pro", "Up to 10 people on one shared inbox", "Assign conversations, internal notes, roles", "Business-wide view and higher assistant limits"],
-    badge: "Teams",
+    who: "Daythread helps run my business.",
+    why: "For businesses that depend on the inbox: the whole picture every morning, an assistant with three times the capacity, and a bigger team.",
+    gets: ["Everything in Pro", "Business-wide view: what's at risk, who owns what, what's first", "60 approved assistant actions an hour, with business memory", "Up to 10 people, roles, internal notes, priority support"],
+    badge: "Runs the business",
   },
 };
 

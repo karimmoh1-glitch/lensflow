@@ -26,7 +26,7 @@ export async function generateDraftAction(
   // Returned, not thrown: a thrown server-action error is a 500 whose message production
   // replaces with a generic one, so the upgrade prompt would never reach the user.
   if (!aiEntitled(business)) {
-    return { error: "AI-drafted replies are available on the Pro plan and above. Upgrade from Billing to use this." };
+    return { error: "AI-drafted replies are part of Daythread Pro. Upgrade under Settings → Subscription." };
   }
 
   const conversation = await prisma.conversation.findFirst({
@@ -68,7 +68,7 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
 
   // A downgraded business keeps reading SMS but can't send on it.
   if (conversation.channel === "SMS" && !smsEntitled(business)) {
-    return { ok: false, error: "SMS replies are available on the Pro plan and above. Upgrade from Billing to reply here." } as SendResult;
+    return { ok: false, error: "SMS replies and a text number are part of Daythread Pro. Upgrade under Settings → Subscription." } as SendResult;
   }
 
   const delivery = await deliverToCustomer({

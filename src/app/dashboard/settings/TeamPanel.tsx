@@ -11,6 +11,7 @@ import { JoinRequestRow } from "@/app/dashboard/team/JoinRequestRow";
 import { ConversationAccessToggle } from "@/app/dashboard/team/ConversationAccessToggle";
 import { TeamInviteForm } from "./TeamInviteForm";
 import { teamEntitled } from "@/lib/billing";
+import { PaywallTrigger } from "@/components/Paywall";
 import type { Business } from "@prisma/client";
 
 const ROLE_LABEL: Record<string, string> = { OWNER: "Owner", ADMIN: "Admin", PHOTOGRAPHER: "Team member", PARTNER: "Partner", CLIENT: "Client" };
@@ -49,10 +50,10 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
     <div className="dt-stagger">
       {!entitled && (
         <div className="mb-8 rounded-[22px] border border-signal/25 bg-signal-soft/40 px-5 py-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Daythread Business</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Daythread Pro</p>
           <h2 className="mt-1.5 font-sans font-extrabold text-xl tracking-[-0.02em] text-ink">Run the inbox as a team.</h2>
-          <p className="mt-1.5 text-sm text-ink/70 leading-relaxed max-w-lg">Business includes up to {PLANS.BUSINESS.maxTeamSeats} people on one shared inbox: everyone sees the same conversations, any thread can be assigned to whoever should answer it, and partners can be handed bookings.</p>
-          <Link href="/dashboard/settings?tab=subscription" className="mt-4 inline-flex items-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Upgrade to Business →</Link>
+          <p className="mt-1.5 text-sm text-ink/70 leading-relaxed max-w-lg">Pro puts up to {PLANS.PRO.maxTeamSeats} people on one shared inbox: everyone sees the same conversations, any thread can be assigned to whoever should answer it, and partners can be handed bookings. Business seats up to {PLANS.BUSINESS.maxTeamSeats}, with roles and internal notes.</p>
+          <PaywallTrigger feature="team" source="settings-team" className="mt-4">Bring your team in →</PaywallTrigger>
         </div>
       )}
       <div className="flex items-baseline justify-between gap-3 mb-4">

@@ -76,7 +76,7 @@ export async function invitePartner(formData: FormData): Promise<{ error?: strin
   const ctx = await requireRole(["OWNER", "ADMIN"]);
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
-  if (!teamEntitled(business)) return { error: "Partners and teammates are part of Daythread Business. Upgrade under Settings → Subscription." };
+  if (!teamEntitled(business)) return { error: "Partners and teammates are part of Daythread Pro. Upgrade under Settings → Subscription." };
 
   const parsed = partnerInviteSchema.safeParse({ name: formData.get("name"), email: formData.get("email") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -130,7 +130,7 @@ export async function invitePartner(formData: FormData): Promise<{ error?: strin
 }
 
 /**
- * Invite someone to share this inbox as a teammate. Business only, and the seat allowance
+ * Invite someone to share this inbox as a teammate. Pro and Business, and the seat allowance
  * is enforced here and again at accept time: pending invitations count, so a burst of
  * invites can't be accepted past the plan's limit.
  */
@@ -138,7 +138,7 @@ export async function inviteTeammate(formData: FormData, actingSession?: Session
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
-  if (!teamEntitled(business)) return { error: "Teammates are part of Daythread Business. Upgrade under Settings → Subscription." };
+  if (!teamEntitled(business)) return { error: "Teammates are part of Daythread Pro. Upgrade under Settings → Subscription." };
 
   const parsed = partnerInviteSchema.safeParse({ name: formData.get("name"), email: String(formData.get("email") ?? "").trim().toLowerCase() });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };

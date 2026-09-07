@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { businessAgentEntitled, effectivePlan, PLANS } from "@/lib/billing";
+import { PaywallTrigger } from "@/components/Paywall";
 import { buildAgentBrief } from "@/server/businessAgent";
 import { PageHeader } from "@/components/ui";
 import { AgentBoard } from "./AgentBoard";
@@ -50,7 +51,7 @@ export default async function AgentPage() {
           <div className="px-6 py-4 md:px-8 border-t border-border flex flex-col sm:flex-row sm:items-center gap-3">
             <p className="flex-1 text-sm text-ink/70">You&rsquo;re on <span className="font-semibold text-ink">{PLANS[plan].name}</span>. Pro is {`$${(PLANS.PRO.priceCents / 100).toFixed(0)}`}/month with every channel, AI and the assistant.</p>
             {canBill ? (
-              <Link href="/dashboard/settings?tab=subscription" className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Upgrade to Pro →</Link>
+              <PaywallTrigger feature="assistant" source="assistant-page">Try the assistant free for 7 days →</PaywallTrigger>
             ) : (
               <span className="text-xs text-ink/65">Ask the workspace owner to upgrade.</span>
             )}

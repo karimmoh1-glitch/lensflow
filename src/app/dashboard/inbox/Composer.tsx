@@ -7,6 +7,7 @@ import { generateDraftAction, sendReplyAction } from "@/app/actions/inbox";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toaster";
 import { EntitlementNotice } from "@/components/UpgradePrompt";
+import { usePaywall } from "@/components/Paywall";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,6 +23,7 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
   const [pending, startTransition] = useTransition();
   const [drafting, setDrafting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const paywall = usePaywall();
   const [sentPulse, setSentPulse] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
@@ -43,6 +45,7 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
         const res = await generateDraftAction(conversationId);
         if (res.error) {
           setError(res.error);
+          if (/daythread pro/i.test(res.error)) paywall?.open("ai_draft", "composer-draft");
           return;
         }
         setBody(res.text ?? "");

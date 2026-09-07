@@ -68,10 +68,10 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
               </li>
             ))}
           </ul>
-          <div className="hidden md:block dt-swap" role="region" aria-label={current.label} key={active}>{panels[active]}</div>
+          <div className="hidden md:block dt-swap" key={active}>{panels[active]}</div>
         </>
       ) : (
-        <div className="dt-swap" role="region" aria-label={current.label} key={active}>
+        <div className="dt-swap" key={active}>
           <Link href="/dashboard/settings" className="md:hidden inline-flex items-center gap-1 text-xs font-semibold text-ink/70 hover:text-ink mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded">
             <ChevronLeft className="w-4 h-4" strokeWidth={2} aria-hidden />All settings
           </Link>

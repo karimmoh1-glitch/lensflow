@@ -12,6 +12,7 @@ const config: Config = {
         accent: {
           DEFAULT: "#F0524D", // brand — bold coral-red, used everywhere: buttons, badges, emphasis
           text: "#C13530", // AA-safe on white for links/emphasis text
+          strong: "#CF3F3A", // coral surface that carries white text at ≥4.5:1 (buttons, badges)
           soft: "#FCE6E5", // tinted backgrounds
           deep: "#A32925", // marketing-only: dark-section accents
         },

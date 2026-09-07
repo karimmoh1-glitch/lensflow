@@ -13,7 +13,7 @@ export function DangerZone({ businessName }: { businessName: string }) {
   return (
     <section aria-label="Delete workspace" className="mt-10 rounded-[22px] border border-danger/30 bg-white px-5 py-4">
       <h3 className="text-sm font-semibold text-ink">Delete this workspace</h3>
-      <p className="mt-1 text-xs text-ink/60 leading-relaxed">Permanently removes {businessName}: people, conversations, messages, bookings, automations, teammates&rsquo; access, every connected-account credential and the calendar events Daythread created. Connected providers are told to stop where they support it, and any Daythread subscription ends. This cannot be undone.</p>
+      <p className="mt-1 text-xs text-ink/65 leading-relaxed">Permanently removes {businessName}: people, conversations, messages, bookings, automations, teammates&rsquo; access, every connected-account credential and the calendar events Daythread created. Connected providers are told to stop where they support it, and any Daythread subscription ends. This cannot be undone.</p>
       {!open ? (
         <div className="mt-3"><Button variant="outline" size="sm" onClick={() => setOpen(true)}>Delete workspace…</Button></div>
       ) : (
@@ -23,7 +23,7 @@ export function DangerZone({ businessName }: { businessName: string }) {
           {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
           <div className="flex items-center gap-2">
             <Button variant="danger" size="sm" disabled={typed !== businessName} loading={pending} loadingLabel="Deleting" onClick={() => start(async () => { const r = await deleteWorkspace(typed); if (r?.error) setError(r.error); })}>Delete permanently</Button>
-            <button type="button" onClick={() => setOpen(false)} className="text-xs text-ink/50">Cancel</button>
+            <button type="button" onClick={() => setOpen(false)} className="text-xs text-ink/65">Cancel</button>
           </div>
         </div>
       )}

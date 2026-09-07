@@ -29,7 +29,7 @@ export default async function AgentPage() {
           <div className="px-6 py-6 md:px-8 md:py-8 bg-[radial-gradient(120%_140%_at_0%_0%,rgba(109,90,230,0.12),transparent_55%)]">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-signal-text"><Lock className="w-3 h-3" strokeWidth={2.5} aria-hidden /> Daythread Pro</span>
             <h2 className="mt-2 font-sans font-extrabold text-[1.6rem] md:text-[1.9rem] leading-[1.05] tracking-[-0.03em] text-ink">Your business has an assistant.</h2>
-            <p className="mt-2 max-w-xl text-sm text-ink/65 leading-relaxed">It reads what is actually happening — who is waiting, what isn&rsquo;t confirmed, who went quiet, what stopped syncing — and proposes the exact next action with the message ready. You approve; it sends, records and moves things forward. Ask it anything about your own business and it answers from your records.</p>
+            <p className="mt-2 max-w-xl text-sm text-ink/70 leading-relaxed">It reads what is actually happening — who is waiting, what isn&rsquo;t confirmed, who went quiet, what stopped syncing — and proposes the exact next action with the message ready. You approve; it sends, records and moves things forward. Ask it anything about your own business and it answers from your records.</p>
             <ul className="mt-5 grid sm:grid-cols-2 gap-2.5">
               {[
                 [MessageSquare, "Replies drafted from the real thread and your real prices"],
@@ -48,11 +48,11 @@ export default async function AgentPage() {
             </ul>
           </div>
           <div className="px-6 py-4 md:px-8 border-t border-border flex flex-col sm:flex-row sm:items-center gap-3">
-            <p className="flex-1 text-sm text-ink/65">You&rsquo;re on <span className="font-semibold text-ink">{PLANS[plan].name}</span>. Pro is {`$${(PLANS.PRO.priceCents / 100).toFixed(0)}`}/month with every channel, AI and the assistant.</p>
+            <p className="flex-1 text-sm text-ink/70">You&rsquo;re on <span className="font-semibold text-ink">{PLANS[plan].name}</span>. Pro is {`$${(PLANS.PRO.priceCents / 100).toFixed(0)}`}/month with every channel, AI and the assistant.</p>
             {canBill ? (
               <Link href="/dashboard/settings?tab=subscription" className="inline-flex items-center justify-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Upgrade to Pro →</Link>
             ) : (
-              <span className="text-xs text-ink/50">Ask the workspace owner to upgrade.</span>
+              <span className="text-xs text-ink/65">Ask the workspace owner to upgrade.</span>
             )}
           </div>
         </section>

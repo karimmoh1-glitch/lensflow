@@ -48,3 +48,20 @@ Only `NEXT_PUBLIC_APP_URL`. No other variable may start with `NEXT_PUBLIC_`.
 ## Build and deploy
 
 `npm run build` runs `prisma db push` (additive schema sync; it now fails instead of dropping data if a change would be destructive) and then `next build`. Deploy from a clean checkout of `main` with the Vercel CLI. The cron in `vercel.json` sends `Authorization: Bearer $CRON_SECRET` to `/api/cron/automations` daily at 13:00 UTC.
+
+## Continue with Google (sign-in)
+
+Uses the same Google OAuth client and the same redirect URI as the Gmail and Calendar
+connections (`/api/auth/google/callback`), with identity scopes only (`openid`, `email`,
+`profile`). Nothing extra is needed in code. In Google Cloud, the OAuth consent screen must
+include the `email` and `profile` scopes (they are non-sensitive; no verification review is
+needed for them), and `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` must be set. The button is
+only rendered when they are. A Google account whose email Google has not verified is refused.
+Accounts are linked by verified email: an existing password account signs in as itself, a new
+address gets a user and their own workspace exactly as the signup form does.
+
+## Annual billing
+
+Yearly prices are created in Stripe on first use, next to the monthly ones, under the lookup
+keys `daythread_pro_yearly` and `daythread_business_yearly` at ten months' price (two months
+free). No Stripe dashboard configuration is needed beyond `STRIPE_SECRET_KEY` and the webhook.

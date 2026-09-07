@@ -40,7 +40,7 @@ export function DeliveryPanel({
     <Card>
       <CardBody>
         <div className="flex items-center justify-between mb-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">Delivery</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-ink/65">Delivery</div>
           {deliveryUrl ? <Badge tone="success">Delivered</Badge> : <Badge tone="neutral">Not delivered</Badge>}
         </div>
 

@@ -12,7 +12,7 @@ import { randomBytes } from "crypto";
  * purpose, so a Gmail state can never complete a Calendar callback.
  */
 export type OAuthProvider = "google" | "instagram" | "whatsapp";
-export type OAuthPurpose = "gmail" | "calendar" | "messaging";
+export type OAuthPurpose = "gmail" | "calendar" | "messaging" | "signin";
 
 const COOKIE: Record<OAuthProvider, string> = { google: "google_oauth_nonce", instagram: "instagram_oauth_nonce", whatsapp: "whatsapp_oauth_nonce" };
 

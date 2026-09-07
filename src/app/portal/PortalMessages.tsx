@@ -36,7 +36,7 @@ export function PortalMessages({ conversationId, messages }: { conversationId: s
               <div className={cn("rounded-2xl px-3.5 py-2 text-sm", m.direction === "INBOUND" ? "bg-ink text-white" : "bg-black/[0.05] text-ink")}>
                 {m.body}
               </div>
-              <div className={cn("text-[11px] text-ink/35 mt-1", m.direction === "INBOUND" ? "text-right" : "")}>
+              <div className={cn("text-[11px] text-ink/65 mt-1", m.direction === "INBOUND" ? "text-right" : "")}>
                 {format(new Date(m.createdAt), "MMM d, h:mm a")}
               </div>
             </div>

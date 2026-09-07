@@ -35,7 +35,7 @@ type ButtonSize = "sm" | "md" | "lg";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: "bg-ink text-white hover:bg-black",
-  secondary: "bg-accent text-white hover:bg-accent/90",
+  secondary: "bg-accent-strong text-white hover:bg-accent/90",
   outline: "bg-white text-ink border border-border hover:bg-black/[0.03]",
   ghost: "bg-transparent text-ink/70 hover:bg-black/[0.05] hover:text-ink",
   danger: "bg-danger text-white hover:bg-danger/90",
@@ -145,7 +145,7 @@ export function IconButton({ className, "aria-label": ariaLabel, ...props }: But
     <button
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/65 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+        "inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/70 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
         className
       )}
       {...props}
@@ -159,7 +159,7 @@ export function IconButton({ className, "aria-label": ariaLabel, ...props }: But
 // darkens a step. Focus: a soft accent ring plus a solid accent border — visible without
 // being loud. Invalid (aria-invalid): the danger border, same ring language in red.
 export const controlBase =
-  "w-full rounded-lg border border-ink/[0.14] bg-white px-3.5 h-10 text-sm text-ink placeholder:text-ink/35 transition-[border-color,box-shadow] duration-150 hover:border-ink/25 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 aria-[invalid=true]:border-danger aria-[invalid=true]:focus:ring-danger/20 disabled:opacity-50 disabled:bg-black/[0.02] disabled:hover:border-ink/[0.14]";
+  "w-full rounded-lg border border-ink/[0.14] bg-white px-3.5 h-10 text-sm text-ink placeholder:text-ink/65 transition-[border-color,box-shadow] duration-150 hover:border-ink/25 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 aria-[invalid=true]:border-danger aria-[invalid=true]:focus:ring-danger/20 disabled:opacity-50 disabled:bg-black/[0.02] disabled:hover:border-ink/[0.14]";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
   return <input ref={ref} className={cn(controlBase, className)} {...props} />;
@@ -196,7 +196,7 @@ export function Field({
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="mt-1.5 text-xs text-ink/50">
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-ink/65">
           {hint}
         </p>
       ) : null}
@@ -233,7 +233,7 @@ export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElem
 
 type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info" | "accent";
 const badgeTones: Record<BadgeTone, string> = {
-  neutral: "bg-black/[0.05] text-ink/60",
+  neutral: "bg-black/[0.05] text-ink/65",
   success: "bg-success-soft text-success-text",
   warning: "bg-warning-soft text-warning-text",
   danger: "bg-danger-soft text-danger-text",
@@ -266,7 +266,7 @@ export function StatusDot({ tone = "neutral", label }: { tone?: BadgeTone; label
     accent: "bg-accent",
   };
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink/60">
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink/65">
       <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotColor[tone])} />
       {label}
     </span>
@@ -318,7 +318,7 @@ export function EmptyState({
         <DaythreadMark className="w-5 h-5" node={tone === "neutral" ? "rgba(16,17,20,0.25)" : "#F0524D"} />
       </div>
       <p className="text-sm font-semibold text-ink">{title}</p>
-      {description && <p className="mt-1 text-sm text-ink/60 max-w-sm leading-relaxed">{description}</p>}
+      {description && <p className="mt-1 text-sm text-ink/65 max-w-sm leading-relaxed">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -365,7 +365,7 @@ export function StatTile({ label, value, sub, tone = "neutral", href }: { label:
     <>
       <div className={cn("font-sans font-extrabold text-[1.6rem] leading-none tracking-[-0.03em] tabular-nums", color)}>{value}</div>
       <div className="mt-1.5 text-sm font-medium text-ink">{label}</div>
-      {sub && <div className="mt-0.5 text-[11px] text-ink/50 leading-snug">{sub}</div>}
+      {sub && <div className="mt-0.5 text-[11px] text-ink/65 leading-snug">{sub}</div>}
     </>
   );
   const cls = "block bg-white px-5 py-4 min-w-0";
@@ -374,11 +374,11 @@ export function StatTile({ label, value, sub, tone = "neutral", href }: { label:
 
 /** A section's eyebrow: small caps, optional hint, optional action on the right. */
 export function SectionLabel({ children, hint, action, tone = "neutral" }: { children: ReactNode; hint?: string; action?: ReactNode; tone?: "neutral" | "accent" | "signal" | "success" }) {
-  const color = { neutral: "text-ink/45", accent: "text-accent-text", signal: "text-signal-text", success: "text-success-text" }[tone];
+  const color = { neutral: "text-ink/65", accent: "text-accent-text", signal: "text-signal-text", success: "text-success-text" }[tone];
   return (
     <div className="flex items-baseline gap-3 mb-2.5 px-1">
       <h2 className={cn("text-[11px] font-bold uppercase tracking-[0.14em]", color)}>{children}</h2>
-      {hint && <span className="text-[11px] text-ink/40">{hint}</span>}
+      {hint && <span className="text-[11px] text-ink/65">{hint}</span>}
       {action && <span className="ml-auto text-xs">{action}</span>}
     </div>
   );

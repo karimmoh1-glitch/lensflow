@@ -25,7 +25,7 @@ export function MessageBubble({ direction, status, meta, children, className, ar
       >
         {children}
       </div>
-      {meta && <div className={cn("text-[11px] text-ink/50 mt-1 px-1", outbound ? "text-right" : "")}>{meta}</div>}
+      {meta && <div className={cn("text-[11px] text-ink/65 mt-1 px-1", outbound ? "text-right" : "")}>{meta}</div>}
     </div>
   );
 }

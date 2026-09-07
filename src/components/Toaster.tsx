@@ -77,7 +77,7 @@ function ToastItem({ toast, onDone }: { toast: Toast; onDone: () => void }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-ink leading-snug">{toast.title}</div>
-        {toast.body && <div className="text-xs text-ink/60 mt-0.5 leading-snug">{toast.body}</div>}
+        {toast.body && <div className="text-xs text-ink/65 mt-0.5 leading-snug">{toast.body}</div>}
       </div>
       {toast.action && (
         <button

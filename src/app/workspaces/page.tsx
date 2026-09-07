@@ -19,7 +19,7 @@ export default async function WorkspacesPage() {
             Start my own inbox
           </a>
           <form action={logout}>
-            <button className="text-sm font-semibold text-ink/60 hover:text-ink transition-colors">Log out</button>
+            <button className="text-sm font-semibold text-ink/65 hover:text-ink transition-colors">Log out</button>
           </form>
         </div>
       </AuthShell>
@@ -49,7 +49,7 @@ export default async function WorkspacesPage() {
                 <span className="w-10 h-10 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-extrabold shrink-0">{initials(m.business.name)}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-ink truncate">{m.business.name}</span>
-                  <span className="block text-xs text-ink/55">{m.role.charAt(0) + m.role.slice(1).toLowerCase()}</span>
+                  <span className="block text-xs text-ink/70">{m.role.charAt(0) + m.role.slice(1).toLowerCase()}</span>
                 </span>
                 <span aria-hidden className="text-ink/30 transition-all duration-200 group-hover:text-ink group-hover:translate-x-0.5">→</span>
               </button>
@@ -58,7 +58,7 @@ export default async function WorkspacesPage() {
         ))}
       </ul>
       <form action={logout} className="mt-6">
-        <button className="text-sm font-semibold text-ink/50 hover:text-ink transition-colors">Log out</button>
+        <button className="text-sm font-semibold text-ink/65 hover:text-ink transition-colors">Log out</button>
       </form>
     </AuthShell>
   );

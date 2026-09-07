@@ -66,9 +66,9 @@ export function ProductDemo() {
       <div aria-hidden className="absolute inset-x-0 top-1/3 h-2/3 -z-0 pointer-events-none transition-all duration-1000" style={{ background: `radial-gradient(50% 50% at 50% 60%, ${active.tint}1a, transparent 70%)` }} />
 
       <Reveal className="relative text-center max-w-2xl mx-auto mb-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-4">Try it</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Try it</p>
         <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">This is the inbox.</h2>
-        <p className="mt-4 text-ink/55 text-base">The real interface. Click a conversation and the context appears beside it.</p>
+        <p className="mt-4 text-ink/70 text-base">The real interface. Click a conversation and the context appears beside it.</p>
       </Reveal>
 
       <div className="relative flex flex-wrap items-center justify-center gap-2 mb-4" role="tablist" aria-label="Product surfaces">
@@ -91,7 +91,7 @@ export function ProductDemo() {
           );
         })}
       </div>
-      <p className="relative text-center text-sm text-ink/55 mb-6 h-5" aria-live="polite">{active.hint}</p>
+      <p className="relative text-center text-sm text-ink/70 mb-6 h-5" aria-live="polite">{active.hint}</p>
 
       {/* The window */}
       <div className="relative rounded-[24px] border border-border bg-white shadow-[0_40px_100px_-40px_rgba(16,17,20,0.4),0_2px_6px_rgba(16,17,20,0.05)] overflow-hidden grid grid-cols-1 md:grid-cols-[176px_minmax(0,1fr)] min-h-[460px] transition-shadow duration-700" style={{ boxShadow: `0 40px 100px -40px ${active.tint}66, 0 2px 6px rgba(16,17,20,0.05)` }}>
@@ -118,11 +118,11 @@ export function ProductDemo() {
                 type="button"
                 disabled={!clickable}
                 onClick={() => clickable && setTab(i.k as Tab)}
-                className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold text-left transition-all duration-200", on ? "bg-ink text-white" : clickable ? "text-ink/70 hover:bg-black/[0.04] hover:translate-x-0.5" : "text-ink/40 cursor-default")}
+                className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold text-left transition-all duration-200", on ? "bg-ink text-white" : clickable ? "text-ink/70 hover:bg-black/[0.04] hover:translate-x-0.5" : "text-ink/65 cursor-default")}
               >
                 <i.icon className="w-4 h-4 shrink-0" strokeWidth={2} />
                 {i.label}
-                {i.n && <span className={cn("ml-auto text-[10px] font-bold rounded-full px-1.5", on ? "bg-white/20 text-white" : "bg-accent text-white")}>{i.n}</span>}
+                {i.n && <span className={cn("ml-auto text-[10px] font-bold rounded-full px-1.5", on ? "bg-white/20 text-white" : "bg-accent-strong text-white")}>{i.n}</span>}
               </button>
             );
           })}
@@ -135,8 +135,8 @@ export function ProductDemo() {
               <div className="divide-y divide-border">
                 <div className="px-5 py-3 flex items-center gap-2">
                   <span className="text-sm font-extrabold text-ink">Inbox</span>
-                  <span className="text-[11px] text-ink/50">Sorted by what needs you</span>
-                  <span className="ml-auto hidden lg:inline-flex items-center gap-1 text-[10px] text-ink/40"><kbd className="rounded border border-border bg-paper px-1 font-sans">↑</kbd><kbd className="rounded border border-border bg-paper px-1 font-sans">↓</kbd> to move</span>
+                  <span className="text-[11px] text-ink/65">Sorted by what needs you</span>
+                  <span className="ml-auto hidden lg:inline-flex items-center gap-1 text-[10px] text-ink/65"><kbd className="rounded border border-border bg-paper px-1 font-sans">↑</kbd><kbd className="rounded border border-border bg-paper px-1 font-sans">↓</kbd> to move</span>
                 </div>
                 {CONVOS.map((x) => {
                   const on = x.id === convo;
@@ -147,7 +147,7 @@ export function ProductDemo() {
                         {x.tag === "Needs reply" && <span aria-hidden className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-white" />}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2"><span className="text-sm font-semibold text-ink truncate">{x.name}</span><span className="text-[10px] text-ink/45">· {x.when}</span></span>
+                        <span className="flex items-center gap-2"><span className="text-sm font-semibold text-ink truncate">{x.name}</span><span className="text-[10px] text-ink/65">· {x.when}</span></span>
                         <span className="block text-xs text-ink/70 truncate">{x.msg}</span>
                         <span className={cn("block text-[11px] font-bold mt-0.5", x.tagTone)}>{x.tag}</span>
                       </span>
@@ -158,12 +158,12 @@ export function ProductDemo() {
               <div key={convo} className="dt-swap border-t lg:border-t-0 lg:border-l border-border bg-paper/60 p-5">
                 <div className="flex items-center gap-3">
                   <span className="w-10 h-10 rounded-full bg-signal-soft text-signal-text flex items-center justify-center text-xs font-extrabold">{c.name.split(" ").map((p) => p[0]).join("")}</span>
-                  <div><div className="text-sm font-extrabold text-ink">{c.name}</div><div className="text-[11px] text-ink/60">{c.status}</div></div>
+                  <div><div className="text-sm font-extrabold text-ink">{c.name}</div><div className="text-[11px] text-ink/65">{c.status}</div></div>
                 </div>
-                <div className="mt-3 flex items-center gap-2 text-[11px]"><span className="rounded-full bg-success-soft text-success-text font-bold px-2 py-0.5">{c.tag}</span><span className="text-ink/55">{c.ltv}</span></div>
-                <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45">They mentioned</div>
-                <dl className="mt-1.5 space-y-1 text-xs">{c.mention.map(([k, v]) => <div key={k} className="flex justify-between"><dt className="text-ink/55">{k}</dt><dd className="font-semibold text-ink">{v}</dd></div>)}</dl>
-                <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45">History</div>
+                <div className="mt-3 flex items-center gap-2 text-[11px]"><span className="rounded-full bg-success-soft text-success-text font-bold px-2 py-0.5">{c.tag}</span><span className="text-ink/70">{c.ltv}</span></div>
+                <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">They mentioned</div>
+                <dl className="mt-1.5 space-y-1 text-xs">{c.mention.map(([k, v]) => <div key={k} className="flex justify-between"><dt className="text-ink/70">{k}</dt><dd className="font-semibold text-ink">{v}</dd></div>)}</dl>
+                <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">History</div>
                 <ol className="relative mt-1.5 pl-5 space-y-2 text-xs text-ink/75"><span aria-hidden className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-border" />{c.history.map((h) => <li key={h} className="relative"><span aria-hidden className="absolute -left-5 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-paper bg-success" />{h}</li>)}</ol>
               </div>
             </div>
@@ -173,13 +173,13 @@ export function ProductDemo() {
             <div className="p-5 md:p-6">
               <div className="flex items-center gap-4 mb-5">
                 <span className="w-12 h-12 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-sm font-extrabold">MC</span>
-                <div className="min-w-0"><div className="text-lg font-extrabold text-ink tracking-tight">Maya Chen</div><div className="text-xs text-ink/60">maya@hey.com · @maya.makes</div></div>
-                <div className="ml-auto text-right"><div className="text-[11px] text-ink/55">Bookings</div><div className="text-xl font-extrabold text-ink tabular-nums">2</div></div>
+                <div className="min-w-0"><div className="text-lg font-extrabold text-ink tracking-tight">Maya Chen</div><div className="text-xs text-ink/65">maya@hey.com · @maya.makes</div></div>
+                <div className="ml-auto text-right"><div className="text-[11px] text-ink/70">Bookings</div><div className="text-xl font-extrabold text-ink tabular-nums">2</div></div>
               </div>
               <div className="group flex items-center gap-3 rounded-2xl border border-accent/30 bg-gradient-to-br from-accent-soft/70 to-white px-4 py-3 mb-5 transition-all hover:-translate-y-px hover:border-accent/50">
-                <span className="w-2 h-2 rounded-full bg-accent shrink-0" /><div className="min-w-0 flex-1"><div className="text-sm font-semibold text-ink">Reply to Maya</div><div className="text-xs text-ink/65">Waiting 2 hours · asked for Tuesday</div></div><span className="text-xs font-bold text-accent-text transition-transform group-hover:translate-x-0.5">Reply →</span>
+                <span className="w-2 h-2 rounded-full bg-accent shrink-0" /><div className="min-w-0 flex-1"><div className="text-sm font-semibold text-ink">Reply to Maya</div><div className="text-xs text-ink/70">Waiting 2 hours · asked for Tuesday</div></div><span className="text-xs font-bold text-accent-text transition-transform group-hover:translate-x-0.5">Reply →</span>
               </div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45 mb-2">Relationship</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">Relationship</div>
               <ol className="relative pl-7">
                 <span aria-hidden className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
                 {[
@@ -190,7 +190,7 @@ export function ProductDemo() {
                 ].map(([dot, title, meta, when]) => (
                   <li key={title + when} className="relative py-2 hover:bg-black/[0.02] -mx-2 px-2 rounded-lg transition-colors">
                     <span aria-hidden className={cn("absolute -left-5 top-[15px] w-[15px] h-[15px] rounded-full border-[3px] border-white", dot)} />
-                    <div className="flex justify-between gap-3"><div className="min-w-0"><div className="text-sm font-medium text-ink truncate">{title}</div><div className="text-xs text-ink/60 truncate">{meta}</div></div><div className="text-[11px] text-ink/45 tabular-nums shrink-0">{when}</div></div>
+                    <div className="flex justify-between gap-3"><div className="min-w-0"><div className="text-sm font-medium text-ink truncate">{title}</div><div className="text-xs text-ink/65 truncate">{meta}</div></div><div className="text-[11px] text-ink/65 tabular-nums shrink-0">{when}</div></div>
                   </li>
                 ))}
               </ol>
@@ -200,35 +200,35 @@ export function ProductDemo() {
           {tab === "booking" && (
             <div className="p-5 md:p-6">
               <div className="flex items-start justify-between gap-4 mb-5">
-                <div><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Booking</div><div className="text-lg font-extrabold text-ink tracking-tight mt-1">Brand session · Maya Chen</div><div className="text-sm text-ink/65">Tue, Sep 9 · 2:00 – 4:00 PM · Studio</div></div>
+                <div><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Booking</div><div className="text-lg font-extrabold text-ink tracking-tight mt-1">Brand session · Maya Chen</div><div className="text-sm text-ink/70">Tue, Sep 9 · 2:00 – 4:00 PM · Studio</div></div>
                 <span className="text-[11px] font-bold rounded-full bg-success-soft text-success-text px-2.5 py-1">Confirmed</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-5">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45 mb-3">Where it is</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-3">Where it is</div>
                   <ol className="flex items-center gap-1">
                     {["New lead", "Follow-up", "Booked", "Confirmed", "Complete"].map((s, i) => (
                       <li key={s} className="flex items-center gap-1 flex-1 min-w-0 last:flex-none">
-                        <span className={cn("flex items-center gap-1.5 text-[11px] font-bold whitespace-nowrap", i <= 2 ? "text-ink" : i === 3 ? "text-signal-text" : "text-ink/35")}>
+                        <span className={cn("flex items-center gap-1.5 text-[11px] font-bold whitespace-nowrap", i <= 2 ? "text-ink" : i === 3 ? "text-signal-text" : "text-ink/65")}>
                           <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", i <= 2 ? "bg-success" : i === 3 ? "bg-signal" : "bg-black/10")} />{s}
                         </span>
                         {i < 4 && <span className={cn("h-px flex-1 mx-1", i < 2 ? "bg-success" : "bg-border")} />}
                       </li>
                     ))}
                   </ol>
-                  <div className="mt-5 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45 mb-2">On this booking</div>
+                  <div className="mt-5 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">On this booking</div>
                   <ol className="relative pl-6 space-y-2 text-sm">
                     <span aria-hidden className="absolute left-[5px] top-2 bottom-2 w-px bg-border" />
-                    <li className="relative"><span aria-hidden className="absolute -left-6 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-white bg-accent" />Maya: “Running 10 late!!” <span className="text-ink/45 text-xs">· Messages</span></li>
+                    <li className="relative"><span aria-hidden className="absolute -left-6 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-white bg-accent" />Maya: “Running 10 late!!” <span className="text-ink/65 text-xs">· Messages</span></li>
                     <li className="relative"><span aria-hidden className="absolute -left-6 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-white bg-signal" />Reminder sent · 1 day before</li>
                     <li className="relative"><span aria-hidden className="absolute -left-6 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-white bg-success" />Questionnaire completed</li>
                   </ol>
                 </div>
                 <div className="rounded-2xl border border-border bg-paper/60 p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45 mb-2">On your calendar</div>
-                  <div className="flex justify-between text-sm py-1.5 border-b border-border"><span className="text-ink/65">Google Calendar</span><span className="font-bold text-success-text">Mirrored</span></div>
-                  <div className="flex justify-between text-sm py-1.5 border-b border-border"><span className="text-ink/65">Busy before</span><span className="font-bold text-ink tabular-nums">12:00 – 1:30</span></div>
-                  <div className="flex justify-between text-sm py-1.5"><span className="text-ink/65">Reminder</span><span className="font-bold text-ink">1 day before</span></div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">On your calendar</div>
+                  <div className="flex justify-between text-sm py-1.5 border-b border-border"><span className="text-ink/70">Google Calendar</span><span className="font-bold text-success-text">Mirrored</span></div>
+                  <div className="flex justify-between text-sm py-1.5 border-b border-border"><span className="text-ink/70">Busy before</span><span className="font-bold text-ink tabular-nums">12:00 – 1:30</span></div>
+                  <div className="flex justify-between text-sm py-1.5"><span className="text-ink/70">Reminder</span><span className="font-bold text-ink">1 day before</span></div>
                   <button type="button" className="mt-3 w-full h-9 rounded-full bg-ink text-white text-xs font-extrabold transition-transform hover:scale-[1.03] active:scale-[0.97]">Reschedule</button>
                 </div>
               </div>
@@ -238,7 +238,7 @@ export function ProductDemo() {
           {tab === "calendar" && (
             <div className="p-5 md:p-6">
               <div className="flex items-center justify-between gap-3 mb-4">
-                <div><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Today</div><div className="text-lg font-extrabold text-ink tracking-tight mt-0.5">Tuesday, Sep 9</div></div>
+                <div><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Today</div><div className="text-lg font-extrabold text-ink tracking-tight mt-0.5">Tuesday, Sep 9</div></div>
                 <span className="text-[11px] font-bold rounded-full bg-success-soft text-success-text px-2.5 py-1">Free 3:00 – 5:30</span>
               </div>
               <ol className="rounded-2xl border border-border divide-y divide-border overflow-hidden">
@@ -249,14 +249,14 @@ export function ProductDemo() {
                   ["5:30", "6:00", "Jordan Lee", "Consult · call", "bg-warning", true],
                 ].map(([s, e, who, what, dot, booking]) => (
                   <li key={String(who)} className={cn("flex items-center gap-4 px-4 py-3 transition-colors", booking ? "hover:bg-black/[0.02]" : "bg-paper/50")}>
-                    <div className="w-14 shrink-0 text-right"><div className="text-sm font-semibold text-ink tabular-nums">{String(s)}</div><div className="text-[10px] text-ink/45 tabular-nums">{String(e)}</div></div>
+                    <div className="w-14 shrink-0 text-right"><div className="text-sm font-semibold text-ink tabular-nums">{String(s)}</div><div className="text-[10px] text-ink/65 tabular-nums">{String(e)}</div></div>
                     <span className={cn("w-1 h-9 rounded-full shrink-0", String(dot))} aria-hidden />
-                    <div className="min-w-0 flex-1"><div className={cn("text-sm truncate", booking ? "font-semibold text-ink" : "font-medium text-ink/70")}>{String(who)}</div><div className="text-xs text-ink/55 truncate">{String(what)}</div></div>
-                    {booking && <span className="text-[10px] font-bold text-ink/40">Open thread →</span>}
+                    <div className="min-w-0 flex-1"><div className={cn("text-sm truncate", booking ? "font-semibold text-ink" : "font-medium text-ink/70")}>{String(who)}</div><div className="text-xs text-ink/70 truncate">{String(what)}</div></div>
+                    {booking && <span className="text-[10px] font-bold text-ink/65">Open thread →</span>}
                   </li>
                 ))}
               </ol>
-              <p className="mt-3 text-xs text-ink/50">Busy time from Google or Apple Calendar blocks booking slots; bookings made here are mirrored back.</p>
+              <p className="mt-3 text-xs text-ink/65">Busy time from Google or Apple Calendar blocks booking slots; bookings made here are mirrored back.</p>
             </div>
           )}
 
@@ -287,7 +287,7 @@ export function ProductDemo() {
 
           {tab === "ai" && (
             <div className="p-5 md:p-6 flex flex-col min-h-[400px]">
-              <div className="flex items-center gap-2 mb-4"><span className="w-7 h-7 rounded-full bg-signal-soft text-signal-text flex items-center justify-center"><Sparkles className="w-3.5 h-3.5" strokeWidth={2} /></span><span className="text-sm font-extrabold text-ink">Assistant</span><span className="text-[11px] text-ink/45">knows your whole thread</span></div>
+              <div className="flex items-center gap-2 mb-4"><span className="w-7 h-7 rounded-full bg-signal-soft text-signal-text flex items-center justify-center"><Sparkles className="w-3.5 h-3.5" strokeWidth={2} /></span><span className="text-sm font-extrabold text-ink">Assistant</span><span className="text-[11px] text-ink/65">knows your whole thread</span></div>
               <div className="flex flex-wrap gap-2 mb-4">
                 {["What do I need to do today?", "What's on my calendar this week?", "Which inquiries are going cold?"].map((q) => (
                   <button key={q} type="button" onClick={() => setAsked(q)} className={cn("text-xs px-3 py-1.5 rounded-full border transition-all duration-200 active:scale-95", asked === q ? "bg-ink text-white border-ink" : "border-border hover:bg-black/[0.04] hover:-translate-y-px")}>{q}</button>
@@ -306,7 +306,7 @@ export function ProductDemo() {
                   </div>
                 </div>
               )}
-              {!asked && <p className="text-xs text-ink/45">Pick a question. Answers come from your real inbox, calendar and bookings.</p>}
+              {!asked && <p className="text-xs text-ink/65">Pick a question. Answers come from your real inbox, calendar and bookings.</p>}
             </div>
           )}
         </div>

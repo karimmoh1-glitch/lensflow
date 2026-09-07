@@ -6,19 +6,34 @@ import type { Business } from "@prisma/client";
 
 export const subscriptionBillingIsLive = Boolean(stripe);
 
+export type BillingInterval = "month" | "year";
+export type PaidPlanKey = Extract<PlanKey, "PRO" | "BUSINESS">;
+
 /** Stable lookup keys: the one link between the plan table and Stripe's prices. */
-export const LOOKUP_KEYS: Record<Extract<PlanKey, "PRO" | "BUSINESS">, string> = {
-  PRO: "daythread_pro_monthly",
-  BUSINESS: "daythread_business_monthly",
+export const LOOKUP_KEYS: Record<PaidPlanKey, Record<BillingInterval, string>> = {
+  PRO: { month: "daythread_pro_monthly", year: "daythread_pro_yearly" },
+  BUSINESS: { month: "daythread_business_monthly", year: "daythread_business_yearly" },
 };
+
+/** A year costs ten months: two months free for paying up front. */
+export const YEARLY_MONTHS = 10;
+export function priceCentsFor(planKey: PaidPlanKey, interval: BillingInterval): number {
+  return interval === "year" ? PLANS[planKey].priceCents * YEARLY_MONTHS : PLANS[planKey].priceCents;
+}
 
 /** The plan a Stripe price belongs to, read from its lookup key. Null for anything that
  * isn't one of ours — such a subscription must never grant a tier. */
-export function planKeyFromPrice(price: Stripe.Price | string | null | undefined): Extract<PlanKey, "PRO" | "BUSINESS"> | null {
+export function planKeyFromPrice(price: Stripe.Price | string | null | undefined): PaidPlanKey | null {
   const key = typeof price === "string" ? null : price?.lookup_key;
-  if (key === LOOKUP_KEYS.PRO) return "PRO";
-  if (key === LOOKUP_KEYS.BUSINESS) return "BUSINESS";
+  for (const planKey of ["PRO", "BUSINESS"] as const) if (key === LOOKUP_KEYS[planKey].month || key === LOOKUP_KEYS[planKey].year) return planKey;
   return null;
+}
+
+/** The billing interval of one of our prices, from its lookup key. */
+export function intervalFromPrice(price: Stripe.Price | string | null | undefined): BillingInterval | null {
+  const key = typeof price === "string" ? null : price?.lookup_key;
+  if (!key) return null;
+  return key.endsWith("_yearly") ? "year" : key.endsWith("_monthly") ? "month" : null;
 }
 
 /** Period end across Stripe API versions: on the subscription before 2025-03, on the items after. */
@@ -61,20 +76,22 @@ async function getOrCreateStripeCustomer(business: Business, email: string): Pro
  * replaced by a new price that takes over the lookup key (the old one is archived so it
  * can never be sold again); a concurrent create is absorbed by one more lookup.
  */
-const priceCache = new Map<PlanKey, string>();
+const priceCache = new Map<string, string>();
 
-export async function getOrCreatePriceId(planKey: Extract<PlanKey, "PRO" | "BUSINESS">): Promise<string> {
-  const cached = priceCache.get(planKey);
+export async function getOrCreatePriceId(planKey: PaidPlanKey, interval: BillingInterval = "month"): Promise<string> {
+  const cacheKey = `${planKey}:${interval}`;
+  const cached = priceCache.get(cacheKey);
   if (cached) return cached;
   if (!stripe) throw new Error("Stripe is not configured on this deployment.");
 
   const plan = PLANS[planKey];
-  const lookupKey = LOOKUP_KEYS[planKey];
+  const lookupKey = LOOKUP_KEYS[planKey][interval];
+  const amount = priceCentsFor(planKey, interval);
 
   const existing = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
   const current = existing.data[0];
-  if (current && current.unit_amount === plan.priceCents && current.currency === "usd" && current.recurring?.interval === "month") {
-    priceCache.set(planKey, current.id);
+  if (current && current.unit_amount === amount && current.currency === "usd" && current.recurring?.interval === interval) {
+    priceCache.set(cacheKey, current.id);
     return current.id;
   }
 
@@ -87,20 +104,20 @@ export async function getOrCreatePriceId(planKey: Extract<PlanKey, "PRO" | "BUSI
     const price = await stripe.prices.create({
       product: productId,
       currency: "usd",
-      unit_amount: plan.priceCents,
-      recurring: { interval: "month" },
+      unit_amount: amount,
+      recurring: { interval },
       lookup_key: lookupKey,
       transfer_lookup_key: true,
-      metadata: { planKey },
+      metadata: { planKey, interval },
     });
     // The stale price loses its lookup key above; archive it so nothing can pick it up.
     if (current) await stripe.prices.update(current.id, { active: false }).catch(() => {});
-    priceCache.set(planKey, price.id);
+    priceCache.set(cacheKey, price.id);
     return price.id;
   } catch (err) {
     const retry = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
     if (retry.data[0]) {
-      priceCache.set(planKey, retry.data[0].id);
+      priceCache.set(cacheKey, retry.data[0].id);
       return retry.data[0].id;
     }
     throw err;
@@ -115,13 +132,14 @@ export async function getOrCreatePriceId(planKey: Extract<PlanKey, "PRO" | "BUSI
 export async function createSubscriptionCheckout(params: {
   business: Business;
   ownerEmail: string;
-  planKey: Extract<PlanKey, "PRO" | "BUSINESS">;
+  planKey: PaidPlanKey;
+  interval?: BillingInterval;
   successUrl: string;
   cancelUrl: string;
 }): Promise<{ url: string }> {
   if (!stripe) throw new Error("Stripe is not configured on this deployment.");
 
-  const [customerId, priceId] = await Promise.all([getOrCreateStripeCustomer(params.business, params.ownerEmail), getOrCreatePriceId(params.planKey)]);
+  const [customerId, priceId] = await Promise.all([getOrCreateStripeCustomer(params.business, params.ownerEmail), getOrCreatePriceId(params.planKey, params.interval ?? "month")]);
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -144,11 +162,14 @@ export async function createSubscriptionCheckout(params: {
  * existing subscription's price in place (prorated) rather than creating a second one.
  * The webhook's customer.subscription.updated handler syncs the new plan onto the row.
  */
-export async function changeSubscriptionPlan(params: { business: Business; planKey: Extract<PlanKey, "PRO" | "BUSINESS"> }): Promise<void> {
+export async function changeSubscriptionPlan(params: { business: Business; planKey: PaidPlanKey; interval?: BillingInterval }): Promise<void> {
   if (!stripe) throw new Error("Stripe is not configured on this deployment.");
   if (!params.business.stripeSubscriptionId) throw new Error("No active subscription to change — start a checkout instead.");
 
-  const [subscription, priceId] = await Promise.all([stripe.subscriptions.retrieve(params.business.stripeSubscriptionId), getOrCreatePriceId(params.planKey)]);
+  const subscription = await stripe.subscriptions.retrieve(params.business.stripeSubscriptionId);
+  // Keep the interval they are on unless they chose one.
+  const interval = params.interval ?? intervalFromPrice(subscription.items.data[0]?.price) ?? "month";
+  const priceId = await getOrCreatePriceId(params.planKey, interval);
   // Ownership: the subscription must belong to this business's customer.
   const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
   if (params.business.stripeCustomerId && customerId !== params.business.stripeCustomerId) throw new Error("Subscription does not belong to this business.");

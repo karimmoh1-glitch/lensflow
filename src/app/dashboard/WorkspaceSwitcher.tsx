@@ -14,7 +14,7 @@ export function WorkspaceSwitcher({ current, workspaces }: { current: string; wo
     <div className="relative px-3">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 text-xs font-medium text-ink/60 hover:text-ink px-2 py-1.5 rounded-md hover:bg-black/[0.05]"
+        className="w-full flex items-center justify-between gap-2 text-xs font-medium text-ink/65 hover:text-ink px-2 py-1.5 rounded-md hover:bg-black/[0.05]"
       >
         <span className="truncate">{current}</span>
         <ChevronsUpDown className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />

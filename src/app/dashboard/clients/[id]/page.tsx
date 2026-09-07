@@ -110,7 +110,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <div className="min-w-0">
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="font-display text-2xl truncate">{client.name}</h1>
-            <span className={cn("text-[10px] font-bold rounded-full px-2 py-0.5 shrink-0", client.relationship === "CUSTOMER" ? "bg-success-soft text-success-text" : client.relationship === "CONTACT" ? "bg-black/[0.05] text-ink/60" : "bg-signal-soft text-signal-text")}>
+            <span className={cn("text-[10px] font-bold rounded-full px-2 py-0.5 shrink-0", client.relationship === "CUSTOMER" ? "bg-success-soft text-success-text" : client.relationship === "CONTACT" ? "bg-black/[0.05] text-ink/65" : "bg-signal-soft text-signal-text")}>
               {client.relationship === "CUSTOMER" ? "Customer" : client.relationship === "CONTACT" ? "Contact" : "Potential client"}
             </span>
           </div>
@@ -118,7 +118,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
         </div>
         <div className="ml-auto text-right shrink-0">
-          <div className="text-xs text-ink/60">Bookings</div>
+          <div className="text-xs text-ink/65">Bookings</div>
           <div className="font-display text-2xl tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</div>
         </div>
       </div>
@@ -129,24 +129,24 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           <div className="px-5 md:px-6 py-5">
             <div className="flex items-center gap-2">
               <span className={cn("w-2 h-2 rounded-full", standing.tone === "signal" ? "bg-accent" : standing.tone === "outcome" ? "bg-success" : standing.tone === "warning" ? "bg-warning" : standing.tone === "thinking" ? "bg-signal" : "bg-ink/30")} />
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/45">Where we stand</span>
-              <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5", standing.tone === "signal" ? "bg-accent-soft text-accent-text" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-signal-soft text-signal-text" : "bg-black/[0.05] text-ink/60")}>{standing.label}</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Where we stand</span>
+              <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5", standing.tone === "signal" ? "bg-accent-soft text-accent-text" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-signal-soft text-signal-text" : "bg-black/[0.05] text-ink/65")}>{standing.label}</span>
             </div>
             <p className="mt-2 font-sans font-extrabold text-[1.35rem] leading-tight tracking-[-0.02em] text-ink">{standing.standing}</p>
             {(standing.theyWaitFor || standing.youWaitFor) && (
               <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                {standing.theyWaitFor && <div><dt className="inline text-ink/45">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor}</dd></div>}
-                {standing.youWaitFor && <div><dt className="inline text-ink/45">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor}</dd></div>}
+                {standing.theyWaitFor && <div><dt className="inline text-ink/65">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor}</dd></div>}
+                {standing.youWaitFor && <div><dt className="inline text-ink/65">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor}</dd></div>}
               </dl>
             )}
             {lastInteraction && (
-              <p className="mt-3 text-sm text-ink/60">
-                <span className="text-ink/45">Last interaction</span> · {humanAgo(lastInteraction.when, now)} ·{" "}
+              <p className="mt-3 text-sm text-ink/65">
+                <span className="text-ink/65">Last interaction</span> · {humanAgo(lastInteraction.when, now)} ·{" "}
                 <Link href={lastInteraction.href} className="text-ink hover:underline">{lastInteraction.text}</Link>
               </p>
             )}
             {standing.nextAction && standingHref && (
-              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-full bg-accent text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-full bg-accent-strong text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
                 {standing.nextAction.label}
                 <span className="text-white/60 font-medium text-xs">· {standing.nextAction.why}</span>
               </Link>
@@ -154,20 +154,20 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           </div>
           <dl className="px-5 md:px-6 py-5 grid grid-cols-2 gap-x-4 gap-y-4 content-start">
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Upcoming</dt>
-              <dd className="mt-1 text-sm font-semibold text-ink">{nextBooking ? <Link href={`/dashboard/bookings/${nextBooking.id}`} className="hover:underline">{nextBooking.service.name} · {format(toZonedDisplayDate(nextBooking.startAt, tz), "MMM d")}</Link> : <span className="text-ink/45 font-medium">Nothing booked</span>}</dd>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Upcoming</dt>
+              <dd className="mt-1 text-sm font-semibold text-ink">{nextBooking ? <Link href={`/dashboard/bookings/${nextBooking.id}`} className="hover:underline">{nextBooking.service.name} · {format(toZonedDisplayDate(nextBooking.startAt, tz), "MMM d")}</Link> : <span className="text-ink/65 font-medium">Nothing booked</span>}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Conversations</dt>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Conversations</dt>
               <dd className="mt-1 text-sm font-semibold text-ink tabular-nums">{client.conversations.length}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Bookings</dt>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Bookings</dt>
               <dd className="mt-1 text-sm font-semibold text-ink tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/45">Came in via</dt>
-              <dd className="mt-1 text-sm font-semibold text-ink">{firstConversation ? `${CHANNEL_META[firstConversation.channel].label} · ${format(firstConversation.createdAt, "MMM yyyy")}` : <span className="text-ink/45 font-medium">Added by you</span>}</dd>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Came in via</dt>
+              <dd className="mt-1 text-sm font-semibold text-ink">{firstConversation ? `${CHANNEL_META[firstConversation.channel].label} · ${format(firstConversation.createdAt, "MMM yyyy")}` : <span className="text-ink/65 font-medium">Added by you</span>}</dd>
             </div>
             <div className="col-span-2 pt-1">
               <RelationshipControls clientId={client.id} relationship={client.relationship} name={client.name} />
@@ -205,12 +205,12 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           {client.subscriptions.length > 0 && (
             <Card>
               <CardBody>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Membership</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">Membership</div>
                 {client.subscriptions.map((s) => (
                   <div key={s.id} className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <div className="text-sm font-medium truncate">{s.plan.name}</div>
-                      <div className="text-xs text-ink/65">
+                      <div className="text-xs text-ink/70">
                         {s.sessionsRemaining} session{s.sessionsRemaining !== 1 && "s"} left · renews {format(s.currentPeriodEnd, "MMM d")}
                       </div>
                     </div>
@@ -222,18 +222,18 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           )}
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">At a glance</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">At a glance</div>
               <dl className="space-y-1.5 text-sm">
-                <div className="flex justify-between"><dt className="text-ink/65">Bookings</dt><dd className="font-medium tabular-nums">{client.bookings.length}</dd></div>
-                <div className="flex justify-between"><dt className="text-ink/65">Conversations</dt><dd className="font-medium tabular-nums">{client.conversations.length}</dd></div>
-                <div className="flex justify-between"><dt className="text-ink/65">Client since</dt><dd className="font-medium">{format(client.createdAt, "MMM yyyy")}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink/70">Bookings</dt><dd className="font-medium tabular-nums">{client.bookings.length}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink/70">Conversations</dt><dd className="font-medium tabular-nums">{client.conversations.length}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink/70">Client since</dt><dd className="font-medium">{format(client.createdAt, "MMM yyyy")}</dd></div>
               </dl>
             </CardBody>
           </Card>
           {client.referrals.length > 0 && (
             <Card>
               <CardBody>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-2">Referred</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">Referred</div>
                 {client.referrals.map((r) => (
                   <div key={r.id} className="text-sm">{r.name}</div>
                 ))}

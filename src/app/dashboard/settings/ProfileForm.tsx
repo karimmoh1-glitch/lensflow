@@ -40,7 +40,7 @@ export function ProfileForm({ name, email, workspaceName, timezone }: { name: st
     >
       <div>
         <h2 className="text-sm font-semibold text-ink">Profile</h2>
-        <p className="mt-0.5 text-xs text-ink/55">Signed in as {email}.</p>
+        <p className="mt-0.5 text-xs text-ink/70">Signed in as {email}.</p>
       </div>
       <Field id="profile-name" label="Your name">
         <Input id="profile-name" value={form.name} autoComplete="name" onChange={(e) => setForm({ ...form, name: e.target.value })} required maxLength={80} />
@@ -56,7 +56,7 @@ export function ProfileForm({ name, email, workspaceName, timezone }: { name: st
       {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
       <div className="flex items-center gap-3">
         <Button type="submit" size="sm" disabled={!dirty} loading={pending} loadingLabel="Saving">Save</Button>
-        {dirty && !pending && <button type="button" className="text-xs text-ink/50 hover:text-ink" onClick={() => setForm({ name, workspaceName, timezone })}>Reset</button>}
+        {dirty && !pending && <button type="button" className="text-xs text-ink/65 hover:text-ink" onClick={() => setForm({ name, workspaceName, timezone })}>Reset</button>}
       </div>
     </form>
   );

@@ -86,8 +86,8 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
     });
   }
 
-  if (!state) return <div className="py-10 flex items-center justify-center text-sm text-ink/50"><WorkingDots /><span className="ml-2">Loading calendars</span></div>;
-  if (!state.connected) return <p className="text-sm text-ink/60">{name} isn&rsquo;t connected.</p>;
+  if (!state) return <div className="py-10 flex items-center justify-center text-sm text-ink/65"><WorkingDots /><span className="ml-2">Loading calendars</span></div>;
+  if (!state.connected) return <p className="text-sm text-ink/65">{name} isn&rsquo;t connected.</p>;
 
   const needsAttention = state.status === "NEEDS_ATTENTION";
   const syncIssue = state.status === "SYNC_ERROR" || state.lastSyncStatus === "failed";
@@ -97,7 +97,7 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
       {mode === "setup" && (
         <div className="rounded-2xl bg-success-soft/60 border border-success/25 px-4 py-3">
           <div className="text-sm font-semibold text-success-text">Connected successfully.</div>
-          <div className="text-xs text-ink/65 mt-0.5">{state.account ? `Signed in as ${state.account}. ` : ""}Choose which calendars Daythread should use.</div>
+          <div className="text-xs text-ink/70 mt-0.5">{state.account ? `Signed in as ${state.account}. ` : ""}Choose which calendars Daythread should use.</div>
         </div>
       )}
 
@@ -115,8 +115,8 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
 
       <div>
         <div className="flex items-baseline justify-between gap-3">
-          <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/45">Calendars to use with Daythread</h4>
-          <button type="button" onClick={() => load(true)} disabled={pending} className="text-[11px] font-semibold text-ink/50 hover:text-ink">{busy === "refresh" ? "Refreshing…" : "Refresh list"}</button>
+          <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Calendars to use with Daythread</h4>
+          <button type="button" onClick={() => load(true)} disabled={pending} className="text-[11px] font-semibold text-ink/65 hover:text-ink">{busy === "refresh" ? "Refreshing…" : "Refresh list"}</button>
         </div>
         {state.error && <p className="mt-1 text-xs text-warning-text">{state.error}</p>}
         <ul className="mt-2 space-y-1.5">
@@ -127,12 +127,12 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
                 <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
                   <input type="checkbox" checked={on} onChange={() => toggle(c.id)} className="w-4 h-4 accent-[#6D5AE6]" aria-label={`Use ${c.name}`} />
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-ink truncate">{c.name}{c.primary ? <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-ink/40">primary</span> : null}</span>
-                    <span className="block text-[11px] text-ink/50">{c.readOnly ? "Read-only · busy time only" : "Busy time blocks availability"}</span>
+                    <span className="block text-sm font-semibold text-ink truncate">{c.name}{c.primary ? <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-ink/65">primary</span> : null}</span>
+                    <span className="block text-[11px] text-ink/65">{c.readOnly ? "Read-only · busy time only" : "Busy time blocks availability"}</span>
                   </span>
                 </label>
                 {on && !c.readOnly && (
-                  <label className={cn("shrink-0 inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-full px-2 py-1 cursor-pointer", bookingCalendar === c.id ? "bg-ink text-white" : "text-ink/55 hover:bg-black/[0.05]")}>
+                  <label className={cn("shrink-0 inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-full px-2 py-1 cursor-pointer", bookingCalendar === c.id ? "bg-ink text-white" : "text-ink/70 hover:bg-black/[0.05]")}>
                     <input type="radio" name="booking-calendar" className="sr-only" checked={bookingCalendar === c.id} onChange={() => setBookingCalendar(c.id)} />
                     {bookingCalendar === c.id ? "Bookings go here" : "Send bookings here"}
                   </label>
@@ -140,29 +140,29 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
               </li>
             );
           })}
-          {state.available.length === 0 && <li className="text-sm text-ink/55">No calendars found on this account.</li>}
+          {state.available.length === 0 && <li className="text-sm text-ink/70">No calendars found on this account.</li>}
         </ul>
-        <p className="mt-2 text-[11px] text-ink/45">Daythread bookings stay the source of truth. Events on these calendars only block your availability; they never change a booking.</p>
+        <p className="mt-2 text-[11px] text-ink/65">Daythread bookings stay the source of truth. Events on these calendars only block your availability; they never change a booking.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={save} disabled={selected.length === 0 || (mode === "manage" && !dirty)} loading={busy === "save"} loadingLabel="Saving and syncing">{mode === "setup" ? "Save calendars" : "Save changes"}</Button>
         {mode === "manage" && <Button size="sm" variant="outline" onClick={sync} loading={busy === "sync"} loadingLabel="Syncing">Sync now</Button>}
-        {mode === "setup" && <button type="button" onClick={onDone} className="text-xs text-ink/50 px-2 py-1">Do this later</button>}
+        {mode === "setup" && <button type="button" onClick={onDone} className="text-xs text-ink/65 px-2 py-1">Do this later</button>}
       </div>
 
       {mode === "manage" && (
         <dl className="grid grid-cols-2 gap-3 text-xs border-t border-border pt-4">
-          <div><dt className="text-ink/45">Account</dt><dd className="font-semibold text-ink truncate">{state.account ?? "—"}</dd></div>
-          <div><dt className="text-ink/45">Last synced</dt><dd className="font-semibold text-ink">{state.lastSyncedAt ? `${formatDistanceToNowStrict(new Date(state.lastSyncedAt))} ago` : "Not yet"}</dd></div>
-          <div><dt className="text-ink/45">Busy blocks ahead</dt><dd className="font-semibold text-ink tabular-nums">{state.busyBlocks}</dd></div>
-          <div><dt className="text-ink/45">Status</dt><dd className={cn("font-semibold", needsAttention ? "text-accent-text" : syncIssue ? "text-warning-text" : "text-success-text")}>{needsAttention ? "Needs attention" : syncIssue ? "Sync issue" : "Healthy"}</dd></div>
+          <div><dt className="text-ink/65">Account</dt><dd className="font-semibold text-ink truncate">{state.account ?? "—"}</dd></div>
+          <div><dt className="text-ink/65">Last synced</dt><dd className="font-semibold text-ink">{state.lastSyncedAt ? `${formatDistanceToNowStrict(new Date(state.lastSyncedAt))} ago` : "Not yet"}</dd></div>
+          <div><dt className="text-ink/65">Busy blocks ahead</dt><dd className="font-semibold text-ink tabular-nums">{state.busyBlocks}</dd></div>
+          <div><dt className="text-ink/65">Status</dt><dd className={cn("font-semibold", needsAttention ? "text-accent-text" : syncIssue ? "text-warning-text" : "text-success-text")}>{needsAttention ? "Needs attention" : syncIssue ? "Sync issue" : "Healthy"}</dd></div>
         </dl>
       )}
 
       {mode === "manage" && (
         <div className="border-t border-border pt-4">
-          <details className="text-xs text-ink/55">
+          <details className="text-xs text-ink/70">
             <summary className="cursor-pointer select-none hover:text-ink">Troubleshooting</summary>
             <ul className="mt-2 space-y-1 list-disc pl-4">
               <li>A booking isn&rsquo;t on the calendar: it goes to the calendar marked &ldquo;Bookings go here&rdquo; — check that one is selected, then Sync now.</li>
@@ -175,9 +175,9 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
               <button type="button" onClick={() => setConfirm(true)} className="text-xs font-semibold text-danger-text hover:underline">Disconnect {name}</button>
             ) : (
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-ink/65">Stops sync and removes Daythread&rsquo;s events from the calendar. Your bookings stay.</span>
+                <span className="text-ink/70">Stops sync and removes Daythread&rsquo;s events from the calendar. Your bookings stay.</span>
                 <Button size="sm" variant="danger" onClick={disconnect} loading={busy === "disconnect"} loadingLabel="Disconnecting">Disconnect</Button>
-                <button type="button" onClick={() => setConfirm(false)} className="text-ink/50">Keep</button>
+                <button type="button" onClick={() => setConfirm(false)} className="text-ink/65">Keep</button>
               </div>
             )}
           </div>

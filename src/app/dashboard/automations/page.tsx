@@ -69,12 +69,12 @@ export default async function AutomationsPage() {
         description="The repetitive parts of your business, handled while you work."
         action={
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-xs font-semibold text-ink/55 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/40">· {PLANS[plan].name}</span></span>
+            <span className="hidden sm:inline text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></span>
             <NewAutomationButton />
           </div>
         }
       />
-      <p className="sm:hidden -mt-4 mb-5 text-xs font-semibold text-ink/55 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/40">· {PLANS[plan].name}</span></p>
+      <p className="sm:hidden -mt-4 mb-5 text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></p>
       {capped && on >= limits.maxAutomations && !overCap && (
         <div className="mb-5 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span><span className="font-semibold text-ink">Automation limit reached.</span> {PLANS[plan].name} includes {limits.maxAutomations} switched on at once. Turn one off to enable another, or upgrade to Pro for {limitLabel(PLANS.PRO.maxAutomations).toLowerCase()} automations.</span>
@@ -104,8 +104,8 @@ export default async function AutomationsPage() {
                     {a.enabled && !running.has(a.id) && <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.1em] text-warning-text bg-warning-soft rounded-full px-1.5 py-0.5">Paused by plan</span>}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
-                    {isEditable(a.trigger, a.action) ? <EditAutomationButton automation={{ id: a.id, name: a.name, trigger: a.trigger as EditableTrigger, action: a.action as EditableAction, offsetHours: a.offsetHours, messageTemplate: a.messageTemplate }} /> : <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink/40">Legacy</span>}
-                    <AutomationToggle id={a.id} enabled={a.enabled} />
+                    {isEditable(a.trigger, a.action) ? <EditAutomationButton automation={{ id: a.id, name: a.name, trigger: a.trigger as EditableTrigger, action: a.action as EditableAction, offsetHours: a.offsetHours, messageTemplate: a.messageTemplate }} /> : <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink/65">Legacy</span>}
+                    <AutomationToggle id={a.id} enabled={a.enabled} name={a.name} />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
@@ -115,8 +115,8 @@ export default async function AutomationsPage() {
                   <Arrow />
                   <Beat label="Then" tone="outcome" text={ACTION[a.action] ?? a.action.toLowerCase()} />
                 </div>
-                <p className="text-xs text-ink/60 mt-3 truncate">
-                  <span className="text-ink/45">Sends:</span> “{a.messageTemplate}”
+                <p className="text-xs text-ink/65 mt-3 truncate">
+                  <span className="text-ink/65">Sends:</span> “{a.messageTemplate}”
                 </p>
               </div>
             </Card>

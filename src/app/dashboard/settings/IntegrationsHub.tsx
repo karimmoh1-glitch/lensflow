@@ -178,20 +178,20 @@ export async function IntegrationsHub({ business, role, connected, connectError,
       <header className="relative overflow-hidden rounded-[26px] border border-border bg-[radial-gradient(120%_140%_at_0%_0%,rgba(109,90,230,0.10),transparent_55%),radial-gradient(100%_120%_at_100%_100%,rgba(240,82,77,0.08),transparent_55%)] px-6 py-6 md:px-8 md:py-7">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Connected channels</p>
         <h2 className="mt-2 font-sans font-extrabold text-[1.5rem] md:text-[1.9rem] leading-[1.05] tracking-[-0.03em] text-ink">Every place people write to you, and your calendar.</h2>
-        <p className="mt-2 max-w-xl text-sm text-ink/65 leading-relaxed">Messages from every connected channel land in one inbox; connected calendars keep bookings and busy time in step. Every connection uses the provider&rsquo;s own sign-in — there is never a key to paste.</p>
+        <p className="mt-2 max-w-xl text-sm text-ink/70 leading-relaxed">Messages from every connected channel land in one inbox; connected calendars keep bookings and busy time in step. Every connection uses the provider&rsquo;s own sign-in — there is never a key to paste.</p>
         <div className="mt-5 rounded-2xl border border-border bg-white/80 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3" aria-label="Connected integrations">
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2 flex-wrap">
               <span className="font-sans font-extrabold text-[1.25rem] tracking-[-0.02em] text-ink tabular-nums">{unlimited ? "Unlimited" : `${connectedCount} / ${usage.limit}`}</span>
-              <span className="text-sm text-ink/60">{unlimited ? `connections on ${planName}` : "connected"}</span>
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/40 ml-auto">{planName} plan</span>
+              <span className="text-sm text-ink/70">{unlimited ? `connections on ${planName}` : "connected"}</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/80 ml-auto">{planName} plan</span>
             </div>
             {!unlimited && (
               <div className="mt-2 h-1.5 rounded-full bg-black/[0.06] overflow-hidden" role="progressbar" aria-valuenow={connectedCount} aria-valuemin={0} aria-valuemax={usage.limit} aria-label="Connections used">
                 <div className={cn2("h-full rounded-full transition-[width]", usage.overQuota ? "bg-warning" : usage.atLimit ? "bg-signal" : "bg-ink")} style={{ width: `${pct}%` }} />
               </div>
             )}
-            {!unlimited && !usage.atLimit && <p className="mt-1.5 text-[11px] text-ink/50">{usage.limit - connectedCount} more can be connected on {planName}.{nextPlanName ? ` ${PLANS[usage.nextPlan!].name} includes ${limitLabel(PLANS[usage.nextPlan!].maxIntegrations).toLowerCase()} connections.` : ""}</p>}
+            {!unlimited && !usage.atLimit && <p className="mt-1.5 text-[11px] text-ink/65">{usage.limit - connectedCount} more can be connected on {planName}.{nextPlanName ? ` ${PLANS[usage.nextPlan!].name} includes ${limitLabel(PLANS[usage.nextPlan!].maxIntegrations).toLowerCase()} connections.` : ""}</p>}
             {usage.atLimit && !usage.overQuota && <p className="mt-1.5 text-[11px] text-signal-text font-semibold">Connection limit reached. {planName} includes {usage.limit} connection{usage.limit === 1 ? "" : "s"}.{nextPlanName ? ` Upgrade to ${nextPlanName} to connect every channel.` : ""}</p>}
           </div>
           {usage.atLimit && nextPlanName && (
@@ -224,13 +224,13 @@ export async function IntegrationsHub({ business, role, connected, connectError,
           return (
             <IntegrationCard key={provider} model={m} icon={icon(provider)} connect={connect} manage={manage}>
               {provider === "SMS" && m.entitled && m.status !== "unavailable" ? <SmsNumberPicker current={business.twilioPhoneNumber} /> : null}
-              {provider === "EMAIL" && m.status === "connected" ? <p className="text-xs text-ink/55">New mail is pulled while Daythread is open and classified before it reaches you. Replies send from this account.</p> : null}
-              {provider === "WHATSAPP" && m.status === "connected" ? <p className="text-xs text-ink/55">Free-form replies are allowed within 24 hours of a customer&rsquo;s message; later ones need an approved template, and Daythread says so instead of sending.</p> : null}
+              {provider === "EMAIL" && m.status === "connected" ? <p className="text-xs text-ink/70">New mail is pulled while Daythread is open and classified before it reaches you. Replies send from this account.</p> : null}
+              {provider === "WHATSAPP" && m.status === "connected" ? <p className="text-xs text-ink/70">Free-form replies are allowed within 24 hours of a customer&rsquo;s message; later ones need an approved template, and Daythread says so instead of sending.</p> : null}
             </IntegrationCard>
           );
         })}
         <IntegrationCard model={model("WEBSITE")} icon={icon("WEBSITE")}>
-          <p className="text-xs text-ink/55">Requests from <Link href={`/book/${business.handle}`} className="font-semibold text-ink hover:underline">/book/{business.handle}</Link> and the contact form at <Link href={`/embed/${business.handle}`} className="font-semibold text-ink hover:underline">/embed/{business.handle}</Link> arrive as conversations and bookings.</p>
+          <p className="text-xs text-ink/70">Requests from <Link href={`/book/${business.handle}`} className="font-semibold text-ink hover:underline">/book/{business.handle}</Link> and the contact form at <Link href={`/embed/${business.handle}`} className="font-semibold text-ink hover:underline">/embed/{business.handle}</Link> arrive as conversations and bookings.</p>
         </IntegrationCard>
       </Group>
 
@@ -238,14 +238,14 @@ export async function IntegrationsHub({ business, role, connected, connectError,
         {(["GOOGLE_CALENDAR", "APPLE_CALENDAR"] as IntegrationProvider[]).map((provider) => (
           <IntegrationCard key={provider} model={model(provider)} icon={icon(provider)} connect={provider === "GOOGLE_CALENDAR" ? connectGoogleCalendar : undefined} />
         ))}
-        <p className="text-[11px] text-ink/45 px-1">Daythread bookings are the source of truth and are mirrored to the calendar you choose. Events on selected calendars only block availability; they never create or change a booking.</p>
+        <p className="text-[11px] text-ink/65 px-1">Daythread bookings are the source of truth and are mirrored to the calendar you choose. Events on selected calendars only block availability; they never create or change a booking.</p>
       </Group>
 
       {owner && (
         <section aria-label="Deployment configuration">
           <div className="flex items-baseline gap-3 mb-3 px-1">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/50">Deployment</h3>
-            <span className="text-[11px] text-ink/40">What the operator sets, not the business</span>
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Deployment</h3>
+            <span className="text-[11px] text-ink/65">What the operator sets, not the business</span>
           </div>
           <MetaConfigPanel />
         </section>
@@ -259,8 +259,8 @@ function Group({ title, hint, children }: { title: string; hint: string; childre
   return (
     <section aria-label={title}>
       <div className="flex items-baseline gap-3 mb-3 px-1">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/50">{title}</h3>
-        <span className="text-[11px] text-ink/40">{hint}</span>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">{title}</h3>
+        <span className="text-[11px] text-ink/65">{hint}</span>
       </div>
       <div className="space-y-3">{children}</div>
     </section>

@@ -61,7 +61,7 @@ export function AppleConnectDialog({ onClose }: { onClose: () => void }) {
       {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
       <div className="flex items-center gap-2 pt-1">
         <Button type="submit" loading={pending} loadingLabel="Checking with iCloud">Connect Apple Calendar</Button>
-        <button type="button" onClick={onClose} className="text-xs text-ink/50 px-2 py-1">Cancel</button>
+        <button type="button" onClick={onClose} className="text-xs text-ink/65 px-2 py-1">Cancel</button>
       </div>
     </form>
   );

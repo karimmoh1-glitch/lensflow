@@ -13,7 +13,7 @@ export default function NotFound() {
       <LinkButton href="/" className="font-bold">
         Back to Daythread
       </LinkButton>
-      <Link href="/login" className="mt-4 text-xs text-ink/60 hover:text-ink transition-colors">
+      <Link href="/login" className="mt-4 text-xs text-ink/65 hover:text-ink transition-colors">
         Log in instead
       </Link>
     </main>

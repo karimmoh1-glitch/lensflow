@@ -38,7 +38,7 @@ export default async function BillingSetupPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <Link href="/dashboard/billing" className="text-xs font-semibold text-ink/55 hover:text-ink">← Billing</Link>
+      <Link href="/dashboard/billing" className="text-xs font-semibold text-ink/70 hover:text-ink">← Billing</Link>
       <div className="mt-3">
         <PageHeader title="Stripe setup" description="Owner only. Your customers never see keys — they choose a plan and pay through Stripe Checkout." />
       </div>
@@ -59,12 +59,12 @@ export default async function BillingSetupPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <code className="text-[12px] font-semibold text-ink">{v.name}</code>
-                  <span className={cn("text-[10px] font-bold uppercase tracking-[0.12em] rounded-full px-2 py-0.5", v.status === "connected" ? "bg-success-soft text-success-text" : v.status === "invalid" ? "bg-danger-soft text-danger-text" : v.status === "unverified" ? "bg-warning-soft text-warning-text" : "bg-black/[0.05] text-ink/55")}>{label(v.status)}</span>
-                  {!v.required && <span className="text-[10px] text-ink/40">optional</span>}
+                  <span className={cn("text-[10px] font-bold uppercase tracking-[0.12em] rounded-full px-2 py-0.5", v.status === "connected" ? "bg-success-soft text-success-text" : v.status === "invalid" ? "bg-danger-soft text-danger-text" : v.status === "unverified" ? "bg-warning-soft text-warning-text" : "bg-black/[0.05] text-ink/70")}>{label(v.status)}</span>
+                  {!v.required && <span className="text-[10px] text-ink/65">optional</span>}
                 </div>
                 <p className="mt-1 text-sm text-ink/70">{v.does}</p>
-                <p className="mt-1 text-xs text-ink/50">Where: {v.where}</p>
-                {v.detail && <p className={cn("mt-1 text-xs", v.status === "invalid" ? "text-danger-text" : "text-ink/60")}>{v.detail}</p>}
+                <p className="mt-1 text-xs text-ink/65">Where: {v.where}</p>
+                {v.detail && <p className={cn("mt-1 text-xs", v.status === "invalid" ? "text-danger-text" : "text-ink/65")}>{v.detail}</p>}
               </div>
             </li>
           ))}
@@ -81,27 +81,27 @@ export default async function BillingSetupPage() {
           { t: "Go live", b: "Swap to sk_live_… and a live-mode webhook secret, redeploy, and repeat the test purchase with a real card once." },
         ].map((s, i) => (
           <div key={s.t} className="rounded-2xl border border-border bg-white px-5 py-4 flex gap-4">
-            <span className="w-7 h-7 rounded-full bg-black/[0.05] text-ink/60 text-xs font-extrabold flex items-center justify-center shrink-0">{i + 1}</span>
+            <span className="w-7 h-7 rounded-full bg-black/[0.05] text-ink/65 text-xs font-extrabold flex items-center justify-center shrink-0">{i + 1}</span>
             <div className="min-w-0">
               <div className="text-sm font-semibold text-ink">{s.t}</div>
-              <p className="mt-1 text-sm text-ink/65 leading-relaxed break-words">{s.b}</p>
+              <p className="mt-1 text-sm text-ink/70 leading-relaxed break-words">{s.b}</p>
             </div>
           </div>
         ))}
       </section>
 
-      <p className="mt-8 text-xs text-ink/45">
+      <p className="mt-8 text-xs text-ink/65">
         Daythread never charges your customers — this Stripe account is used for your Daythread subscription only.</p>
 
       <section aria-label="Apple Pay and Google Pay" className="mt-8 rounded-2xl border border-border bg-white px-5 py-5">
         <h2 className="text-sm font-semibold text-ink">Apple Pay and Google Pay</h2>
-        <p className="mt-1.5 text-sm text-ink/65 leading-relaxed">Your Daythread subscription — goes through Stripe-hosted Checkout with dynamic payment methods. Stripe shows Apple Pay on Safari (iPhone, iPad, Mac with a card in Wallet) and Google Pay on Chrome/Android when they are enabled on the account, and falls back to card. Daythread never sees or stores card details; the webhook, not the return page, marks a payment paid.</p>
+        <p className="mt-1.5 text-sm text-ink/70 leading-relaxed">Your Daythread subscription — goes through Stripe-hosted Checkout with dynamic payment methods. Stripe shows Apple Pay on Safari (iPhone, iPad, Mac with a card in Wallet) and Google Pay on Chrome/Android when they are enabled on the account, and falls back to card. Daythread never sees or stores card details; the webhook, not the return page, marks a payment paid.</p>
         <ol className="mt-3 space-y-1.5 text-sm text-ink/75 list-decimal pl-5">
           <li>Stripe Dashboard → Settings → Payments → <span className="font-semibold text-ink">Payment methods</span>: turn on Apple Pay and Google Pay (they are on by default for new accounts; wallets need &ldquo;Cards&rdquo; on too).</li>
           <li>Hosted Checkout runs on checkout.stripe.com, so no Apple Pay domain registration is needed for it. If Daythread ever embeds the Payment Element on <span className="font-mono text-xs">{appUrl.replace(/^https?:\/\//, "")}</span>, register that domain under Settings → Payments → Payment method domains first.</li>
           <li>Test on a real iPhone in Safari with a card in Wallet: the Checkout page shows an Apple Pay button above the card form. Stripe test mode supports Apple Pay with any Wallet card (nothing is charged).</li>
         </ol>
-        <p className="mt-3 text-[11px] text-ink/45">Status here reflects code and configuration only. A wallet button can only be confirmed by paying on a real device with live or test keys present.</p>
+        <p className="mt-3 text-[11px] text-ink/65">Status here reflects code and configuration only. A wallet button can only be confirmed by paying on a real device with live or test keys present.</p>
       </section>
     </div>
   );

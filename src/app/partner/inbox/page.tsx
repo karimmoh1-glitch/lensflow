@@ -43,7 +43,7 @@ export default async function PartnerInboxPage({ searchParams }: { searchParams:
       <div className={cn("w-full md:w-[340px] shrink-0 border-r border-border flex-col bg-white", selectedId ? "hidden md:flex" : "flex")}>
         <div className="px-5 pt-4 pb-3 border-b border-border">
           <h1 className="font-display text-lg text-ink">Conversations</h1>
-          <p className="text-xs text-ink/60 mt-0.5">
+          <p className="text-xs text-ink/65 mt-0.5">
             {membership.canViewAllConversations ? "All business conversations" : "Conversations with your assigned clients"}
           </p>
         </div>
@@ -70,7 +70,7 @@ export default async function PartnerInboxPage({ searchParams }: { searchParams:
                   </div>
                   <span className="text-sm font-medium truncate flex-1">{conv.client?.name ?? conv.externalHandle ?? "Unknown"}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-ink/60 mb-1">
+                <div className="flex items-center gap-1.5 text-xs text-ink/65 mb-1">
                   <ChannelBadge channel={conv.channel} />
                   <span>{CHANNEL_META[conv.channel].label}</span>
                   <span>·</span>
@@ -87,12 +87,12 @@ export default async function PartnerInboxPage({ searchParams }: { searchParams:
         {active ? (
           <div className="flex-1 flex flex-col min-w-0">
             <div className="px-4 md:px-6 py-3.5 border-b border-border bg-white flex items-center gap-3">
-              <Link href="/partner/inbox" className="md:hidden text-xs text-ink/65">
+              <Link href="/partner/inbox" className="md:hidden text-xs text-ink/70">
                 ← Back
               </Link>
               <div className="flex-1 min-w-0">
                 <h2 className="font-medium text-sm truncate">{active.client?.name ?? active.externalHandle ?? "Unknown"}</h2>
-                <div className="flex items-center gap-1.5 text-xs text-ink/65">
+                <div className="flex items-center gap-1.5 text-xs text-ink/70">
                   <ChannelBadge channel={active.channel} />
                   {CHANNEL_META[active.channel].label}
                 </div>
@@ -110,18 +110,18 @@ export default async function PartnerInboxPage({ searchParams }: { searchParams:
                   >
                     {m.body}
                   </div>
-                  <div className={cn("text-[11px] text-ink/35 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
+                  <div className={cn("text-[11px] text-ink/65 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
                     {format(m.createdAt, "MMM d, h:mm a")}
                   </div>
                 </div>
               ))}
             </div>
-            <div className="px-4 md:px-6 py-3 border-t border-border bg-white text-xs text-ink/60">
+            <div className="px-4 md:px-6 py-3 border-t border-border bg-white text-xs text-ink/65">
               Only the business owner or admin can reply from Daythread.
             </div>
           </div>
         ) : (
-          <div className="hidden md:flex flex-1 items-center justify-center text-ink/60 text-sm">Select a conversation</div>
+          <div className="hidden md:flex flex-1 items-center justify-center text-ink/65 text-sm">Select a conversation</div>
         )}
       </div>
     </div>

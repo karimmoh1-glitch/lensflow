@@ -48,15 +48,15 @@ export function BookingActions({ bookingId, status, hasQuestionnaire }: { bookin
   return (
     <Card>
       <CardBody className="space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">Actions</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-ink/65">Actions</div>
         {next.filter((n) => n.show).map((n) => (
           <Button key={n.to} size="sm" className="w-full" onClick={() => doAdvance(n.to, n.done)} loading={pending} loadingLabel="Saving">{n.label}</Button>
         ))}
         {!hasQuestionnaire && status !== "INQUIRY" && status !== "CANCELED" && (
           <Button size="sm" variant="outline" className="w-full" onClick={doQuestionnaire} disabled={pending}>Send questionnaire</Button>
         )}
-        {status === "CANCELED" && <p className="text-xs text-ink/50">This booking was canceled.</p>}
-        {status === "FOLLOWED_UP" && <p className="text-xs text-ink/50">All done here.</p>}
+        {status === "CANCELED" && <p className="text-xs text-ink/65">This booking was canceled.</p>}
+        {status === "FOLLOWED_UP" && <p className="text-xs text-ink/65">All done here.</p>}
       </CardBody>
     </Card>
   );

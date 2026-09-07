@@ -126,3 +126,23 @@ Final launch audit additions (2026-09-06):
 - Missing (optional until launch of that feature): `OPENAI_API_KEY`, `RESEND_*`,
   `INSTAGRAM_*`, `META_*`, `WHATSAPP_CONFIG_ID`, `TWILIO_*`, `STRIPE_*`.
 - Daily cron `/api/cron/automations` (automations + integration maintenance) runs at 13:00 UTC.
+
+## Trust pass (2026-09-07, PR #47)
+
+- Contrast: muted text is ink/65 and ink/70 (≥4.5:1 on white and on the paper background);
+  white text sits on `accent-strong` (#CF3F3A, 4.7:1). Verified by a rendered sweep of every
+  visible text node and by axe-core on the public pages and the dashboard at 1440 and 390.
+- axe-core (WCAG 2.1 AA + best practice): no violations on /, /login, /signup, /status,
+  /support, /privacy, /terms, or the dashboard at 1440; one best-practice note remains on
+  phones (content outside a landmark). Pinch-zoom is no longer disabled in the app.
+- Continue with Google (login + signup) on the existing OAuth client and callback; verified-
+  email linking; new users get a workspace; concurrent first sign-ins serialized (tests).
+- Annual billing: yearly Stripe prices by lookup key at ten months' price; the webhook maps
+  monthly and yearly keys to the same plan.
+- Landing: who-it's-for + honest proof placeholder (no invented customers), FAQ, JSON-LD
+  (Organization, SoftwareApplication with the three real offers, FAQPage). /status page with
+  a live database check and configured/not-configured per provider; providers are never
+  claimed operational. /demo removed from the sitemap; the only contact addresses are
+  support@daythread.org and privacy@daythread.org. Privacy has a cookies section.
+- Inbox with 300+ conversations renders in ~370 ms on dev; search and filters stay fast;
+  an 80-character name and a 2,000-character message truncate and wrap cleanly on a phone.

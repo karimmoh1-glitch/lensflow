@@ -40,7 +40,7 @@ export function AskAssistant() {
           }}
         >
           <Sparkles className="w-4 h-4 text-signal-text shrink-0" strokeWidth={2} aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about your inbox, calendar or customers…" aria-label="Ask the assistant" maxLength={500} className="flex-1 bg-transparent text-[16px] md:text-sm text-ink placeholder:text-ink/40 outline-none min-w-0" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about your inbox, calendar or customers…" aria-label="Ask the assistant" maxLength={500} className="flex-1 bg-transparent text-[16px] md:text-sm text-ink placeholder:text-ink/65 outline-none min-w-0" />
           <button type="submit" disabled={!q.trim() || pending} aria-label="Ask" className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", q.trim() && !pending ? "bg-ink hover:bg-black" : "bg-ink/25")}>
             {pending ? <WorkingDots /> : <ArrowUp className="w-4 h-4" strokeWidth={2.5} aria-hidden />}
           </button>
@@ -57,13 +57,13 @@ export function AskAssistant() {
         <ol className="border-t border-border divide-y divide-border" aria-live="polite">
           {history.map((h, i) => (
             <li key={i} className="px-5 py-3.5 dt-msg-in">
-              <div className="text-xs font-semibold text-ink/55">{h.q}</div>
+              <div className="text-xs font-semibold text-ink/70">{h.q}</div>
               <p className="mt-1 text-sm text-ink leading-relaxed whitespace-pre-wrap">{h.a}</p>
             </li>
           ))}
         </ol>
       )}
-      <p className="px-5 py-2.5 border-t border-border text-[11px] text-ink/45">Answers come from your own records. The assistant never takes an action from here.</p>
+      <p className="px-5 py-2.5 border-t border-border text-[11px] text-ink/65">Answers come from your own records. The assistant never takes an action from here.</p>
     </section>
   );
 }

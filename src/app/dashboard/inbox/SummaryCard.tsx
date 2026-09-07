@@ -36,12 +36,12 @@ export function SummaryCard({ conversationId, initial, autoRun }: { conversation
           <Sparkles className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
           Summary
         </div>
-        <button type="button" onClick={() => run(true)} disabled={pending} className="text-[11px] font-semibold text-ink/55 hover:text-ink rounded-md px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+        <button type="button" onClick={() => run(true)} disabled={pending} className="text-[11px] font-semibold text-ink/70 hover:text-ink rounded-md px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
           {pending ? <WorkingDots /> : summary ? "Refresh" : "Summarize"}
         </button>
       </div>
       {error && <p className="mt-2 text-xs text-danger-text">{error}</p>}
-      {!summary && !pending && !error && <p className="mt-2 text-xs text-ink/60">One sentence, the key details, and the next step — read from the messages themselves.</p>}
+      {!summary && !pending && !error && <p className="mt-2 text-xs text-ink/65">One sentence, the key details, and the next step — read from the messages themselves.</p>}
       {summary && (
         <div className={cn("mt-2 dt-swap", pending && "opacity-60")}>
           <p className="text-sm text-ink leading-snug">{summary.summary}</p>
@@ -49,21 +49,21 @@ export function SummaryCard({ conversationId, initial, autoRun }: { conversation
             <dl className="mt-2.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
               {summary.details.map((d) => (
                 <div key={d.label} className="contents">
-                  <dt className="text-ink/50">{d.label}</dt>
+                  <dt className="text-ink/65">{d.label}</dt>
                   <dd className="font-medium text-ink truncate">{d.value}</dd>
                 </div>
               ))}
               <div className="contents">
-                <dt className="text-ink/50">Status</dt>
+                <dt className="text-ink/65">Status</dt>
                 <dd className="font-medium text-ink">{summary.status}</dd>
               </div>
             </dl>
           )}
           <div className="mt-2.5 pt-2.5 border-t border-signal/15">
-            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45">Suggested next step</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">Suggested next step</div>
             <div className="text-sm font-semibold text-ink mt-0.5">{summary.nextStep}</div>
           </div>
-          <div className="mt-2 text-[10px] text-ink/40">{summary.source === "ai" ? "Sentence by AI, details from the messages" : "From the messages — AI summaries are part of Pro"}</div>
+          <div className="mt-2 text-[10px] text-ink/65">{summary.source === "ai" ? "Sentence by AI, details from the messages" : "From the messages — AI summaries are part of Pro"}</div>
         </div>
       )}
     </div>

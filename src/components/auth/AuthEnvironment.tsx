@@ -103,7 +103,7 @@ export function AuthEnvironment() {
           <div className="text-sm text-paper/60">“{s.msg}”</div>
         </div>
         <div className={cn("mt-3 text-xs text-signal transition-all duration-500", on(2) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1")}>
-          <span className="text-paper/40 uppercase tracking-[0.12em] font-bold text-[10px] mr-2">Knows</span>
+          <span className="text-paper/60 uppercase tracking-[0.12em] font-bold text-[10px] mr-2">Knows</span>
           <span className="text-paper/80">{s.ctx}</span>
         </div>
         <div className={cn("mt-auto pt-3 flex items-center gap-2 text-xs transition-all duration-500", on(2) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1")}>

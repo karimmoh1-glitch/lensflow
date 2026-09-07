@@ -53,7 +53,7 @@ export default async function ClientsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{c.name}</div>
-                      <div className="text-xs text-ink/65 truncate">{c.email ?? c.phone ?? "No contact info"}</div>
+                      <div className="text-xs text-ink/65 truncate">{c.email ?? c.phone ?? (c.instagram ? `@${c.instagram}` : "No contact info")}</div>
                     </div>
                   </div>
                   <div className="flex items-center flex-wrap gap-3 pl-11 sm:pl-0 shrink-0">

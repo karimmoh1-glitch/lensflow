@@ -133,6 +133,7 @@ export async function summarizeConversation(conversationId: string, opts: { forc
     messages: cleaned,
     lead: conv.lead ? { serviceName: conv.lead.service?.name, requestedDateText: conv.lead.requestedDateText, requestedLocation: conv.lead.requestedLocation, budgetCents: conv.lead.budgetCents, status: conv.lead.status, respondedAt: conv.lead.respondedAt } : null,
     upcomingBookingLabel: upcomingLabel,
+    upcomingConfirmed: upcoming ? upcoming.status !== "BOOKED" : undefined,
   });
 
   let summary = base;

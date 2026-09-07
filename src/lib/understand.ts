@@ -39,6 +39,8 @@ export type UnderstandInput = {
   relationship: "LEAD" | "CUSTOMER" | "CONTACT" | null;
   hasUpcomingBooking: boolean;
   upcomingBookingLabel?: string | null;
+  /** The upcoming booking is confirmed (anything past BOOKED) — nothing left to lock in. */
+  upcomingConfirmed?: boolean;
   hasOutstandingPayment?: boolean;
   leadStatus?: string | null;
 };
@@ -101,6 +103,13 @@ export function understand(input: UnderstandInput): Understanding {
           ? "New inquiry"
           : null;
 
+  // Once they're on the calendar, an ask for a time or a price has been answered: what's
+  // left is to lock the booking in — or nothing, if it already is.
+  const bookedAction: Understanding["nextAction"] | null = input.hasUpcomingBooking
+    ? input.upcomingConfirmed
+      ? { label: "Nothing needed — they're booked and confirmed", kind: "none" }
+      : { label: "Confirm the booking", kind: "confirm" }
+    : null;
   let nextAction: Understanding["nextAction"];
   switch (intent) {
     case "CONFIRM":
@@ -115,15 +124,13 @@ export function understand(input: UnderstandInput): Understanding {
       nextAction = { label: "Acknowledge and release the date", kind: "reply" };
       break;
     case "PRICING":
-      nextAction = input.hasUpcomingBooking ? { label: "Confirm the booking", kind: "confirm" } : { label: "Send pricing and propose a date", kind: "reply" };
+      nextAction = bookedAction ?? { label: "Send pricing and propose a date", kind: "reply" };
       break;
     case "AVAILABILITY":
-      // Once they're on the calendar, the ask for a time has been answered — what's left is
-      // to lock it in, not to send another booking link.
-      nextAction = input.hasUpcomingBooking ? { label: "Confirm the booking", kind: "confirm" } : { label: day ? `Answer for ${day} and send the booking link` : "Send your availability", kind: "send_link" };
+      nextAction = bookedAction ?? { label: day ? `Answer for ${day} and send the booking link` : "Send your availability", kind: "send_link" };
       break;
     case "BOOK":
-      nextAction = input.hasUpcomingBooking ? { label: "Confirm the booking", kind: "confirm" } : { label: day ? `Book ${day}${time ? ` at ${time}` : ""}` : "Send the booking link", kind: day ? "book" : "send_link" };
+      nextAction = bookedAction ?? { label: day ? `Book ${day}${time ? ` at ${time}` : ""}` : "Send the booking link", kind: day ? "book" : "send_link" };
       break;
     case "PAYMENT":
       nextAction = { label: "Reply about payment", kind: "reply" };

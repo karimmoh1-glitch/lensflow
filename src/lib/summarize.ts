@@ -28,6 +28,7 @@ export type SummaryInput = {
   messages: Array<{ direction: "INBOUND" | "OUTBOUND"; body: string; createdAt: Date; status?: string | null }>;
   lead?: { serviceName?: string | null; requestedDateText?: string | null; requestedLocation?: string | null; budgetCents?: number | null; status?: string | null; respondedAt?: Date | null } | null;
   upcomingBookingLabel?: string | null;
+  upcomingConfirmed?: boolean;
 };
 
 export function summarizeDeterministically(input: SummaryInput): ConversationSummary {
@@ -43,6 +44,7 @@ export function summarizeDeterministically(input: SummaryInput): ConversationSum
     relationship: input.relationship,
     hasUpcomingBooking: Boolean(input.upcomingBookingLabel),
     upcomingBookingLabel: input.upcomingBookingLabel,
+    upcomingConfirmed: input.upcomingConfirmed,
     leadStatus: input.lead?.status ?? null,
   });
 

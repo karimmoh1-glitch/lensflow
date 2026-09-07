@@ -15,7 +15,7 @@ server-only.
 | `CRON_SECRET` | server | the daily cron answers 501; automations and calendar maintenance stop |
 | `SEED_SECRET` | server | admin routes (`/api/admin/*`) refuse |
 
-Optional for core: `INTEGRATION_TOKEN_ENCRYPTION_KEY_PREVIOUS` (only during key rotation), `OPENAI_API_KEY` (without it, extraction, drafts and Copilot use deterministic rule-based fallbacks and say so nowhere misleading).
+Optional for core: `INTEGRATION_TOKEN_ENCRYPTION_KEY_PREVIOUS` (only during key rotation), `OPENAI_API_KEY` (without it, extraction, drafts and the assistant use deterministic rule-based fallbacks and say so nowhere misleading).
 
 ## Required for Google (Gmail + Google Calendar)
 

@@ -16,18 +16,18 @@ provider's.
 - Tenant isolation: conversations, bookings, integrations, automations, agent proposals,
   webhooks — every action re-derives the business from the session and refuses foreign ids
   (tests).
-- Plan enforcement, server-side: connected-integrations quota (Free 2 / Pro 6 / Business ∞)
+- Plan enforcement, server-side: connected-channels quota (Free 2 / Pro ∞ / Business ∞)
   in a row-locked transaction at every activation point, including 6 simultaneous attempts;
-  automation caps at creation, toggle and run time; seat caps; Copilot daily and hourly caps
-  counted in the database; Business Agent and Analytics denied to Free/Pro through actions
-  and the mobile API (tests + browser on staged Free/Pro/Business workspaces).
+  automation caps at creation, toggle and run time; seat caps; assistant daily and hourly caps
+  counted in the database; the assistant's proposals denied to Free, team features denied to
+  Free/Pro through actions and the mobile API (tests + browser on staged Free/Pro workspaces).
 - Bookings: 5 concurrent public bookings for one slot → exactly one; outside hours, overlap
   and past times refused; reschedule respects other bookings and connected-calendar busy
   time; cancel frees the slot and removes calendar mirrors (tests).
 - Inbox: inbound routing per channel, dedupe by provider message id, identity matching
   inside one business only, honest delivery states (NOT_DELIVERED when a channel isn't
   connected; never "sent" without provider confirmation) (tests + browser).
-- Business Agent: proposals from real data; Recommendation → Preview → Approve → Execute;
+- Assistant: proposals from real data; Recommendation → Preview → Approve → Execute;
   execution recorded honestly; dismiss; hourly cap (tests + browser).
 - Automations: create from recipes, edit, delete, Free fourth saved switched off, runner
   respects the cap (tests + browser).
@@ -71,7 +71,7 @@ setting, URL and variable.
   row lock (that file carries unrelated uncommitted work); public bookings and reschedules
   are locked.
 - Per-instance rate limits (login, signup, booking) are process-local; the product caps
-  (Copilot, agent) are database-counted.
+  (assistant questions, proposals) are database-counted.
 - Onboarding wizard file carries unrelated uncommitted edits and was not changed in this pass.
 
 ## 6. TEST RESULTS
@@ -94,7 +94,7 @@ Final launch audit additions (2026-09-06):
   change fails the build instead of dropping data.
 - Fixed: framing is refused everywhere except the embeddable lead form (`/embed/:handle`).
 - Added: webhook body ceilings (Stripe 512KB, Twilio 64KB, Resend 2MB) → 413 before parsing.
-- Added: AI prompts mark customer text as untrusted and forbid claiming actions; Copilot
+- Added: AI prompts mark customer text as untrusted and forbid claiming actions; assistant
   questions are capped at 500 characters; model calls time out at 20s with one retry.
 - Fixed: the "simulate inbound message" tool is refused for real workspaces on production.
 

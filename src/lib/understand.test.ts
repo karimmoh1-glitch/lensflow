@@ -43,6 +43,8 @@ describe("understand", () => {
     expect(u.nextAction).toEqual({ label: "Confirm the booking", kind: "confirm" });
     const b = understand({ body: "I'd like to book the family session on Sep 12", relationship: "CUSTOMER", hasUpcomingBooking: true, upcomingBookingLabel: "Family session · Sep 12", hasOutstandingPayment: false });
     expect(b.nextAction.kind).toBe("confirm");
+    const c = understand({ body: "Are you free Tuesday?", relationship: "CUSTOMER", hasUpcomingBooking: true, upcomingConfirmed: true, upcomingBookingLabel: "Brand session · Mon", hasOutstandingPayment: false });
+    expect(c.nextAction.kind).toBe("none");
   });
 
   it("falls back honestly", () => {

@@ -5,6 +5,8 @@ import { Story } from "./landing/Story";
 import { OneThing } from "./landing/OneThing";
 import { ProductDemo } from "./landing/ProductDemo";
 import { Workflow } from "./landing/Workflow";
+import { CalendarBeat } from "./landing/CalendarBeat";
+import { AssistantBeat } from "./landing/AssistantBeat";
 import { PricingSection } from "./PricingSection";
 import { FinalCta } from "./landing/FinalCta";
 import { Footer } from "./landing/Footer";
@@ -17,6 +19,8 @@ import { Footer } from "./landing/Footer";
  *     outcome → the thread widens into the product itself
  *   the business gets quiet — one thing to do (midnight)
  *   click around — the product, interactive
+ *   the calendar — a message moves a booking, the confirmation goes back out
+ *   the assistant — it proposes, you approve, it lands in done
  *   it runs itself — an automation firing
  *   pricing — the natural conclusion
  *   the end — the thread returns, organized, and one line
@@ -40,6 +44,14 @@ export default function LandingPage() {
 
       <section id="demo" className="relative py-20 md:py-28 bg-white border-b border-border overflow-hidden scroll-mt-16">
         <ProductDemo />
+      </section>
+
+      <section id="calendar" className="relative py-20 md:py-28 bg-paper border-b border-border overflow-hidden scroll-mt-16">
+        <CalendarBeat />
+      </section>
+
+      <section id="assistant" className="relative py-20 md:py-28 bg-white overflow-hidden scroll-mt-16">
+        <AssistantBeat />
       </section>
 
       <section id="how" className="relative py-20 md:py-28 bg-[linear-gradient(180deg,#FAFAF9_0%,#EEEBFC_55%,#FAFAF9_100%)] scroll-mt-16">

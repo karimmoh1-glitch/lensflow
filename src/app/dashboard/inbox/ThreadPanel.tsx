@@ -87,7 +87,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
     : null;
   const relationshipLabel = client ? (client.relationship === "CUSTOMER" ? "Customer" : client.relationship === "CONTACT" ? "Contact" : "Potential customer") : labelFor(conversation.category);
   const latestText = lastInboundMsg ? splitMessage(lastInboundMsg.body).text : "";
-  const understanding = isPerson && lastInboundMsg ? understand({ body: latestText, relationship: client?.relationship ?? null, hasUpcomingBooking: Boolean(upcoming), upcomingBookingLabel: upcomingLabel, leadStatus: lead?.status ?? null }) : null;
+  const understanding = isPerson && lastInboundMsg ? understand({ body: latestText, relationship: client?.relationship ?? null, hasUpcomingBooking: Boolean(upcoming), upcomingBookingLabel: upcomingLabel, upcomingConfirmed: upcoming ? upcoming.status !== "BOOKED" : undefined, leadStatus: lead?.status ?? null }) : null;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const cachedSummary = (conversation.summary as unknown as ConversationSummary | null) ?? null;
   const canBook = Boolean(lead && lead.status !== "BOOKED" && lead.status !== "LOST");

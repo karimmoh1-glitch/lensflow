@@ -12,7 +12,7 @@ import type { PlanKey } from "@/lib/billing";
  * "Redirecting" once we have a URL, a toast on any failure. Nothing here changes the
  * plan — Stripe's webhook does; the button only asks.
  */
-export function PlanButton({ planKey, label, variant = "primary" }: { planKey: Extract<PlanKey, "PRO" | "BUSINESS">; label: string; variant?: "primary" | "outline" }) {
+export function PlanButton({ planKey, label, variant = "primary" }: { planKey: Extract<PlanKey, "PRO">; label: string; variant?: "primary" | "outline" }) {
   const [pending, startTransition] = useTransition();
   const [redirecting, setRedirecting] = useState(false);
   const router = useRouter();
@@ -27,7 +27,7 @@ export function PlanButton({ planKey, label, variant = "primary" }: { planKey: E
         return;
       }
       if (result.changed) {
-        toast({ tone: "outcome", title: "Plan change accepted", body: "Stripe is applying it now — your billing updates within seconds." });
+        toast({ tone: "outcome", title: "Plan change accepted", body: "Stripe is applying it now — your subscription updates within seconds." });
         router.refresh();
         return;
       }
@@ -82,15 +82,15 @@ export function CheckoutReturn({ outcome, expectedPlan, currentPlan }: { outcome
       if (!announced.current) {
         announced.current = true;
         toast({ tone: "neutral", title: "Checkout canceled", body: "Nothing was charged. Your plan is unchanged." });
-        router.replace("/dashboard/billing");
+        router.replace("/dashboard/settings?tab=subscription");
       }
       return;
     }
     if (landed) {
       if (!announced.current) {
         announced.current = true;
-        toast({ tone: "outcome", title: `You're on ${expectedPlan ? expectedPlan.charAt(0).toUpperCase() + expectedPlan.slice(1) : "your new plan"}`, body: "Payment received. Everything on your plan is unlocked." });
-        router.replace("/dashboard/billing");
+        toast({ tone: "outcome", title: "You're on Daythread Pro", body: "Payment received. Every channel, AI and your team are unlocked." });
+        router.replace("/dashboard/settings?tab=subscription");
       }
       return;
     }

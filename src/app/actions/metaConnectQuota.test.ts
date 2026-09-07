@@ -36,7 +36,7 @@ describe("Meta connection start", () => {
     vi.unstubAllEnvs();
   });
 
-  async function workspace(planTier: "FREE" | "PRO" | "BUSINESS", connected: Array<"EMAIL" | "GOOGLE_CALENDAR" | "SMS" | "APPLE_CALENDAR"> = []) {
+  async function workspace(planTier: "FREE" | "PRO" | "BUSINESS", connected: Array<"EMAIL" | "SMS" | "INSTAGRAM" | "WHATSAPP"> = []) {
     const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const b = await prisma.business.create({ data: { name: "Meta Quota", handle: `meta-quota-${stamp}`, planTier, billingStatus: planTier === "FREE" ? null : "ACTIVE" } });
     const u = await prisma.user.create({ data: { name: "O", email: `meta-quota-${stamp}@example.com`, passwordHash: "x" } });
@@ -50,10 +50,10 @@ describe("Meta connection start", () => {
     configureMeta();
     vi.stubGlobal("fetch", network);
     const { connectInstagram } = await import("./connect");
-    const { session } = await workspace("FREE", ["EMAIL", "GOOGLE_CALENDAR"]);
+    const { session } = await workspace("FREE", ["EMAIL", "SMS"]);
     redirects.length = 0;
     await expect(connectInstagram(session)).rejects.toThrow(/NEXT_REDIRECT/);
-    expect(redirects[0]).toBe("/dashboard/settings?tab=connections&connect_error=limit&provider=INSTAGRAM");
+    expect(redirects[0]).toBe("/dashboard/settings?tab=channels&connect_error=limit&provider=INSTAGRAM");
     expect(network).not.toHaveBeenCalled();
     expect(await prisma.integration.count({ where: { businessId: session.activeBusinessId, provider: "INSTAGRAM" } })).toBe(0);
   });
@@ -62,10 +62,10 @@ describe("Meta connection start", () => {
     configureMeta();
     vi.stubGlobal("fetch", network);
     const { connectWhatsApp } = await import("./connect");
-    const { session } = await workspace("FREE", ["EMAIL", "GOOGLE_CALENDAR"]);
+    const { session } = await workspace("FREE", ["EMAIL", "SMS"]);
     redirects.length = 0;
     await expect(connectWhatsApp(session)).rejects.toThrow(/NEXT_REDIRECT/);
-    expect(redirects[0]).toBe("/dashboard/settings?tab=connections&connect_error=limit&provider=WHATSAPP");
+    expect(redirects[0]).toBe("/dashboard/settings?tab=channels&connect_error=limit&provider=WHATSAPP");
     expect(network).not.toHaveBeenCalled();
   });
 

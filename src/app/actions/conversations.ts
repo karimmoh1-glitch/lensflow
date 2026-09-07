@@ -7,23 +7,18 @@ import { track } from "@/lib/analytics";
 import { labelFor, type MessageCategory } from "@/lib/classifyMessage";
 import { summarizeDeterministically, type ConversationSummary } from "@/lib/summarize";
 import { summarizeConversationSentence } from "@/lib/ai";
-import { aiEntitled, intelligenceEntitled } from "@/lib/billing";
+import { aiEntitled, teamEntitled } from "@/lib/billing";
 import { splitMessage } from "@/lib/cleanMessage";
-import { format } from "date-fns";
-import { toZonedDisplayDate } from "@/lib/utils";
-import type { ClientRelationship } from "@prisma/client";
 
 const STAFF = ["OWNER", "ADMIN", "PHOTOGRAPHER"] as const;
 
 function refresh() {
   revalidatePath("/dashboard/inbox");
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/clients");
 }
 
 /**
- * Corrections. "Not priority" / "Mark as priority" / "This is a customer" / "Not a client"
- * change the record in front of you and are remembered for this business only: a sender
+ * Corrections. "Not priority" / "Mark as priority" change the record in front of you and
+ * are remembered for this workspace only: a sender
  * rule is stored for the address (and, for automated mail, its domain) so the next message
  * from them lands where you said. Nothing is deleted — a conversation moved out of Priority
  * is still in All.
@@ -49,8 +44,8 @@ export async function reclassifyConversation(conversationId: string, category: M
   await prisma.$transaction(async (tx) => {
     const data: Record<string, unknown> = { category, categoryReason: `You marked this as ${labelFor(category).toLowerCase()}.`, categorySource: "user" };
     if (category === "PRIORITY" && !conv.clientId) {
-      // Promoting to priority gives the sender a client record (and a lead, if new) so the
-      // CRM knows them — exactly what the automated path deliberately didn't do.
+      // Promoting to priority gives the sender a person record (and the extracted facts row,
+      // if new) so the thread knows who they are — what the automated path deliberately skipped.
       const name = conv.client?.name ?? guessName(conv.externalHandle) ?? "Unknown";
       const client = await tx.client.create({ data: { businessId, name, email: isEmail ? handle! : undefined, phone: conv.channel === "SMS" ? conv.externalHandle : undefined } });
       data.clientId = client.id;
@@ -70,17 +65,6 @@ export async function reclassifyConversation(conversationId: string, category: M
   await track("classification_corrected", { businessId, properties: { from: conv.category, to: category, rule: rule?.kind ?? null } });
   refresh();
   return { ruleFor: rule?.value };
-}
-
-export async function setClientRelationship(clientId: string, relationship: ClientRelationship, session?: SessionPayload | null): Promise<{ error?: string }> {
-  const ctx = await requireRole([...STAFF], session);
-  if (!ctx) throw new Error("unauthorized");
-  const r = await prisma.client.updateMany({ where: { id: clientId, businessId: ctx.business.id }, data: { relationship } });
-  if (r.count === 0) return { error: "Client not found." };
-  if (relationship === "CUSTOMER") await track("first_client_relationship", { businessId: ctx.business.id, properties: { via: "manual" } });
-  refresh();
-  revalidatePath(`/dashboard/clients/${clientId}`);
-  return {};
 }
 
 export async function markConversationRead(conversationId: string, read: boolean, session?: SessionPayload | null): Promise<void> {
@@ -109,8 +93,8 @@ export async function summarizeConversation(conversationId: string, opts: { forc
     where: { id: conversationId, businessId: business.id },
     include: {
       messages: { orderBy: { createdAt: "asc" } },
-      client: { include: { bookings: { where: { startAt: { gte: new Date() }, status: { not: "CANCELED" } }, orderBy: { startAt: "asc" }, take: 1, include: { service: true } }, payments: { where: { status: "AWAITING_CONFIRMATION" }, take: 1 } } },
-      lead: { include: { service: true } },
+      client: { select: { name: true } },
+      lead: { include: { service: { select: { name: true } } } },
     },
   });
   if (!conv) return { error: "Conversation not found." };
@@ -122,18 +106,13 @@ export async function summarizeConversation(conversationId: string, opts: { forc
   }
 
   const personName = conv.client?.name ?? conv.lead?.extractedName ?? guessName(conv.externalHandle) ?? "They";
-  const upcoming = conv.client?.bookings[0];
-  const upcomingLabel = upcoming ? `${upcoming.service.name} · ${format(toZonedDisplayDate(upcoming.startAt, business.timezone), "EEE, MMM d · h:mm a")}` : null;
   const cleaned = conv.messages.map((m) => ({ direction: m.direction, body: splitMessage(m.body).text, createdAt: m.createdAt }));
 
   const base = summarizeDeterministically({
     personName,
-    relationship: conv.client?.relationship ?? null,
     channel: conv.channel,
     messages: cleaned,
-    lead: conv.lead ? { serviceName: conv.lead.service?.name, requestedDateText: conv.lead.requestedDateText, requestedLocation: conv.lead.requestedLocation, budgetCents: conv.lead.budgetCents, status: conv.lead.status, respondedAt: conv.lead.respondedAt } : null,
-    upcomingBookingLabel: upcomingLabel,
-    hasOutstandingPayment: Boolean(conv.client?.payments.length),
+    mentioned: conv.lead ? { serviceName: conv.lead.service?.name, requestedDateText: conv.lead.requestedDateText, requestedLocation: conv.lead.requestedLocation, budgetCents: conv.lead.budgetCents } : null,
   });
 
   let summary = base;
@@ -163,7 +142,7 @@ function guessName(handle: string | null | undefined): string | null {
 }
 
 /**
- * Ownership. A Business-plan feature: hand a conversation to a teammate. Both the
+ * Ownership. A Pro feature: hand a conversation to a teammate. Both the
  * conversation and the membership must belong to this business; the check is server-side
  * and the plan is re-read from the database, never trusted from the client.
  */
@@ -171,7 +150,7 @@ export async function assignConversation(conversationId: string, membershipId: s
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
-  if (!intelligenceEntitled(business)) return { error: "Assigning conversations to teammates is part of the Business plan." };
+  if (!teamEntitled(business)) return { error: "Assigning conversations to teammates is part of Daythread Pro." };
   const conv = await prisma.conversation.findFirst({ where: { id: conversationId, businessId: business.id }, select: { id: true } });
   if (!conv) return { error: "Conversation not found." };
   let assigneeName: string | null = null;

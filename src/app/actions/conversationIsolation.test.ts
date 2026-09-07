@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { prisma } from "@/lib/db";
-import { reclassifyConversation, removeConversationForMe, setClientRelationship, summarizeConversation, assignConversation, markConversationRead } from "./conversations";
+import { reclassifyConversation, removeConversationForMe, summarizeConversation, assignConversation, markConversationRead } from "./conversations";
 
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
@@ -57,12 +57,6 @@ describe("conversation actions are tenant-isolated", () => {
     expect((await prisma.conversation.findUnique({ where: { id: aConvId } }))?.archived).toBe(false);
   });
 
-  it("relationship changes refuse across tenants", async () => {
-    const r = await setClientRelationship(aClientId, "CUSTOMER", bSession);
-    expect(r.error).toBeTruthy();
-    expect((await prisma.client.findUnique({ where: { id: aClientId } }))?.relationship).toBe("LEAD");
-  });
-
   it("summaries refuse across tenants and store nothing", async () => {
     const r = await summarizeConversation(aConvId, {}, bSession);
     expect(r.error).toBeTruthy();
@@ -85,11 +79,14 @@ describe("conversation actions are tenant-isolated", () => {
     expect((await prisma.conversation.findUnique({ where: { id: bConv.id } }))?.assigneeMembershipId).toBeNull();
   });
 
-  it("assignment is a Business-plan capability, enforced server-side", async () => {
-    await prisma.business.update({ where: { id: bId }, data: { planTier: "PRO" } });
+  it("assignment is a Pro capability, enforced server-side from the database plan", async () => {
+    await prisma.business.update({ where: { id: bId }, data: { planTier: "FREE", billingStatus: null } });
     const bConv = await prisma.conversation.findFirst({ where: { businessId: bId } });
     const bMembership = await prisma.orgMembership.findFirst({ where: { businessId: bId } });
     const r = await assignConversation(bConv!.id, bMembership!.id, bSession);
-    expect(r.error).toMatch(/Business plan/);
+    expect(r.error).toMatch(/Daythread Pro/);
+    await prisma.business.update({ where: { id: bId }, data: { planTier: "PRO", billingStatus: "ACTIVE" } });
+    const ok = await assignConversation(bConv!.id, bMembership!.id, bSession);
+    expect(ok.error).toBeUndefined();
   });
 });

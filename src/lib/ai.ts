@@ -109,7 +109,6 @@ export type ReplyContext = {
   services: { name: string; priceCents: number; durationMins: number }[];
   customerMessage: string;
   customerName?: string | null;
-  depositPercent: number;
 };
 
 export async function draftReply(ctx: ReplyContext): Promise<string> {
@@ -124,7 +123,7 @@ export async function draftReply(ctx: ReplyContext): Promise<string> {
         messages: [
           {
             role: "system",
-            content: `You are drafting a short, warm, professional reply on behalf of ${ctx.businessName}, an independent service business. Keep it under 80 words. Only quote prices/services from the list given. Sign off naturally, no placeholders like [Your Name]. A deposit of ${ctx.depositPercent}% is required to hold a date if relevant. ${UNTRUSTED} Never promise that anything has been booked, sent, paid or confirmed — you only draft words for the owner to review.\n\nServices:\n${servicesList}`,
+            content: `You are drafting a short, warm, professional reply on behalf of ${ctx.businessName}. Keep it under 80 words. Answer what the person actually asked; if they ask about prices or services, only quote from the list given, and if the list is empty say the owner will follow up with details. Sign off naturally, no placeholders like [Your Name]. ${UNTRUSTED} Never promise that anything has been scheduled, sent, paid or confirmed — you only draft words for the owner to review.${servicesList ? `\n\nServices:\n${servicesList}` : ""}`,
           },
           { role: "user", content: `Customer${ctx.customerName ? ` (${ctx.customerName})` : ""} wrote: """${ctx.customerMessage}"""` },
         ],
@@ -143,10 +142,13 @@ function ruleBasedReply(ctx: ReplyContext): string {
   const lower = ctx.customerMessage.toLowerCase();
   const mentioned = ctx.services.find((s) => lower.includes(s.name.toLowerCase().split(" ")[0]));
   if (mentioned) {
-    return `${greeting} Thanks for reaching out. Our ${mentioned.name} is $${(mentioned.priceCents / 100).toFixed(0)} and runs about ${mentioned.durationMins} minutes. I'd love to get you on the calendar — a ${ctx.depositPercent}% deposit holds your date. What day were you thinking?`;
+    return `${greeting} Thanks for reaching out. ${mentioned.name} is $${(mentioned.priceCents / 100).toFixed(0)} and runs about ${mentioned.durationMins} minutes. What day were you thinking?`;
   }
-  const list = ctx.services.slice(0, 3).map((s) => `${s.name} ($${(s.priceCents / 100).toFixed(0)})`).join(", ");
-  return `${greeting} Thanks for reaching out! We offer ${list}. Let me know which one you're interested in and what date works for you, and I'll get you set up.`;
+  if (ctx.services.length > 0) {
+    const list = ctx.services.slice(0, 3).map((s) => `${s.name} ($${(s.priceCents / 100).toFixed(0)})`).join(", ");
+    return `${greeting} Thanks for reaching out! We offer ${list}. Let me know which one you're interested in and what date works for you.`;
+  }
+  return `${greeting} Thanks for your message — I'll get back to you with details shortly. Is there anything else I should know first?`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

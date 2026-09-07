@@ -2,29 +2,26 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashPassword, createSessionToken, homeRouteFor } from "@/lib/auth";
-import { uniqueHandle } from "@/app/actions/auth";
+import { uniqueHandle, personalWorkspaceName } from "@/app/actions/auth";
 import { jsonError } from "@/lib/mobileApi";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 const signupSchema = z.object({
-  name: z.string().min(1, "Full name is required"),
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  businessName: z.string().min(1, "Business name is required"),
-  businessType: z.string().optional(),
-  phone: z.string().optional(),
+  name: z.string().trim().min(1, "Your name is required").max(80),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(200),
 });
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
 
 /** Mobile equivalent of src/app/actions/auth.ts signup() — same validation, same
- * user/business/membership creation, returns a bearer token instead of a cookie+redirect.
+ * user/workspace/membership creation, returns a bearer token instead of a cookie+redirect.
  * Same per-IP rate limit as the web signup action, to block mass fake-account creation. */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = signupSchema.safeParse(body);
   if (!parsed.success) return jsonError(parsed.error.issues[0]?.message ?? "Invalid input", 400);
-  const { name, email, password, businessName, businessType, phone } = parsed.data;
+  const { name, email, password } = parsed.data;
 
   const ip = await getClientIp();
   if (!rateLimit(`mobile-signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok) {
@@ -36,13 +33,12 @@ export async function POST(req: Request) {
 
   let user, business, role;
   try {
-    const handle = await uniqueHandle(businessName);
+    const workspaceName = await personalWorkspaceName(name);
+    const handle = await uniqueHandle(name);
     const passwordHash = await hashPassword(password);
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { name, email, passwordHash } });
-      const business = await tx.business.create({
-        data: { name: businessName, handle, businessType: businessType || null, phone: phone || null },
-      });
+      const business = await tx.business.create({ data: { name: workspaceName, handle } });
       await tx.orgMembership.create({ data: { userId: user.id, businessId: business.id, role: "OWNER" } });
       return { user, business };
     });

@@ -2,39 +2,33 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Inbox, Users, CalendarClock, CreditCard, Zap, Sparkles, Receipt, Settings, Home, ArrowRight } from "lucide-react";
+import { Search, Inbox, Users, Settings, Plug, Receipt } from "lucide-react";
 import { universalSearch, type SearchHit } from "@/app/actions/search";
 import { cn } from "@/lib/utils";
 
 /**
- * ⌘K. One box that finds anyone and anything on the thread, and goes anywhere. Results
- * arrive as you type (debounced, tenant-scoped on the server); a person at the top gets a
- * summary — conversations, bookings, paid, and the next action — so "Sarah" answers
- * "where do we stand with Sarah" before you press Enter. Fully keyboard-driven, a real
- * dialog for assistive tech, and closed with Escape or a click outside.
+ * ⌘K. One box that finds anyone in the inbox and goes anywhere. Results arrive as you
+ * type (debounced, tenant-scoped on the server). Fully keyboard-driven, a real dialog for
+ * assistive tech, and closed with Escape or a click outside.
  */
-type Item = { key: string; title: string; subtitle?: string; href: string; icon: typeof Search; group: "Go to" | "People" | "Conversations" | "Bookings" | "Payments" | "Automations" };
+type Item = { key: string; title: string; subtitle?: string; href: string; icon: typeof Search; group: "Go to" | "People" | "Conversations" };
 
 const GO: Item[] = [
-  { key: "go-home", title: "Home", subtitle: "What needs you now", href: "/dashboard", icon: Home, group: "Go to" },
-  { key: "go-inbox", title: "Priority inbox", subtitle: "Conversations that need you", href: "/dashboard/inbox", icon: Inbox, group: "Go to" },
-  { key: "go-all", title: "All inbox", subtitle: "Everything, classified", href: "/dashboard/inbox?view=all", icon: Inbox, group: "Go to" },
-  { key: "go-clients", title: "Clients", href: "/dashboard/clients", icon: Users, group: "Go to" },
-  { key: "go-bookings", title: "Bookings", href: "/dashboard/bookings", icon: CalendarClock, group: "Go to" },
-  { key: "go-payments", title: "Payments", href: "/dashboard/payments", icon: CreditCard, group: "Go to" },
-  { key: "go-automations", title: "Automations", href: "/dashboard/automations", icon: Zap, group: "Go to" },
-  { key: "go-copilot", title: "Copilot", subtitle: "Ask what needs you today", href: "/dashboard/copilot", icon: Sparkles, group: "Go to" },
-  { key: "go-billing", title: "Billing", href: "/dashboard/billing", icon: Receipt, group: "Go to" },
-  { key: "go-settings", title: "Settings", subtitle: "Connections, team, booking page", href: "/dashboard/settings", icon: Settings, group: "Go to" },
+  { key: "go-inbox", title: "Inbox", subtitle: "People waiting on you", href: "/dashboard/inbox", icon: Inbox, group: "Go to" },
+  { key: "go-unanswered", title: "Waiting on you", subtitle: "Conversations without a reply", href: "/dashboard/inbox?filter=unanswered", icon: Inbox, group: "Go to" },
+  { key: "go-all", title: "All mail", subtitle: "Everything, sorted", href: "/dashboard/inbox?view=all", icon: Inbox, group: "Go to" },
+  { key: "go-channels", title: "Connected channels", subtitle: "Gmail, Instagram, WhatsApp, SMS", href: "/dashboard/settings?tab=channels", icon: Plug, group: "Go to" },
+  { key: "go-subscription", title: "Subscription", subtitle: "Free or Pro", href: "/dashboard/settings?tab=subscription", icon: Receipt, group: "Go to" },
+  { key: "go-team", title: "Team", subtitle: "Who shares this inbox", href: "/dashboard/settings?tab=team", icon: Users, group: "Go to" },
+  { key: "go-settings", title: "Settings", href: "/dashboard/settings", icon: Settings, group: "Go to" },
 ];
-const ICON: Record<SearchHit["kind"], typeof Search> = { client: Users, conversation: Inbox, booking: CalendarClock, payment: CreditCard, automation: Zap };
-const GROUP: Record<SearchHit["kind"], Item["group"]> = { client: "People", conversation: "Conversations", booking: "Bookings", payment: "Payments", automation: "Automations" };
+const ICON: Record<SearchHit["kind"], typeof Search> = { person: Users, conversation: Inbox };
+const GROUP: Record<SearchHit["kind"], Item["group"]> = { person: "People", conversation: "Conversations" };
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
-  const [summary, setSummary] = useState<Awaited<ReturnType<typeof universalSearch>>["summary"]>();
   const [cursor, setCursor] = useState(0);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +55,6 @@ export function CommandPalette() {
     if (open) {
       setQ("");
       setHits([]);
-      setSummary(undefined);
       setCursor(0);
       setTimeout(() => inputRef.current?.focus(), 20);
     }
@@ -73,14 +66,12 @@ export function CommandPalette() {
     const term = q.trim();
     if (term.length < 2) {
       setHits([]);
-      setSummary(undefined);
       return;
     }
     setLoading(true);
     const t = setTimeout(async () => {
       const r = await universalSearch(term);
       setHits(r.hits);
-      setSummary(r.summary);
       setCursor(0);
       setLoading(false);
     }, 140);
@@ -130,7 +121,7 @@ export function CommandPalette() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Find a person, a conversation, a booking, a payment, an automation — or go somewhere"
+            placeholder="Find a person or a conversation — or go somewhere"
             aria-label="Search"
             aria-activedescendant={items[cursor] ? `cmd-${items[cursor].key}` : undefined}
             aria-controls="cmd-list"
@@ -141,26 +132,10 @@ export function CommandPalette() {
           <kbd className="hidden sm:inline-flex items-center rounded-md border border-border bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-ink/50">esc</kbd>
         </div>
 
-        {summary && (
-          <button type="button" onClick={() => go(summary.href)} className="w-full text-left px-4 py-3 border-b border-border bg-signal-soft/30 hover:bg-signal-soft/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <span className="w-9 h-9 rounded-full bg-signal-soft text-signal-text flex items-center justify-center text-xs font-extrabold shrink-0">{summary.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}</span>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-extrabold text-ink">{summary.name}</div>
-                <div className="text-xs text-ink/60">
-                  {summary.conversations} conversation{summary.conversations === 1 ? "" : "s"} · {summary.bookings} booking{summary.bookings === 1 ? "" : "s"} · ${(summary.paidCents / 100).toLocaleString()} paid
-                  {summary.nextAction && <span className="text-accent-text font-semibold"> · Next: {summary.nextAction}</span>}
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-ink/30" strokeWidth={2} />
-            </div>
-          </button>
-        )}
-
         <ul id="cmd-list" role="listbox" className="max-h-[52vh] overflow-y-auto scrollbar-thin py-2">
           {loading && items.length === 0 && <li className="px-4 py-3 text-sm text-ink/50">Looking…</li>}
           {!loading && q.trim().length >= 2 && hits.length === 0 && (
-            <li className="px-4 py-3 text-sm text-ink/50">Nothing on the thread matches “{q.trim()}”.</li>
+            <li className="px-4 py-3 text-sm text-ink/50">Nothing in the inbox matches “{q.trim()}”.</li>
           )}
           {items.map((it, i) => {
             const header = it.group !== lastGroup;

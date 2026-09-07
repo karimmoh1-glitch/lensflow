@@ -38,11 +38,11 @@ export default function OpengraphImage() {
           <div style={{ fontSize: 32, color: "#101114", fontWeight: 700, letterSpacing: "-0.02em", display: "flex" }}>Daythread</div>
         </div>
         <div style={{ fontSize: 88, color: "#101114", fontWeight: 800, lineHeight: 0.98, letterSpacing: "-0.045em", maxWidth: 960, display: "flex", flexDirection: "column" }}>
-          <span>All your clients.</span>
-          <span>One thread.</span>
+          <span>Every message.</span>
+          <span>One inbox.</span>
         </div>
         <div style={{ fontSize: 28, color: "rgba(16,17,20,0.55)", marginTop: 32, maxWidth: 820, display: "flex" }}>
-          Instagram, email, texts, bookings and payments — connected.
+          Instagram, Gmail, WhatsApp and texts — one thread.
         </div>
         <div style={{ display: "flex", gap: 12, marginTop: 40 }}>
           {["#F0524D", "#6D5AE6", "#13CC78"].map((c) => (

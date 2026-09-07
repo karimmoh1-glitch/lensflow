@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/payments";
 import { sendOnChannel } from "@/lib/messaging";
 import { track } from "@/lib/analytics";
-import { markPaymentPaidAndAdvanceBooking } from "@/server/payments";
 import { planKeyFromPrice, subscriptionPeriodEnd, invoiceSubscriptionId } from "@/lib/subscriptionBilling";
 import type { BillingStatus } from "@prisma/client";
 
@@ -34,21 +33,7 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<{ handled:
         await track("checkout_completed", { businessId: session.metadata.businessId, properties: { planKey: session.metadata?.planTier } });
         return { handled: true };
       }
-      if (session.mode === "payment" && session.payment_status === "paid") return payClientPayment(session);
       return { handled: false, note: "session ignored" };
-    }
-    case "checkout.session.async_payment_succeeded": {
-      const session = event.data.object as Stripe.Checkout.Session;
-      if (session.mode === "payment") return payClientPayment(session);
-      return { handled: false };
-    }
-    case "checkout.session.async_payment_failed": {
-      const session = event.data.object as Stripe.Checkout.Session;
-      if (session.mode === "payment" && session.metadata?.paymentId && session.metadata?.businessId) {
-        await prisma.payment.updateMany({ where: { id: session.metadata.paymentId, businessId: session.metadata.businessId, status: "AWAITING_CONFIRMATION" }, data: { status: "FAILED" } });
-        return { handled: true };
-      }
-      return { handled: false };
     }
     case "customer.subscription.created":
     case "customer.subscription.updated": {
@@ -85,16 +70,6 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<{ handled:
     default:
       return { handled: false, note: `unhandled ${event.type}` };
   }
-}
-
-async function payClientPayment(session: Stripe.Checkout.Session): Promise<{ handled: boolean; note?: string }> {
-  const paymentId = session.metadata?.paymentId;
-  const businessId = session.metadata?.businessId;
-  if (!paymentId || !businessId) return { handled: false, note: "payment session without metadata" };
-  const intentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
-  // Scoped by business inside; a PAID payment is left alone, so a retry cannot double-apply.
-  await markPaymentPaidAndAdvanceBooking(paymentId, businessId, { stripePaymentIntentId: intentId });
-  return { handled: true };
 }
 
 const STRIPE_STATUS_MAP: Record<string, BillingStatus> = {

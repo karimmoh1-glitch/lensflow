@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * simple-icons — the official brand geometry, not an approximation — except Gmail, whose
  * four-color M is drawn from Google's own logo geometry because the library only carries a
  * monochrome glyph. Each app keeps its own form: Instagram's gradient tile, WhatsApp's
- * green circle, Gmail's white tile with the M, Messages' green bubble tile, and the booking page as Daythread's own ink.
+ * green circle, Gmail's white tile with the M, Messages' green bubble tile, and the contact form as Daythread's own ink.
  * Messenger is deliberately absent: the product doesn't support it.
  */
 export type ChannelKey = "instagram" | "gmail" | "sms" | "whatsapp" | "website";
@@ -17,7 +17,7 @@ export const CHANNEL: Record<ChannelKey, { name: string; brand: string; soft: st
   gmail: { name: "Gmail", brand: "#EA4335", soft: "rgba(234,67,53,0.10)" },
   sms: { name: "Messages", brand: "#34C759", soft: "rgba(52,199,89,0.12)" },
   whatsapp: { name: "WhatsApp", brand: "#25D366", soft: "rgba(37,211,102,0.12)" },
-  website: { name: "Booking page", brand: "#101114", soft: "rgba(16,17,20,0.06)" },
+  website: { name: "Contact form", brand: "#101114", soft: "rgba(16,17,20,0.06)" },
 };
 
 function Mark({ path, size, color = "white" }: { path: string; size: number; color?: string }) {
@@ -71,11 +71,11 @@ export function ChannelIcon({ k, size = 56, className, active }: { k: ChannelKey
     );
   }
   return (
-    <span className={common} style={{ ...base, borderRadius: Math.round(size * 0.24), background: "linear-gradient(180deg, #2A2C33 0%, #101114 100%)" }} title="Your booking page">
+    <span className={common} style={{ ...base, borderRadius: Math.round(size * 0.24), background: "linear-gradient(180deg, #2A2C33 0%, #101114 100%)" }} title="Your contact form">
       <svg viewBox="0 0 24 24" fill="none" style={{ width: size * 0.5, height: size * 0.5 }} aria-hidden>
-        <rect x="3.5" y="5" width="17" height="15" rx="3" stroke="white" strokeWidth="1.8" />
-        <path d="M3.5 9.5h17M8 3v4M16 3v4" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-        <circle cx="12" cy="14.5" r="1.4" fill="#F0524D" />
+        <rect x="3.5" y="4" width="17" height="16" rx="3" stroke="white" strokeWidth="1.8" />
+        <path d="M7.5 9h9M7.5 12.5h9M7.5 16h5" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="16.5" cy="16" r="1.4" fill="#F0524D" />
       </svg>
     </span>
   );

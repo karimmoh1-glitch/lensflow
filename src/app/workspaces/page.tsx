@@ -13,10 +13,10 @@ export default async function WorkspacesPage() {
 
   if (memberships.length === 0) {
     return (
-      <AuthShell eyebrow="No workspace yet" title="This account isn't part of a business yet." lede="Ask the owner for an invitation, or start your own thread.">
+      <AuthShell eyebrow="No inbox yet" title="This account isn't part of an inbox yet." lede="Ask whoever invited you for a new link, or start your own.">
         <div className="flex flex-col gap-3">
-          <a href="/signup/create" className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-ink text-white text-sm font-semibold transition-transform hover:scale-[1.03] active:scale-[0.97]">
-            Start my own
+          <a href="/signup" className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-ink text-white text-sm font-semibold transition-transform hover:scale-[1.03] active:scale-[0.97]">
+            Start my own inbox
           </a>
           <form action={logout}>
             <button className="text-sm font-semibold text-ink/60 hover:text-ink transition-colors">Log out</button>
@@ -37,7 +37,7 @@ export default async function WorkspacesPage() {
   }
 
   return (
-    <AuthShell eyebrow="Workspaces" title="Which business today?" lede="You're part of more than one.">
+    <AuthShell eyebrow="Inboxes" title="Which inbox today?" lede="You're part of more than one.">
       <ul className="space-y-2">
         {memberships.map((m) => (
           <li key={m.businessId}>

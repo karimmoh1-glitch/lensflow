@@ -39,7 +39,7 @@ export function AuthShell({
           <div className="mt-6 lg:mt-auto lg:mb-auto">
             <AuthEnvironment />
           </div>
-          <p className="hidden lg:block mt-auto text-sm text-paper/45 max-w-sm">Every message, client, booking and payment. One thread.</p>
+          <p className="hidden lg:block mt-auto text-sm text-paper/45 max-w-sm">Every message, from every channel. One inbox.</p>
         </div>
       </section>
 

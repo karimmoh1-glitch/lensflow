@@ -8,18 +8,20 @@ import { generatePasswordResetToken, passwordResetExpiry } from "@/lib/passwordR
 import { sendOnChannel, messagingIsLive } from "@/lib/messaging";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { track } from "@/lib/analytics";
-import type { Role } from "@prisma/client";
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
 
 const signupSchema = z.object({
-  name: z.string().min(1, "Full name is required"),
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  businessName: z.string().min(1, "Business name is required"),
-  businessType: z.string().optional(),
-  phone: z.string().optional(),
+  name: z.string().trim().min(1, "Your name is required").max(80),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(200),
 });
+
+/** A person's own workspace, named after them. Nothing about a business is asked. */
+export async function personalWorkspaceName(name: string): Promise<string> {
+  const first = name.trim().split(/\s+/)[0] || "My";
+  return /s$/i.test(first) ? `${first}' inbox` : `${first}'s inbox`;
+}
 
 function slugify(input: string) {
   return input
@@ -51,12 +53,9 @@ export async function signup(formData: FormData): Promise<FormState> {
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
-    businessName: formData.get("businessName"),
-    businessType: formData.get("businessType") || undefined,
-    phone: formData.get("phone") || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  const { name, email, password, businessName, businessType, phone } = parsed.data;
+  const { name, email, password } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -65,14 +64,13 @@ export async function signup(formData: FormData): Promise<FormState> {
 
   let user, business;
   try {
-    const handle = await uniqueHandle(businessName);
+    const workspaceName = await personalWorkspaceName(name);
+    const handle = await uniqueHandle(name);
     const passwordHash = await hashPassword(password);
 
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { name, email, passwordHash } });
-      const business = await tx.business.create({
-        data: { name: businessName, handle, businessType: businessType || null, phone: phone || null },
-      });
+      const business = await tx.business.create({ data: { name: workspaceName, handle } });
       await tx.orgMembership.create({ data: { userId: user.id, businessId: business.id, role: "OWNER" } });
       return { user, business };
     });
@@ -219,19 +217,3 @@ export async function resetPassword(token: string, formData: FormData): Promise<
   redirect("/login?reset=1");
 }
 
-async function loginAsDemoRole(role: Role) {
-  const business = await prisma.business.findFirst({ where: { handle: "alex-photo" } });
-  if (!business) redirect("/login");
-  const membership = await prisma.orgMembership.findFirst({ where: { businessId: business.id, role }, include: { business: true } });
-  if (!membership) redirect("/login");
-  await setSessionCookie({ userId: membership.userId, activeBusinessId: business.id });
-  redirect(homeRouteFor(membership.role, membership.business));
-}
-
-/** The public "try the demo" entry: signs in as the seeded demo workspace's owner. The
- * demo workspace is throwaway by design (the seed recreates it). Other roles are not
- * exposed — there is no product surface for them and an unauthenticated entry point
- * shouldn't exist without one. */
-export async function loginAsDemo() {
-  await loginAsDemoRole("OWNER");
-}

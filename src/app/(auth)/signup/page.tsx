@@ -1,11 +1,39 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { signup } from "@/app/actions/auth";
+import { Button, Input, Field, FormError } from "@/components/ui";
+import { PasswordInput } from "@/components/PasswordInput";
 import { AuthShell } from "@/components/auth/AuthShell";
 
-export default function SignupChooserPage() {
+/** Signup is a person, not a company: a name, an email, a password. The inbox is theirs. */
+export default function SignupPage() {
+  const [error, setError] = useState<string | null>(null);
+  const [duplicateEmail, setDuplicateEmail] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    window.dispatchEvent(new CustomEvent("dt-auth", { detail: 3 }));
+    setDuplicateEmail(false);
+    const formData = new FormData(e.currentTarget);
+    startTransition(async () => {
+      const result = await signup(formData);
+      if (result?.error) {
+        setError(result.error);
+        setDuplicateEmail(!!result.duplicateEmail);
+        window.dispatchEvent(new CustomEvent("dt-auth", { detail: 0 }));
+      }
+    });
+  }
+
   return (
     <AuthShell
-      eyebrow="Start"
-      title="Your business, or someone else's?"
+      eyebrow="Start free"
+      title="One inbox for every message."
+      lede="Free to start, no card. Connect Gmail, Instagram, WhatsApp or a text number in a minute."
       footer={
         <>
           Already on Daythread?{" "}
@@ -15,31 +43,28 @@ export default function SignupChooserPage() {
         </>
       }
     >
-      <div className="space-y-3">
-        <Choice
-          href="/signup/create"
-          title="Start my own"
-          body="I run a business. Put my messages, clients, bookings and payments on one thread."
-          tone="accent"
-        />
-        <Choice href="/signup/join" title="Join a team" body="I work with a business that already uses Daythread." tone="signal" />
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <Field id="name" label="Your name">
+          <Input id="name" name="name" autoComplete="name" placeholder="Alex Rivera" required maxLength={80} />
+        </Field>
+        <Field id="email" label="Email" error={duplicateEmail ? error : null}>
+          <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@example.com" required onInput={() => window.dispatchEvent(new CustomEvent("dt-auth", { detail: 1 }))} aria-invalid={duplicateEmail} />
+        </Field>
+        {duplicateEmail && (
+          <p className="-mt-2 text-xs text-ink/60 flex gap-3">
+            <Link href="/login" className="font-semibold text-ink hover:text-accent-text">Log in instead</Link>
+            <Link href="/forgot-password" className="font-semibold text-ink hover:text-accent-text">Forgot the password?</Link>
+          </p>
+        )}
+        <Field id="password" label="Password" hint="At least 8 characters.">
+          <PasswordInput id="password" name="password" autoComplete="new-password" required onInput={() => window.dispatchEvent(new CustomEvent("dt-auth", { detail: 2 }))} minLength={8} />
+        </Field>
+        {error && !duplicateEmail && <FormError>{error}</FormError>}
+        <Button type="submit" size="lg" className="w-full mt-2" loading={pending} loadingLabel="Creating your inbox">
+          Create my inbox
+        </Button>
+        <p className="text-xs text-ink/45 text-center">By continuing you agree to the <Link href="/terms" className="underline">terms</Link> and <Link href="/privacy" className="underline">privacy policy</Link>.</p>
+      </form>
     </AuthShell>
-  );
-}
-
-function Choice({ href, title, body, tone }: { href: string; title: string; body: string; tone: "accent" | "signal" }) {
-  return (
-    <Link
-      href={href}
-      className="group flex items-start gap-4 rounded-2xl border border-border bg-white px-5 py-4 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-ink/25 hover:-translate-y-0.5 hover:shadow-popover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-    >
-      <span aria-hidden className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${tone === "accent" ? "bg-accent" : "bg-signal"}`} />
-      <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-extrabold text-ink tracking-tight">{title}</span>
-        <span className="block text-sm text-ink/60 mt-0.5 leading-relaxed">{body}</span>
-      </span>
-      <span aria-hidden className="mt-1 text-ink/30 transition-all duration-200 group-hover:text-ink group-hover:translate-x-0.5">→</span>
-    </Link>
   );
 }

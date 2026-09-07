@@ -64,19 +64,3 @@ describe("webhook payload ceilings", () => {
     vi.unstubAllEnvs();
   });
 });
-
-describe("demo tool", () => {
-  it("is refused for a real workspace on production", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-    const stamp = Date.now();
-    const b = await prisma.business.create({ data: { name: "Real", handle: `real-${stamp}` } });
-    const u = await prisma.user.create({ data: { name: "R", email: `real-${stamp}@example.com`, passwordHash: "x" } });
-    await prisma.orgMembership.create({ data: { userId: u.id, businessId: b.id, role: "OWNER" } });
-    const { simulateInboundMessage } = await import("./integrations");
-    await expect(simulateInboundMessage({ channel: "INSTAGRAM", senderName: "X", handle: "x", body: "hi" }, { userId: u.id, activeBusinessId: b.id, sv: 0 })).rejects.toThrow(/demo workspace/);
-    expect(await prisma.conversation.count({ where: { businessId: b.id } })).toBe(0);
-    vi.unstubAllEnvs();
-    await prisma.business.delete({ where: { id: b.id } });
-    await prisma.user.delete({ where: { id: u.id } });
-  });
-});

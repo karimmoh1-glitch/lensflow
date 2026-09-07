@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
 import { extractLeadInfo } from "@/lib/ai";
-import { scoreLead } from "@/lib/leadScoring";
 import { cleanEmailBody } from "@/lib/emailText";
 import { classifyMessage } from "@/lib/classifyMessage";
 import { findKnownClient } from "@/server/identity";
@@ -167,15 +166,6 @@ export async function ingestInboundMessage(params: {
       const mergedIntent = extracted.intent !== "UNKNOWN" ? extracted.intent : lead.intent;
       const mergedServicePrice = matchedService?.priceCents ?? services.find((s) => s.id === mergedServiceId)?.priceCents;
 
-      const { score, reasons } = scoreLead({
-        intent: mergedIntent,
-        hasRequestedDate: Boolean(mergedDateText),
-        requestedDate: lead.requestedDate,
-        serviceValueCents: mergedServicePrice ?? lead.estimatedValueCents,
-        hoursSinceLastInbound: 0,
-        hasRespondedYet: false,
-        fieldsKnownCount: [mergedName, mergedServiceId, mergedDateText, mergedLocation, mergedBudgetCents].filter(Boolean).length,
-      });
 
       await prisma.lead.update({
         where: { id: lead.id },
@@ -186,8 +176,6 @@ export async function ingestInboundMessage(params: {
           requestedLocation: mergedLocation,
           budgetCents: mergedBudgetCents,
           intent: mergedIntent,
-          score,
-          scoreReasons: reasons,
           estimatedValueCents: mergedServicePrice ?? lead.estimatedValueCents,
           lastInboundAt: new Date(),
           respondedAt: null,
@@ -208,15 +196,6 @@ export async function ingestInboundMessage(params: {
 
   await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body, providerMessageId, rawBody } });
 
-  const { score, reasons } = scoreLead({
-    intent: extracted.intent,
-    hasRequestedDate: Boolean(extracted.dateText),
-    requestedDate: null,
-    serviceValueCents: matchedService?.priceCents ?? 0,
-    hoursSinceLastInbound: 0,
-    hasRespondedYet: false,
-    fieldsKnownCount: [extracted.name, matchedService, extracted.dateText, extracted.location, extracted.budgetCents].filter(Boolean).length,
-  });
 
   const lead = await prisma.lead.create({
     data: {
@@ -229,8 +208,6 @@ export async function ingestInboundMessage(params: {
       requestedLocation: extracted.location,
       budgetCents: extracted.budgetCents,
       intent: extracted.intent,
-      score,
-      scoreReasons: reasons,
       estimatedValueCents: matchedService?.priceCents ?? extracted.budgetCents ?? 0,
       lastInboundAt: new Date(),
     },

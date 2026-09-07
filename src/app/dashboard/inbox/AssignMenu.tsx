@@ -9,8 +9,7 @@ import { assignConversation } from "@/app/actions/conversations";
 
 export type Teammate = { membershipId: string; name: string; role: string };
 
-/** Who owns this conversation. Business plan: pick a teammate; the row and the executive
- * view reflect it. */
+/** Who owns this conversation. Pro: pick a teammate; the inbox row shows it. */
 export function AssignMenu({ conversationId, members, current }: { conversationId: string; members: Teammate[]; current: string | null }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();

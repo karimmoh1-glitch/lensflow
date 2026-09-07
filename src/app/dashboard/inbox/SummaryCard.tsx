@@ -41,7 +41,7 @@ export function SummaryCard({ conversationId, initial, autoRun }: { conversation
         </button>
       </div>
       {error && <p className="mt-2 text-xs text-danger-text">{error}</p>}
-      {!summary && !pending && !error && <p className="mt-2 text-xs text-ink/60">One sentence, the key details, and the next step — from the messages themselves.</p>}
+      {!summary && !pending && !error && <p className="mt-2 text-xs text-ink/60">One sentence, the key details, and the next step — read from the messages themselves.</p>}
       {summary && (
         <div className={cn("mt-2 dt-swap", pending && "opacity-60")}>
           <p className="text-sm text-ink leading-snug">{summary.summary}</p>
@@ -63,7 +63,7 @@ export function SummaryCard({ conversationId, initial, autoRun }: { conversation
             <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/45">Suggested next step</div>
             <div className="text-sm font-semibold text-ink mt-0.5">{summary.nextStep}</div>
           </div>
-          <div className="mt-2 text-[10px] text-ink/40">{summary.source === "ai" ? "Sentence by AI, details from your records" : "From your records — no AI key configured"}</div>
+          <div className="mt-2 text-[10px] text-ink/40">{summary.source === "ai" ? "Sentence by AI, details from the messages" : "From the messages — AI summaries are part of Pro"}</div>
         </div>
       )}
     </div>

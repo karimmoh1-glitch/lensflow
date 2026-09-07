@@ -83,6 +83,13 @@ export async function deleteWorkspace(confirmName: string): Promise<{ error?: st
     if ((i.provider === "EMAIL" || i.provider === "GOOGLE_CALENDAR") && i.refreshToken) await revokeGoogleToken(i.refreshToken);
     if (i.provider === "SMS" && i.externalId && twilioConfigured()) await releaseNumber(i.externalId);
   }
+  // A deleted workspace must never keep being billed. If Stripe can't be reached the
+  // deletion stops here — the owner can retry, or cancel from the billing portal first.
+  const { cancelSubscriptionNow } = await import("@/lib/subscriptionBilling");
+  if (business.stripeSubscriptionId && business.billingStatus && ["ACTIVE", "TRIALING", "PAST_DUE", "UNPAID"].includes(business.billingStatus)) {
+    const outcome = await cancelSubscriptionNow(business.stripeSubscriptionId);
+    if (outcome === "failed") return { error: "Your subscription couldn't be canceled with Stripe just now, so nothing was deleted. Try again in a minute, or cancel it first under Settings → Subscription." };
+  }
   await prisma.business.delete({ where: { id: business.id } });
   const { logout } = await import("@/app/actions/auth");
   await logout();

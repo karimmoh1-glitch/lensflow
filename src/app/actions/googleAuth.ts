@@ -7,7 +7,7 @@ import { requireRole, type SessionPayload } from "@/lib/auth";
 import { googleOAuthConfigured, getGoogleAuthUrl, getValidAccessToken, listRecentGmailMessages, revokeGoogleToken } from "@/lib/google";
 import { signOAuthState } from "@/lib/integrations/oauthState";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
-import { ingestInboundMessage } from "@/server/leadIngestion";
+import { syncGmailForBusiness } from "@/server/gmailSync";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { canActivate } from "@/server/integrationQuota";
@@ -58,27 +58,12 @@ export type SyncGmailResult = { ok: true; found: number; ingested: number } | { 
 export async function syncGmailNow(): Promise<SyncGmailResult> {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (!ctx) return { ok: false, error: "unauthorized" };
-  const integration = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "EMAIL" } } });
-  if (!integration?.refreshToken || integration.status === "NOT_CONNECTED") return { ok: false, error: "Gmail isn't connected for this business." };
-
-  try {
-    const accessToken = await getValidAccessToken(integration);
-    const messages = await listRecentGmailMessages(accessToken, integration.lastSyncedAt ? 15 : 60);
-    let ingested = 0;
-    for (const m of messages) {
-      const result = await ingestInboundMessage({ businessId: ctx.business.id, channel: "EMAIL", senderName: m.fromName || m.from.split("@")[0], senderHandle: m.from, body: m.body, subject: m.subject, clientEmail: m.from, providerMessageId: m.messageIdHeader || m.id, headers: m.headers, rawBody: m.rawBody });
-      if (!result.duplicate) ingested += 1;
-    }
-    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, status: "CONNECTED" } });
+  const result = await syncGmailForBusiness(ctx.business.id);
+  if (result.ok) {
     revalidatePath("/dashboard/inbox");
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/settings");
-    return { ok: true, found: messages.length, ingested };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Gmail sync failed";
-    const revoked = /invalid_grant|No refresh token|401/i.test(message);
-    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncStatus: "failed", lastError: revoked ? "Google revoked access — reconnect" : "Couldn't reach Gmail", lastErrorAt: new Date(), status: revoked ? "NEEDS_ATTENTION" : "SYNC_ERROR" } });
-    await reportFailure("sync", "Gmail sync failed", { businessId: ctx.business.id, provider: "EMAIL", error: err });
-    return { ok: false, error: revoked ? "Google revoked Daythread's access. Reconnect Gmail from Settings." : "Couldn't reach Gmail just now. Your messages are safe — try again in a minute." };
+    return { ok: true, found: result.found, ingested: result.ingested };
   }
+  return { ok: false, error: result.error };
 }

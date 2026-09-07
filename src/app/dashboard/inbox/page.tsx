@@ -146,7 +146,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   })() : null;
   return (
     <div className="flex h-[100dvh] md:h-screen bg-white">
-      {gmailConnected && <AutoGmailSync />}
+      {gmailConnected && <AutoGmailSync immediate />}
       {/* Below lg the list and the thread take turns (a tablet is a wide phone here); from lg they sit side by side. */}
       <div className={cn("w-full lg:w-[380px] xl:w-[400px] shrink-0 border-r border-border flex-col bg-white", selectedId ? "hidden lg:flex" : "flex")}>
         <div className="px-4 md:px-5 pt-3 md:pt-4 pb-3 border-b border-border space-y-3">

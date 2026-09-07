@@ -13,7 +13,7 @@ const POLL_MS = 20_000;
  * new so an in-progress reply draft is never disturbed. Stops polling while the tab is
  * hidden so it doesn't burn API quota in a background tab.
  */
-export function AutoGmailSync() {
+export function AutoGmailSync({ immediate = false }: { immediate?: boolean }) {
   const router = useRouter();
   const inFlight = useRef(false);
 
@@ -37,12 +37,15 @@ export function AutoGmailSync() {
       }
     }
 
+    // On open: pull right away so what's on screen is today's mail, not the last visit's.
+    const first = immediate ? setTimeout(tick, 800) : null;
     const interval = setInterval(tick, POLL_MS);
     return () => {
       cancelled = true;
+      if (first) clearTimeout(first);
       clearInterval(interval);
     };
-  }, [router]);
+  }, [router, immediate]);
 
   return null;
 }

@@ -61,13 +61,15 @@ export function VerticalPage({ v }: { v: Vertical }) {
           <h2 id="problem-title" className="font-sans font-extrabold text-[1.8rem] md:text-[2.4rem] leading-[1.02] tracking-[-0.04em] text-ink max-w-2xl text-balance">How a lead gets lost.</h2>
           <ol className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {v.problems.map((pr, i) => (
-              <RevealOnScroll key={pr.title} delay={i * 70}>
-                <li className="h-full rounded-2xl border border-border bg-paper px-5 py-5">
-                  <span className="text-[11px] font-bold text-accent-text tabular-nums">0{i + 1}</span>
-                  <h3 className="mt-2 text-[15px] font-extrabold text-ink">{pr.title}</h3>
-                  <p className="mt-1.5 text-sm text-ink/70 leading-relaxed">{pr.body}</p>
-                </li>
-              </RevealOnScroll>
+              <li key={pr.title} className="h-full">
+                <RevealOnScroll delay={i * 70} className="h-full">
+                  <div className="h-full rounded-2xl border border-border bg-paper px-5 py-5">
+                    <span className="text-[11px] font-bold text-accent-text tabular-nums">0{i + 1}</span>
+                    <h3 className="mt-2 text-[15px] font-extrabold text-ink">{pr.title}</h3>
+                    <p className="mt-1.5 text-sm text-ink/70 leading-relaxed">{pr.body}</p>
+                  </div>
+                </RevealOnScroll>
+              </li>
             ))}
           </ol>
         </div>
@@ -79,15 +81,17 @@ export function VerticalPage({ v }: { v: Vertical }) {
           <h2 id="how-title" className="mt-3 font-sans font-extrabold text-[1.8rem] md:text-[2.4rem] leading-[1.02] tracking-[-0.04em] text-ink max-w-2xl text-balance">One thread, from the first message to the booking.</h2>
           <ol className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {v.steps.map((st, i) => (
-              <RevealOnScroll key={st.title} delay={i * 70}>
-                <li className="h-full rounded-2xl border border-border bg-white px-5 py-5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-full bg-ink text-white text-xs font-extrabold flex items-center justify-center tabular-nums">{i + 1}</span>
-                    <h3 className="text-[15px] font-extrabold text-ink">{st.title}</h3>
+              <li key={st.title} className="h-full">
+                <RevealOnScroll delay={i * 70} className="h-full">
+                  <div className="h-full rounded-2xl border border-border bg-white px-5 py-5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-7 h-7 rounded-full bg-ink text-white text-xs font-extrabold flex items-center justify-center tabular-nums">{i + 1}</span>
+                      <h3 className="text-[15px] font-extrabold text-ink">{st.title}</h3>
+                    </div>
+                    <p className="mt-2.5 text-sm text-ink/70 leading-relaxed">{st.body}</p>
                   </div>
-                  <p className="mt-2.5 text-sm text-ink/70 leading-relaxed">{st.body}</p>
-                </li>
-              </RevealOnScroll>
+                </RevealOnScroll>
+              </li>
             ))}
           </ol>
           <p className="mt-8 text-sm text-ink/65 max-w-2xl leading-relaxed">{v.standing}</p>

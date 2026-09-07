@@ -226,3 +226,5 @@ Verified on dev with real clicks (persona A–D, widths 375/390/768/1440/1728): 
 - **Founder dashboard** `/admin/growth` behind `FOUNDER_EMAILS` (404 otherwise; `/admin` is session-protected in middleware).
 - **Vertical pages** `/photographers` and `/service-businesses`: real differentiated copy, honest standing, FAQ JSON-LD, in the sitemap and footer. The "people are made up" line is gone from the hero.
 - **Inbox**: `first_conversation_viewed` recorded once per workspace.
+- **Gmail sync** now lives in `src/server/gmailSync.ts`: the inbox and Today pull on open (not only after the first 20-second tick), the "Check for new emails" button uses the same path, and the daily cron pulls every connected Gmail so follow-ups and reminders see mail from workspaces nobody opened. Vercel's cron runs once a day; more frequent background pulls need a paid cron schedule or Gmail push (Pub/Sub), neither configured.
+- **Workspace deletion** cancels an active Stripe subscription first and refuses to delete if Stripe can't be reached, so a deleted workspace can never keep being billed.

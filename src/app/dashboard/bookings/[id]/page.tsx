@@ -63,7 +63,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             <div key={step.status} className="flex items-center shrink-0">
               <div
                 className={`text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap ${
-                  i <= currentIndex ? "bg-ink text-white" : "bg-black/5 text-ink/60"
+                  i <= currentIndex ? "bg-ink text-white" : "bg-black/5 text-ink/65"
                 }`}
               >
                 {step.label}
@@ -78,7 +78,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-3">Details</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">Details</div>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between"><dt className="text-ink/75">Service</dt><dd className="font-medium">{booking.service.name}</dd></div>
                 <div className="flex justify-between"><dt className="text-ink/75">When</dt><dd className="font-medium">{format(toZonedDisplayDate(booking.startAt, business.timezone), "EEE, MMM d · h:mm a")} – {format(toZonedDisplayDate(booking.endAt, business.timezone), "h:mm a")}</dd></div>
@@ -92,7 +92,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-3">Questionnaire</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">Questionnaire</div>
               {booking.questionnaire?.completedAt ? (
                 <Badge tone="success">Completed</Badge>
               ) : booking.questionnaire?.sentAt ? (
@@ -111,7 +111,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <div>
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/60 mb-3">Client</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">Client</div>
               <Link href={`/dashboard/clients/${booking.clientId}`} className="font-medium text-sm hover:underline">
                 {booking.client.name}
               </Link>

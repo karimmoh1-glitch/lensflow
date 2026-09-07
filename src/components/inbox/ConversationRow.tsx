@@ -41,23 +41,23 @@ export function ConversationRow({ name, channel, time, timeISO, preview, fromYou
       <span aria-hidden className={cn("absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-accent transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] origin-center", active ? "scale-y-100" : "scale-y-0")} />
       {tools && <div className="absolute right-3 top-2.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 hidden md:block">{tools}</div>}
       <div className={cn("flex items-center gap-3 mb-1", tools && "md:group-hover:pr-32 md:group-focus-within:pr-32")}>
-        <div className={cn("relative w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/60")}>
+        <div className={cn("relative w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/65")}>
           {initials(name)}
           {(waiting || unread) && <span aria-hidden className={cn("absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-white", waiting ? "bg-accent" : "bg-signal")} />}
         </div>
         <span className={cn("text-[14px] truncate flex-1 leading-tight", isPerson ? (unread ? "font-extrabold text-ink" : "font-semibold text-ink") : unread ? "font-semibold text-ink/80" : "font-medium text-ink/70")}>{name}</span>
-        {!isPerson && categoryLabel && <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 shrink-0 bg-black/[0.05] text-ink/65">{categoryLabel}</span>}
+        {!isPerson && categoryLabel && <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 shrink-0 bg-black/[0.05] text-ink/70">{categoryLabel}</span>}
         {assigneeName && <span title={`Assigned to ${assigneeName}`} className="w-5 h-5 rounded-full bg-signal text-white text-[9px] font-extrabold flex items-center justify-center shrink-0">{initials(assigneeName)}</span>}
-        <time dateTime={timeISO} suppressHydrationWarning className={cn("text-[11px] shrink-0 tabular-nums", unread ? "text-ink/70 font-semibold" : "text-ink/60")}>{time}</time>
+        <time dateTime={timeISO} suppressHydrationWarning className={cn("text-[11px] shrink-0 tabular-nums", unread ? "text-ink/70 font-semibold" : "text-ink/65")}>{time}</time>
       </div>
-      <div className="flex items-center gap-1.5 text-xs text-ink/60 mb-1 pl-12">
+      <div className="flex items-center gap-1.5 text-xs text-ink/65 mb-1 pl-12">
         <ChannelBadge channel={channel} />
         <span>{CHANNEL_META[channel].label}</span>
         {subject && !isPerson && <span className="truncate">· {subject}</span>}
         {waiting && <span className="ml-auto text-[11px] font-semibold text-accent-text shrink-0">Waiting on you</span>}
       </div>
-      <p className={cn("text-[13px] leading-snug line-clamp-2 pl-12", isPerson ? (unread ? "text-ink/85" : "text-ink/65") : "text-ink/65")}>
-        {fromYou && <span className="text-ink/60">You: </span>}
+      <p className={cn("text-[13px] leading-snug line-clamp-2 pl-12", isPerson ? (unread ? "text-ink/85" : "text-ink/70") : "text-ink/70")}>
+        {fromYou && <span className="text-ink/65">You: </span>}
         {preview}
       </p>
     </>

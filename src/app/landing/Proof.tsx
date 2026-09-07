@@ -19,7 +19,7 @@ export function Proof() {
   return (
     <div className="max-w-[1200px] mx-auto px-6">
       <Reveal className="max-w-2xl mb-10">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60 mb-4">Who it&rsquo;s for</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Who it&rsquo;s for</p>
         <h2 className="font-sans font-extrabold text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[0.94] tracking-[-0.045em] text-ink">Built for businesses that live in their inbox.</h2>
       </Reveal>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -37,7 +37,7 @@ export function Proof() {
             <li key={p.name + p.business} className="rounded-[20px] border border-border bg-paper px-5 py-5">
               <blockquote className="text-[15px] leading-relaxed text-ink">“{p.quote}”</blockquote>
               <div className="mt-3 text-sm font-semibold text-ink">{p.name}</div>
-              <div className="text-xs text-ink/65">{p.business}{p.metric ? ` · ${p.metric}` : ""}</div>
+              <div className="text-xs text-ink/70">{p.business}{p.metric ? ` · ${p.metric}` : ""}</div>
             </li>
           ))}
         </ul>

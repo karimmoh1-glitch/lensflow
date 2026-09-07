@@ -53,7 +53,7 @@ export default async function ClientsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{c.name}</div>
-                      <div className="text-xs text-ink/65 truncate">{c.email ?? c.phone ?? (c.instagram ? `@${c.instagram}` : "No contact info")}</div>
+                      <div className="text-xs text-ink/70 truncate">{c.email ?? c.phone ?? (c.instagram ? `@${c.instagram}` : "No contact info")}</div>
                     </div>
                   </div>
                   <div className="flex items-center flex-wrap gap-3 pl-11 sm:pl-0 shrink-0">
@@ -62,7 +62,7 @@ export default async function ClientsPage() {
                     {c.userId ? <Badge tone="info">Portal active</Badge> : null}
                     <div className="text-right">
                       <div className="text-sm font-medium">{c.bookings.filter((b) => b.status !== "CANCELED").length} booking{c.bookings.filter((b) => b.status !== "CANCELED").length !== 1 && "s"}</div>
-                      <div className="text-xs text-ink/60">{c.conversations[0] ? `Last on ${c.conversations[0].channel.toLowerCase()}` : "No conversation yet"}</div>
+                      <div className="text-xs text-ink/65">{c.conversations[0] ? `Last on ${c.conversations[0].channel.toLowerCase()}` : "No conversation yet"}</div>
                     </div>
                     {canPromote && c.userId && clientMembershipByUserId.has(c.userId) && (
                       <PromotePartnerButton membershipId={clientMembershipByUserId.get(c.userId)!} name={c.name} />

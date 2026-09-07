@@ -53,7 +53,7 @@ export function SignupForm({ google }: { google: boolean }) {
           <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" placeholder="you@example.com" required onInput={() => window.dispatchEvent(new CustomEvent("dt-auth", { detail: 1 }))} aria-invalid={duplicateEmail} />
         </Field>
         {duplicateEmail && (
-          <p className="-mt-2 text-xs text-ink/60 flex gap-3">
+          <p className="-mt-2 text-xs text-ink/65 flex gap-3">
             <Link href="/login" className="font-semibold text-ink hover:text-accent-text">Log in instead</Link>
             <Link href="/forgot-password" className="font-semibold text-ink hover:text-accent-text">Forgot the password?</Link>
           </p>
@@ -65,7 +65,7 @@ export function SignupForm({ google }: { google: boolean }) {
         <Button type="submit" size="lg" className="w-full mt-2" loading={pending} loadingLabel="Creating your inbox">
           Create my inbox
         </Button>
-        <p className="text-xs text-ink/60 text-center">By continuing you agree to the <Link href="/terms" className="underline">terms</Link> and <Link href="/privacy" className="underline">privacy policy</Link>.</p>
+        <p className="text-xs text-ink/65 text-center">By continuing you agree to the <Link href="/terms" className="underline">terms</Link> and <Link href="/privacy" className="underline">privacy policy</Link>.</p>
       </form>
     </AuthShell>
   );

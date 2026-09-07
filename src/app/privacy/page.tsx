@@ -11,9 +11,9 @@ export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-paper">
       <div className="max-w-2xl mx-auto px-6 py-16 prose-sm">
-        <Link href="/" className="text-xs font-semibold text-ink/60 hover:text-ink">← Daythread</Link>
+        <Link href="/" className="text-xs font-semibold text-ink/65 hover:text-ink">← Daythread</Link>
         <h1 className="mt-4 font-sans font-extrabold text-3xl tracking-[-0.03em] text-ink">Privacy</h1>
-        <p className="mt-2 text-sm text-ink/65">Last updated September 6, 2026</p>
+        <p className="mt-2 text-sm text-ink/70">Last updated September 6, 2026</p>
 
         <Section title="What Daythread is">
           Daythread is a workspace for customer communication: it connects the accounts a business chooses (email, Instagram, WhatsApp, a text number, a calendar) and turns what arrives into conversations, bookings and follow-ups. The business that creates a workspace is the controller of the customer data inside it; Daythread processes that data on its behalf.
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-ink/60">{title}</h2>
+      <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-ink/65">{title}</h2>
       <div className="mt-2 text-[15px] leading-relaxed text-ink/80">{children}</div>
     </section>
   );

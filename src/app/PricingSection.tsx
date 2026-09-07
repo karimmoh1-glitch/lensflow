@@ -38,12 +38,12 @@ export function PricingSection() {
     <section className="px-6 py-20 md:py-28 max-w-[1200px] mx-auto">
       <ValueLadder />
       <div className="max-w-2xl mb-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60 mb-4">Pricing</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Pricing</p>
         <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">Start free. Step up when it&rsquo;s obvious.</h2>
       </div>
       <div role="group" aria-label="Billing interval" className="mb-8 inline-flex items-center h-10 rounded-full border border-border bg-white p-0.5">
         {(["month", "year"] as const).map((v) => (
-          <button key={v} type="button" onClick={() => setInterval(v)} aria-pressed={interval === v} className={cn("inline-flex items-center h-9 px-4 rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", interval === v ? "bg-ink text-white" : "text-ink/65 hover:text-ink")}>
+          <button key={v} type="button" onClick={() => setInterval(v)} aria-pressed={interval === v} className={cn("inline-flex items-center h-9 px-4 rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", interval === v ? "bg-ink text-white" : "text-ink/70 hover:text-ink")}>
             {v === "month" ? "Monthly" : "Yearly"}{v === "year" && <span className={cn("ml-2 text-[10px] font-extrabold uppercase tracking-wide rounded-full px-1.5 py-0.5", interval === v ? "bg-white/15 text-white" : "bg-success-soft text-success-text")}>2 months free</span>}
           </button>
         ))}
@@ -60,7 +60,7 @@ export function PricingSection() {
                 <div className="text-sm font-semibold text-ink/70 leading-snug min-h-[2.5rem]">{l.who}</div>
                 <div className="mt-3 flex items-baseline gap-1.5">
                   <span className="font-sans font-extrabold text-4xl tracking-[-0.04em] text-ink">{plan.priceCents === 0 ? "Free" : formatMoney(price(plan.priceCents))}</span>
-                  {plan.priceCents > 0 && <span className="text-sm text-ink/60">/ {interval === "year" ? "year" : "month"}</span>}
+                  {plan.priceCents > 0 && <span className="text-sm text-ink/65">/ {interval === "year" ? "year" : "month"}</span>}
                 </div>
                 {plan.priceCents > 0 && interval === "year" && <p className="mt-1 text-xs font-semibold text-success-text">{formatMoney(plan.priceCents * 10 / 12)} a month, billed yearly</p>}
                 <div className="mt-1 text-lg font-extrabold tracking-tight text-ink">{plan.name}</div>
@@ -69,7 +69,7 @@ export function PricingSection() {
                     <li key={g} className="flex items-start gap-2.5 text-sm text-ink/75"><span className={cn("mt-[7px] w-1.5 h-1.5 rounded-full shrink-0", pro ? "bg-accent" : "bg-ink/40")} />{g}</li>
                   ))}
                 </ul>
-                {l.why && <p className="mt-5 text-xs text-ink/65 leading-relaxed">{l.why}</p>}
+                {l.why && <p className="mt-5 text-xs text-ink/70 leading-relaxed">{l.why}</p>}
                 <Link
                   href="/signup"
                   className={cn("mt-6 inline-flex items-center justify-center h-11 rounded-full text-sm font-extrabold transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", pro ? "bg-accent-strong text-white" : "bg-ink text-white")}
@@ -81,7 +81,7 @@ export function PricingSection() {
           );
         })}
       </div>
-      <p className="mt-6 text-xs text-ink/60">No card to start. Cancel anytime. Your Daythread plan is the only thing you ever pay for here — Daythread never handles payments between you and your customers.</p>
+      <p className="mt-6 text-xs text-ink/65">No card to start. Cancel anytime. Your Daythread plan is the only thing you ever pay for here — Daythread never handles payments between you and your customers.</p>
     </section>
   );
 }

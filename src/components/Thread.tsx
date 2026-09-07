@@ -54,9 +54,9 @@ export function ThreadNode({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-medium text-ink truncate">{title}</div>
-          {meta && <div className="text-xs text-ink/65 mt-0.5 truncate">{meta}</div>}
+          {meta && <div className="text-xs text-ink/70 mt-0.5 truncate">{meta}</div>}
         </div>
-        {when && <div className="text-[11px] text-ink/60 tabular-nums shrink-0 mt-0.5">{when}</div>}
+        {when && <div className="text-[11px] text-ink/65 tabular-nums shrink-0 mt-0.5">{when}</div>}
       </div>
       {children}
     </>
@@ -84,7 +84,7 @@ export function NextAction({ title, why, href, cta }: { title: string; why?: str
       <span aria-hidden className="w-2 h-2 rounded-full bg-accent shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-ink">{title}</div>
-        {why && <div className="text-xs text-ink/65 mt-0.5">{why}</div>}
+        {why && <div className="text-xs text-ink/70 mt-0.5">{why}</div>}
       </div>
       <span className="text-xs font-bold text-accent-text shrink-0 group-hover:translate-x-0.5 transition-transform">{cta} →</span>
     </Link>

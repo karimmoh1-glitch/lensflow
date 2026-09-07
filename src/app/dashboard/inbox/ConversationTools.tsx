@@ -136,7 +136,7 @@ export function ConversationTools({ conversationId, unread, category, clientId, 
       title={label}
       className={cn(
         "w-7 h-7 rounded-md flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-        variant === "header" ? "text-ink/65 hover:text-ink hover:bg-black/[0.05]" : "text-ink/60 hover:text-ink hover:bg-white shadow-none hover:shadow-xs",
+        variant === "header" ? "text-ink/70 hover:text-ink hover:bg-black/[0.05]" : "text-ink/65 hover:text-ink hover:bg-white shadow-none hover:shadow-xs",
         tone === "signal" && "hover:text-signal-text"
       )}
     >
@@ -156,7 +156,7 @@ export function ConversationTools({ conversationId, unread, category, clientId, 
       {btn("More", (e) => { stop(e); setMenu((m) => !m); }, MoreHorizontal)}
       {menu && (
         <div role="menu" className="absolute right-0 top-full mt-1 z-40 w-60 rounded-xl border border-border bg-white shadow-[0_18px_44px_-20px_rgba(16,17,20,0.35)] p-1 text-sm dt-land">
-          <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink/60">Daythread put this in {label(category)}</div>
+          <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink/65">Daythread put this in {label(category)}</div>
           {category !== "PRIORITY" ? (
             <Item onClick={(e) => reclassify(e, "PRIORITY")} title="Mark as priority" hint="A real person — show them in Priority" />
           ) : (
@@ -186,7 +186,7 @@ function Item({ onClick, title, hint, check }: { onClick: (e: React.SyntheticEve
         {check && <Check className="w-3.5 h-3.5 text-success" strokeWidth={2.5} aria-hidden />}
         {title}
       </span>
-      {hint && <span className="block text-[11px] text-ink/65">{hint}</span>}
+      {hint && <span className="block text-[11px] text-ink/70">{hint}</span>}
     </button>
   );
 }

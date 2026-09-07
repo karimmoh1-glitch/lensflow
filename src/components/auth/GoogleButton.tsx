@@ -27,7 +27,7 @@ export function GoogleButton({ intent, className }: { intent: "login" | "signup"
         </svg>
         {pending ? "Opening Google…" : "Continue with Google"}
       </button>
-      <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/60" aria-hidden>
+      <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65" aria-hidden>
         <span className="h-px flex-1 bg-border" />
         or with email
         <span className="h-px flex-1 bg-border" />

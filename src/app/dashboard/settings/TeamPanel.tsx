@@ -51,13 +51,13 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
         <div className="mb-8 rounded-[22px] border border-signal/25 bg-signal-soft/40 px-5 py-5">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Daythread Business</p>
           <h2 className="mt-1.5 font-sans font-extrabold text-xl tracking-[-0.02em] text-ink">Run the inbox as a team.</h2>
-          <p className="mt-1.5 text-sm text-ink/65 leading-relaxed max-w-lg">Business includes up to {PLANS.BUSINESS.maxTeamSeats} people on one shared inbox: everyone sees the same conversations, any thread can be assigned to whoever should answer it, and partners can be handed bookings.</p>
+          <p className="mt-1.5 text-sm text-ink/70 leading-relaxed max-w-lg">Business includes up to {PLANS.BUSINESS.maxTeamSeats} people on one shared inbox: everyone sees the same conversations, any thread can be assigned to whoever should answer it, and partners can be handed bookings.</p>
           <Link href="/dashboard/settings?tab=subscription" className="mt-4 inline-flex items-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Upgrade to Business →</Link>
         </div>
       )}
       <div className="flex items-baseline justify-between gap-3 mb-4">
         <h2 className="font-sans font-extrabold text-lg tracking-[-0.02em] text-ink">Team</h2>
-        <span className="text-xs font-semibold text-ink/65 tabular-nums">{capped ? `${seats} of ${limits.maxTeamSeats}` : `${seats} · unlimited`} <span className="text-ink/60">· {PLANS[plan].name}</span></span>
+        <span className="text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${seats} of ${limits.maxTeamSeats}` : `${seats} · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></span>
       </div>
 
       {over && (
@@ -87,7 +87,7 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
                       {m.user.name}
                       {m.status === "SUSPENDED" && <span className="text-danger-text font-normal"> · Deactivated</span>}
                     </div>
-                    <div className="text-xs text-ink/65 truncate">
+                    <div className="text-xs text-ink/70 truncate">
                       {m.user.email}
                       {m.role === "PARTNER" &&
                         ` · ${m.assignedBookings.length} upcoming ${m.assignedBookings.length === 1 ? "project" : "projects"}`}

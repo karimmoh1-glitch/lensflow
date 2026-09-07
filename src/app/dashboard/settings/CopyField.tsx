@@ -18,7 +18,7 @@ export function CopyField({ label, value }: { label: string; value: string }) {
   }
   return (
     <div className="rounded-xl border border-border bg-paper/60 px-3 py-2">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink/60">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink/65">{label}</div>
       <div className="mt-1 flex items-center gap-2">
         <code className="min-w-0 flex-1 text-[11px] font-mono text-ink/80 break-all">{value || "— set NEXT_PUBLIC_APP_URL —"}</code>
         <button

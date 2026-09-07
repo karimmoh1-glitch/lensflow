@@ -66,9 +66,9 @@ export function OneThingCard({
       <Link href={href} className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-lg">
         <span className="block text-base font-extrabold text-ink tracking-tight leading-tight">
           {state === "settling" ? `${first} — handled.` : `Reply to ${first}.`}
-          {state !== "settling" && waiting && <span className="text-ink/60 font-semibold"> {waiting}</span>}
+          {state !== "settling" && waiting && <span className="text-ink/65 font-semibold"> {waiting}</span>}
         </span>
-        <span className="block text-sm text-ink/60 mt-0.5">
+        <span className="block text-sm text-ink/65 mt-0.5">
           {state === "settling" ? "The next thing is on its way up." : detail}
           {state !== "settling" && more > 0 && ` · ${more} more waiting`}
         </span>
@@ -79,7 +79,7 @@ export function OneThingCard({
           type="button"
           onClick={done}
           disabled={pending || state === "settling"}
-          className="h-10 px-3.5 rounded-full text-xs font-bold text-ink/65 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
+          className="h-10 px-3.5 rounded-full text-xs font-bold text-ink/70 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50"
           aria-label={`Mark ${first} as handled`}
         >
           Done

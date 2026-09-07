@@ -81,7 +81,7 @@ export function Spine() {
               <span
                 className={cn(
                   "text-[11px] font-bold uppercase tracking-[0.14em] whitespace-nowrap motion-safe:transition-all motion-safe:duration-300 group-focus-visible:opacity-100 group-focus-visible:translate-x-0",
-                  on ? cn("opacity-100 translate-x-0", dark ? "text-paper" : "text-ink") : cn("opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0", dark ? "text-paper/70" : "text-ink/60")
+                  on ? cn("opacity-100 translate-x-0", dark ? "text-paper" : "text-ink") : cn("opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0", dark ? "text-paper/70" : "text-ink/65")
                 )}
               >
                 {s.label}

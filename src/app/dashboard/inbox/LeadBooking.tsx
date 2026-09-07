@@ -64,7 +64,7 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
 
   if (services.length === 0) {
     return (
-      <p className="text-xs text-ink/65">
+      <p className="text-xs text-ink/70">
         Add a service under <Link href="/dashboard/settings?tab=business" className="font-semibold text-accent-text hover:underline">Settings → Business</Link> to book from here.
       </p>
     );
@@ -83,7 +83,7 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
   return (
     <div className="space-y-3">
       <div>
-        <label htmlFor={`svc-${leadId}`} className="block text-xs font-semibold uppercase tracking-wide text-ink/60 mb-1.5">
+        <label htmlFor={`svc-${leadId}`} className="block text-xs font-semibold uppercase tracking-wide text-ink/65 mb-1.5">
           Service
         </label>
         <select
@@ -101,7 +101,7 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
         </select>
       </div>
 
-      <div className="text-xs font-semibold uppercase tracking-wide text-ink/60">Pick a day</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-ink/65">Pick a day</div>
       <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1">
         {NEXT_DAYS.map((day) => {
           const active = selectedDay && isSameDay(day, selectedDay);
@@ -117,21 +117,21 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
                 active ? "bg-ink text-white border-ink" : "bg-white text-ink border-border hover:border-ink/30"
               )}
             >
-              <span className={cn("text-[10px] font-medium", active ? "text-white/60" : "text-ink/60")}>{format(day, "EEE")}</span>
+              <span className={cn("text-[10px] font-medium", active ? "text-white/60" : "text-ink/65")}>{format(day, "EEE")}</span>
               <span className="text-sm font-semibold mt-0.5">{format(day, "d")}</span>
             </button>
           );
         })}
       </div>
-      {!service && <p className="text-xs text-ink/60">Pick a service to see open times.</p>}
+      {!service && <p className="text-xs text-ink/65">Pick a service to see open times.</p>}
 
       {error && <p className="text-xs text-danger" role="alert">{error}</p>}
 
       {pending && !slots ? (
-        <p className="text-xs text-ink/60">Loading times…</p>
+        <p className="text-xs text-ink/65">Loading times…</p>
       ) : slots ? (
         slots.length === 0 ? (
-          <p className="text-xs text-ink/60">No open times this day{chosen ? ` for a ${chosen.durationMins}-minute ${chosen.name.toLowerCase()}` : ""}.</p>
+          <p className="text-xs text-ink/65">No open times this day{chosen ? ` for a ${chosen.durationMins}-minute ${chosen.name.toLowerCase()}` : ""}.</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {slots.map((slot) => (

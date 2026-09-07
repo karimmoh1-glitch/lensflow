@@ -42,12 +42,12 @@ const seg = (p: number, a: number, b: number) => ease(clamp((p - a) / (b - a)));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const BEATS = [
-  { at: 0.0, eyebrow: "Right now", tone: "text-ink/60", title: <>Your customers are everywhere.</>, sub: "Instagram. WhatsApp. Texts. Gmail. Your booking page." },
+  { at: 0.0, eyebrow: "Right now", tone: "text-ink/65", title: <>Your customers are everywhere.</>, sub: "Instagram. WhatsApp. Texts. Gmail. Your booking page." },
   { at: 0.16, eyebrow: "Daythread", tone: "text-signal-text", title: <>Your work shouldn&rsquo;t be.</>, sub: "One inbox. Every conversation, in the order it happened." },
   { at: 0.34, eyebrow: "Context", tone: "text-signal-text", title: <>It reads it.</>, sub: "Who this is. What they want. What's open." },
   { at: 0.52, eyebrow: "Action", tone: "text-accent-text", title: <>It knows what&rsquo;s next.</>, sub: "The booking, ready to send." },
   { at: 0.66, eyebrow: "Outcome", tone: "text-success-text", title: <>Done.</>, sub: "Booked. Confirmed. On the calendar." },
-  { at: 0.8, eyebrow: "The product", tone: "text-ink/60", title: <>This is Daythread.</>, sub: "Six conversations became one thing to do. The thread is the interface." },
+  { at: 0.8, eyebrow: "The product", tone: "text-ink/65", title: <>This is Daythread.</>, sub: "Six conversations became one thing to do. The thread is the interface." },
 ];
 
 export function Story() {
@@ -117,7 +117,7 @@ export function Story() {
                 <div key={i} className="absolute inset-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ opacity: on ? 1 : 0, transform: `translateY(${on ? 0 : beat > i ? -10 : 10}px)` }} aria-hidden={!on}>
                   <p className={cn("text-[11px] font-bold uppercase tracking-[0.16em] mb-2 lg:mb-4", b.tone)}>{b.eyebrow}</p>
                   <h2 className="font-sans font-extrabold text-[clamp(2rem,4.6vw,4rem)] leading-[0.94] tracking-[-0.045em] text-ink">{b.title}</h2>
-                  <p className="mt-2 lg:mt-4 text-sm lg:text-base text-ink/65 max-w-xs">{b.sub}</p>
+                  <p className="mt-2 lg:mt-4 text-sm lg:text-base text-ink/70 max-w-xs">{b.sub}</p>
                 </div>
               );
             })}
@@ -138,13 +138,13 @@ export function Story() {
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-paper/70" style={{ opacity: settle }}>
                 <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
                 <span className="text-[13px] font-extrabold tracking-tight text-ink">Daythread</span>
-                <span className="text-[11px] text-ink/60">Inbox</span>
-                <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold rounded-full px-2 py-0.5 bg-success-soft text-success-text"><span className="text-ink/60 font-semibold">6 conversations</span><span aria-hidden>→</span>1 thing to do</span>
+                <span className="text-[11px] text-ink/65">Inbox</span>
+                <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold rounded-full px-2 py-0.5 bg-success-soft text-success-text"><span className="text-ink/65 font-semibold">6 conversations</span><span aria-hidden>→</span>1 thing to do</span>
               </div>
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] h-[calc(100%-42px)]">
                 {/* Inbox */}
                 <Panel k={0} t={settle} className="border-r border-border">
-                  <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60">Inbox · sorted by what needs you</div>
+                  <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">Inbox · sorted by what needs you</div>
                   <Row k="whatsapp" who="Sarah Kim" msg="Do you have anything Friday afternoon?" tag="Booked" tagTone="text-success-text" active />
                   <Row k="instagram" who="Maya Chen" msg="Loved the last shoot — can we do another?" tag="Needs reply" tagTone="text-accent-text" />
                   <Row k="gmail" who="Jordan Lee" msg="Re: a September date?" tag="Going cold" tagTone="text-warning-text" />
@@ -155,20 +155,20 @@ export function Story() {
                 {/* Client / booking / calendar / automation */}
                 <div className="flex flex-col divide-y divide-border bg-paper/40">
                   <Panel k={1} t={settle} className="px-3 py-2.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60 mb-1">Client</div>
-                    <div className="flex items-center gap-2"><span className="w-7 h-7 rounded-full bg-success-soft text-success-text text-[10px] font-extrabold flex items-center justify-center">SK</span><div className="min-w-0"><div className="text-xs font-semibold text-ink truncate">Sarah Kim</div><div className="text-[10px] text-ink/65">Returning · 2 bookings</div></div></div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Client</div>
+                    <div className="flex items-center gap-2"><span className="w-7 h-7 rounded-full bg-success-soft text-success-text text-[10px] font-extrabold flex items-center justify-center">SK</span><div className="min-w-0"><div className="text-xs font-semibold text-ink truncate">Sarah Kim</div><div className="text-[10px] text-ink/70">Returning · 2 bookings</div></div></div>
                   </Panel>
                   <Panel k={2} t={settle} className="px-3 py-2.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60 mb-1">Booking</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Booking</div>
                     <div className="text-xs font-semibold text-ink">Brand session · Fri 2:30 PM</div>
-                    <div className="text-[10px] text-ink/65">$350 · questionnaire sent</div>
+                    <div className="text-[10px] text-ink/70">$350 · questionnaire sent</div>
                   </Panel>
                   <Panel k={3} t={settle} className="px-3 py-2.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60 mb-1">Calendar</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Calendar</div>
                     <div className="flex items-center justify-between text-xs"><span className="font-semibold text-ink">Fri 2:30 – 4:00 PM</span><span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-success-soft text-success-text">On Google</span></div>
                   </Panel>
                   <Panel k={4} t={settle} className="px-3 py-2.5 flex-1">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60 mb-1">Automation</div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Automation</div>
                     <div className="text-[11px] text-ink/75 leading-snug"><span className="text-accent-text font-bold">When</span> a booking is coming up · <span className="text-signal-text font-bold">if</span> 1 day before · <span className="text-success-text font-bold">then</span> send a reminder</div>
                   </Panel>
                 </div>
@@ -212,7 +212,7 @@ export function Story() {
                     <div className="flex items-center gap-2.5 px-3 py-2.5">
                       <ChannelIcon k={c.k} size={30} />
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline gap-1.5"><span className="text-xs font-semibold text-ink truncate">{c.who}</span><span className="text-[10px] text-ink/60 shrink-0">{c.when}</span></div>
+                        <div className="flex items-baseline gap-1.5"><span className="text-xs font-semibold text-ink truncate">{c.who}</span><span className="text-[10px] text-ink/65 shrink-0">{c.when}</span></div>
                         <div className="text-[11px] text-ink/70 truncate">{c.msg}</div>
                       </div>
                     </div>
@@ -230,7 +230,7 @@ export function Story() {
                             <div className={cn("text-[10px] font-bold uppercase tracking-[0.12em] mb-0.5 transition-colors", outcome > 0.5 ? "text-success-text" : "text-accent-text")}>{outcome > 0.5 ? "Booked" : "Send booking"}</div>
                             <div className="text-sm font-extrabold text-ink tracking-tight">Brand session · Fri 2:30 PM</div>
                             <div className="flex items-center justify-between mt-1.5">
-                              <span className="text-[11px] text-ink/60">$350 · 60 min</span>
+                              <span className="text-[11px] text-ink/65">$350 · 60 min</span>
                               <span className={cn("inline-flex items-center h-7 px-3 rounded-full text-[11px] font-extrabold transition-colors duration-500", outcome > 0.5 ? "bg-success text-white" : "bg-accent-strong text-white")}>{outcome > 0.5 ? "Confirmed" : "Send →"}</span>
                             </div>
                           </div>
@@ -252,7 +252,7 @@ function Chip({ t, dot, label, value }: { t: number; dot: string; label: string;
   return (
     <div className="flex items-center gap-2 text-[11px]" style={{ opacity: t, transform: `translateX(${(1 - t) * -6}px)` }}>
       <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dot)} />
-      <span className="text-ink/60 font-bold uppercase tracking-[0.1em] text-[9px] w-10 shrink-0">{label}</span>
+      <span className="text-ink/65 font-bold uppercase tracking-[0.1em] text-[9px] w-10 shrink-0">{label}</span>
       <span className="font-semibold text-ink truncate">{value}</span>
     </div>
   );
@@ -273,7 +273,7 @@ function Row({ k, who, msg, tag, tagTone, active }: { k: ChannelKey; who: string
       <ChannelIcon k={k} size={26} />
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-ink truncate">{who}</div>
-        <div className="text-[10px] text-ink/60 truncate">{msg}</div>
+        <div className="text-[10px] text-ink/65 truncate">{msg}</div>
       </div>
       <span className={cn("text-[9px] font-bold shrink-0", tagTone)}>{tag}</span>
     </div>

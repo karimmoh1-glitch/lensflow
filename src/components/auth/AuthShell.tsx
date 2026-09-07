@@ -47,15 +47,15 @@ export function AuthShell({
       <section className="flex items-start lg:items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-sm dt-swap">
           {back && (
-            <Link href={back.href} className="inline-flex items-center gap-1 text-xs font-semibold text-ink/60 hover:text-ink transition-colors mb-6">
+            <Link href={back.href} className="inline-flex items-center gap-1 text-xs font-semibold text-ink/65 hover:text-ink transition-colors mb-6">
               <span aria-hidden>←</span> {back.label}
             </Link>
           )}
-          {eyebrow && <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60 mb-3">{eyebrow}</p>}
+          {eyebrow && <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-3">{eyebrow}</p>}
           <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">{title}</h1>
-          {lede && <p className="mt-3 text-sm text-ink/65 leading-relaxed">{lede}</p>}
+          {lede && <p className="mt-3 text-sm text-ink/70 leading-relaxed">{lede}</p>}
           <div className="mt-8">{children}</div>
-          {footer && <div className="mt-8 text-sm text-ink/60">{footer}</div>}
+          {footer && <div className="mt-8 text-sm text-ink/65">{footer}</div>}
         </div>
       </section>
     </main>

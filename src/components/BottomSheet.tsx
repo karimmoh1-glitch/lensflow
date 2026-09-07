@@ -37,9 +37,9 @@ export function BottomSheet({ open, onClose, title, subtitle, icon, children, si
             {icon && <span className="w-8 h-8 rounded-lg border border-border bg-paper flex items-center justify-center shrink-0">{icon}</span>}
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-ink truncate">{title}</div>
-              {subtitle && <div className="text-[11px] text-ink/60 truncate">{subtitle}</div>}
+              {subtitle && <div className="text-[11px] text-ink/65 truncate">{subtitle}</div>}
             </div>
-            <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-md flex items-center justify-center text-ink/65 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-4 h-4" strokeWidth={2} /></button>
+            <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-md flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-4 h-4" strokeWidth={2} /></button>
           </div>
           <div className="px-5 py-5">{children}</div>
         </div>

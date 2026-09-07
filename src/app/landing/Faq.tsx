@@ -28,7 +28,7 @@ export function Faq() {
   return (
     <div className="max-w-[880px] mx-auto px-6">
       <Reveal className="mb-10">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60 mb-4">Questions</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Questions</p>
         <h2 className="font-sans font-extrabold text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[0.94] tracking-[-0.045em] text-ink">Before you connect anything.</h2>
       </Reveal>
       <div className="divide-y divide-border border-y border-border">
@@ -36,7 +36,7 @@ export function Faq() {
           <details key={item.q} className="group py-1">
             <summary className="flex items-center justify-between gap-6 cursor-pointer list-none py-4 text-[15px] md:text-base font-semibold text-ink rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 [&::-webkit-details-marker]:hidden">
               <span>{item.q}</span>
-              <span aria-hidden className="relative w-5 h-5 shrink-0 text-ink/60">
+              <span aria-hidden className="relative w-5 h-5 shrink-0 text-ink/65">
                 <span className="absolute inset-x-0 top-1/2 h-[1.5px] -translate-y-1/2 bg-current" />
                 <span className="absolute inset-y-0 left-1/2 w-[1.5px] -translate-x-1/2 bg-current transition-transform duration-200 group-open:scale-y-0" />
               </span>

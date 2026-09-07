@@ -25,19 +25,19 @@ export default async function PartnerLayout({ children }: { children: React.Reac
           </div>
           <div>
             <div className="font-display text-base leading-tight text-ink">{business.name}</div>
-            <div className="text-[11px] text-ink/60 leading-tight">Partner access</div>
+            <div className="text-[11px] text-ink/65 leading-tight">Partner access</div>
           </div>
         </div>
         <nav className="hidden sm:flex items-center gap-5 text-sm">
-          <Link href="/partner" className="text-ink/60 hover:text-ink">
+          <Link href="/partner" className="text-ink/65 hover:text-ink">
             My work
           </Link>
-          <Link href="/partner/inbox" className="text-ink/60 hover:text-ink">
+          <Link href="/partner/inbox" className="text-ink/65 hover:text-ink">
             Conversations
           </Link>
         </nav>
         <form action={logout}>
-          <button className="text-xs text-ink/65 hover:text-ink/70">Log out</button>
+          <button className="text-xs text-ink/70 hover:text-ink/70">Log out</button>
         </form>
       </header>
       <main>{children}</main>

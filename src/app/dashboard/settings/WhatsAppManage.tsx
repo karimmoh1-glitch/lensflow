@@ -49,19 +49,19 @@ export function WhatsAppManage({ model }: { model: WhatsAppManageModel }) {
   return (
     <div className="space-y-3 text-xs">
       <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1.5">
-        <dt className="text-ink/60">Business account</dt>
+        <dt className="text-ink/65">Business account</dt>
         <dd className="text-ink/80 min-w-0 break-words">{model.wabaName ?? "WhatsApp Business Account"}</dd>
-        <dt className="text-ink/60">Number</dt>
+        <dt className="text-ink/65">Number</dt>
         <dd className="text-ink/80">{model.displayPhoneNumber} · {model.verifiedName}</dd>
         {model.qualityRating && (
           <>
-            <dt className="text-ink/60">Quality</dt>
+            <dt className="text-ink/65">Quality</dt>
             <dd className="text-ink/80">{model.qualityRating.toLowerCase()}</dd>
           </>
         )}
-        <dt className="text-ink/60">Verification</dt>
+        <dt className="text-ink/65">Verification</dt>
         <dd className="text-ink/80">{model.codeVerificationStatus === "VERIFIED" ? "Verified with Meta" : model.codeVerificationStatus ? model.codeVerificationStatus.toLowerCase().replace(/_/g, " ") : "Not reported by Meta"}</dd>
-        <dt className="text-ink/60">Webhooks</dt>
+        <dt className="text-ink/65">Webhooks</dt>
         <dd className={model.webhooksSubscribed ? "text-success-text" : "text-warning-text"}>
           {model.webhooksSubscribed ? "Subscribed — messages and receipts arrive here" : "Not subscribed — reconnect to retry"}
         </dd>
@@ -82,10 +82,10 @@ export function WhatsAppManage({ model }: { model: WhatsAppManageModel }) {
                     aria-pressed={active}
                     className={`w-full text-left flex items-center gap-2.5 rounded-xl border px-3 py-2.5 transition-colors min-h-[44px] ${active ? "border-ink/25 bg-white" : "border-border hover:border-ink/20 bg-white/60"} disabled:opacity-60`}
                   >
-                    <Phone className="w-3.5 h-3.5 shrink-0 text-ink/60" strokeWidth={2} aria-hidden />
+                    <Phone className="w-3.5 h-3.5 shrink-0 text-ink/65" strokeWidth={2} aria-hidden />
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold text-ink truncate">{n.displayPhoneNumber}</span>
-                      <span className="block text-[11px] text-ink/65 truncate">{n.verifiedName}{n.codeVerificationStatus === "VERIFIED" ? " · verified" : ""}</span>
+                      <span className="block text-[11px] text-ink/70 truncate">{n.verifiedName}{n.codeVerificationStatus === "VERIFIED" ? " · verified" : ""}</span>
                     </span>
                     {active && <Check className="w-4 h-4 shrink-0 text-success-text" strokeWidth={3} aria-hidden />}
                   </button>
@@ -105,7 +105,7 @@ export function WhatsAppManage({ model }: { model: WhatsAppManageModel }) {
         </p>
       </div>
 
-      <p className="text-[11px] text-ink/60">Disconnecting stops Meta delivering this number&rsquo;s events to Daythread and erases the stored credential. Your conversations and customers stay.</p>
+      <p className="text-[11px] text-ink/65">Disconnecting stops Meta delivering this number&rsquo;s events to Daythread and erases the stored credential. Your conversations and customers stay.</p>
     </div>
   );
 }

@@ -30,7 +30,7 @@ export function SettingsTabs({ active, panels }: { active: SettingsTab; panels: 
               href={t.key === "channels" ? "/dashboard/settings" : `/dashboard/settings?tab=${t.key}`}
               className={cn(
                 "inline-flex items-center h-8 px-3.5 rounded-full text-[13px] font-semibold transition-colors shrink-0 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-                active === t.key ? "bg-white text-ink shadow-xs" : "text-ink/65 hover:text-ink"
+                active === t.key ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink"
               )}
             >
               {t.label}

@@ -30,7 +30,7 @@ export function ValueLadder() {
   return (
     <div ref={ref} className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_64px_minmax(0,1.1fr)] gap-6 md:gap-0 items-center mb-16 md:mb-24">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60 mb-4">What you&rsquo;re paying today</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">What you&rsquo;re paying today</p>
         <ul className="space-y-2">
           {SCATTERED.map((s, i) => {
             const t = seg(p, 0.05 + i * 0.05, 0.35 + i * 0.05);
@@ -69,7 +69,7 @@ export function ValueLadder() {
             );
           })}
         </ol>
-        <p className="mt-4 text-xs text-ink/60">For less than one missed booking.</p>
+        <p className="mt-4 text-xs text-ink/65">For less than one missed booking.</p>
       </div>
     </div>
   );

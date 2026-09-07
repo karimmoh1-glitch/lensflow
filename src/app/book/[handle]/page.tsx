@@ -35,10 +35,10 @@ export default async function PublicBookingPage({ params }: { params: Promise<{ 
           </div>
           <div>
             <h1 className="font-display text-2xl">{business.name}</h1>
-            {business.specialties.length > 0 && <p className="text-xs text-ink/65">{business.specialties.join(" · ")}</p>}
+            {business.specialties.length > 0 && <p className="text-xs text-ink/70">{business.specialties.join(" · ")}</p>}
           </div>
         </div>
-        {business.bio && <p className="text-sm text-ink/60 mb-8 max-w-lg">{business.bio}</p>}
+        {business.bio && <p className="text-sm text-ink/65 mb-8 max-w-lg">{business.bio}</p>}
 
         <BookingFlow
           handle={business.handle}

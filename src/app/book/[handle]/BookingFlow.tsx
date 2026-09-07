@@ -77,7 +77,7 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
             {service?.name} on {slot && `${inZone(slot.start, timezone, { weekday: "long", month: "long", day: "numeric" })} at ${inZone(slot.start, timezone, { hour: "numeric", minute: "2-digit", timeZoneName: "short" })}`}
           </p>
 
-          <p className="text-xs text-ink/65">We&apos;ll confirm the details with you shortly.</p>
+          <p className="text-xs text-ink/70">We&apos;ll confirm the details with you shortly.</p>
         </CardBody>
       </Card>
     );
@@ -106,7 +106,7 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
               >
                 <div>
                   <div className="font-medium text-sm">{s.name}</div>
-                  <div className="text-xs text-ink/65">{s.durationMins} min</div>
+                  <div className="text-xs text-ink/70">{s.durationMins} min</div>
                 </div>
                 <div className="font-medium text-sm">{formatMoney(s.priceCents)}</div>
               </button>
@@ -116,7 +116,7 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
 
         {step === 1 && service && (
           <div className="space-y-4">
-            <button onClick={() => setStep(0)} className="flex items-center gap-1 text-xs text-ink/60 hover:text-ink mb-1">
+            <button onClick={() => setStep(0)} className="flex items-center gap-1 text-xs text-ink/65 hover:text-ink mb-1">
               <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
               {service.name}
             </button>
@@ -128,8 +128,8 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
             {date && (
               <div>
                 <Label>Available times</Label>
-                {pending && !slots && <p className="text-sm text-ink/60">Checking availability…</p>}
-                {slots && slots.length === 0 && <p className="text-sm text-ink/60">No openings this day — try another date.</p>}
+                {pending && !slots && <p className="text-sm text-ink/65">Checking availability…</p>}
+                {slots && slots.length === 0 && <p className="text-sm text-ink/65">No openings this day — try another date.</p>}
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {slots?.map((s) => (
                     <button
@@ -154,7 +154,7 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
 
         {step === 2 && service && slot && (
           <div className="space-y-4">
-            <button onClick={() => setStep(1)} className="flex items-center gap-1 text-xs text-ink/60 hover:text-ink mb-1">
+            <button onClick={() => setStep(1)} className="flex items-center gap-1 text-xs text-ink/65 hover:text-ink mb-1">
               <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
               {inZone(slot.start, timezone, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}
             </button>

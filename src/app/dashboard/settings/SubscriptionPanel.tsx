@@ -81,18 +81,18 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
       <section aria-label="Your Daythread subscription" className="mb-8 rounded-[22px] border border-border bg-white overflow-hidden">
         <div className="px-5 md:px-6 py-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60">Your Daythread subscription</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Your Daythread subscription</p>
             <div className="mt-1 flex items-center gap-2 flex-wrap">
               <h2 className="font-sans font-extrabold text-[1.35rem] tracking-[-0.02em] text-ink">Daythread {plan.name}</h2>
               {status && paid && <Badge tone={status.tone}>{status.label}</Badge>}
               {business.cancelAtPeriodEnd && live && <Badge tone="neutral">Cancels {business.currentPeriodEnd ? format(business.currentPeriodEnd, "MMM d") : "at period end"}</Badge>}
             </div>
-            <p className="mt-1 text-sm text-ink/60">{plan.tagline}</p>
+            <p className="mt-1 text-sm text-ink/65">{plan.tagline}</p>
           </div>
           <div className="text-left sm:text-right shrink-0">
             <div className="font-sans font-extrabold text-2xl tracking-[-0.03em] text-ink tabular-nums">
               {plan.priceCents === 0 ? "Free" : formatMoney(plan.priceCents)}
-              {plan.priceCents > 0 && <span className="text-sm font-medium text-ink/60"> / month</span>}
+              {plan.priceCents > 0 && <span className="text-sm font-medium text-ink/65"> / month</span>}
             </div>
             {paid && business.stripeCustomerId && subscriptionBillingIsLive && canBill && <div className="mt-2"><ManageBillingButton /></div>}
           </div>
@@ -116,7 +116,7 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
       <section aria-label="Plans" className="mb-8">
         <div role="group" aria-label="Billing interval" className="mb-4 inline-flex items-center h-9 rounded-full border border-border bg-white p-0.5">
         {(["month", "year"] as const).map((v) => (
-          <Link key={v} href={`/dashboard/settings?tab=subscription&interval=${v}`} aria-current={interval === v ? "page" : undefined} className={cn("inline-flex items-center h-8 px-3 rounded-full text-sm font-semibold transition-colors", interval === v ? "bg-ink text-white" : "text-ink/65 hover:text-ink")}>{v === "month" ? "Monthly" : "Yearly · 2 months free"}</Link>
+          <Link key={v} href={`/dashboard/settings?tab=subscription&interval=${v}`} aria-current={interval === v ? "page" : undefined} className={cn("inline-flex items-center h-8 px-3 rounded-full text-sm font-semibold transition-colors", interval === v ? "bg-ink text-white" : "text-ink/70 hover:text-ink")}>{v === "month" ? "Monthly" : "Yearly · 2 months free"}</Link>
         ))}
       </div>
       <div className="grid sm:grid-cols-3 gap-3 md:gap-4 items-stretch">
@@ -133,11 +133,11 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
                 </div>
                 <div className="mt-2 font-sans font-extrabold text-2xl tracking-[-0.03em] text-ink tabular-nums">
                   {p.priceCents === 0 ? "Free" : formatMoney(priceFor(key as "PRO" | "BUSINESS"))}
-                  {p.priceCents > 0 && <span className="text-sm font-medium text-ink/60"> / {interval === "year" ? "year" : "mo"}</span>}
+                  {p.priceCents > 0 && <span className="text-sm font-medium text-ink/65"> / {interval === "year" ? "year" : "mo"}</span>}
                 </div>
                 {p.priceCents > 0 && interval === "year" && <p className="text-[11px] font-semibold text-success-text">Two months free — {formatMoney(p.priceCents * 10 / 12)} a month, billed yearly</p>}
                 <p className="mt-1 text-sm font-semibold text-ink">{p.tagline}</p>
-                <p className="mt-1 text-xs text-ink/65 leading-relaxed">{p.outcome}</p>
+                <p className="mt-1 text-xs text-ink/70 leading-relaxed">{p.outcome}</p>
                 <ul className="mt-4 space-y-1.5 flex-1">
                   {p.features.map((f) => (
                     <li key={f} className="text-xs text-ink/70 flex items-start gap-1.5"><span className="mt-[5px] w-1.5 h-1.5 rounded-full bg-success shrink-0" />{f}</li>
@@ -145,36 +145,36 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
                 </ul>
                 <div className="mt-5">
                   {label && key !== "FREE" && subscriptionBillingIsLive && canBill && <PlanButton planKey={key as "PRO" | "BUSINESS"} label={label} variant={rank > currentRank ? "primary" : "outline"} interval={interval} />}
-                  {label && key !== "FREE" && !subscriptionBillingIsLive && <p className="text-xs text-ink/60">Available once billing opens.</p>}
-                  {label && key !== "FREE" && subscriptionBillingIsLive && !canBill && <p className="text-xs text-ink/60">Ask the workspace owner to change the plan.</p>}
-                  {isCurrent && <p className="text-xs text-ink/60">{key === "FREE" ? "No card on file." : business.cancelAtPeriodEnd ? "Cancels at the end of the period." : "Renews monthly."}</p>}
-                  {!isCurrent && key === "FREE" && business.stripeCustomerId && live && <p className="text-xs text-ink/60">To go back to Free, cancel from Manage subscription. You keep your plan until the period ends.</p>}
+                  {label && key !== "FREE" && !subscriptionBillingIsLive && <p className="text-xs text-ink/65">Available once billing opens.</p>}
+                  {label && key !== "FREE" && subscriptionBillingIsLive && !canBill && <p className="text-xs text-ink/65">Ask the workspace owner to change the plan.</p>}
+                  {isCurrent && <p className="text-xs text-ink/65">{key === "FREE" ? "No card on file." : business.cancelAtPeriodEnd ? "Cancels at the end of the period." : "Renews monthly."}</p>}
+                  {!isCurrent && key === "FREE" && business.stripeCustomerId && live && <p className="text-xs text-ink/65">To go back to Free, cancel from Manage subscription. You keep your plan until the period ends.</p>}
                 </div>
               </div>
             );
           })}
         </div>
-        <p className="mt-3 text-xs text-ink/60">USD, billed monthly, cancel anytime. Plan changes are prorated by Stripe. Downgrading never deletes anything. Daythread never handles payments between you and your customers.</p>
+        <p className="mt-3 text-xs text-ink/65">USD, billed monthly, cancel anytime. Plan changes are prorated by Stripe. Downgrading never deletes anything. Daythread never handles payments between you and your customers.</p>
       </section>
 
       {paid && snapshot && snapshot.invoices.length > 0 && (
         <section aria-label="Receipts" className="rounded-[22px] border border-border bg-white overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-border text-[11px] font-bold uppercase tracking-[0.14em] text-ink/60">Receipts for your Daythread subscription</div>
+          <div className="px-5 py-3.5 border-b border-border text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Receipts for your Daythread subscription</div>
           <ul className="divide-y divide-border">
             {snapshot.invoices.map((inv) => (
               <li key={inv.id} className="px-5 py-3 flex items-center gap-3 text-sm">
-                <span className="text-ink/60 tabular-nums w-28 shrink-0">{format(inv.at, "MMM d, yyyy")}</span>
+                <span className="text-ink/65 tabular-nums w-28 shrink-0">{format(inv.at, "MMM d, yyyy")}</span>
                 <span className="flex-1 min-w-0 truncate text-ink">{inv.number ?? "Receipt"}</span>
                 <Badge tone={inv.status === "paid" ? "success" : inv.status === "open" ? "warning" : "neutral"}>{inv.status}</Badge>
                 <span className="font-semibold text-ink tabular-nums w-20 text-right">{formatMoney(inv.amountCents)}</span>
-                {inv.url && <a href={inv.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-ink/65 hover:text-ink">View</a>}
+                {inv.url && <a href={inv.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-ink/70 hover:text-ink">View</a>}
               </li>
             ))}
           </ul>
         </section>
       )}
       {next && subscriptionBillingIsLive && !pastDue && canBill && <MobileUpgradeBar planKey={next as "PRO" | "BUSINESS"} label={`Upgrade to ${PLANS[next].name}`} price={formatMoney(PLANS[next].priceCents)} />}
-      <p className="mt-6 text-xs text-ink/60"><Link href="/support" className="underline">Support</Link> · <Link href="/terms" className="underline">Terms</Link></p>
+      <p className="mt-6 text-xs text-ink/65"><Link href="/support" className="underline">Support</Link> · <Link href="/terms" className="underline">Terms</Link></p>
     </div>
   );
 }
@@ -182,9 +182,9 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
 function Fact({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "warning" }) {
   return (
     <div className="bg-white px-5 py-3.5">
-      <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/60">{label}</dt>
+      <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">{label}</dt>
       <dd className={cn("mt-1 text-sm font-semibold", tone === "warning" ? "text-warning-text" : "text-ink")}>{value}</dd>
-      {sub && <dd className="text-[11px] text-ink/60 mt-0.5">{sub}</dd>}
+      {sub && <dd className="text-[11px] text-ink/65 mt-0.5">{sub}</dd>}
     </div>
   );
 }

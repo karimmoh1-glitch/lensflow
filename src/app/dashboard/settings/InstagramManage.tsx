@@ -25,21 +25,21 @@ export function InstagramManage({ model }: { model: InstagramManageModel }) {
   return (
     <div className="space-y-3 text-xs">
       <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1.5">
-        <dt className="text-ink/60">Account</dt>
+        <dt className="text-ink/65">Account</dt>
         <dd className="text-ink/80 min-w-0 break-words">{model.username ? `@${model.username.replace(/^@/, "")}` : "—"}</dd>
-        <dt className="text-ink/60">Type</dt>
+        <dt className="text-ink/65">Type</dt>
         <dd className="text-ink/80">{model.accountType ? model.accountType.toLowerCase().replace(/_/g, " ") : "not reported by Meta"}</dd>
-        <dt className="text-ink/60">Webhooks</dt>
+        <dt className="text-ink/65">Webhooks</dt>
         <dd className={model.webhooksSubscribed ? "text-success-text" : "text-warning-text"}>
           {model.webhooksSubscribed ? "Subscribed — new DMs arrive here" : "Not subscribed — reconnect to retry"}
         </dd>
         {model.lastSyncedAt && (
           <>
-            <dt className="text-ink/60">Last sync</dt>
+            <dt className="text-ink/65">Last sync</dt>
             <dd className="text-ink/80">{formatDistanceToNowStrict(model.lastSyncedAt)} ago</dd>
           </>
         )}
-        <dt className="text-ink/60">Access</dt>
+        <dt className="text-ink/65">Access</dt>
         <dd className="text-ink/80">
           {model.tokenExpiresAt
             ? model.tokenExpiresAt.getTime() > Date.now()
@@ -66,7 +66,7 @@ export function InstagramManage({ model }: { model: InstagramManageModel }) {
         )}
       </div>
 
-      <p className="text-[11px] text-ink/60 leading-relaxed">
+      <p className="text-[11px] text-ink/65 leading-relaxed">
         Disconnecting stops Meta delivering this account&rsquo;s events to Daythread and erases the stored credential. Instagram has no third-party revocation endpoint, so you can also remove Daythread under Instagram → Settings → Website permissions. Your conversations and customers stay either way.
       </p>
     </div>

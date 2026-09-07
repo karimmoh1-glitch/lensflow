@@ -71,27 +71,27 @@ export function Welcome({
         <div className="w-full max-w-2xl mx-auto px-6 py-10 md:py-14">
           {view === "welcome" ? (
             <section className="dt-swap" aria-labelledby="welcome-title">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60">Welcome</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Welcome</p>
               <h1 id="welcome-title" className="mt-3 font-sans font-extrabold text-[2.2rem] md:text-[3rem] leading-[1] tracking-[-0.04em] text-ink text-balance">Hi {firstName}. Your inbox is ready.</h1>
-              <p className="mt-4 text-base md:text-lg text-ink/65 leading-relaxed max-w-lg">Every message from every channel you connect lands in one place, sorted so the people waiting on you come first. Nothing arrives until you connect a channel — that&rsquo;s the next step.</p>
+              <p className="mt-4 text-base md:text-lg text-ink/70 leading-relaxed max-w-lg">Every message from every channel you connect lands in one place, sorted so the people waiting on you come first. Nothing arrives until you connect a channel — that&rsquo;s the next step.</p>
               <ul className="mt-8 grid sm:grid-cols-3 gap-3">
                 {[["Connect", "Gmail, Instagram, WhatsApp or a text number, with the provider's own sign-in."], ["Read", "One list, newest first. Automated and promotional mail is kept out of the way."], ["Reply", "From the same address or account the message came from."]].map(([t, b]) => (
                   <li key={t} className="rounded-2xl border border-border bg-white px-4 py-3.5">
                     <div className="text-sm font-extrabold text-ink">{t}</div>
-                    <div className="mt-1 text-xs text-ink/60 leading-relaxed">{b}</div>
+                    <div className="mt-1 text-xs text-ink/65 leading-relaxed">{b}</div>
                   </li>
                 ))}
               </ul>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Button size="lg" onClick={() => setView("connect")}>Connect a channel <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden /></Button>
-                <button type="button" onClick={finish} disabled={pending} className="text-sm font-semibold text-ink/65 hover:text-ink disabled:opacity-50">{pending ? "Opening your inbox…" : "Skip for now"}</button>
+                <button type="button" onClick={finish} disabled={pending} className="text-sm font-semibold text-ink/70 hover:text-ink disabled:opacity-50">{pending ? "Opening your inbox…" : "Skip for now"}</button>
               </div>
             </section>
           ) : (
             <section className="dt-swap" aria-labelledby="connect-title">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/60">Step 2 of 2</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Step 2 of 2</p>
               <h1 id="connect-title" className="mt-3 font-sans font-extrabold text-[2rem] md:text-[2.6rem] leading-[1.02] tracking-[-0.04em] text-ink text-balance">Connect your first channel.</h1>
-              <p className="mt-3 text-base text-ink/65 leading-relaxed max-w-lg">Each one opens the provider&rsquo;s own sign-in and brings you back here. You can add more, or disconnect any of them, under Settings.</p>
+              <p className="mt-3 text-base text-ink/70 leading-relaxed max-w-lg">Each one opens the provider&rsquo;s own sign-in and brings you back here. You can add more, or disconnect any of them, under Settings.</p>
               {justConnected && (
                 <p role="status" className="mt-4 rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-3 text-sm text-success-text">Connected. Messages from it will start arriving in your inbox.</p>
               )}
@@ -107,12 +107,12 @@ export function Welcome({
                       <span className="shrink-0 w-10 h-10 rounded-xl border border-border bg-paper flex items-center justify-center">{icon && <ChannelIcon k={icon} size={24} />}</span>
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-ink">{c.name}</div>
-                        <div className="text-xs text-ink/65">{c.note ?? BLURB[c.provider]}</div>
+                        <div className="text-xs text-ink/70">{c.note ?? BLURB[c.provider]}</div>
                       </div>
                       {c.connected ? (
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-success-text"><Check className="w-3.5 h-3.5" strokeWidth={3} aria-hidden />Connected</span>
                       ) : c.provider === "SMS" ? (
-                        c.available ? <Link href="/dashboard/settings?tab=channels" className="text-xs font-semibold text-ink/60 hover:text-ink whitespace-nowrap">Pick a number in Settings →</Link> : null
+                        c.available ? <Link href="/dashboard/settings?tab=channels" className="text-xs font-semibold text-ink/65 hover:text-ink whitespace-nowrap">Pick a number in Settings →</Link> : null
                       ) : action && c.available ? (
                         <form action={action} onSubmit={() => setOpening(c.provider)}>
                           <Button type="submit" size="sm" loading={opening === c.provider} loadingLabel="Opening">Connect</Button>
@@ -124,7 +124,7 @@ export function Welcome({
               </ul>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Button size="lg" onClick={finish} loading={pending} loadingLabel="Opening your inbox">{connectedCount > 0 ? "Open my inbox" : "Continue without connecting"} <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden /></Button>
-                <button type="button" onClick={() => setView("welcome")} className="text-sm font-semibold text-ink/65 hover:text-ink">Back</button>
+                <button type="button" onClick={() => setView("welcome")} className="text-sm font-semibold text-ink/70 hover:text-ink">Back</button>
               </div>
             </section>
           )}

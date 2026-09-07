@@ -188,7 +188,7 @@ export function HeroThread() {
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-paper/70">
             <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
             <span className="text-[13px] font-extrabold tracking-tight text-ink">Daythread</span>
-            <span className="text-[11px] text-ink/60">Inbox</span>
+            <span className="text-[11px] text-ink/65">Inbox</span>
             <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5 transition-colors", inFlight ? "bg-accent-soft text-accent-text" : phase < 4 ? "bg-signal-soft text-signal-text" : "bg-success-soft text-success-text")}>
               {inFlight ? "Incoming" : phase < 4 ? "Reading" : "Handled"}
             </span>
@@ -216,9 +216,9 @@ export function HeroThread() {
               </Node>
               <Node on={on(2)} dot={cn("bg-signal", phase === 1 && !still && "animate-[dtBreathe_1.1s_ease-in-out_infinite]")} label="Daythread knows" labelClass="text-signal-text">
                 <span className="font-semibold">{s.ctx}</span>
-                <span className="block text-xs text-ink/60">{s.ctxMeta}</span>
+                <span className="block text-xs text-ink/65">{s.ctxMeta}</span>
               </Node>
-              <Node on={on(3)} dot="bg-ink/75" label="Done for you" labelClass="text-ink/65">
+              <Node on={on(3)} dot="bg-ink/75" label="Done for you" labelClass="text-ink/70">
                 {s.action}
               </Node>
               <Node on={on(4)} dot="bg-success" label="Outcome" labelClass="text-success-text">
@@ -226,13 +226,13 @@ export function HeroThread() {
               </Node>
             </ol>
             <aside className="hidden md:flex lg:hidden xl:flex flex-col border-l border-border bg-paper/60 p-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/60 mb-2">{s.who.split(" ")[0]}</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">{s.who.split(" ")[0]}</div>
               <div className="text-xs text-ink/70 leading-relaxed">{s.ctx}</div>
               <div className="mt-auto pt-4">
                 <div className={cn("rounded-2xl border px-3 py-2.5 transition-all duration-500", on(4) ? "border-accent/35 bg-gradient-to-br from-accent-soft/80 to-white opacity-100 translate-y-0" : "border-border opacity-0 translate-y-1")}>
                   <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-accent-text mb-0.5">Next</div>
                   <div className="text-[13px] font-semibold text-ink leading-snug">{s.next}</div>
-                  <div className="text-[11px] text-ink/60 mt-0.5 leading-snug">{s.nextWhy}</div>
+                  <div className="text-[11px] text-ink/65 mt-0.5 leading-snug">{s.nextWhy}</div>
                 </div>
               </div>
             </aside>

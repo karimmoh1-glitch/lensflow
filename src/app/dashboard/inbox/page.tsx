@@ -130,10 +130,10 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
           <div className="flex items-center justify-between gap-3">
             <h1 className="font-sans font-extrabold text-[19px] tracking-[-0.02em] text-ink">Inbox</h1>
             <div role="tablist" aria-label="Inbox view" className="inline-flex items-center rounded-full bg-black/[0.05] p-0.5 text-xs font-semibold">
-              <Link role="tab" aria-selected={view === "priority"} href={href({ view: "priority", cat: "all" })} className={cn("px-3 py-1 rounded-full transition-all", view === "priority" ? "bg-white text-ink shadow-xs" : "text-ink/65 hover:text-ink")}>
+              <Link role="tab" aria-selected={view === "priority"} href={href({ view: "priority", cat: "all" })} className={cn("px-3 py-1 rounded-full transition-all", view === "priority" ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink")}>
                 Priority
               </Link>
-              <Link role="tab" aria-selected={view === "all"} href={href({ view: "all", filter: "all" })} className={cn("px-3 py-1 rounded-full transition-all", view === "all" ? "bg-white text-ink shadow-xs" : "text-ink/65 hover:text-ink")}>
+              <Link role="tab" aria-selected={view === "all"} href={href({ view: "all", filter: "all" })} className={cn("px-3 py-1 rounded-full transition-all", view === "all" ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink")}>
                 All
               </Link>
             </div>
@@ -142,14 +142,14 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
           <SearchBox initial={q} />
 
           <p className="text-sm text-ink" aria-live="polite">
-            {q || view === "all" ? <span className="font-extrabold">{headline}</span> : waiting.length === 0 ? <span className="text-ink/60">{headline}</span> : (
+            {q || view === "all" ? <span className="font-extrabold">{headline}</span> : waiting.length === 0 ? <span className="text-ink/65">{headline}</span> : (
               <>
                 <span className="font-extrabold">{headline}</span>
-                <span className="text-ink/65"> · {waiting.slice(0, 3).map((r) => firstName(nameOf(r.conv))).join(", ")}{waiting.length > 3 ? "…" : ""}</span>
+                <span className="text-ink/70"> · {waiting.slice(0, 3).map((r) => firstName(nameOf(r.conv))).join(", ")}{waiting.length > 3 ? "…" : ""}</span>
               </>
             )}
             {view === "priority" && filteredOut > 0 && !q && (
-              <span className="block text-[11px] text-ink/60 mt-0.5">{filteredOut} automated or promotional {filteredOut === 1 ? "message" : "messages"} kept out of the way · <Link href={href({ view: "all", cat: "all" })} className="underline decoration-ink/20 hover:text-ink">see all</Link></span>
+              <span className="block text-[11px] text-ink/65 mt-0.5">{filteredOut} automated or promotional {filteredOut === 1 ? "message" : "messages"} kept out of the way · <Link href={href({ view: "all", cat: "all" })} className="underline decoration-ink/20 hover:text-ink">see all</Link></span>
             )}
           </p>
 
@@ -230,7 +230,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 <span className="w-px h-6 bg-gradient-to-b from-ink/10 to-transparent" />
               </div>
               <p className="text-sm font-semibold text-ink">Pick a conversation</p>
-              <p className="mt-1 text-sm text-ink/65 leading-relaxed">Who they are, what they mentioned and your history with them shows up beside it.</p>
+              <p className="mt-1 text-sm text-ink/70 leading-relaxed">Who they are, what they mentioned and your history with them shows up beside it.</p>
             </div>
           </div>
         )}
@@ -264,7 +264,7 @@ function Chip({ href, active, label, count, icon, tone }: { href: string; active
     <Link href={href} aria-current={active ? "page" : undefined} className={cn("inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full font-medium whitespace-nowrap transition-all duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", active ? "bg-ink text-white" : tone === "accent" && count ? "text-accent-text hover:bg-accent-soft" : "text-ink/70 hover:bg-black/[0.05]")}>
       {icon}
       {label}
-      {typeof count === "number" && count > 0 && <span className={cn("tabular-nums", active ? "text-white/60" : "text-ink/60")}>{count}</span>}
+      {typeof count === "number" && count > 0 && <span className={cn("tabular-nums", active ? "text-white/60" : "text-ink/65")}>{count}</span>}
     </Link>
   );
 }

@@ -4,6 +4,8 @@ import { automationsEntitled, planLimits } from "@/lib/billing";
 import { toZonedDisplayDate, firstName } from "@/lib/utils";
 import { format, subHours, addHours, subDays } from "date-fns";
 import type { AutomationAction, AutomationTrigger, Prisma } from "@prisma/client";
+import { subMinutes } from "date-fns";
+import { withLock } from "@/lib/dbLock";
 
 /**
  * The automation runner. Automations were a page of toggles with nothing behind them;
@@ -90,23 +92,34 @@ export type RunResult = "sent" | "skipped" | "not_configured" | "failed";
 
 async function runOne(automation: { id: string; businessId: string; name: string; messageTemplate: string; trigger: AutomationTrigger; action: AutomationAction }, target: Target): Promise<RunResult> {
   const { businessId } = automation;
-  // Idempotent per target. A not_configured run is retried once the channel exists.
-  const already = await prisma.automationExecution.findFirst({ where: { automationId: automation.id, targetId: target.targetId, result: { in: ["sent", "skipped"] } } });
-  if (already) return "skipped";
-  // Two automations doing the same thing (a recipe added twice, an edited copy) must not
-  // message the same person twice: once any automation has sent — or written the not-yet-
-  // deliverable message into the thread — for this action and target, the others record a
-  // skip instead of a second send.
-  const sentByAnother = await prisma.automationExecution.findFirst({ where: { businessId, targetId: target.targetId, result: { in: ["sent", "not_configured"] }, automationId: { not: automation.id }, automation: { action: automation.action } }, select: { id: true } });
-  if (sentByAnother) {
-    await prisma.automationExecution.create({ data: { businessId, automationId: automation.id, targetType: target.targetType, targetId: target.targetId, result: "skipped" } });
-    return "skipped";
-  }
+  // Exactly one run per action and person, however many times the event arrives at once:
+  // the check and the claim happen under a lock keyed by target + action, the claim is a
+  // "pending" execution row, and the send happens after the lock is released.
+  const claim = await withLock(`automation:${businessId}:${target.targetId}:${automation.action}`, async () => {
+    // Idempotent per target. A not_configured run is retried once the channel exists; a
+    // claim that never finished (an instance died mid-send) stops blocking after 10 minutes.
+    const stale = subMinutes(new Date(), 10);
+    const already = await prisma.automationExecution.findFirst({ where: { automationId: automation.id, targetId: target.targetId, OR: [{ result: { in: ["sent", "skipped"] } }, { result: "pending", ranAt: { gte: stale } }] }, select: { id: true } });
+    if (already) return null;
+    // Two automations doing the same thing (a recipe added twice, an edited copy) must not
+    // message the same person twice: once any automation has sent — or written the not-yet-
+    // deliverable message into the thread — for this action and target, the others record a
+    // skip instead of a second send.
+    const sentByAnother = await prisma.automationExecution.findFirst({ where: { businessId, targetId: target.targetId, automationId: { not: automation.id }, automation: { action: automation.action }, OR: [{ result: { in: ["sent", "not_configured"] } }, { result: "pending", ranAt: { gte: stale } }] }, select: { id: true } });
+    if (sentByAnother) {
+      await prisma.automationExecution.create({ data: { businessId, automationId: automation.id, targetType: target.targetType, targetId: target.targetId, result: "skipped" } });
+      return null;
+    }
+    return prisma.automationExecution.create({ data: { businessId, automationId: automation.id, targetType: target.targetType, targetId: target.targetId, result: "pending" }, select: { id: true } });
+  });
+  if (!claim) return "skipped";
 
   const business = await prisma.business.findUnique({ where: { id: businessId } });
-  if (!business) return "failed";
-  const record = (result: RunResult) =>
-    prisma.automationExecution.create({ data: { businessId, automationId: automation.id, targetType: target.targetType, targetId: target.targetId, result } });
+  const record = (result: RunResult) => prisma.automationExecution.update({ where: { id: claim.id }, data: { result } });
+  if (!business) {
+    await record("failed");
+    return "failed";
+  }
 
   // Server-side entitlement at run time: a downgraded business's automations stop, and a
   // plan with a count cap runs only its oldest N switched-on automations — the rest stay

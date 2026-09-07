@@ -42,12 +42,12 @@ const seg = (p: number, a: number, b: number) => ease(clamp((p - a) / (b - a)));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const BEATS = [
-  { at: 0.0, eyebrow: "Right now", tone: "text-ink/45", title: <>Ten places.</>, sub: "Instagram. WhatsApp. Texts. Gmail. Your booking page. Your calendar." },
-  { at: 0.16, eyebrow: "Daythread", tone: "text-signal-text", title: <>One thread.</>, sub: "Every conversation, in the order it happened." },
+  { at: 0.0, eyebrow: "Right now", tone: "text-ink/45", title: <>Your customers are everywhere.</>, sub: "Instagram. WhatsApp. Texts. Gmail. Your booking page." },
+  { at: 0.16, eyebrow: "Daythread", tone: "text-signal-text", title: <>Your work shouldn&rsquo;t be.</>, sub: "One inbox. Every conversation, in the order it happened." },
   { at: 0.34, eyebrow: "Context", tone: "text-signal-text", title: <>It reads it.</>, sub: "Who this is. What they want. What's open." },
   { at: 0.52, eyebrow: "Action", tone: "text-accent-text", title: <>It knows what&rsquo;s next.</>, sub: "The booking, ready to send." },
   { at: 0.66, eyebrow: "Outcome", tone: "text-success-text", title: <>Done.</>, sub: "Booked. Confirmed. On the calendar." },
-  { at: 0.8, eyebrow: "The product", tone: "text-ink/45", title: <>Daythread handled it.</>, sub: "Six conversations became one thing to do. The thread is the interface." },
+  { at: 0.8, eyebrow: "The product", tone: "text-ink/45", title: <>This is Daythread.</>, sub: "Six conversations became one thing to do. The thread is the interface." },
 ];
 
 export function Story() {
@@ -102,7 +102,7 @@ export function Story() {
   const violetTint = mix(0, 1, thread) * (1 - product);
 
   return (
-    <section ref={ref} className={cn("relative", pinned ? "h-[520vh]" : "py-16")} aria-label="One message, from chaos to booked, and the product it lives in">
+    <section id="story" ref={ref} className={cn("relative scroll-mt-0", pinned ? "h-[520vh]" : "py-16")} aria-label="One message, from chaos to booked, and the product it lives in">
       <div className={cn("w-full", pinned && "sticky top-0 h-[100svh] flex items-center overflow-hidden")}>
         {/* atmosphere */}
         <div aria-hidden className="absolute inset-0 pointer-events-none transition-opacity duration-300" style={{ opacity: chaosTint * 0.9, background: "radial-gradient(40% 40% at 20% 30%, rgba(214,41,118,0.10), transparent 70%), radial-gradient(40% 40% at 80% 25%, rgba(234,67,53,0.10), transparent 70%), radial-gradient(45% 45% at 70% 80%, rgba(37,211,102,0.12), transparent 70%)" }} />

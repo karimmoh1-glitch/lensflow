@@ -7,6 +7,7 @@ import { ProductDemo } from "./landing/ProductDemo";
 import { Workflow } from "./landing/Workflow";
 import { CalendarBeat } from "./landing/CalendarBeat";
 import { AssistantBeat } from "./landing/AssistantBeat";
+import { Spine } from "./landing/Spine";
 import { PricingSection } from "./PricingSection";
 import { FinalCta } from "./landing/FinalCta";
 import { Footer } from "./landing/Footer";
@@ -20,8 +21,8 @@ import { Footer } from "./landing/Footer";
  *   the business gets quiet — one thing to do (midnight)
  *   click around — the product, interactive
  *   the calendar — a message moves a booking, the confirmation goes back out
- *   the assistant — it proposes, you approve, it lands in done
  *   it runs itself — an automation firing
+ *   the assistant — it proposes, you approve, it lands in done
  *   pricing — the natural conclusion
  *   the end — the thread returns, organized, and one line
  *
@@ -35,7 +36,10 @@ export default function LandingPage() {
     <main className="bg-paper overflow-x-clip">
       <Opening />
       <Navbar />
-      <Hero />
+      <Spine />
+      <div id="top" className="scroll-mt-16">
+        <Hero />
+      </div>
       <Story />
 
       <section className="relative py-24 md:py-32 bg-midnight overflow-hidden">
@@ -50,12 +54,12 @@ export default function LandingPage() {
         <CalendarBeat />
       </section>
 
-      <section id="assistant" className="relative py-20 md:py-28 bg-white overflow-hidden scroll-mt-16">
-        <AssistantBeat />
-      </section>
-
       <section id="how" className="relative py-20 md:py-28 bg-[linear-gradient(180deg,#FAFAF9_0%,#EEEBFC_55%,#FAFAF9_100%)] scroll-mt-16">
         <Workflow />
+      </section>
+
+      <section id="assistant" className="relative py-20 md:py-28 bg-white border-t border-border overflow-hidden scroll-mt-16">
+        <AssistantBeat />
       </section>
 
       <div id="pricing" className="bg-white border-t border-border scroll-mt-16">

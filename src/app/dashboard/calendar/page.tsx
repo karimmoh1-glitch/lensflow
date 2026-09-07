@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getDayAgenda } from "@/server/dayAgenda";
+import { WeekGrid } from "./WeekGrid";
 import { ChevronLeft, ChevronRight, CalendarDays, Plus, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 import { addDays, addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
@@ -14,7 +15,7 @@ import { cn, toZonedDisplayDate } from "@/lib/utils";
  *   "Am I free at 3?"        — free windows: working hours minus bookings, buffers and busy time.
  * The month grid stays for planning. Every time is shown in the business's own timezone.
  */
-export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string; day?: string }> }) {
+export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ month?: string; day?: string; view?: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
   if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
@@ -35,13 +36,15 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const weekStart = startOfWeek(selected);
   const week = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
 
-  const [bookings, agenda] = await Promise.all([
+  const view: "day" | "week" = sp.view === "week" ? "week" : "day";
+  const [bookings, agenda, weekAgendas] = await Promise.all([
     prisma.booking.findMany({
       where: { businessId: business.id, startAt: { gte: addDays(gridStart, -1), lte: addDays(gridEnd, 1) }, status: { not: "CANCELED" } },
       include: { client: true, service: true },
       orderBy: { startAt: "asc" },
     }),
     getDayAgenda(business.id, { year: selected.getFullYear(), month: selected.getMonth(), date: selected.getDate() }),
+    view === "week" ? Promise.all(week.map((d) => getDayAgenda(business.id, { year: d.getFullYear(), month: d.getMonth(), date: d.getDate() }))) : Promise.resolve(null),
   ]);
 
   const byDay = new Map<string, typeof bookings>();
@@ -66,7 +69,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         description={isSelectedToday ? "What's on today, and when you're free." : format(selected, "EEEE, MMMM d")}
         action={
           <div className="flex items-center gap-1.5">
-            {!isSelectedToday && <Link href={`?day=${dayKey(today)}`} className="inline-flex items-center h-9 px-3.5 rounded-full border border-border bg-white text-sm font-semibold text-ink hover:bg-black/[0.03]">Today</Link>}
+            <div role="group" aria-label="View" className="inline-flex items-center h-9 rounded-full border border-border bg-white p-0.5 mr-1">
+              {(["day", "week"] as const).map((v) => (
+                <Link key={v} href={`?view=${v}&day=${dayKey(selected)}`} aria-current={view === v ? "page" : undefined} className={cn("inline-flex items-center h-8 px-3 rounded-full text-sm font-semibold transition-colors", view === v ? "bg-ink text-white" : "text-ink/60 hover:text-ink")}>{v === "day" ? "Day" : "Week"}</Link>
+              ))}
+            </div>
+            {!isSelectedToday && <Link href={`?view=${view}&day=${dayKey(today)}`} className="inline-flex items-center h-9 px-3.5 rounded-full border border-border bg-white text-sm font-semibold text-ink hover:bg-black/[0.03]">Today</Link>}
             <Link href="/dashboard/bookings" className="inline-flex items-center h-9 px-3.5 rounded-full bg-ink text-white text-sm font-semibold hover:bg-black"><Plus className="w-4 h-4 mr-1" strokeWidth={2.5} aria-hidden />Bookings</Link>
           </div>
         }
@@ -82,14 +90,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
       {/* Week strip: seven big targets, the selected day solid. */}
       <div className="flex items-center gap-1 mb-4">
-        <Link href={`?day=${dayKey(addDays(selected, -7))}`} aria-label="Previous week" className="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded-md text-ink/55 hover:text-ink hover:bg-black/[0.05]"><ChevronLeft className="w-4 h-4" strokeWidth={2} /></Link>
+        <Link href={`?view=${view}&day=${dayKey(addDays(selected, -7))}`} aria-label="Previous week" className="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded-md text-ink/55 hover:text-ink hover:bg-black/[0.05]"><ChevronLeft className="w-4 h-4" strokeWidth={2} /></Link>
         <ol className="flex-1 grid grid-cols-7 gap-1">
           {week.map((d) => {
             const sel = isSameDay(d, selected);
             const count = byDay.get(dayKey(d))?.length ?? 0;
             return (
               <li key={d.toISOString()}>
-                <Link href={`?day=${dayKey(d)}`} aria-current={sel ? "date" : undefined} className={cn("flex flex-col items-center rounded-2xl py-2 min-h-[3.75rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", sel ? "bg-ink text-white" : "bg-white border border-border text-ink hover:bg-black/[0.03]")}>
+                <Link href={`?view=${view}&day=${dayKey(d)}`} aria-current={sel ? "date" : undefined} className={cn("flex flex-col items-center rounded-2xl py-2 min-h-[3.75rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", sel ? "bg-ink text-white" : "bg-white border border-border text-ink hover:bg-black/[0.03]")}>
                   <span className={cn("text-[10px] font-bold uppercase tracking-[0.1em]", sel ? "text-white/70" : "text-ink/45")}>{format(d, "EEE")}</span>
                   <span className={cn("text-lg font-extrabold tabular-nums leading-tight", !sel && isSameDay(d, today) && "text-accent-text")}>{format(d, "d")}</span>
                   <span className="h-1.5 flex items-center gap-0.5" aria-hidden>{Array.from({ length: Math.min(3, count) }).map((_, i) => <span key={i} className={cn("w-1 h-1 rounded-full", sel ? "bg-white/80" : "bg-accent")} />)}</span>
@@ -98,10 +106,16 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             );
           })}
         </ol>
-        <Link href={`?day=${dayKey(addDays(selected, 7))}`} aria-label="Next week" className="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded-md text-ink/55 hover:text-ink hover:bg-black/[0.05]"><ChevronRight className="w-4 h-4" strokeWidth={2} /></Link>
+        <Link href={`?view=${view}&day=${dayKey(addDays(selected, 7))}`} aria-label="Next week" className="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded-md text-ink/55 hover:text-ink hover:bg-black/[0.05]"><ChevronRight className="w-4 h-4" strokeWidth={2} /></Link>
       </div>
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-10">
+      {view === "week" && weekAgendas && (
+        <div className="mb-10">
+          <WeekGrid week={week} agendas={weekAgendas} timezone={tz} today={today} selected={selected} dayKey={dayKey} />
+        </div>
+      )}
+
+      <div className={cn("grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-10", view === "week" && "hidden")}>
         {/* Day agenda */}
         <section aria-label="Day agenda" className="rounded-[22px] border border-border bg-white overflow-hidden">
           <div className="px-5 py-3.5 border-b border-border flex items-center justify-between gap-3">
@@ -173,7 +187,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             {agenda.calendars.length > 0 && (
               <p className="mt-4 text-[11px] text-ink/45">{agenda.calendars.map((c) => `${c.provider === "GOOGLE_CALENDAR" ? "Google" : "Apple"}${c.lastSyncedAt ? ` synced ${format(c.lastSyncedAt, "h:mm a")}` : c.status === "CONNECTED" ? " connected" : " needs attention"}`).join(" · ")}</p>
             )}
-            {agenda.calendars.length === 0 && <Link href="/dashboard/settings?tab=connections" className="mt-4 inline-block text-[11px] font-semibold text-signal-text hover:underline">Connect Google or Apple Calendar so busy time counts →</Link>}
+            {agenda.calendars.length === 0 && <Link href="/dashboard/settings?tab=channels" className="mt-4 inline-block text-[11px] font-semibold text-signal-text hover:underline">Connect Google or Apple Calendar so busy time counts →</Link>}
           </div>
         </aside>
       </div>
@@ -183,8 +197,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         <div className="flex items-center justify-between gap-3 mb-3">
           <h2 className="font-sans font-extrabold text-lg tracking-tight text-ink">{format(anchor, "MMMM yyyy")}</h2>
           <div className="flex items-center gap-1">
-            <Link href={`?day=${dayKey(selected)}&month=${prevMonth}`} aria-label="Previous month" className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink/65 hover:text-ink hover:bg-black/[0.05]"><ChevronLeft className="w-4 h-4" strokeWidth={2} /></Link>
-            <Link href={`?day=${dayKey(selected)}&month=${nextMonth}`} aria-label="Next month" className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink/65 hover:text-ink hover:bg-black/[0.05]"><ChevronRight className="w-4 h-4" strokeWidth={2} /></Link>
+            <Link href={`?view=${view}&day=${dayKey(selected)}&month=${prevMonth}`} aria-label="Previous month" className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink/65 hover:text-ink hover:bg-black/[0.05]"><ChevronLeft className="w-4 h-4" strokeWidth={2} /></Link>
+            <Link href={`?view=${view}&day=${dayKey(selected)}&month=${nextMonth}`} aria-label="Next month" className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink/65 hover:text-ink hover:bg-black/[0.05]"><ChevronRight className="w-4 h-4" strokeWidth={2} /></Link>
           </div>
         </div>
         <div className="grid grid-cols-7 text-[10px] md:text-xs font-semibold text-ink/50 mb-1.5">
@@ -197,7 +211,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             const inMonth = isSameMonth(day, anchor);
             const sel = isSameDay(day, selected);
             return (
-              <Link key={key} href={`?day=${key}`} aria-label={`${format(day, "EEEE, MMMM d")}${dayBookings.length ? `, ${dayBookings.length} booking${dayBookings.length === 1 ? "" : "s"}` : ""}`} className={cn("min-h-[3.25rem] md:min-h-28 rounded-lg md:rounded-xl border p-1.5 md:p-2 bg-white transition-colors hover:bg-black/[0.02]", !inMonth && "bg-black/[0.02] text-ink/30", isSameDay(day, today) && "border-accent ring-1 ring-accent/30", sel ? "border-ink" : "border-border")}>
+              <Link key={key} href={`?view=${view}&day=${key}`} aria-label={`${format(day, "EEEE, MMMM d")}${dayBookings.length ? `, ${dayBookings.length} booking${dayBookings.length === 1 ? "" : "s"}` : ""}`} className={cn("min-h-[3.25rem] md:min-h-28 rounded-lg md:rounded-xl border p-1.5 md:p-2 bg-white transition-colors hover:bg-black/[0.02]", !inMonth && "bg-black/[0.02] text-ink/30", isSameDay(day, today) && "border-accent ring-1 ring-accent/30", sel ? "border-ink" : "border-border")}>
                 <div className={cn("text-xs font-medium mb-1 text-center md:text-left", isSameDay(day, today) && "text-accent-text")}>{format(day, "d")}</div>
                 <div className="hidden md:block space-y-1">
                   {dayBookings.slice(0, 3).map((b) => (

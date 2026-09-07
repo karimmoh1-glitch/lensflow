@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { ChannelIcon } from "./ChannelIcon";
 import { Beat, Arrow } from "./ProductDemo";
 import { useScrollProgress, seg } from "./useScrollProgress";
+import { Reveal } from "./Reveal";
 
 /**
  * An automation, shown firing — and you're the one firing it, with the scroll wheel.
@@ -22,13 +23,13 @@ export function Workflow() {
   return (
     <div ref={ref} className="max-w-[1200px] mx-auto px-6">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-10 lg:gap-16 items-center">
-        <div>
+        <Reveal>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text mb-4">Runs itself</p>
           <h2 className="font-sans font-extrabold text-[clamp(2.4rem,4.4vw,3.9rem)] leading-[0.94] tracking-[-0.045em] text-ink">
             The boring part,<br /><span className="whitespace-nowrap">done for you.</span>
           </h2>
-          <p className="mt-5 text-ink/60 text-base max-w-xs">A sentence you can read. Scroll, and watch it fire.</p>
-        </div>
+          <p className="mt-5 text-ink/60 text-base max-w-xs">Message → understand → act → follow up. Written as a sentence you can read. Scroll, and watch it fire.</p>
+        </Reveal>
 
         <div className="relative">
           {/* the trigger: a booking arriving */}

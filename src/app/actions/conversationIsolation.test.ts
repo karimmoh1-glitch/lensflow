@@ -9,6 +9,7 @@ vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
  * against Business A's data. Each one must refuse without touching A. Runs against the real
  * database with two isolated fixture businesses.
  */
+let stamp = 0;
 describe("conversation actions are tenant-isolated", () => {
   let aId: string;
   let bId: string;
@@ -18,7 +19,7 @@ describe("conversation actions are tenant-isolated", () => {
   let aMembershipId: string;
 
   beforeAll(async () => {
-    const stamp = Date.now();
+    stamp = Date.now();
     const a = await prisma.business.create({ data: { name: "Tenant A", handle: `tenant-a-${stamp}`, planTier: "BUSINESS", billingStatus: "ACTIVE" } });
     const b = await prisma.business.create({ data: { name: "Tenant B", handle: `tenant-b-${stamp}`, planTier: "BUSINESS", billingStatus: "ACTIVE" } });
     aId = a.id;
@@ -39,7 +40,8 @@ describe("conversation actions are tenant-isolated", () => {
   afterAll(async () => {
     await prisma.business.delete({ where: { id: aId } });
     await prisma.business.delete({ where: { id: bId } });
-    await prisma.user.deleteMany({ where: { email: { contains: "-owner-" } } });
+    // Only this file's own fixtures — other suites use "-owner-" too and run in parallel.
+    await prisma.user.deleteMany({ where: { email: { contains: `-owner-${stamp}@example.com` } } });
   });
 
   it("reclassify refuses and leaves A's category and rules untouched", async () => {

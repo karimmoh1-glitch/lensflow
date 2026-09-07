@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Inbox, Users, CalendarClock, Zap, Home, CalendarDays, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Reveal } from "./Reveal";
 import { ChannelIcon, type ChannelKey } from "./ChannelIcon";
 
 /**
@@ -64,10 +65,11 @@ export function ProductDemo() {
     <div className="relative max-w-[1200px] mx-auto px-6">
       <div aria-hidden className="absolute inset-x-0 top-1/3 h-2/3 -z-0 pointer-events-none transition-all duration-1000" style={{ background: `radial-gradient(50% 50% at 50% 60%, ${active.tint}1a, transparent 70%)` }} />
 
-      <div className="relative text-center max-w-2xl mx-auto mb-8">
+      <Reveal className="relative text-center max-w-2xl mx-auto mb-8">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-4">Try it</p>
-        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">Click around.</h2>
-      </div>
+        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">This is the inbox.</h2>
+        <p className="mt-4 text-ink/55 text-base">The real interface. Click a conversation and the context appears beside it.</p>
+      </Reveal>
 
       <div className="relative flex flex-wrap items-center justify-center gap-2 mb-4" role="tablist" aria-label="Product surfaces">
         {TABS.map((t) => {
@@ -100,9 +102,9 @@ export function ProductDemo() {
             <span className="text-sm font-extrabold tracking-tight text-ink">Daythread</span>
           </div>
           {[
-            { k: "home", label: "Home", icon: Home },
+            { k: "home", label: "Today", icon: Home },
             { k: "inbox", label: "Inbox", icon: Inbox, n: 3 },
-            { k: "client", label: "Clients", icon: Users },
+            { k: "client", label: "People", icon: Users },
             { k: "booking", label: "Bookings", icon: CalendarClock },
             { k: "calendar", label: "Calendar", icon: CalendarDays },
             { k: "automation", label: "Automations", icon: Zap },

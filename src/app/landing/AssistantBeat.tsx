@@ -4,6 +4,7 @@ import { Sparkles, MessageSquare, CalendarCheck, RotateCcw, Check } from "lucide
 import { cn } from "@/lib/utils";
 import { ChannelIcon } from "./ChannelIcon";
 import { useScrollProgress, seg } from "./useScrollProgress";
+import { Reveal } from "./Reveal";
 
 /**
  * The assistant, doing what it does: it reads who is waiting, what isn't confirmed and who
@@ -27,15 +28,15 @@ export function AssistantBeat() {
   return (
     <div ref={ref} className="max-w-[1200px] mx-auto px-6">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-10 lg:gap-16 items-center">
-        <div>
+        <Reveal>
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text mb-4">Assistant</p>
           <h2 className="font-sans font-extrabold text-[clamp(2.4rem,4.4vw,3.9rem)] leading-[0.94] tracking-[-0.045em] text-ink">
             It proposes.<br />You approve.
           </h2>
           <p className="mt-5 text-ink/60 text-base max-w-sm">
-            Every morning it reads what&rsquo;s actually happening — who&rsquo;s waiting, what isn&rsquo;t confirmed, who went quiet — and writes the next move from your real thread and prices. You read it. You send it. Nothing goes out on its own.
+            It reads what&rsquo;s actually happening — who&rsquo;s waiting, what isn&rsquo;t confirmed, who went quiet — and writes the next move from your real thread and prices. You read it. You send it. Nothing goes out on its own.
           </p>
-        </div>
+        </Reveal>
 
         <div className="relative">
           <div className="rounded-[22px] border border-border bg-white shadow-[0_32px_80px_-32px_rgba(16,17,20,0.3)] overflow-hidden" style={{ opacity: 0.4 + arrive * 0.6, transform: `translateY(${(1 - arrive) * 12}px)` }}>

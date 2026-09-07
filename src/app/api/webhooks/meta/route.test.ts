@@ -167,10 +167,10 @@ describe("Meta webhook", () => {
   });
 
   it("ignores a WhatsApp message for a phone number nobody has connected, and writes nothing", async () => {
-    const before = await prisma.conversation.count();
+    // Other suites write conversations in parallel; count only what this sender could create.
     const r = await post({ object: "whatsapp_business_account", entry: [{ id: "waba", changes: [{ field: "messages", value: { metadata: { phone_number_id: "pn_never_connected" }, contacts: [{ wa_id: "15550008888", profile: { name: "Nobody" } }], messages: [{ from: "15550008888", id: `wamid.unknown_${Date.now()}`, type: "text", text: { body: "hello?" } }] } }] }] });
     expect(await r.json()).toMatchObject({ handled: 0 });
-    expect(await prisma.conversation.count()).toBe(before);
+    expect(await prisma.conversation.count({ where: { externalHandle: { contains: "15550008888" } } })).toBe(0);
   });
 
   it("ignores an Instagram DM for an account whose integration has been disconnected", async () => {

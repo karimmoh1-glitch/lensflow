@@ -15,6 +15,8 @@ import { SubscriptionPanel } from "./SubscriptionPanel";
 import { TeamPanel } from "./TeamPanel";
 import { HowYouWorkForm } from "./HowYouWorkForm";
 import { getPersonalization } from "@/server/personalization";
+import { ensureReferralCode } from "@/server/referral";
+import { ReferralCard } from "./ReferralCard";
 
 type Params = { tab?: string; google_connected?: string; google_error?: string; connected?: string; connect_error?: string; provider?: string; setup?: string; checkout?: string; plan?: string; interval?: string };
 
@@ -38,11 +40,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     : sp.tab === "team" ? "team"
     : "channels"; // includes the legacy ?tab=connections and every provider callback
 
-  const [services, availability, personalization] = await Promise.all([
+  const [services, availability, personalization, referralCode] = await Promise.all([
     prisma.service.findMany({ where: { businessId: business.id }, orderBy: { sortOrder: "asc" } }),
     prisma.availability.findMany({ where: { businessId: business.id } }),
     getPersonalization(business.id),
+    ctx.role === "OWNER" ? ensureReferralCode(business.id).catch(() => null) : Promise.resolve(null),
   ]);
+  const referralUrl = referralCode ? `${process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org"}/?ref=${referralCode}` : null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
@@ -63,6 +67,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <>
               <ProfileForm name={ctx.user.name} email={ctx.user.email} workspaceName={business.name} timezone={business.timezone} />
               <div className="mt-6"><HowYouWorkForm initial={personalization?.answers ?? null} /></div>
+              {referralUrl && <div className="mt-6"><ReferralCard url={referralUrl} /></div>}
               {ctx.role === "OWNER" && <DangerZone businessName={business.name} />}
             </>
           ),

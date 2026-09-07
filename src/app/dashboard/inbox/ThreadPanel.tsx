@@ -20,6 +20,8 @@ import { splitMessage } from "@/lib/cleanMessage";
 import { understand } from "@/lib/understand";
 import { readRelationship } from "@/lib/relationshipState";
 import { labelFor } from "@/lib/classifyMessage";
+import { leadAttention } from "@/lib/attention";
+import { FollowUpControl } from "./FollowUpControl";
 import type { ConversationSummary } from "@/lib/summarize";
 
 /**
@@ -91,6 +93,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const cachedSummary = (conversation.summary as unknown as ConversationSummary | null) ?? null;
   const canBook = Boolean(lead && lead.status !== "BOOKED" && lead.status !== "LOST");
+  const attention = lead ? leadAttention({ status: lead.status, respondedAt: lead.respondedAt, lastInboundAt: lead.lastInboundAt, followUpAt: lead.followUpAt, createdAt: lead.createdAt, hasService: Boolean(lead.serviceId), hasDate: Boolean(lead.requestedDateText || lead.requestedDate), hidden: conversation.archived || !isPerson, hasUpcomingBooking: Boolean(upcoming) }, now) : null;
 
   // WhatsApp's 24-hour customer-service window, told before the person writes.
   let windowNotice: WindowNotice = null;
@@ -181,6 +184,15 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/65 mb-2">They mentioned</div>
             <dl className="space-y-1.5 text-sm">{facts.map((f) => <Row key={f.label} label={f.label} value={f.value} />)}</dl>
+          </div>
+        )}
+
+        {lead && lead.status !== "BOOKED" && lead.status !== "LOST" && (
+          <div className="pt-4 border-t border-border space-y-3">
+            {attention && (
+              <p className="rounded-xl bg-paper border border-border px-3 py-2 text-xs text-ink/80"><span className="font-bold text-ink">{attention.label}.</span> {attention.why}</p>
+            )}
+            <FollowUpControl leadId={lead.id} followUpAt={lead.followUpAt ? lead.followUpAt.toISOString() : null} />
           </div>
         )}
 

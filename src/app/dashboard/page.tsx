@@ -15,6 +15,7 @@ import { format, formatDistanceToNowStrict } from "date-fns";
 import { FixMyDayButton } from "./FixMyDayButton";
 import { OneThingCard } from "./OneThingCard";
 import { Priorities } from "./Priorities";
+import { AttentionList } from "./AttentionList";
 import { effectivePlan } from "@/lib/billing";
 
 /**
@@ -136,6 +137,8 @@ export default async function TodayPage() {
           </div>
         )}
       </section>
+
+      <AttentionList businessId={business.id} timezone={business.timezone} skipLeadId={top?.id ?? null} />
 
       {/* TODAY + ASSISTANT */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 mt-10">

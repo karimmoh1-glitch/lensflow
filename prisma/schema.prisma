@@ -35,6 +35,12 @@ model Business {
   // SMS number; email inbound routes by handle@inbound domain instead, no field needed.
   twilioPhoneNumber String? @unique
 
+  /// Referral: this workspace's own share code, and the workspace whose link brought it here.
+  /// Uniqueness is enforced by ensureReferralCode() (a unique index on a new column would make
+  /// `prisma db push` — which the production build runs — stop for a data-loss confirmation).
+  referralCode  String?
+  referredById  String?
+
   onboardingStep     Int     @default(0)
   // What the owner said matters most during onboarding ("messages", "clients", "bookings",
   // "payments", "follow-ups") — shapes the first-run experience and the dashboard order.
@@ -80,6 +86,8 @@ model Business {
   analyticsEvents AnalyticsEvent[]
   onboardingProfile OnboardingProfile?
   senderRules     SenderRule[]
+
+  @@index([referralCode])
 }
 
 /// What the owner told us about how they work, before their account existed. Read by the
@@ -400,6 +408,8 @@ model Lead {
 
   lastInboundAt DateTime?
   respondedAt   DateTime?
+  /// A reminder the owner set on this person: "follow up on Thursday". Cleared when they write.
+  followUpAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

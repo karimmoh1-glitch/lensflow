@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/payments";
 import { sendOnChannel } from "@/lib/messaging";
 import { track } from "@/lib/analytics";
+import { trackReferralMilestone } from "@/server/referral";
 import { planKeyFromPrice, subscriptionPeriodEnd, invoiceSubscriptionId } from "@/lib/subscriptionBilling";
 import type { BillingStatus } from "@prisma/client";
 
@@ -117,7 +118,10 @@ export async function syncSubscription(subscription: Stripe.Subscription): Promi
   // Funnel signal: the first time this workspace becomes a paying subscriber.
   const entitledNow = billingStatus === "ACTIVE" || billingStatus === "TRIALING";
   const entitledBefore = business.planTier !== "FREE" && (business.billingStatus === "ACTIVE" || business.billingStatus === "TRIALING" || business.billingStatus === "PAST_DUE");
-  if (entitledNow && !entitledBefore) await track("subscription_started", { businessId, properties: { planKey: planTier, trial: subscription.status === "trialing" } });
+  if (entitledNow && !entitledBefore) {
+    await track("subscription_started", { businessId, properties: { planKey: planTier, trial: subscription.status === "trialing" } });
+    await trackReferralMilestone(businessId, "referral_converted", { planKey: planTier });
+  }
   if (subscription.status === "trialing" && !business.trialUsedAt) await track("trial_started", { businessId, properties: { planKey: planTier } });
   await prisma.business.updateMany({
     where: { id: businessId },

@@ -26,6 +26,14 @@ export function LandingBeacon() {
   useEffect(() => {
     const id = visitorId();
     if (!id) return;
+    // A referral link: keep the code for /start, and count the visit once.
+    try {
+      const ref = new URLSearchParams(window.location.search).get("ref");
+      if (ref && /^[a-z2-9]{8}$/.test(ref) && localStorage.getItem("dt-ref") !== ref) {
+        localStorage.setItem("dt-ref", ref);
+        void recordLandingEvent("referral_started", id, ref);
+      }
+    } catch {}
     try {
       if (!sessionStorage.getItem("dt-visit-sent")) {
         sessionStorage.setItem("dt-visit-sent", "1");

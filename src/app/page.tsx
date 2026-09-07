@@ -12,6 +12,7 @@ import { Proof } from "./landing/Proof";
 import { Faq, FAQ } from "./landing/Faq";
 import { Why } from "./landing/Why";
 import { Trust } from "./landing/Trust";
+import { LandingBeacon } from "./landing/LandingBeacon";
 import { PLANS } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { PricingSection } from "./PricingSection";
@@ -64,6 +65,7 @@ export default function LandingPage() {
   return (
     <main className="bg-paper overflow-x-clip">
       <Opening />
+      <LandingBeacon />
       <Navbar />
       <Spine />
       <div id="top" className="scroll-mt-16">

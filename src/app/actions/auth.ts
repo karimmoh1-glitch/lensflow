@@ -56,6 +56,7 @@ export async function signup(formData: FormData): Promise<FormState> {
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, email, password } = parsed.data;
+  await track("signup_started");
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -80,7 +81,8 @@ export async function signup(formData: FormData): Promise<FormState> {
     return { error: "Something went wrong creating your account. Please try again." };
   }
 
-  await track("signup_completed", { businessId: business.id });
+  await track("signup_completed", { businessId: business.id, properties: { method: "password" } });
+  await track("workspace_created", { businessId: business.id });
   await setSessionCookie({ userId: user.id, activeBusinessId: business.id });
   redirect(homeRouteFor("OWNER", business));
 }

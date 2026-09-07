@@ -191,3 +191,13 @@ Final launch audit additions (2026-09-06):
 - Process note: a CSS cleanup in #54 left a stray brace; the ship chain was stopped, the two
   deployments it had queued were removed before going live (production stayed on #53), and
   #55 shipped the fix with the build gated on its real exit code.
+
+## Launch readiness pass (2026-09-07, PR #57)
+
+- Funnel instrumentation completed (docs/ANALYTICS.md): landing_view / landing_cta with a
+  per-visit random id (no cookie, no IP), signup_started, workspace_created,
+  first_channel_connected, first_ai_action (draft or agent approval), first_automation_created,
+  trial_started, plus the existing first_message_received / first_reply_sent /
+  first_booking_created / paywall_* / checkout_started / subscription_* events. Read-only SQL
+  for every funnel question is in the doc.
+- Demo seed schedules its bookings at believable hours in the demo business's timezone.

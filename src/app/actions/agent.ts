@@ -1,5 +1,7 @@
 "use server";
 
+import { prisma } from "@/lib/db";
+
 import { revalidatePath } from "next/cache";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { businessAgentEntitled, effectivePlan, planLimits, PLANS } from "@/lib/billing";
@@ -52,6 +54,7 @@ export async function approveAgentProposal(input: { proposalId: string; body: st
   const proposal = await findProposal(ctx.business.id, parsed.data.proposalId);
   if (!proposal) return { allowed: true, ok: false, error: "That suggestion is no longer current — the situation changed." };
   await track("agent_action_approved", { businessId: ctx.business.id, properties: { kind: proposal.kind } });
+  if ((await prisma.analyticsEvent.count({ where: { businessId: ctx.business.id, name: "first_ai_action" } })) === 0) await track("first_ai_action", { businessId: ctx.business.id, properties: { via: "agent_approval", kind: proposal.kind } });
   const result = await executeProposal({ businessId: ctx.business.id, userId: ctx.session.userId, proposal, body: parsed.data.body });
   revalidatePath("/dashboard/agent");
   revalidatePath("/dashboard/inbox");

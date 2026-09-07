@@ -44,6 +44,7 @@ export async function generateDraftAction(
     customerMessage: lastInbound?.body ?? "",
     customerName: conversation.client?.name,
   });
+  if ((await prisma.analyticsEvent.count({ where: { businessId: business.id, name: "first_ai_action" } })) === 0) await track("first_ai_action", { businessId: business.id, properties: { via: "draft" } });
   return { text };
 }
 

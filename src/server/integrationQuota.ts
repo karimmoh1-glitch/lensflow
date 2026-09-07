@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { track } from "@/lib/analytics";
 import { PLANS, effectivePlan, planForIntegrations, type PlanKey } from "@/lib/billing";
 import type { Integration, IntegrationProvider, IntegrationStatus, Prisma } from "@prisma/client";
 
@@ -83,7 +84,7 @@ export async function activateIntegration(params: {
   update: Omit<Prisma.IntegrationUncheckedUpdateInput, "businessId" | "provider" | "status">;
 }): Promise<ActivationResult> {
   const { businessId, provider } = params;
-  return prisma.$transaction(
+  const result = await prisma.$transaction(
     async (tx) => {
       // Serialize every activation for this workspace: the lock is held until commit.
       const locked = await tx.$queryRaw<Array<{ id: string; planTier: PlanKey; billingStatus: string | null }>>`SELECT "id", "planTier", "billingStatus" FROM "Business" WHERE "id" = ${businessId} FOR UPDATE`;
@@ -95,15 +96,20 @@ export async function activateIntegration(params: {
       if (QUOTA_PROVIDERS.includes(provider) && !alreadyActive && usage.atLimit) {
         return { ok: false as const, reason: "limit" as const, usage };
       }
+      const firstEver = !rows.some((r) => r.status === "CONNECTED");
       const row = await tx.integration.upsert({
         where: { businessId_provider: { businessId, provider } },
         create: { ...params.create, businessId, provider, status: "CONNECTED" },
         update: { ...params.update, status: "CONNECTED" },
       });
-      return { ok: true as const, row };
+      return { ok: true as const, row, firstEver };
     },
     { isolationLevel: "ReadCommitted", timeout: 15_000 }
   );
+  // After commit, never inside: the event row references the Business row the transaction
+  // held FOR UPDATE, and its foreign-key check would wait on that lock.
+  if (result.ok && result.firstEver) await track("first_channel_connected", { businessId, properties: { provider } });
+  return result;
 }
 
 /** The sentence shown when a connection is refused for the plan. */

@@ -1,5 +1,16 @@
 import bcrypt from "bcryptjs";
 import { addDays, addHours, subDays, subHours, subMinutes, format } from "date-fns";
+
+/** A wall-clock time in the demo business's timezone, `dayOffset` days from today. */
+const DEMO_TZ = "America/Chicago";
+function demoAt(dayOffset: number, hour: number, minute = 0): Date {
+  const local = new Date(new Date().toLocaleString("en-US", { timeZone: DEMO_TZ }));
+  local.setDate(local.getDate() + dayOffset);
+  const guess = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate(), hour, minute));
+  const asZoned = new Date(guess.toLocaleString("en-US", { timeZone: DEMO_TZ }));
+  const asUtc = new Date(guess.toLocaleString("en-US", { timeZone: "UTC" }));
+  return new Date(guess.getTime() + (asUtc.getTime() - asZoned.getTime()));
+}
 import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
 import type { Db } from "@/lib/db";
 
@@ -241,8 +252,8 @@ export async function seedDemoWorkspace(prisma: Db) {
       clientId: james.id,
       conversationId: jamesConvo.id,
       serviceId: graduation.id,
-      startAt: addDays(now, 2),
-      endAt: addHours(addDays(now, 2), 1),
+      startAt: demoAt(2, 10),
+      endAt: demoAt(2, 11),
       location: "Zilker Park",
       status: "BOOKED",
       totalCents: graduation.priceCents,
@@ -259,8 +270,8 @@ export async function seedDemoWorkspace(prisma: Db) {
       businessId: business.id,
       clientId: priya.id,
       serviceId: portrait.id,
-      startAt: new Date(new Date().setHours(10, 0, 0, 0)),
-      endAt: new Date(new Date().setHours(11, 0, 0, 0)),
+      startAt: demoAt(0, 10),
+      endAt: demoAt(0, 11),
       location: "Studio",
       status: "CONFIRMED",
       totalCents: portrait.priceCents,
@@ -320,8 +331,8 @@ export async function seedDemoWorkspace(prisma: Db) {
       businessId: business.id,
       clientId: diego.id,
       serviceId: family.id,
-      startAt: addHours(new Date(new Date().setHours(14, 0, 0, 0)), 24),
-      endAt: addHours(new Date(new Date().setHours(15, 15, 0, 0)), 24),
+      startAt: demoAt(1, 14),
+      endAt: demoAt(1, 15, 15),
       location: "Zilker Park",
       status: "BOOKED",
       totalCents: family.priceCents,

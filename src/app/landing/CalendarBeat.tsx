@@ -53,14 +53,14 @@ export function CalendarBeat() {
                   ].map(([k, v], i) => {
                     const t = seg(read, i * 0.2, i * 0.2 + 0.4);
                     return (
-                      <div key={k} className="flex items-baseline justify-between gap-3" style={{ opacity: 0.25 + t * 0.75, transform: `translateX(${(1 - t) * -6}px)` }}>
+                      <div key={k} className="flex items-baseline justify-between gap-3" style={{ opacity: t, transform: `translateX(${(1 - t) * -6}px)` }}>
                         <dt className="text-ink/65">{k}</dt>
                         <dd className={cn("font-medium text-right", i === 3 ? "text-success-text" : "text-ink")}>{v}</dd>
                       </div>
                     );
                   })}
                 </dl>
-                <div className="mt-4 rounded-xl bg-ink text-white text-[13px] font-semibold px-3 py-2 text-center" style={{ opacity: 0.3 + move * 0.7 }}>
+                <div className="mt-4 rounded-xl bg-ink text-white text-[13px] font-semibold px-3 py-2 text-center" style={{ opacity: read, transform: `translateY(${(1 - read) * 6}px)` }}>
                   Move it to Thursday at 4:00 PM
                 </div>
               </div>

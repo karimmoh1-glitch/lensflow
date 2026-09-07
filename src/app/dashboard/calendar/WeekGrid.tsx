@@ -90,7 +90,7 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
                   })}
                   {/* now */}
                   {isToday && nowMin >= startHour * 60 && nowMin <= endHour * 60 && (
-                    <div aria-label={`Now, ${format(nowZ, "h:mm a")}`} className="absolute inset-x-0 z-10 pointer-events-none" style={{ top: top(nowMin) }}>
+                    <div role="img" aria-label={`Now, ${format(nowZ, "h:mm a")}`} className="absolute inset-x-0 z-10 pointer-events-none" style={{ top: top(nowMin) }}>
                       <span className="absolute -left-[5px] -top-[4px] w-[9px] h-[9px] rounded-full bg-accent ring-2 ring-white" />
                       <span className="block h-px bg-accent" />
                     </div>

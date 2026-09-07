@@ -95,7 +95,7 @@ export function Workflow() {
 
 function Lit({ t, color, children }: { t: number; color: string; children: React.ReactNode }) {
   return (
-    <div className={cn("rounded-xl transition-transform duration-200")} style={{ boxShadow: `0 0 0 ${t * 2}px ${color}`, transform: `scale(${1 + (t > 0 && t < 1 ? Math.sin(t * Math.PI) * 0.03 : 0)})`, opacity: 0.55 + t * 0.45 }}>
+    <div className={cn("rounded-xl transition-transform duration-200")} style={{ boxShadow: `0 0 0 ${t * 2}px ${color}`, transform: `scale(${1 + (t > 0 && t < 1 ? Math.sin(t * Math.PI) * 0.03 : 0)})`, opacity: 0.78 + t * 0.22 }}>
       {children}
     </div>
   );

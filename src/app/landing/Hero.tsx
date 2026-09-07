@@ -9,14 +9,14 @@ import { PointerField, MagneticLink } from "./Pointer";
 export function Hero() {
   return (
     <PointerField className="relative px-6 pt-8 md:pt-12 lg:pt-16 pb-16 md:pb-24 lg:min-h-[calc(84vh-72px)] flex items-start">
-      <div className="w-full max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] gap-12 lg:gap-12 items-center">
-        <div className="dt-hero-copy max-w-md">
+      <div className="w-full max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-12 lg:gap-10 items-center">
+        <div className="dt-hero-copy max-w-lg">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-6">For freelancers &amp; small businesses</p>
-          <h1 className="font-sans font-extrabold text-[clamp(2.75rem,6vw,5.4rem)] leading-[0.92] tracking-[-0.05em] text-ink text-balance">
-            All your clients.<br /><span className="whitespace-nowrap">One thread.</span>
+          <h1 className="font-sans font-extrabold text-[clamp(2.6rem,5.2vw,4.75rem)] leading-[0.92] tracking-[-0.05em] text-ink">
+            Every conversation.<br /><span className="whitespace-nowrap">One inbox.</span>
           </h1>
           <p className="mt-6 text-base md:text-lg text-ink/65 leading-relaxed max-w-sm">
-            Instagram, email, texts, WhatsApp and your calendar — connected, and telling you what&rsquo;s next.
+            Instagram, Gmail, WhatsApp, texts and your booking page on one thread — with the reply, the booking and the follow-up ready.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
             <MagneticLink

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { withLock } from "@/lib/dbLock";
 import { track } from "@/lib/analytics";
 import { extractLeadInfo } from "@/lib/ai";
 import { cleanEmailBody } from "@/lib/emailText";
@@ -23,7 +24,7 @@ import type { ChannelType } from "@prisma/client";
  * already known is never overwritten back to unknown just because a later message
  * didn't repeat it.
  */
-export async function ingestInboundMessage(params: {
+async function ingestUnlocked(params: {
   businessId: string;
   channel: ChannelType;
   senderName: string;
@@ -220,4 +221,17 @@ export async function ingestInboundMessage(params: {
   });
 
   return { client, conversation, lead, duplicate: false as const, category: "PRIORITY" as const };
+}
+
+type IngestParams = Parameters<typeof ingestUnlocked>[0];
+
+/**
+ * Entry point for every inbound message. Providers retry and redeliver, and two deliveries
+ * of the same message can arrive in the same second on two instances — the whole ingest
+ * runs under a lock keyed by the provider's message id (or the sender, when there is none)
+ * so the second delivery sees the first one's conversation instead of creating a copy.
+ */
+export async function ingestInboundMessage(params: IngestParams) {
+  const key = `ingest:${params.businessId}:${params.providerMessageId ?? `${params.channel}:${params.senderHandle}`}`;
+  return withLock(key, () => ingestUnlocked(params));
 }

@@ -23,7 +23,7 @@ export class PhoneAdapter implements ChannelAdapter {
   }
 
   async send(message: OutboundMessage): Promise<SendResult> {
-    console.log(`[phone-adapter:demo] call notes for ${message.to ?? "unknown"}: ${message.body}`);
+    console.info(`[phone-adapter:not-configured] call notes for ${message.to ?? "unknown"}: ${message.body}`);
     return { ok: true, simulated: true };
   }
 }

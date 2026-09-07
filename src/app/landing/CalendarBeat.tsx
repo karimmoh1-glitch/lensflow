@@ -4,6 +4,7 @@ import { CalendarDays, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChannelIcon } from "./ChannelIcon";
 import { useScrollProgress, seg } from "./useScrollProgress";
+import { Reveal } from "./Reveal";
 
 /**
  * The calendar lives inside the conversation. One message — "can we move Thursday to
@@ -110,7 +111,7 @@ export function CalendarBeat() {
           </div>
         </div>
 
-        <div className="order-1 lg:order-2">
+        <Reveal className="order-1 lg:order-2">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text mb-4">Calendar</p>
           <h2 className="font-sans font-extrabold text-[clamp(2.4rem,4.4vw,3.9rem)] leading-[0.94] tracking-[-0.045em] text-ink">
             The calendar is<br />in the conversation.
@@ -118,7 +119,7 @@ export function CalendarBeat() {
           <p className="mt-5 text-ink/60 text-base max-w-sm">
             A message asks for a time. Daythread checks what&rsquo;s open — bookings, buffers, your Google or Apple calendar — and the booking moves from the thread. The confirmation goes back on the channel they wrote from.
           </p>
-        </div>
+        </Reveal>
       </div>
     </div>
   );

@@ -220,7 +220,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
               {handled.map((h) => (
                 <li key={h.id} className="flex items-start gap-2">
                   <span className={cn("mt-[5px] w-1.5 h-1.5 rounded-full shrink-0", h.result === "sent" ? "bg-success" : h.result === "failed" ? "bg-accent" : "bg-ink/30")} />
-                  <span>{h.result === "sent" ? "Sent" : h.result === "not_configured" ? "Tried to send" : h.result === "failed" ? "Failed to send" : "Skipped"} {h.automation.name.toLowerCase()} · {format(h.ranAt, "MMM d")}{h.result === "not_configured" && <span className="text-warning-text"> — channel not connected</span>}</span>
+                  <span>{h.result === "sent" ? "Sent" : h.result === "not_configured" ? "Tried to send" : h.result === "failed" ? "Failed to send" : h.result === "pending" ? "Sending" : "Skipped"} {h.automation.name.toLowerCase()} · {format(h.ranAt, "MMM d")}{h.result === "not_configured" && <span className="text-warning-text"> — channel not connected</span>}</span>
                 </li>
               ))}
             </ul>

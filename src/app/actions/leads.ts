@@ -55,10 +55,11 @@ export async function bookLead(leadId: string, startISO: string, serviceId?: str
   if (Number.isNaN(start.getTime())) throw new Error("Pick a time.");
   const end = addMinutes(start, service.durationMins);
 
-  const stillAvailable = await isSlotStillAvailable(business.id, start, end);
-  if (!stillAvailable) throw new Error("That time is no longer available. Pick another slot.");
-
   const { booking } = await prisma.$transaction(async (tx) => {
+    // Same lock as public bookings and reschedules: two bookings for one slot can't both pass.
+    await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${business.id} FOR UPDATE`;
+    const stillAvailable = await isSlotStillAvailable(business.id, start, end);
+    if (!stillAvailable) throw new Error("That time is no longer available. Pick another slot.");
     const booking = await tx.booking.create({
       data: {
         businessId: business.id,

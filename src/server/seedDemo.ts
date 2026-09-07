@@ -17,6 +17,11 @@ export async function seedDemoWorkspace(prisma: Db) {
     where: {
       email: {
         in: [
+          "alex@demo.daythread.org",
+          "sarah.kim@demo.daythread.org",
+          "morgan.blake@demo.daythread.org",
+          "jordan.lee@demo.daythread.org",
+          // Earlier demo identities, removed on reseed.
           "alex@demo.lensflow.app",
           "sarah.kim@demo.lensflow.app",
           "morgan.blake@demo.lensflow.app",
@@ -48,19 +53,19 @@ export async function seedDemoWorkspace(prisma: Db) {
     },
   });
 
-  const owner = await prisma.user.create({ data: { name: "Alex Rivera", email: "alex@demo.lensflow.app", passwordHash } });
+  const owner = await prisma.user.create({ data: { name: "Alex Rivera", email: "alex@demo.daythread.org", passwordHash } });
   await prisma.orgMembership.create({ data: { userId: owner.id, businessId: business.id, role: "OWNER" } });
 
-  const photographer = await prisma.user.create({ data: { name: "Sarah Kim", email: "sarah.kim@demo.lensflow.app", passwordHash } });
+  const photographer = await prisma.user.create({ data: { name: "Sarah Kim", email: "sarah.kim@demo.daythread.org", passwordHash } });
   await prisma.orgMembership.create({ data: { userId: photographer.id, businessId: business.id, role: "PHOTOGRAPHER" } });
 
-  const partnerUser = await prisma.user.create({ data: { name: "Jordan Lee", email: "jordan.lee@demo.lensflow.app", passwordHash } });
+  const partnerUser = await prisma.user.create({ data: { name: "Jordan Lee", email: "jordan.lee@demo.daythread.org", passwordHash } });
   const partnerMembership = await prisma.orgMembership.create({ data: { userId: partnerUser.id, businessId: business.id, role: "PARTNER" } });
 
   // Org-level ADMIN — same permission tier as OWNER within this business (can manage
   // team/settings/invitations), just not the org's original creator. This is NOT a
   // cross-organization platform superadmin — Daythread has no such role or panel.
-  const adminUser = await prisma.user.create({ data: { name: "Morgan Blake", email: "morgan.blake@demo.lensflow.app", passwordHash } });
+  const adminUser = await prisma.user.create({ data: { name: "Morgan Blake", email: "morgan.blake@demo.daythread.org", passwordHash } });
   await prisma.orgMembership.create({ data: { userId: adminUser.id, businessId: business.id, role: "ADMIN" } });
 
   const otherBusiness = await prisma.business.create({
@@ -282,7 +287,7 @@ export async function seedDemoWorkspace(prisma: Db) {
       conversationId: ahmedConvo.id,
       direction: "INBOUND",
       createdAt: subHours(now, 4),
-      body: `The location will be at Redmond Town Center. My budget is $500, and I want this done for my newborn child.\n\nOn ${format(subHours(now, 40), "EEE, MMM d, yyyy")} at ${format(subHours(now, 40), "h:mm a")} Alex Rivera <alex@demo.lensflow.app> wrote:\n> Hi Ahmed! Yes — where were you thinking, and do you have a budget in mind?\n>\n> On ${format(subDays(now, 2), "EEE, MMM d, yyyy")} Ahmed Mantawy <ahmed.m@example.com> wrote:\n> > Hi, are you available for a newborn session in September?\n\nSent from my iPhone`,
+      body: `The location will be at Redmond Town Center. My budget is $500, and I want this done for my newborn child.\n\nOn ${format(subHours(now, 40), "EEE, MMM d, yyyy")} at ${format(subHours(now, 40), "h:mm a")} Alex Rivera <alex@demo.daythread.org> wrote:\n> Hi Ahmed! Yes — where were you thinking, and do you have a budget in mind?\n>\n> On ${format(subDays(now, 2), "EEE, MMM d, yyyy")} Ahmed Mantawy <ahmed.m@example.com> wrote:\n> > Hi, are you available for a newborn session in September?\n\nSent from my iPhone`,
     },
   });
   await prisma.lead.create({

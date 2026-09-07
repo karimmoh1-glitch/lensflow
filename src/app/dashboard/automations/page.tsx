@@ -133,9 +133,9 @@ export default async function AutomationsPage() {
                 {recentRuns.map((r) => (
                   <ThreadNode
                     key={r.id}
-                    kind={r.result === "sent" ? "outcome" : r.result === "failed" ? "signal" : r.result === "not_configured" ? "state" : "note"}
+                    kind={r.result === "sent" ? "outcome" : r.result === "failed" ? "signal" : r.result === "not_configured" || r.result === "pending" ? "state" : "note"}
                     title={r.automation.name}
-                    meta={r.result === "sent" ? `Sent · ${r.targetType}` : r.result === "failed" ? "Failed to send" : r.result === "not_configured" ? "Not delivered — channel not connected" : "Skipped"}
+                    meta={r.result === "sent" ? `Sent · ${r.targetType}` : r.result === "failed" ? "Failed to send" : r.result === "not_configured" ? "Not delivered — channel not connected" : r.result === "pending" ? "Sending…" : "Skipped"}
                     when={formatDistanceToNowStrict(r.ranAt, { addSuffix: true })}
                   />
                 ))}

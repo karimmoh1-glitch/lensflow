@@ -60,7 +60,7 @@ export class EmailAdapter implements ChannelAdapter {
         return { ok: false, error: "Email provider error" };
       }
     }
-    console.log(`[email-adapter:demo] to ${message.to ?? "unknown"}: ${message.body}`);
+    console.info(`[email-adapter:not-configured] to ${message.to ?? "unknown"}: ${message.body}`);
     return { ok: true, simulated: true };
   }
 }

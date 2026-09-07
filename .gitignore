@@ -9,3 +9,4 @@ dist
 .other-session-backup
 .vercel
 .env*
+scripts-dev/

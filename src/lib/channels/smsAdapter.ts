@@ -21,7 +21,7 @@ export class SmsAdapter implements ChannelAdapter {
       live: configured,
       setupNote: configured
         ? "Sending live via Twilio."
-        : "Add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN; each business then gets its own number from Settings → Integrations.",
+        : "Add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN; each business then gets its own number from Settings → Channels.",
     };
   }
 

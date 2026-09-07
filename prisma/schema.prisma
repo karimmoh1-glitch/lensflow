@@ -549,7 +549,7 @@ model Booking {
 
   status        BookingStatus @default(INQUIRY)
   totalCents    Int
-  depositCents  Int
+  depositCents   Int           @default(0)
   confirmedAt   DateTime?
   completedAt   DateTime?
 

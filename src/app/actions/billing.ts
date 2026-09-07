@@ -8,7 +8,7 @@ import { track } from "@/lib/analytics";
 
 const LIVE_SUBSCRIPTION_STATUSES = new Set(["ACTIVE", "TRIALING", "PAST_DUE"]);
 
-/** Only OWNER/ADMIN can change what the workspace pays Daythread. The role is read from the
+/** Only OWNER/ADMIN can change what the business pays Daythread. The role is read from the
  * session and the plan from the database — nothing about billing is trusted from the client. */
 async function requireBillingRole(session?: SessionPayload | null) {
   const ctx = await requireRole(["OWNER", "ADMIN"], session);
@@ -22,17 +22,17 @@ async function requireBillingRole(session?: SessionPayload | null) {
  * accepted the change and the webhook will land the new plan within seconds.
  */
 export async function startUpgradeCheckout(
-  planKey: Extract<PlanKey, "PRO">,
+  planKey: Extract<PlanKey, "PRO" | "BUSINESS">,
   session?: SessionPayload | null
 ): Promise<{ url?: string; changed?: boolean; error?: string }> {
-  if (planKey !== "PRO") return { error: "Unknown plan." };
+  if (planKey !== "PRO" && planKey !== "BUSINESS") return { error: "Unknown plan." };
   if (!subscriptionBillingIsLive) {
     return { error: "Upgrades aren't open on this deployment yet." };
   }
 
   const ctx = await requireBillingRole(session);
   const { business } = ctx;
-  if (effectivePlan(business) !== "FREE" && business.billingStatus && LIVE_SUBSCRIPTION_STATUSES.has(business.billingStatus) && !business.cancelAtPeriodEnd) {
+  if (effectivePlan(business) === planKey && business.billingStatus && LIVE_SUBSCRIPTION_STATUSES.has(business.billingStatus) && !business.cancelAtPeriodEnd) {
     return { error: `You're already on ${PLANS[planKey].name}.` };
   }
   await track("upgrade_clicked", { businessId: business.id, properties: { planKey } });
@@ -40,7 +40,7 @@ export async function startUpgradeCheckout(
   if (business.stripeSubscriptionId && business.billingStatus && LIVE_SUBSCRIPTION_STATUSES.has(business.billingStatus)) {
     try {
       await changeSubscriptionPlan({ business, planKey });
-      revalidatePath("/dashboard/settings");
+      revalidatePath("/dashboard/billing");
       await track("plan_changed", { businessId: business.id, properties: { planKey } });
       return { changed: true };
     } catch (err) {

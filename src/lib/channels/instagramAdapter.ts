@@ -9,7 +9,7 @@ import { instagramConfigured } from "@/lib/meta/instagram";
  *
  * `live` here says only whether the deployment has a Meta app configured at all — the thing
  * an operator controls. Whether a given business is connected is a property of its
- * Integration row, shown on its own card in Settings → Integrations.
+ * Integration row, shown on its own card in Settings → Channels.
  */
 export class InstagramAdapter implements ChannelAdapter {
   readonly channel = "INSTAGRAM" as const;
@@ -21,7 +21,7 @@ export class InstagramAdapter implements ChannelAdapter {
       canReceive: configured,
       live: configured,
       setupNote: configured
-        ? "Each business connects its own professional Instagram account from Settings → Integrations; DMs arrive on the Meta webhook."
+        ? "Each business connects its own professional Instagram account from Settings → Channels; DMs arrive on the Meta webhook."
         : "Set INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET and META_WEBHOOK_VERIFY_TOKEN, and point the Meta app's webhook at /api/webhooks/meta.",
     };
   }

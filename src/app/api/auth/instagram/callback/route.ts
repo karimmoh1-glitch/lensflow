@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   // Redirects are built from the deployment's own configured URL, not the request host, so
   // a proxied or preview host can never redirect a completed connection somewhere else.
   const back = new URL("/dashboard/settings", appBaseUrl() || url.origin);
-  back.searchParams.set("tab", "channels");
+  back.searchParams.set("tab", "connections");
   const fail = (reason: string) => {
     back.searchParams.set("connect_error", reason);
     back.searchParams.set("provider", "INSTAGRAM");
@@ -128,13 +128,6 @@ export async function GET(req: Request) {
 
     await track("integration_connected", { businessId, properties: { provider: "INSTAGRAM" } });
     back.searchParams.set("connected", "INSTAGRAM");
-    // A brand-new inbox connecting its first channel is still in onboarding: land back there.
-    const onboarding = await prisma.business.findUnique({ where: { id: verified.state.businessId }, select: { onboardingComplete: true } });
-    if (onboarding && !onboarding.onboardingComplete) {
-      back.pathname = "/onboarding";
-      back.searchParams.delete("tab");
-      back.searchParams.set("step", "connect");
-    }
     return NextResponse.redirect(back);
   } catch (err) {
     await reportFailure("oauth", "Instagram connect failed", { businessId, provider: "INSTAGRAM", error: err });

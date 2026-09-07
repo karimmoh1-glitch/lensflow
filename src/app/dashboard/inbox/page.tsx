@@ -3,7 +3,8 @@ import Link from "next/link";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { EmptyState } from "@/components/ui";
-import { cn, initials } from "@/lib/utils";
+import { cn, firstName } from "@/lib/utils";
+import { ConversationRow } from "@/components/inbox/ConversationRow";
 import { formatDistanceToNowStrict } from "date-fns";
 import type { ChannelType, ConversationCategory, Prisma } from "@prisma/client";
 import { ThreadPanel } from "./ThreadPanel";
@@ -121,13 +122,13 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     : `${waiting.length === 1 ? "1 person is" : `${waiting.length} people are`} waiting on you`;
 
   return (
-    <div className="flex h-[100dvh] md:h-screen">
+    <div className="flex h-[100dvh] md:h-screen bg-white">
       {gmailConnected && <AutoGmailSync />}
       {/* Below lg the list and the thread take turns (a tablet is a wide phone here); from lg they sit side by side. */}
       <div className={cn("w-full lg:w-[380px] xl:w-[400px] shrink-0 border-r border-border flex-col bg-white", selectedId ? "hidden lg:flex" : "flex")}>
         <div className="px-4 md:px-5 pt-3 md:pt-4 pb-3 border-b border-border space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="font-sans font-extrabold text-[17px] tracking-tight text-ink">Inbox</h1>
+            <h1 className="font-sans font-extrabold text-[19px] tracking-[-0.02em] text-ink">Inbox</h1>
             <div role="tablist" aria-label="Inbox view" className="inline-flex items-center rounded-full bg-black/[0.05] p-0.5 text-xs font-semibold">
               <Link role="tab" aria-selected={view === "priority"} href={href({ view: "priority", cat: "all" })} className={cn("px-3 py-1 rounded-full transition-all", view === "priority" ? "bg-white text-ink shadow-xs" : "text-ink/55 hover:text-ink")}>
                 Priority
@@ -144,7 +145,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
             {q || view === "all" ? <span className="font-extrabold">{headline}</span> : waiting.length === 0 ? <span className="text-ink/60">{headline}</span> : (
               <>
                 <span className="font-extrabold">{headline}</span>
-                <span className="text-ink/55"> · {waiting.slice(0, 3).map((r) => nameOf(r.conv).split(" ")[0]).join(", ")}{waiting.length > 3 ? "…" : ""}</span>
+                <span className="text-ink/55"> · {waiting.slice(0, 3).map((r) => firstName(nameOf(r.conv))).join(", ")}{waiting.length > 3 ? "…" : ""}</span>
               </>
             )}
             {view === "priority" && filteredOut > 0 && !q && (
@@ -192,44 +193,27 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
             </div>
           )}
 
-          <ol>
-            {rows.map(({ conv, last, isPerson, unread, unanswered }) => {
-              const isActive = active?.id === conv.id;
-              const name = nameOf(conv);
-              return (
-                <li key={conv.id}>
-                  <Link
-                    href={rowHref(conv.id)}
-                    aria-current={isActive ? "true" : undefined}
-                    className={cn("group relative block px-4 md:px-5 py-3.5 border-b border-border transition-colors hover:bg-black/[0.02] focus-visible:outline-none focus-visible:bg-black/[0.03] focus-within:bg-black/[0.02]", isActive && "bg-accent-soft/50", !isPerson && "bg-paper/40")}
-                  >
-                    <div className="absolute right-3 top-2.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 hidden md:block">
-                      <ConversationTools conversationId={conv.id} unread={unread} category={conv.category} />
-                    </div>
-                    <div className="flex items-center gap-2.5 mb-1 md:group-hover:pr-32 md:group-focus-within:pr-32">
-                      <div className={cn("relative w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/50")}>
-                        {initials(name)}
-                        {(unanswered || unread) && <span aria-hidden className={cn("absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-white", unanswered ? "bg-accent" : "bg-signal")} />}
-                      </div>
-                      <span className={cn("text-sm truncate flex-1", isPerson ? (unread ? "font-extrabold text-ink" : "font-semibold text-ink") : unread ? "font-semibold text-ink/80" : "font-medium text-ink/70")}>{name}</span>
-                      {!isPerson && <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 shrink-0 bg-black/[0.05] text-ink/55">{CATEGORY_LABEL[conv.category]}</span>}
-                      {conv.assignee && <span title={`Assigned to ${conv.assignee.user.name}`} className="w-5 h-5 rounded-full bg-signal text-white text-[9px] font-extrabold flex items-center justify-center shrink-0">{initials(conv.assignee.user.name)}</span>}
-                      <time dateTime={conv.lastMessageAt.toISOString()} suppressHydrationWarning className="text-[11px] text-ink/45 shrink-0 tabular-nums">{shortAgo(conv.lastMessageAt)}</time>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-ink/60 mb-1 pl-[42px]">
-                      <ChannelBadge channel={conv.channel} />
-                      <span>{CHANNEL_META[conv.channel].label}</span>
-                      {conv.subject && !isPerson && <span className="truncate">· {conv.subject}</span>}
-                      {unanswered && <span className="ml-auto text-[11px] font-semibold text-accent-text shrink-0">Waiting on you</span>}
-                    </div>
-                    <p className={cn("text-xs line-clamp-2 pl-[42px]", isPerson ? (unread ? "text-ink/85" : "text-ink/70") : "text-ink/55")}>
-                      {last?.direction === "OUTBOUND" && <span className="text-ink/45">You: </span>}
-                      {previewOf(last?.body ?? "")}
-                    </p>
-                  </Link>
-                </li>
-              );
-            })}
+          <ol className="dt-rows" aria-label="Conversations">
+            {rows.map(({ conv, last, isPerson, unread, unanswered }) => (
+              <ConversationRow
+                key={conv.id}
+                href={rowHref(conv.id)}
+                active={active?.id === conv.id}
+                name={nameOf(conv)}
+                channel={conv.channel}
+                time={shortAgo(conv.lastMessageAt)}
+                timeISO={conv.lastMessageAt.toISOString()}
+                preview={previewOf(last?.body ?? "")}
+                fromYou={last?.direction === "OUTBOUND"}
+                unread={unread}
+                waiting={unanswered}
+                isPerson={isPerson}
+                categoryLabel={CATEGORY_LABEL[conv.category]}
+                subject={conv.subject}
+                assigneeName={conv.assignee?.user.name ?? null}
+                tools={<ConversationTools conversationId={conv.id} unread={unread} category={conv.category} />}
+              />
+            ))}
           </ol>
         </div>
       </div>

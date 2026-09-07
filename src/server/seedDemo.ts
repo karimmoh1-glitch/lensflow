@@ -40,11 +40,8 @@ export async function seedDemoWorkspace(prisma: Db) {
       specialties: ["Portrait", "Graduation", "Family", "Wedding"],
       bio: "Natural-light portrait and lifestyle photography based in Austin, TX. Booking graduation season now!",
       timezone: "America/Chicago",
-      depositPercent: 30,
       bufferMinutes: 30,
       bookingLeadHours: 24,
-      paymentMethods: ["card", "zelle", "bank_transfer"],
-      zelleHandle: "alex@alexriveraphoto.com",
       bankInstructions: "Chase Bank — Account: Alex Rivera Photography LLC — Routing: 111000025 — Account #: 000123456789",
       onboardingComplete: true,
       onboardingStep: 8,
@@ -106,14 +103,6 @@ export async function seedDemoWorkspace(prisma: Db) {
         offsetHours: 24,
         action: "SEND_REMINDER",
         messageTemplate: "Quick reminder: your {{service}} session is tomorrow at {{time}}. See you then!",
-      },
-      {
-        businessId: business.id,
-        name: "Payment reminder",
-        trigger: "PAYMENT_DUE_SOON",
-        offsetHours: 72,
-        action: "SEND_PAYMENT_REMINDER",
-        messageTemplate: "Friendly reminder — your remaining balance of {{amount}} is due soon.",
       },
       {
         businessId: business.id,
@@ -179,7 +168,7 @@ export async function seedDemoWorkspace(prisma: Db) {
     data: {
       conversationId: mikeConvo.id,
       direction: "OUTBOUND",
-      body: "Hi Mike! Our Family Session is $400 and runs about 75 minutes. I'd love to get you on the calendar — a 30% deposit holds your date. What day were you thinking?",
+      body: "Hi Mike! Our Family Session is $400 and runs about 75 minutes. I'd love to get you on the calendar — What day were you thinking?",
       aiDrafted: true,
       sentByUserId: owner.id,
       createdAt: subHours(now, 19),
@@ -252,19 +241,6 @@ export async function seedDemoWorkspace(prisma: Db) {
       location: "Zilker Park",
       status: "BOOKED",
       totalCents: graduation.priceCents,
-      depositCents: Math.round(graduation.priceCents * 0.3),
-    },
-  });
-  await prisma.payment.create({
-    data: {
-      businessId: business.id,
-      bookingId: jamesBooking.id,
-      clientId: james.id,
-      method: "ZELLE",
-      purpose: "DEPOSIT",
-      amountCents: Math.round(graduation.priceCents * 0.3),
-      status: "AWAITING_CONFIRMATION",
-      reference: `LF-${jamesBooking.id.slice(-6).toUpperCase()}`,
     },
   });
 
@@ -283,22 +259,7 @@ export async function seedDemoWorkspace(prisma: Db) {
       location: "Studio",
       status: "CONFIRMED",
       totalCents: portrait.priceCents,
-      depositCents: Math.round(portrait.priceCents * 0.3),
       confirmedAt: subDays(now, 1),
-    },
-  });
-  await prisma.payment.create({
-    data: { businessId: business.id, bookingId: priyaBooking.id, clientId: priya.id, method: "CARD", purpose: "DEPOSIT", amountCents: Math.round(portrait.priceCents * 0.3), status: "PAID", confirmedAt: subDays(now, 1) },
-  });
-  await prisma.payment.create({
-    data: {
-      businessId: business.id,
-      bookingId: priyaBooking.id,
-      clientId: priya.id,
-      method: "CARD",
-      purpose: "BALANCE",
-      amountCents: portrait.priceCents - Math.round(portrait.priceCents * 0.3),
-      status: "AWAITING_CONFIRMATION",
     },
   });
   const priyaConvo = await prisma.conversation.create({
@@ -359,7 +320,6 @@ export async function seedDemoWorkspace(prisma: Db) {
       location: "Zilker Park",
       status: "BOOKED",
       totalCents: family.priceCents,
-      depositCents: Math.round(family.priceCents * 0.3),
       assignedMembershipId: partnerMembership.id,
       conversationId: diegoConvo.id,
     },
@@ -375,12 +335,8 @@ export async function seedDemoWorkspace(prisma: Db) {
       endAt: addHours(subDays(now, 3), 1),
       status: "COMPLETED",
       totalCents: portrait.priceCents,
-      depositCents: Math.round(portrait.priceCents * 0.3),
       completedAt: subDays(now, 3),
     },
-  });
-  await prisma.payment.create({
-    data: { businessId: business.id, bookingId: emmaBooking.id, clientId: emma.id, method: "CARD", purpose: "DEPOSIT", amountCents: Math.round(portrait.priceCents * 0.3), status: "PAID", confirmedAt: subDays(now, 10) },
   });
 
   const lily = await prisma.client.create({ data: { businessId: business.id, name: "Lily Chen", email: "lily.chen@example.com" } });

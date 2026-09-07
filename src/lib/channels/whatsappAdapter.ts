@@ -21,7 +21,7 @@ export class WhatsAppAdapter implements ChannelAdapter {
       canReceive: configured,
       live: configured,
       setupNote: configured
-        ? "Each business connects its own WhatsApp Business number from Settings → Integrations; messages and delivery receipts arrive on the Meta webhook."
+        ? "Each business connects its own WhatsApp Business number from Settings → Channels; messages and delivery receipts arrive on the Meta webhook."
         : "Set META_APP_ID, META_APP_SECRET, WHATSAPP_CONFIG_ID and META_WEBHOOK_VERIFY_TOKEN, and point the Meta app's webhook at /api/webhooks/meta.",
     };
   }

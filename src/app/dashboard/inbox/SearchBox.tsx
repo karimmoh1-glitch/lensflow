@@ -15,18 +15,17 @@ export function SearchBox({ initial }: { initial: string }) {
   const params = useSearchParams();
   const [value, setValue] = useState(initial);
   const inputRef = useRef<HTMLInputElement>(null);
-  const first = useRef(true);
 
   useEffect(() => setValue(initial), [initial]);
 
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
+    const q = value.trim();
+    // Only a real change to the search touches the URL. A mount (or React's development
+    // double-run of effects) must never rewrite it — that used to drop the `c` parameter and
+    // close the conversation a link had just opened.
+    if (q === (params?.get("q") ?? "")) return;
     const t = setTimeout(() => {
       const next = new URLSearchParams(params?.toString() ?? "");
-      const q = value.trim();
       if (q) next.set("q", q);
       else next.delete("q");
       next.delete("c");

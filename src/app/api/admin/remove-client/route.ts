@@ -68,7 +68,6 @@ export async function POST(req: Request) {
       await prisma.lead.deleteMany({ where: { clientId: c.id } });
       await prisma.message.deleteMany({ where: { conversation: { clientId: c.id } } });
       await prisma.conversation.deleteMany({ where: { clientId: c.id } });
-      await prisma.payment.deleteMany({ where: { clientId: c.id } });
       await prisma.booking.deleteMany({ where: { clientId: c.id } });
       await prisma.client.delete({ where: { id: c.id } });
     }

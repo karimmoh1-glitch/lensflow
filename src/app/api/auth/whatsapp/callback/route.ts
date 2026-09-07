@@ -42,7 +42,7 @@ function rank(p: WaPhone): number {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const back = new URL("/dashboard/settings", appBaseUrl() || url.origin);
-  back.searchParams.set("tab", "channels");
+  back.searchParams.set("tab", "connections");
   const fail = (reason: string) => {
     back.searchParams.set("connect_error", reason);
     back.searchParams.set("provider", "WHATSAPP");
@@ -126,13 +126,6 @@ export async function GET(req: Request) {
 
     await track("integration_connected", { businessId, properties: { provider: "WHATSAPP" } });
     back.searchParams.set("connected", "WHATSAPP");
-    // A brand-new inbox connecting its first channel is still in onboarding: land back there.
-    const onboarding = await prisma.business.findUnique({ where: { id: verified.state.businessId }, select: { onboardingComplete: true } });
-    if (onboarding && !onboarding.onboardingComplete) {
-      back.pathname = "/onboarding";
-      back.searchParams.delete("tab");
-      back.searchParams.set("step", "connect");
-    }
     return NextResponse.redirect(back);
   } catch (err) {
     await reportFailure("oauth", "WhatsApp connect failed", { businessId, provider: "WHATSAPP", error: err });

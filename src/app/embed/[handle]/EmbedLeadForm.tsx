@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button, Input, Label, Textarea } from "@/components/ui";
+import { Button, Input, Label, Select, Textarea } from "@/components/ui";
 import { submitWebsiteLead } from "@/app/actions/websiteLead";
 import { CheckCircle2 } from "lucide-react";
 
-export function EmbedLeadForm({ handle }: { handle: string }) {
+export function EmbedLeadForm({ handle, services }: { handle: string; services: { id: string; name: string }[] }) {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -19,6 +19,7 @@ export function EmbedLeadForm({ handle }: { handle: string }) {
         name: String(form.get("name") || ""),
         email: String(form.get("email") || ""),
         phone: String(form.get("phone") || ""),
+        serviceId: String(form.get("serviceId") || "") || undefined,
         preferredDate: String(form.get("preferredDate") || "") || undefined,
         message: String(form.get("message") || ""),
       });
@@ -51,6 +52,19 @@ export function EmbedLeadForm({ handle }: { handle: string }) {
         <Label htmlFor="phone">Phone (optional)</Label>
         <Input id="phone" name="phone" type="tel" />
       </div>
+      {services.length > 0 && (
+        <div>
+          <Label htmlFor="serviceId">Service</Label>
+          <Select id="serviceId" name="serviceId" defaultValue="">
+            <option value="">Not sure yet</option>
+            {services.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
       <div>
         <Label htmlFor="preferredDate">Preferred date (optional)</Label>
         <Input id="preferredDate" name="preferredDate" type="date" />

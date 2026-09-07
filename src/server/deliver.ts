@@ -119,7 +119,7 @@ export async function deliverToCustomer(params: {
   if (channel === "SMS") {
     const business = await prisma.business.findUnique({ where: { id: businessId }, select: { twilioPhoneNumber: true } });
     from = business?.twilioPhoneNumber;
-    if (!from && !process.env.TWILIO_FROM_NUMBER) return { status: "NOT_DELIVERED", error: "This business doesn't have a text number yet. Get one in Settings → Integrations.", statusDetail: "not_connected", via: "none" };
+    if (!from && !process.env.TWILIO_FROM_NUMBER) return { status: "NOT_DELIVERED", error: "This business doesn't have a text number yet. Get one in Settings → Channels.", statusDetail: "not_connected", via: "none" };
   }
 
   const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;

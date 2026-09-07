@@ -10,8 +10,11 @@ import { aiEntitled, smsEntitled } from "@/lib/billing";
 import { deliverToCustomer } from "@/server/deliver";
 import type { SendResult } from "@/lib/channels/types";
 
-/** AI-drafted replies are a Pro feature. Reading and replying by hand is on every plan;
- * only the draft button is gated, and the plan is read from the database. */
+/** "AI-powered lead scoring & reply drafts" is the marketed Pro+ feature — scoped here to
+ * the reply-draft generator specifically, not the underlying lead extraction/scoring that
+ * runs for every inbound message regardless of plan. Free's own feature list promises a
+ * working "unified email + website inbox," so gating basic lead intake would break a
+ * capability Free is supposed to have; gating the AI-drafted-reply button doesn't. */
 export async function generateDraftAction(
   conversationId: string,
   session?: SessionPayload | null
@@ -23,7 +26,7 @@ export async function generateDraftAction(
   // Returned, not thrown: a thrown server-action error is a 500 whose message production
   // replaces with a generic one, so the upgrade prompt would never reach the user.
   if (!aiEntitled(business)) {
-    return { error: "AI-drafted replies are part of Daythread Pro. Upgrade under Settings → Subscription to use this." };
+    return { error: "AI-drafted replies are available on the Pro plan and above. Upgrade from Billing to use this." };
   }
 
   const conversation = await prisma.conversation.findFirst({
@@ -119,8 +122,8 @@ export async function markLeadLost(leadId: string) {
 
 /**
  * "Delete" from the inbox — sets the existing archived flag rather than actually
- * destroying the conversation. Messages, the associated lead, and any booking/payment
- * history all stay intact (bookings/payments are queried from their own tables, not
+ * destroying the conversation. Messages, the associated lead, and any booking
+ * history all stay intact (bookings are queried from their own tables, not
  * through the conversation, so nothing else breaks); it just stops showing up in the
  * default Inbox view. A real hard-delete of customer correspondence is the kind of
  * irreversible action that shouldn't be one click away.

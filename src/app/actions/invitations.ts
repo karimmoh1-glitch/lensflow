@@ -10,43 +10,30 @@ import { sendOnChannel } from "@/lib/messaging";
 import { canAddTeamSeat, planLimits, teamEntitled } from "@/lib/billing";
 
 const inviteSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(80),
-  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Enter a valid email"),
+  phone: z.string().optional(),
 });
 
-/** Teammates share the inbox with the same access to conversations; the role is fixed to
- * a staff seat — invitations never grant ownership. */
-const TEAMMATE_ROLE = "PHOTOGRAPHER" as const;
-
-/**
- * Invite someone to share this inbox. Pro only, and the seat allowance is enforced here and
- * again at accept time: pending invitations count, so a burst of invites can't be accepted
- * past the plan's limit.
- */
-export async function inviteTeammate(formData: FormData): Promise<{ error?: string; link?: string }> {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function inviteClient(formData: FormData): Promise<{ error?: string; link?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
-  if (!teamEntitled(business)) return { error: "Inviting teammates is part of Daythread Pro. Upgrade under Settings → Subscription." };
 
-  const parsed = inviteSchema.safeParse({ name: formData.get("name"), email: formData.get("email") });
+  const parsed = inviteSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    phone: formData.get("phone") || undefined,
+  });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  const { name, email } = parsed.data;
+  const { name, email, phone } = parsed.data;
 
-  const already = await prisma.orgMembership.findFirst({ where: { businessId: business.id, user: { email }, status: "ACTIVE" }, select: { id: true } });
-  if (already) return { error: "They're already on this inbox." };
-
-  const [activeSeats, pendingInvites] = await Promise.all([
-    prisma.orgMembership.count({ where: { businessId: business.id, role: { not: "CLIENT" }, status: "ACTIVE" } }),
-    prisma.invitation.count({ where: { businessId: business.id, role: { not: "CLIENT" }, status: "PENDING", email: { not: email } } }),
-  ]);
-  if (!canAddTeamSeat(business, activeSeats + pendingInvites)) {
-    const limit = planLimits(business).maxTeamSeats;
-    return { error: `Your plan includes ${limit} team member${limit === 1 ? "" : "s"}. Deactivate someone to free a seat.` };
-  }
+  const client =
+    (await prisma.client.findFirst({ where: { businessId: business.id, email } })) ??
+    (await prisma.client.create({ data: { businessId: business.id, name, email, phone } }));
 
   await prisma.invitation.updateMany({
-    where: { businessId: business.id, email, status: "PENDING" },
+    where: { businessId: business.id, clientId: client.id, status: "PENDING" },
     data: { status: "REVOKED" },
   });
 
@@ -54,7 +41,67 @@ export async function inviteTeammate(formData: FormData): Promise<{ error?: stri
     data: {
       businessId: business.id,
       email,
-      role: TEAMMATE_ROLE,
+      role: "CLIENT",
+      token: generateInvitationToken(),
+      clientId: client.id,
+      invitedByUserId: session.userId,
+      expiresAt: invitationExpiry(),
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "client", targetId: client.id },
+  });
+
+  const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
+  await sendOnChannel({
+    channel: "EMAIL",
+    to: email,
+    subject: `You're invited to ${business.name}`,
+    body: `Hi ${name}, you've been invited to join ${business.name}. Accept your invitation: ${link}`,
+  });
+
+  revalidatePath("/dashboard/clients");
+  revalidatePath("/dashboard/team");
+  return { link };
+}
+
+const partnerInviteSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Enter a valid email"),
+});
+
+export async function invitePartner(formData: FormData): Promise<{ error?: string; link?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN"]);
+  if (!ctx) return { error: "unauthorized" };
+  const { business, session } = ctx;
+  if (!teamEntitled(business)) return { error: "Partners and teammates are part of Daythread Business. Upgrade under Settings → Subscription." };
+
+  const parsed = partnerInviteSchema.safeParse({ name: formData.get("name"), email: formData.get("email") });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const { name, email } = parsed.data;
+
+  // A seat is anyone on the team side of the org (staff + partners) — clients don't count.
+  // Pending invitations count too, so a burst of invites can't be accepted past the cap.
+  const [activeSeats, pendingPartnerInvites] = await Promise.all([
+    prisma.orgMembership.count({ where: { businessId: business.id, role: { not: "CLIENT" }, status: "ACTIVE" } }),
+    prisma.invitation.count({ where: { businessId: business.id, role: "PARTNER", status: "PENDING" } }),
+  ]);
+  if (!canAddTeamSeat(business, activeSeats + pendingPartnerInvites)) {
+    const limit = planLimits(business).maxTeamSeats;
+    return { error: `Your plan includes ${limit} team member${limit === 1 ? "" : "s"}. Upgrade in Billing to invite more people.` };
+  }
+
+  await prisma.invitation.updateMany({
+    where: { businessId: business.id, email, role: "PARTNER", status: "PENDING" },
+    data: { status: "REVOKED" },
+  });
+
+  const invitation = await prisma.invitation.create({
+    data: {
+      businessId: business.id,
+      email,
+      role: "PARTNER",
       token: generateInvitationToken(),
       invitedByUserId: session.userId,
       expiresAt: invitationExpiry(),
@@ -62,18 +109,59 @@ export async function inviteTeammate(formData: FormData): Promise<{ error?: stri
   });
 
   await prisma.auditLog.create({
-    data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "teammate", targetId: invitation.id },
+    data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "partner", targetId: invitation.id },
   });
 
   const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
   await sendOnChannel({
     channel: "EMAIL",
     to: email,
-    subject: `${business.name} invited you to their Daythread inbox`,
-    body: `Hi ${name}, ${business.name} invited you to share their inbox on Daythread. Accept your invitation: ${link}`,
+    subject: `${business.name} invited you to join their team`,
+    body: `Hi ${name}, ${business.name} invited you to join their team as a partner. Accept your invitation: ${link}`,
   });
 
+  revalidatePath("/dashboard/team");
+  return { link };
+}
+
+/**
+ * Invite someone to share this inbox as a teammate. Business only, and the seat allowance
+ * is enforced here and again at accept time: pending invitations count, so a burst of
+ * invites can't be accepted past the plan's limit.
+ */
+export async function inviteTeammate(formData: FormData): Promise<{ error?: string; link?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN"]);
+  if (!ctx) return { error: "unauthorized" };
+  const { business, session } = ctx;
+  if (!teamEntitled(business)) return { error: "Teammates are part of Daythread Business. Upgrade under Settings → Subscription." };
+
+  const parsed = partnerInviteSchema.safeParse({ name: formData.get("name"), email: String(formData.get("email") ?? "").trim().toLowerCase() });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const { name, email } = parsed.data;
+
+  const already = await prisma.orgMembership.findFirst({ where: { businessId: business.id, user: { email }, status: "ACTIVE" }, select: { id: true } });
+  if (already) return { error: "They're already on this workspace." };
+
+  const [activeSeats, pendingInvites] = await Promise.all([
+    prisma.orgMembership.count({ where: { businessId: business.id, role: { not: "CLIENT" }, status: "ACTIVE" } }),
+    prisma.invitation.count({ where: { businessId: business.id, role: { not: "CLIENT" }, status: "PENDING", email: { not: email } } }),
+  ]);
+  if (!canAddTeamSeat(business, activeSeats + pendingInvites)) {
+    const limit = planLimits(business).maxTeamSeats;
+    return { error: `Your plan includes ${limit} team member${limit === 1 ? "" : "s"}. Deactivate someone or revoke an invitation to free a seat.` };
+  }
+
+  await prisma.invitation.updateMany({ where: { businessId: business.id, email, status: "PENDING" }, data: { status: "REVOKED" } });
+  const invitation = await prisma.invitation.create({
+    data: { businessId: business.id, email, role: "PHOTOGRAPHER", token: generateInvitationToken(), invitedByUserId: session.userId, expiresAt: invitationExpiry() },
+  });
+  await prisma.auditLog.create({ data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "teammate", targetId: invitation.id } });
+
+  const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
+  await sendOnChannel({ channel: "EMAIL", to: email, subject: `${business.name} invited you to their Daythread inbox`, body: `Hi ${name}, ${business.name} invited you to share their inbox on Daythread. Accept your invitation: ${link}` });
+
   revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/team");
   return { link };
 }
 
@@ -84,7 +172,7 @@ export async function revokeInvitation(id: string) {
     where: { id, businessId: ctx.business.id, status: "PENDING" },
     data: { status: "REVOKED" },
   });
-  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/team");
 }
 
 export async function resendInvitation(id: string): Promise<{ link?: string; error?: string }> {
@@ -101,7 +189,7 @@ export async function resendInvitation(id: string): Promise<{ link?: string; err
   const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${updated.token}`;
   await sendOnChannel({ channel: "EMAIL", to: updated.email, subject: `Reminder: join ${ctx.business.name}`, body: `Accept your invitation: ${link}` });
 
-  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/team");
   return { link };
 }
 
@@ -172,7 +260,7 @@ export async function acceptInvitation(token: string, formData: FormData): Promi
     const business = await prisma.business.findUnique({ where: { id: invitation.businessId } });
     const seats = await prisma.orgMembership.count({ where: { businessId: invitation.businessId, role: { not: "CLIENT" }, status: "ACTIVE" } });
     if (!business || !teamEntitled(business) || !canAddTeamSeat(business, seats)) {
-      return { error: "This inbox has no free team seat right now. Ask the owner to upgrade their plan, then try the link again." };
+      return { error: "This workspace has no free team seat right now. Ask the owner to upgrade their plan, then try the link again." };
     }
   }
 

@@ -109,7 +109,7 @@ export function userFacingMetaError(err: unknown, fallback: string): string {
   if (err.status === 502) return "Meta couldn't be reached just now. Nothing was sent — try again.";
   if (err.status >= 500) return "Meta had a problem on their side. Nothing was sent — try again in a minute.";
   if (isOutsideServiceWindow(err)) return "WhatsApp only allows a free-form reply within 24 hours of the customer's last message. An approved template is required after that.";
-  if (isTokenInvalid(err)) return "The connection to Meta is no longer valid. Reconnect it in Settings → Integrations.";
+  if (isTokenInvalid(err)) return "The connection to Meta is no longer valid. Reconnect it in Settings → Channels.";
   if (isPermissionError(err)) return "Meta refused this because a required permission isn't granted. Reconnect and approve everything it asks for.";
   return scrubMetaMessage(err.message) || fallback;
 }

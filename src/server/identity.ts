@@ -32,7 +32,7 @@ export async function findKnownClient(input: IdentityInput) {
   const { businessId, channel } = input;
   const email = normalizeEmail(input.email ?? (channel === "EMAIL" ? input.senderHandle : null));
   const phone = normalizePhone(input.phone ?? (channel === "SMS" || channel === "WHATSAPP" ? input.senderHandle : null));
-  const include = { _count: { select: { bookings: true, payments: true } } } as const;
+  const include = { _count: { select: { bookings: true } } } as const;
   if (email) {
     const byEmail = await prisma.client.findFirst({ where: { businessId, email: { equals: email, mode: "insensitive" } }, include });
     if (byEmail) return { client: byEmail, matchedOn: "email" as const, email, phone };

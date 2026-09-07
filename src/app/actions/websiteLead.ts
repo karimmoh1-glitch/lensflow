@@ -9,6 +9,7 @@ const leadFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Enter a valid email"),
   phone: z.string().optional(),
+  serviceId: z.string().optional(),
   preferredDate: z.string().optional(),
   message: z.string().min(1, "Tell us a bit about what you're looking for"),
 });
@@ -31,11 +32,12 @@ export async function submitWebsiteLead(
 
   const parsed = leadFormSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  const { name, email, phone, preferredDate, message } = parsed.data;
+  const { name, email, phone, serviceId, preferredDate, message } = parsed.data;
 
   const business = await prisma.business.findUnique({ where: { handle } });
   if (!business) return { ok: false, error: "This business isn't accepting inquiries right now." };
 
+  const service = serviceId ? await prisma.service.findFirst({ where: { id: serviceId, businessId: business.id } }) : null;
 
   const client =
     (await prisma.client.findFirst({ where: { businessId: business.id, email } })) ??
@@ -45,7 +47,7 @@ export async function submitWebsiteLead(
     data: { businessId: business.id, clientId: client.id, channel: "WEBSITE", externalHandle: email, lastMessageAt: new Date() },
   });
 
-  const body = [message, preferredDate ? `Preferred date: ${preferredDate}` : null]
+  const body = [message, service ? `Interested in: ${service.name}` : null, preferredDate ? `Preferred date: ${preferredDate}` : null]
     .filter(Boolean)
     .join("\n");
 
@@ -58,9 +60,11 @@ export async function submitWebsiteLead(
       clientId: client.id,
       conversationId: conversation.id,
       extractedName: name,
+      serviceId: service?.id,
       requestedDateText: preferredDate || null,
       requestedDate: preferredDate ? new Date(preferredDate) : null,
       intent: "HIGH",
+      estimatedValueCents: service?.priceCents ?? 0,
       lastInboundAt: new Date(),
     },
   });
@@ -69,7 +73,7 @@ export async function submitWebsiteLead(
     data: {
       businessId: business.id,
       title: "New website inquiry",
-      body: `${name} wrote to you through your contact form.`,
+      body: `${name} submitted your website contact form${service ? ` about ${service.name}` : ""}.`,
     },
   });
 

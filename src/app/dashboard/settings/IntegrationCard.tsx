@@ -4,20 +4,22 @@ import { Children, useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { X, Check, ArrowRight, Lock } from "lucide-react";
+import { X, Check, ArrowRight, RefreshCw, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui";
 import { useToast } from "@/components/Toaster";
-import { disconnectIntegration } from "@/app/actions/connect";
+import { disconnectIntegration, retrySync } from "@/app/actions/connect";
+import { CalendarSetup } from "./CalendarSetup";
+import { AppleConnectDialog } from "./AppleConnectDialog";
 import type { IntegrationProvider } from "@prisma/client";
 import type { DisplayStatus } from "@/lib/integrations/registry";
 import type { ConnectionState } from "@/lib/meta/config";
 export type { DisplayStatus };
 
 /**
- * One channel, one honest state, one obvious action. The status comes from the server
- * row; the primary button always invokes a real flow (a server action that redirects to
- * the provider). "Manage" opens a detail sheet.
+ * One integration, one honest state, one obvious action. The status comes from the
+ * server row; the primary button always invokes a real flow (a server action that
+ * redirects to the provider, or the Apple setup dialog). "Manage" opens a detail sheet.
  */
 export type CardModel = {
   provider: IntegrationProvider;
@@ -38,21 +40,29 @@ export type CardModel = {
   pill: { label: string; tone: "success" | "warning" | "accent" | "signal" | "neutral" };
   /** Why Connect is withheld by the plan, and where to fix it. */
   limit: { message: string; upgradePlan: string | null; upgradeHref: string } | null;
+  calendarsConnected?: number;
   accent: string;
 };
 
 const PILL: Record<CardModel["pill"]["tone"], string> = { success: "bg-success-soft text-success-text", warning: "bg-warning-soft text-warning-text", accent: "bg-accent-soft text-accent-text", signal: "bg-signal-soft text-signal-text", neutral: "bg-black/[0.05] text-ink/55" };
 
-export function IntegrationCard({ model, icon, connect, manage, children }: { model: CardModel; icon: React.ReactNode; connect?: (formData: FormData) => Promise<void>; /** Detail shown in the Manage sheet (WhatsApp's number and window rules, Instagram's account). */ manage?: React.ReactNode; children?: React.ReactNode }) {
-  const [open, setOpen] = useState<null | "manage">(null);
+export function IntegrationCard({ model, icon, connect, manage, children }: { model: CardModel; icon: React.ReactNode; connect?: (formData: FormData) => Promise<void>; /** Detail shown in the Manage sheet for a non-calendar provider (WhatsApp's number and window rules). */ manage?: React.ReactNode; children?: React.ReactNode }) {
+  const [open, setOpen] = useState<null | "manage" | "apple" | "setup">(null);
   const [pending, start] = useTransition();
   const [confirm, setConfirm] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const hasManage = Boolean(manage);
+  const isCalendar = model.provider === "GOOGLE_CALENDAR" || model.provider === "APPLE_CALENDAR";
+  const hasManage = isCalendar || Boolean(manage);
   const connected = model.status === "connected" || model.status === "sync_issue" || model.status === "needs_attention";
 
+  // Auto-open the setup sheet when the callback sent us back with ?setup=PROVIDER.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("setup") === model.provider && isCalendar) setOpen("setup");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);
@@ -73,8 +83,21 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
       router.refresh();
     });
   }
+  function retry() {
+    start(async () => {
+      const r = await retrySync(model.provider);
+      if (!r.ok) return toast({ tone: "signal", title: "Sync still failing", body: r.error ?? "Daythread will retry automatically." });
+      toast({ tone: "outcome", title: `${model.name} synced` });
+      router.refresh();
+    });
+  }
   function closeSheet() {
     setOpen(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("setup")) {
+      url.searchParams.delete("setup");
+      window.history.replaceState({}, "", url.toString());
+    }
   }
 
   const statusPill = (
@@ -99,12 +122,15 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
       return null;
     }
     if (model.status === "needs_attention") {
+      if (model.provider === "APPLE_CALENDAR") return <Button size="sm" onClick={() => setOpen("apple")}>Reconnect</Button>;
       if (connect) return <form action={connect} onSubmit={() => setConnecting(true)}><Button type="submit" size="sm" loading={connecting} loadingLabel="Opening">Reconnect</Button></form>;
     }
     if (model.status === "disconnected") {
+      if (model.provider === "APPLE_CALENDAR") return <Button size="sm" onClick={() => setOpen("apple")}>Connect <ArrowRight className="w-3.5 h-3.5 ml-1" strokeWidth={2.5} aria-hidden /></Button>;
       if (connect) return <form action={connect} onSubmit={() => setConnecting(true)}><Button type="submit" size="sm" loading={connecting} loadingLabel="Connecting">Connect <ArrowRight className="w-3.5 h-3.5 ml-1" strokeWidth={2.5} aria-hidden /></Button></form>;
       return null;
     }
+    if (model.status === "sync_issue" && isCalendar) return <Button size="sm" variant="outline" onClick={retry} loading={pending} loadingLabel="Syncing"><RefreshCw className="w-3.5 h-3.5 mr-1" strokeWidth={2} aria-hidden />Retry</Button>;
     return null;
   })();
 
@@ -120,19 +146,19 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
           )}
           {/* A working connection can still be renewed — a re-grant is the fix for a
               permission the business later removed, or a webhook Meta never accepted. */}
-          {connect && model.status !== "needs_attention" && !confirm && (
+          {!isCalendar && connect && model.status !== "needs_attention" && !confirm && (
             <form action={connect} onSubmit={() => setConnecting(true)}>
               <button type="submit" disabled={connecting} className="text-[13px] sm:text-xs font-semibold text-ink/60 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-60">
                 {connecting ? "Opening…" : "Reconnect"}
               </button>
             </form>
           )}
-          {!confirm && (
+          {!isCalendar && !confirm && (
             <button type="button" onClick={() => setConfirm(true)} disabled={pending} className="text-[13px] sm:text-xs font-semibold text-ink/50 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05]">
               Disconnect
             </button>
           )}
-          {confirm && (
+          {!isCalendar && confirm && (
             <span className="inline-flex items-center gap-1">
               <Button size="sm" variant="danger" onClick={disconnect} loading={pending} loadingLabel="Disconnecting">Disconnect</Button>
               <button type="button" onClick={() => setConfirm(false)} className="text-[13px] sm:text-xs text-ink/50 px-3 py-2 sm:px-2.5 sm:py-1.5">Keep</button>
@@ -155,7 +181,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
               <h3 className="text-[15px] font-semibold text-ink">{model.name}</h3>
               {statusPill}
             </div>
-            {connected && model.account && <p className="mt-0.5 text-sm text-ink/80 truncate">{model.account}</p>}
+            {connected && model.account && <p className="mt-0.5 text-sm text-ink/80 truncate">{model.account}{model.calendarsConnected ? ` · ${model.calendarsConnected} calendar${model.calendarsConnected === 1 ? "" : "s"}` : ""}</p>}
             <p className="mt-1 text-sm text-ink/60 leading-snug">{model.description}</p>
             <ul className="mt-2.5 flex flex-wrap gap-1.5">
               {model.capabilities.map((c) => (
@@ -165,7 +191,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
             {model.status === "connected" && model.lastSyncedAt && <p className="mt-2 text-[11px] text-ink/45">Last synced {model.lastSyncedAt}</p>}
             {model.status === "sync_issue" && !model.lastError && (
               <p className="mt-2 text-[11px] text-warning-text">
-                {`The last sync with ${model.name} failed. Messages already received are unaffected`}
+                {isCalendar ? "Calendar sync temporarily failed. Daythread will retry automatically" : `The last sync with ${model.name} failed. Messages already received are unaffected`}
                 {model.lastSyncedAt ? ` · last good sync ${model.lastSyncedAt}` : ""}.
               </p>
             )}
@@ -173,8 +199,8 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
             {model.status === "unavailable" && <p className="mt-2 text-[11px] text-ink/50">{model.detail}</p>}
             {model.limit && (model.status === "disconnected" || model.status === "needs_attention") && (
               <div className="mt-2.5 rounded-xl border border-signal/20 bg-signal-soft/40 px-3 py-2">
-                <p className="text-xs font-semibold text-ink">{/limit reached/i.test(model.limit.message) ? "Channel limit reached" : "Part of Pro"}</p>
-                <p className="mt-0.5 text-[11px] text-ink/65 leading-relaxed">{model.limit.message.replace(/^(Integration|Channel) limit reached\.\s*/i, "")}</p>
+                <p className="text-xs font-semibold text-ink">{/limit reached/i.test(model.limit.message) ? "Integration limit reached" : "Upgrade required"}</p>
+                <p className="mt-0.5 text-[11px] text-ink/65 leading-relaxed">{model.limit.message.replace(/^Integration limit reached\.\s*/i, "")}</p>
               </div>
             )}
             {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && <p className="mt-2 text-[11px] text-ink/50">{model.detail}</p>}
@@ -200,19 +226,23 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
         <div className="fixed inset-0 z-[80] overflow-y-auto" role="presentation">
           <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={closeSheet} aria-hidden />
           <div className="relative min-h-full flex items-end sm:items-center justify-center p-0 sm:p-6">
-          <div role="dialog" aria-modal="true" aria-label={`${model.name} settings`} className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-[26px] bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] dt-land">
+          <div role="dialog" aria-modal="true" aria-label={`${model.name} ${open === "manage" ? "settings" : "setup"}`} className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-[26px] bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] dt-land">
             <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-border px-5 py-3.5 flex items-center gap-3">
               <span className="w-8 h-8 rounded-lg border border-border bg-paper flex items-center justify-center">{icon}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-ink">{model.name}</div>
-                <div className="text-[11px] text-ink/50">Manage connection</div>
+                <div className="text-[11px] text-ink/50">{open === "manage" ? "Manage connection" : open === "apple" ? "Connect with an app-specific password" : "Choose calendars"}</div>
               </div>
               <button type="button" onClick={closeSheet} aria-label="Close" className="w-11 h-11 sm:w-8 sm:h-8 -mr-1.5 sm:mr-0 rounded-lg flex items-center justify-center text-ink/55 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-4 h-4" strokeWidth={2} /></button>
             </div>
             {/* Bottom sheet on a phone: the home-indicator inset is part of the padding so
                 the last control is never under it. */}
             <div className="px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-5">
-              {open === "manage" && manage}
+              {open === "apple" && <AppleConnectDialog onClose={closeSheet} />}
+              {open === "manage" && !isCalendar && manage}
+              {(open === "manage" || open === "setup") && isCalendar && (
+                <CalendarSetup provider={model.provider as "GOOGLE_CALENDAR" | "APPLE_CALENDAR"} mode={open} onDone={closeSheet} reconnect={model.provider === "APPLE_CALENDAR" ? <Button size="sm" onClick={() => setOpen("apple")}>Reconnect</Button> : connect ? <form action={connect}><Button type="submit" size="sm">Reconnect</Button></form> : null} />
+              )}
             </div>
           </div>
           </div>

@@ -228,3 +228,11 @@ Verified on dev with real clicks (persona A–D, widths 375/390/768/1440/1728): 
 - **Inbox**: `first_conversation_viewed` recorded once per workspace.
 - **Gmail sync** now lives in `src/server/gmailSync.ts`: the inbox and Today pull on open (not only after the first 20-second tick), the "Check for new emails" button uses the same path, and the daily cron pulls every connected Gmail so follow-ups and reminders see mail from workspaces nobody opened. Vercel's cron runs once a day; more frequent background pulls need a paid cron schedule or Gmail push (Pub/Sub), neither configured.
 - **Workspace deletion** cancels an active Stripe subscription first and refuses to delete if Stripe can't be reached, so a deleted workspace can never keep being billed.
+
+## Final pre-customer audit (2026-09-07, PR #60)
+
+- **Blocker fixed:** the time-based automations (reminders before a booking, follow-ups after, quiet-lead nudges) had no caller in production; the daily cron now runs `runScheduledAutomations()` after the Gmail pull and before channel maintenance. The Gmail pull is bounded to a time budget so the run fits Vercel's 60-second cron limit; what doesn't fit is first in line next day.
+- **Production configuration, verified from the deployment:** database, sessions, token encryption, cron secret, seed secret, app URL and the Google OAuth client are configured. Google's consent screen accepts the production redirect URI with identity-only scopes (checked live). Not configured: Meta (Instagram, WhatsApp), Twilio, OpenAI, Resend, Stripe, `FOUNDER_EMAILS`. The app says so wherever each would be offered.
+- **Security smoke on production:** mobile API 401 without a session and with a forged bearer; admin routes 401 without and with a wrong secret; cron 401; every webhook 501 while its provider is unconfigured; forged OAuth state ends on the settings page with `connect_error=state`; `/login?next=` is ignored; HSTS, CSP, frame, nosniff, referrer and permissions headers present.
+- **Privacy:** states when and why conversation text would go to OpenAI, and that without a model nothing leaves Daythread.
+- **Mobile:** every dashboard section at 375 and 390 without overflow; onboarding at 390 with reload, back and forward; keyboard audit passing.

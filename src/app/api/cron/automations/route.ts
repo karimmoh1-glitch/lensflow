@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { runIntegrationMaintenance } from "@/server/integrationMaintenance";
 import { syncAllGmail } from "@/server/gmailSync";
+import { runScheduledAutomations } from "@/server/automationRunner";
 
 /**
- * Daily maintenance for connected channels (see vercel.json): refresh Instagram tokens before
- * they expire and flag credentials that stopped working. Vercel Cron calls this with
+ * The daily run (see vercel.json), in order: pull every connected Gmail so the sweep sees
+ * today's mail; run the time-based automations — reminders before a booking, follow-ups
+ * after one, quiet-lead nudges — each idempotent per (automation, target); then channel
+ * maintenance: refresh Instagram tokens before they expire and flag credentials that
+ * stopped working. Vercel Cron calls this with
  * `Authorization: Bearer $CRON_SECRET`; anything else is rejected. With no CRON_SECRET
  * configured the route refuses to run rather than running unauthenticated.
  */
@@ -21,11 +25,10 @@ export async function GET(req: Request) {
   if (a.length !== b.length || !timingSafeEqual(a, b)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
+    const gmail = await syncAllGmail({ budgetMs: 25_000 });
+    const automations = await runScheduledAutomations();
     const maintenance = await runIntegrationMaintenance();
-    // Pull every connected Gmail so "waiting for your reply" and follow-ups reflect today's
-    // mail even for a workspace nobody opened; the inbox and Today also pull on open.
-    const gmail = await syncAllGmail();
-    return NextResponse.json({ ok: true, maintenance, gmail });
+    return NextResponse.json({ ok: true, gmail, automations, maintenance });
   } catch (err) {
     console.error("[cron/automations] failed", err);
     return NextResponse.json({ error: "Run failed" }, { status: 500 });

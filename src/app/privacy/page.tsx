@@ -25,7 +25,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Messages, contacts, bookings">
-          Daythread stores the messages that arrive on connected channels, the people who sent them, and the bookings and notes you create. Classification (priority, automated, promotional, vendor) is metadata Daythread computes; it never deletes a message to keep an inbox tidy. The only payment Daythread handles is your own subscription, processed by Stripe; Daythread stores the plan, its status and Stripe&rsquo;s identifiers, never card numbers.
+          Daythread stores the messages that arrive on connected channels, the people who sent them, and the bookings and notes you create. Classification (priority, automated, promotional, vendor) is metadata Daythread computes; it never deletes a message to keep an inbox tidy. The only payment Daythread handles is your own subscription, processed by Stripe; Daythread stores the plan, its status and Stripe&rsquo;s identifiers, never card numbers. When an assistant language model is configured on a deployment (the Status page says whether it is), the text of a conversation is sent to OpenAI only to draft a reply, pull out details or summarize it, and only when you or an automation you switched on asks for that; OpenAI&rsquo;s API terms do not allow that text to be used to train its models. Without a model configured, drafts and summaries come from rules inside Daythread and nothing leaves it.
         </Section>
 
         <Section title="AI features">

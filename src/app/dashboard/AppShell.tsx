@@ -255,7 +255,7 @@ export function AppShell({
       </aside>
 
       {/* Mobile top bar: where you are, search, and the More sheet under the avatar. */}
-      <div className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-3 border-b border-border bg-white/95 backdrop-blur pt-[env(safe-area-inset-top)]">
+      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-3 border-b border-border bg-white/95 backdrop-blur pt-[env(safe-area-inset-top)]">
         <button
           ref={menuButtonRef}
           aria-label="Open navigation"
@@ -273,7 +273,7 @@ export function AppShell({
             <span className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-semibold">{initials(businessName)}</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Mobile nav drawer */}
       {mobileOpen && (

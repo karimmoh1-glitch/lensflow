@@ -180,3 +180,14 @@ Final launch audit additions (2026-09-06):
   that the example studio is one cast. FAQ extended: trial end, cancel, delete, AI scope,
   without AI. Pricing carries the plan philosophy lines.
 - Status page adds the assistant model and email sending rows.
+
+## Final conversion pass (2026-09-07, PRs #54–#55)
+
+- The opening animation writes no invented readings (name, time, action): thread, message,
+  word. FAQ answers the skeptical buyer (who it's for; HoneyBook/Dubsado; Front or a shared
+  inbox; the separate tools; changing email or number; when you're charged; downgrading)
+  without claims about what other products lack. "Why Daythread" carries the honest cost
+  line: one missed booking can cost more than a month of Daythread.
+- Process note: a CSS cleanup in #54 left a stray brace; the ship chain was stopped, the two
+  deployments it had queued were removed before going live (production stayed on #53), and
+  #55 shipped the fix with the build gated on its real exit code.

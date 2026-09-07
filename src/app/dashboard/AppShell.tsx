@@ -91,7 +91,7 @@ function NavLinks({ pathname, search, role, onNavigate }: { pathname: string; se
     );
   };
   return (
-    <nav ref={navRef} className="dt-nav flex-1 px-3 py-3 overflow-y-auto scrollbar-thin flex flex-col">
+    <nav ref={navRef} aria-label="Primary" className="dt-nav flex-1 px-3 py-3 overflow-y-auto scrollbar-thin flex flex-col">
       <div aria-hidden className="dt-nav-indicator" style={{ transform: `translateY(${indicator.y}px)`, opacity: indicator.visible ? 1 : 0 }} />
       {groups.map(({ g, items }, gi) => (
         <div key={g} className={cn(gi > 0 && "mt-5")}>

@@ -146,3 +146,17 @@ Final launch audit additions (2026-09-06):
   support@daythread.org and privacy@daythread.org. Privacy has a cookies section.
 - Inbox with 300+ conversations renders in ~370 ms on dev; search and filters stay fast;
   an 80-character name and a 2,000-character message truncate and wrap cleanly on a phone.
+
+## Launch war room (2026-09-07, PR #50)
+
+- 7-day Pro trial with a card on file, one per business, offered and decided server-side;
+  the subscription panel states the first-charge date and how to cancel; the landing pricing
+  shows the trial terms only when billing is live on the deployment (tests: webhook trial sync,
+  eligibility).
+- Settings is a control center: a sidebar of sections on desktop, all visible without scrolling;
+  a section index on phones with a way back. Verified by keyboard: every section reachable
+  with Tab/Enter, sidebar fully in view at 1440×900.
+- Keyboard audit (real key events): landing tab order with visible rings, FAQ opens with
+  Enter/Space, login submits with Enter, ⌘K opens the palette, arrows move the selection,
+  Escape closes it, Enter opens a conversation, the composer is reachable, the phone "More"
+  sheet traps focus and restores it on Escape. Fixed: palette now restores focus on close.

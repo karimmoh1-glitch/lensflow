@@ -110,6 +110,12 @@ type BillingFields = Pick<Business, "planTier" | "billingStatus">;
 
 /** The plan a workspace actually has right now — never planTier alone. A lapsed paid
  * subscription falls back to Free. */
+export const TRIAL_DAYS = 7;
+/** A business gets one 7-day Pro trial, before it has ever had a subscription. */
+export function trialEligible(business: { stripeSubscriptionId: string | null; trialUsedAt: Date | null; billingStatus: string | null }): boolean {
+  return !business.stripeSubscriptionId && !business.trialUsedAt && business.billingStatus !== "TRIALING";
+}
+
 export function effectivePlan(business: BillingFields): PlanKey {
   if (business.planTier === "FREE") return "FREE";
   if (business.billingStatus && ENTITLED_STATUSES.has(business.billingStatus)) return business.planTier as PlanKey;

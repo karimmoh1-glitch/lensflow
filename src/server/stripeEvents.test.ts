@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import Stripe from "stripe";
 import { prisma } from "@/lib/db";
+import { effectivePlan, trialEligible } from "@/lib/billing";
 
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
@@ -91,6 +92,28 @@ describe("Stripe webhook", () => {
     expect(after?.billingStatus).toBe("CANCELED");
     const { effectivePlan } = await import("@/lib/billing");
     expect(effectivePlan(after!)).toBe("FREE");
+  });
+
+  it("a trialing subscription grants Pro, records the trial end and marks the one trial as used", async () => {
+    const trialEnd = Math.floor(Date.now() / 1000) + 7 * 86400;
+    const c = await prisma.business.create({ data: { name: "Stripe C", handle: `stripe-c-${Date.now()}`, stripeCustomerId: `cus_C_${Date.now()}` } });
+    const sub = { ...subscription({ id: `sub_trial_${c.id}`, businessId: c.id, customer: c.stripeCustomerId!, status: "trialing", planKey: "PRO", periodEnd: trialEnd }), trial_end: trialEnd, trial_start: Math.floor(Date.now() / 1000) };
+    const r = await POST(await signed(evt("customer.subscription.created", sub)));
+    expect(r.status).toBe(200);
+    const b = await prisma.business.findUniqueOrThrow({ where: { id: c.id } });
+    expect(b.planTier).toBe("PRO");
+    expect(b.billingStatus).toBe("TRIALING");
+    expect(b.trialEndsAt?.getTime()).toBe(trialEnd * 1000);
+    expect(b.trialUsedAt).not.toBeNull();
+    expect(effectivePlan(b)).toBe("PRO");
+    expect(trialEligible(b)).toBe(false);
+    // Converting to active clears the trial marker but the "used" stamp stays.
+    await POST(await signed(evt("customer.subscription.updated", { ...sub, status: "active", trial_end: trialEnd })));
+    const after = await prisma.business.findUniqueOrThrow({ where: { id: c.id } });
+    expect(after.billingStatus).toBe("ACTIVE");
+    expect(after.trialEndsAt).toBeNull();
+    expect(after.trialUsedAt).not.toBeNull();
+    await prisma.business.delete({ where: { id: c.id } });
   });
 
   it("acknowledges a duplicate delivery without re-applying it", async () => {

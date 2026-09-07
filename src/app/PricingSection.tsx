@@ -31,7 +31,7 @@ const LADDER: Record<PlanKey, { who: string; why?: string; gets: string[]; badge
   },
 };
 
-export function PricingSection() {
+export function PricingSection({ trial = false }: { trial?: boolean }) {
   const [interval, setInterval] = useState<"month" | "year">("month");
   const price = (cents: number) => (interval === "year" ? cents * 10 : cents);
   return (
@@ -70,6 +70,7 @@ export function PricingSection() {
                   ))}
                 </ul>
                 {l.why && <p className="mt-5 text-xs text-ink/70 leading-relaxed">{l.why}</p>}
+                {pro && trial && <p className="mt-3 text-xs font-semibold text-ink leading-relaxed">7-day free trial · card required · first charge on day 8 · cancel before then and pay nothing.</p>}
                 <Link
                   href="/signup"
                   className={cn("mt-6 inline-flex items-center justify-center h-11 rounded-full text-sm font-extrabold transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", pro ? "bg-accent-strong text-white" : "bg-ink text-white")}

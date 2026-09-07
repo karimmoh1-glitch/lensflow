@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { createSubscriptionCheckout, createBillingPortalSession, changeSubscriptionPlan, subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
-import { PLANS, effectivePlan, type PlanKey } from "@/lib/billing";
+import { PLANS, effectivePlan, type PlanKey, trialEligible, TRIAL_DAYS } from "@/lib/billing";
 import { track } from "@/lib/analytics";
 
 const LIVE_SUBSCRIPTION_STATUSES = new Set(["ACTIVE", "TRIALING", "PAST_DUE"]);
@@ -24,7 +24,8 @@ async function requireBillingRole(session?: SessionPayload | null) {
 export async function startUpgradeCheckout(
   planKey: Extract<PlanKey, "PRO" | "BUSINESS">,
   interval: "month" | "year" = "month",
-  session?: SessionPayload | null
+  session?: SessionPayload | null,
+  opts: { trial?: boolean } = {}
 ): Promise<{ url?: string; changed?: boolean; error?: string }> {
   if (planKey !== "PRO" && planKey !== "BUSINESS") return { error: "Unknown plan." };
   if (interval !== "month" && interval !== "year") return { error: "Unknown billing interval." };
@@ -51,16 +52,20 @@ export async function startUpgradeCheckout(
     }
   }
 
+  // One 7-day Pro trial per business, only before any subscription ever existed; the
+  // request may ask for it, the server decides.
+  const trial = Boolean(opts.trial) && planKey === "PRO" && trialEligible(business);
   try {
     const { url } = await createSubscriptionCheckout({
       business,
       ownerEmail: ctx.user.email,
       planKey,
       interval,
+      trialDays: trial ? TRIAL_DAYS : undefined,
       successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?checkout=success&plan=${planKey.toLowerCase()}`,
       cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?checkout=canceled`,
     });
-    await track("checkout_started", { businessId: business.id, properties: { planKey } });
+    await track("checkout_started", { businessId: business.id, properties: { planKey, interval, trial } });
     return { url };
   } catch (err) {
     console.error("[billing] checkout creation failed", err instanceof Error ? err.message : err);

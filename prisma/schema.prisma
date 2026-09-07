@@ -51,6 +51,10 @@ model Business {
   stripeSubscriptionId String?       @unique
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean       @default(false)
+  /// When the Pro trial ends (from Stripe). Null when no trial is running.
+  trialEndsAt          DateTime?
+  /// Set the first time this business starts a subscription with a trial — one trial per business.
+  trialUsedAt          DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

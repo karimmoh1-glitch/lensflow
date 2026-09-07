@@ -59,6 +59,19 @@ export function CommandPalette() {
     };
   }, []);
 
+  // Whoever opened the palette gets focus back when it closes — a keyboard user lands where
+  // they were, not at the top of the page.
+  const openerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (open) {
+      openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      return;
+    }
+    const el = openerRef.current;
+    openerRef.current = null;
+    if (el && document.contains(el)) requestAnimationFrame(() => el.focus());
+  }, [open]);
+
   useEffect(() => {
     if (open) {
       setQ("");

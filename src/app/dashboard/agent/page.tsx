@@ -7,6 +7,7 @@ import { buildAgentBrief } from "@/server/businessAgent";
 import { PageHeader } from "@/components/ui";
 import { AgentBoard } from "./AgentBoard";
 import { Sparkles, MessageSquare, CalendarCheck, RotateCcw, Workflow, Lock } from "lucide-react";
+import { getPersonalization } from "@/server/personalization";
 
 /**
  * The Daythread assistant. Pro and Business: the plan is read from the database by this
@@ -23,13 +24,16 @@ export default async function AgentPage() {
 
   if (!entitled) {
     const canBill = ctx.role === "OWNER" || ctx.role === "ADMIN";
+    const personalization = await getPersonalization(business.id);
+    const askedForIt = Boolean(personalization?.wantsAI);
     return (
       <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
         <PageHeader title="Assistant" description="Daythread proposes the day's work and carries it out when you approve." />
         <section className="rounded-[26px] border border-border bg-white overflow-hidden">
           <div className="px-6 py-6 md:px-8 md:py-8 bg-[radial-gradient(120%_140%_at_0%_0%,rgba(109,90,230,0.12),transparent_55%)]">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-signal-text"><Lock className="w-3 h-3" strokeWidth={2.5} aria-hidden /> Daythread Pro</span>
-            <h2 className="mt-2 font-sans font-extrabold text-[1.6rem] md:text-[1.9rem] leading-[1.05] tracking-[-0.03em] text-ink">Your business has an assistant.</h2>
+            <h2 className="mt-2 font-sans font-extrabold text-[1.6rem] md:text-[1.9rem] leading-[1.05] tracking-[-0.03em] text-ink">{askedForIt ? "Meet your Business Agent." : "Your business has an assistant."}</h2>
+            {askedForIt && <p className="mt-2 max-w-xl text-sm font-semibold text-ink leading-relaxed">You said you&rsquo;d like help with replies and follow-ups during setup. This is that help.</p>}
             <p className="mt-2 max-w-xl text-sm text-ink/70 leading-relaxed">It reads what is actually happening — who is waiting, what isn&rsquo;t confirmed, who went quiet, what stopped syncing — and proposes the exact next action with the message ready. You approve; it sends, records and moves things forward. Ask it anything about your own business and it answers from your records.</p>
             <ul className="mt-5 grid sm:grid-cols-2 gap-2.5">
               {[

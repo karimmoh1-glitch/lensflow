@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
  * "Continue with Google" for the login and signup pages. Rendered only when the server says
  * the Google OAuth client is configured, so it never promises a sign-in that can't happen.
  */
-export function GoogleButton({ intent, className }: { intent: "login" | "signup"; className?: string }) {
+export function GoogleButton({ intent, className, personalization, divider = "or with email" }: { intent: "login" | "signup"; className?: string; personalization?: { answers: string; selectedPlan?: string; anonymousId?: string }; divider?: string | null }) {
   const [pending, startTransition] = useTransition();
   return (
     <div className={cn("space-y-4", className)}>
       <button
         type="button"
-        onClick={() => startTransition(() => startGoogleSignIn(intent))}
+        onClick={() => startTransition(() => startGoogleSignIn(intent, personalization))}
         disabled={pending}
         className="w-full inline-flex items-center justify-center gap-2.5 h-12 rounded-full border border-border bg-white text-[15px] font-semibold text-ink hover:bg-black/[0.03] active:scale-[0.99] transition-[background-color,transform] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
         aria-busy={pending}
@@ -27,11 +27,13 @@ export function GoogleButton({ intent, className }: { intent: "login" | "signup"
         </svg>
         {pending ? "Opening Google…" : "Continue with Google"}
       </button>
-      <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65" aria-hidden>
-        <span className="h-px flex-1 bg-border" />
-        or with email
-        <span className="h-px flex-1 bg-border" />
-      </div>
+      {divider && (
+        <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65" aria-hidden>
+          <span className="h-px flex-1 bg-border" />
+          {divider}
+          <span className="h-px flex-1 bg-border" />
+        </div>
+      )}
     </div>
   );
 }

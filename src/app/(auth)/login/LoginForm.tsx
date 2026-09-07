@@ -47,7 +47,7 @@ function LoginFormInner({ google }: { google: boolean }) {
       footer={
         <>
           New here?{" "}
-          <Link href="/signup" className="font-semibold text-ink hover:text-accent-text transition-colors">
+          <Link href="/start" className="font-semibold text-ink hover:text-accent-text transition-colors">
             Start free
           </Link>
         </>

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui";
 import { formatMoney, cn } from "@/lib/utils";
 import { PLANS, effectivePlan, VISIBLE_PLANS, PLAN_ORDER, limitLabel, type PlanKey, trialEligible, TRIAL_DAYS } from "@/lib/billing";
 import { usageFor } from "@/server/integrationQuota";
+import { getPersonalization } from "@/server/personalization";
 import { priceCentsFor, subscriptionBillingIsLive, getBillingSnapshot } from "@/lib/subscriptionBilling";
 import { PlanButton, ManageBillingButton, CheckoutReturn } from "@/app/dashboard/billing/PlanActions";
 import { MobileUpgradeBar } from "@/app/dashboard/billing/MobileUpgradeBar";
@@ -42,6 +43,8 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
     prisma.automation.count({ where: { businessId: business.id, enabled: true } }),
   ]);
   const usage = usageFor(business, integrationRows);
+  const personalization = await getPersonalization(business.id);
+  const recommended = personalization && PLAN_ORDER.indexOf(personalization.recommendedPlan) > PLAN_ORDER.indexOf(current) ? personalization : null;
   const seatsOver = plan.maxTeamSeats !== Infinity && seatCount > plan.maxTeamSeats;
   const automationsOver = Number.isFinite(plan.maxAutomations) && automationsOn > plan.maxAutomations;
   const status = business.billingStatus ? STATUS[business.billingStatus] : null;
@@ -59,6 +62,11 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
       {!subscriptionBillingIsLive && (
         <div className="text-sm text-ink/70 bg-signal-soft/50 border border-signal/15 rounded-2xl px-4 py-3 mb-6">
           Upgrades aren&apos;t open on this deployment yet — plans are shown for reference and nothing is charged.
+        </div>
+      )}
+      {recommended && (
+        <div className="mb-6 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3.5 text-sm text-ink/80">
+          <span className="font-semibold text-ink">Based on what you told us during setup, we&rsquo;d recommend {PLANS[recommended.recommendedPlan].name}.</span> {recommended.reasons[0]} <Link href="/dashboard/settings?tab=profile" className="text-signal-text font-semibold hover:underline">Change how you work →</Link>
         </div>
       )}
       {pastDue && (

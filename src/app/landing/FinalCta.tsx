@@ -85,7 +85,7 @@ export function FinalCta() {
         </p>
         <div className="mt-10 flex flex-col items-center gap-3">
           <Link
-            href="/signup"
+            href="/start"
             className="group inline-flex items-center gap-2 h-14 px-8 rounded-full bg-accent-strong text-white text-base font-extrabold shadow-[0_16px_40px_-12px_rgba(240,82,77,0.85)] transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] hover:scale-[1.04] hover:-translate-y-0.5 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
           >
             Get started <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>

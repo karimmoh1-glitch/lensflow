@@ -12,10 +12,17 @@ cookie, no IP, no fingerprint.
 | --- | --- | --- |
 | Landing viewed | `landing_view` (anonymousId) | `LandingBeacon` |
 | Start clicked | `landing_cta` (anonymousId, `source` = scene id) | `LandingBeacon` |
-| Signup started | `signup_started` | `signup()` after validation |
-| Signup completed | `signup_completed` (`method` password/google) | `signup()`, `completeGoogleSignIn()` |
+| /start opened | `onboarding_started` (anonymousId, `source: start`) | `StartFlow` |
+| Question answered | `onboarding_question_answered` (anonymousId, `step`, `values` option keys, `count`) | `StartFlow` — the name step sends `count` only |
+| Setup skipped | `onboarding_skipped` (anonymousId, `step`) | `StartFlow` |
+| Recommendation shown | `recommended_plan_shown` (anonymousId, `recommendedPlan`) | `StartFlow` summary |
+| Recommendation chosen | `recommended_plan_selected` (anonymousId, `recommendedPlan`, `selectedPlan`; or businessId + `source: onboarding` from the welcome screen) | `StartFlow`, `notePlanChoice()` |
+| Personalization done | `personalization_completed` (anonymousId, `seconds` since /start opened) | `StartFlow` |
+| Signup started | `signup_started` (anonymousId, `personalized`) | `signup()` after validation |
+| Signup completed | `signup_completed` (anonymousId, `method` password/google, `personalized`) | `signup()`, `completeGoogleSignIn()`, mobile signup |
 | Workspace created | `workspace_created` | same |
-| Onboarding | `onboarding_started`, `onboarding_completed` | onboarding actions |
+| Profile saved | `personalization_created` / `personalization_updated` (anonymousId on the first, `source`, `recommendedPlan`, `selectedPlan`, `priorities`, `channelCount`, `businessStatus`, `userType`, `workCategory`, `usesBookings`, `usesTeam`) | `savePersonalization()` |
+| Onboarding | `onboarding_started` (businessId, `personalized`), `onboarding_completed` (`connected`, `via` inbox/checkout), `onboarding_to_product` | onboarding page and actions |
 | First channel | `first_channel_connected` (`provider`) | `activateIntegration()` — the only CONNECTED path |
 | First conversation | `first_message_received` (`channel`) | ingestion |
 | First reply | `first_reply_sent` (`channel`) | send reply |
@@ -36,6 +43,27 @@ SELECT name, COUNT(DISTINCT "businessId") AS workspaces
 FROM "AnalyticsEvent"
 WHERE name IN ('workspace_created','onboarding_completed','first_channel_connected','first_message_received','first_reply_sent','first_booking_created','first_ai_action','checkout_started','subscription_started')
 GROUP BY name ORDER BY workspaces DESC;
+```
+
+The onboarding funnel, question by question — the `anonymousId` ties a /start visit to its signup, so drop-off per step and time-to-complete are both one query:
+
+```sql
+SELECT properties->>'step' AS step, COUNT(DISTINCT "anonymousId") AS answered
+FROM "AnalyticsEvent" WHERE name='onboarding_question_answered' GROUP BY 1 ORDER BY 2 DESC;
+
+SELECT
+  (SELECT COUNT(DISTINCT "anonymousId") FROM "AnalyticsEvent" WHERE name='onboarding_started') AS started,
+  (SELECT COUNT(DISTINCT "anonymousId") FROM "AnalyticsEvent" WHERE name='personalization_completed') AS finished_questions,
+  (SELECT COUNT(DISTINCT "anonymousId") FROM "AnalyticsEvent" WHERE name='onboarding_skipped') AS skipped,
+  (SELECT COUNT(*) FROM "AnalyticsEvent" WHERE name='signup_completed' AND (properties->>'personalized')='true') AS personalized_signups,
+  (SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY (properties->>'seconds')::int) FROM "AnalyticsEvent" WHERE name='personalization_completed') AS median_seconds;
+```
+
+Which plan gets recommended, which gets chosen, and whether the recommendation converts:
+
+```sql
+SELECT properties->>'recommendedPlan' AS recommended, properties->>'selectedPlan' AS selected, COUNT(*)
+FROM "AnalyticsEvent" WHERE name='recommended_plan_selected' GROUP BY 1, 2 ORDER BY 1, 2;
 ```
 
 Landing to signup — visits versus clicks versus signups:

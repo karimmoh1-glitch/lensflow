@@ -201,3 +201,19 @@ Final launch audit additions (2026-09-06):
   first_booking_created / paywall_* / checkout_started / subscription_* events. Read-only SQL
   for every funnel question is in the doc.
 - Demo seed schedules its bookings at believable hours in the demo business's timezone.
+
+## Personalized onboarding (2026-09-07, PR #58)
+
+"Start free" now opens `/start`: ten short questions about how the person works (what they do, the kind of work, business status, channels, pain points, what they want from Daythread, current tools, bookings, team, team size when relevant), a summary that reflects the answers back with a plan recommendation and the reasons for it, then the account step (password or Google). `/signup` redirects there; the account step is the same `signup()` action and the same Google sign-in, unchanged.
+
+What the answers change, all deterministic (`src/lib/personalization.ts`, 12 unit tests plus persona tests A–D):
+- the recommendation: Business when more than five people are involved; Pro when they named something only Pro has (more than two connections, SMS, AI, a team of up to five); Free otherwise and always for personal use;
+- `Business.priorities`, the two to four features Today leads with;
+- the channels they named, marked `wanted` on their Integration rows, which the shell banner, the onboarding connect step, the inbox empty state and Settings → Channels all point at;
+- the stored recommendation, repeated on Settings → Subscription while their plan is below it;
+- the paywall headline and lede, built only from what they selected;
+- the bookings, automations and assistant pages' first-run copy.
+
+Nothing is connected, charged or invented. "Building your Daythread" lists exactly the four writes above. The answers are editable under Settings → Profile → How you work, and re-saving re-derives everything. Answers are option keys; the only free text is an optional 80-character description for "Other" work. They are not passed to the language model.
+
+Verified on dev with real clicks (persona A–D, widths 375/390/768/1440/1728): every question, Back, Continue, refresh mid-flow (position and answers restored), browser back/forward, keyboard selection, duplicate email, short password, skip, the building moment, the personalized welcome, the connect order, the inbox/Today/bookings/automations/assistant surfaces, the personalized paywall, the subscription note and the settings form. Google sign-in with answers is covered by the cookie hand-off (`dt_start`, 30 minutes, scoped to the callback path) and cannot be exercised end to end without a Google OAuth client on the deployment.

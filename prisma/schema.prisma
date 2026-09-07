@@ -78,7 +78,34 @@ model Business {
   notifications  Notification[]
   joinRequests   JoinRequest[]
   analyticsEvents AnalyticsEvent[]
+  onboardingProfile OnboardingProfile?
   senderRules     SenderRule[]
+}
+
+/// What the owner told us about how they work, before their account existed. Read by the
+/// Today page, empty states, the paywall and the plan recommendation — never sent to the
+/// language model wholesale. Option keys only; free text is limited to `workDetail`.
+model OnboardingProfile {
+  id              String   @id @default(cuid())
+  businessId      String   @unique
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  userType        String
+  workCategory    String
+  workDetail      String?
+  businessStatus  String
+  teamSize        String?
+  channels        String[] @default([])
+  painPoints      String[] @default([])
+  desiredFeatures String[] @default([])
+  currentTools    String[] @default([])
+  bookings        String
+  teamUsage       String
+  /// Derived deterministically from the answers at save time (src/lib/personalization.ts).
+  recommendedPlan PlanTier
+  /// What they chose on the recommendation screen — a preference, never a charge.
+  selectedPlan    PlanTier?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 enum PlanTier {

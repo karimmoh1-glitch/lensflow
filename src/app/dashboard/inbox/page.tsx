@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getPersonalization } from "@/server/personalization";
+import { PROVIDER_LABEL, list } from "@/lib/personalization";
 import { EmptyState } from "@/components/ui";
 import { cn, firstName } from "@/lib/utils";
 import { ConversationRow } from "@/components/inbox/ConversationRow";
@@ -121,6 +123,17 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     : waiting.length === 0 ? "Nobody is waiting on you."
     : `${waiting.length === 1 ? "1 person is" : `${waiting.length} people are`} waiting on you`;
 
+  // Nothing connected yet and a /start profile: the empty inbox names the channels they said they use.
+  const personalEmpty = enriched.length === 0 ? await (async () => {
+    const p = await getPersonalization(business.id);
+    if (!p) return null;
+    const wanted = p.connectProviders.filter((x) => x !== "GOOGLE_CALENDAR");
+    if (wanted.length === 0) return null;
+    const active = await prisma.integration.count({ where: { businessId: business.id, status: { in: ["CONNECTED", "NEEDS_ATTENTION", "SYNC_ERROR"] }, provider: { in: ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS"] } } });
+    if (active > 0) return null;
+    const names = list(wanted.map((x) => PROVIDER_LABEL[x]));
+    return { title: "Connect your customer channels.", description: `You said customers reach you on ${names}. Connect ${wanted.length === 1 ? "it" : "them"} and every message lands here — with who they are and what they need.`, cta: `Connect ${names}` };
+  })() : null;
   return (
     <div className="flex h-[100dvh] md:h-screen bg-white">
       {gmailConnected && <AutoGmailSync />}
@@ -179,16 +192,17 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
           {rows.length === 0 && (
             <div className="p-6">
               <EmptyState
-                title={q ? "Nothing matches." : view === "all" ? "Nothing in this pile." : filter === "unanswered" ? "Nobody is waiting on you." : filter === "unread" ? "You're all caught up." : channel !== "all" ? `Nothing from ${CHANNEL_META[channel].label} yet.` : "Your inbox is quiet."}
+                title={q ? "Nothing matches." : view === "all" ? "Nothing in this pile." : filter === "unanswered" ? "Nobody is waiting on you." : filter === "unread" ? "You're all caught up." : channel !== "all" ? `Nothing from ${CHANNEL_META[channel].label} yet.` : personalEmpty ? personalEmpty.title : "Your inbox is quiet."}
                 description={
                   q ? "Try a name, an email address, or a word from the message."
                   : view === "all" ? "Mail Daythread classifies this way will collect here — kept, never in your way."
                   : filter !== "all" ? "New messages land here the moment they arrive."
                   : channel !== "all" ? "Messages on that channel appear here as soon as someone writes."
+                  : personalEmpty ? personalEmpty.description
                   : "Connect a channel under Settings and every message from it lands here — with who they are and what they need."
                 }
                 tone={view === "priority" && filter !== "all" && !q ? "success" : "neutral"}
-                action={view === "priority" && filter === "all" && channel === "all" && !q && enriched.length === 0 ? <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-4 rounded-full bg-ink text-white text-sm font-semibold">Connect a channel</Link> : undefined}
+                action={view === "priority" && filter === "all" && channel === "all" && !q && enriched.length === 0 ? <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-4 rounded-full bg-ink text-white text-sm font-semibold">{personalEmpty?.cta ?? "Connect a channel"}</Link> : undefined}
               />
             </div>
           )}

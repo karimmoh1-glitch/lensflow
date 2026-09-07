@@ -15,7 +15,7 @@ export default async function WorkspacesPage() {
     return (
       <AuthShell eyebrow="No inbox yet" title="This account isn't part of an inbox yet." lede="Ask whoever invited you for a new link, or start your own.">
         <div className="flex flex-col gap-3">
-          <a href="/signup" className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-ink text-white text-sm font-semibold transition-transform hover:scale-[1.03] active:scale-[0.97]">
+          <a href="/start" className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-ink text-white text-sm font-semibold transition-transform hover:scale-[1.03] active:scale-[0.97]">
             Start my own inbox
           </a>
           <form action={logout}>

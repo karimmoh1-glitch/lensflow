@@ -62,12 +62,12 @@ export function TeamInviteForm() {
   return (
     <Card>
       <CardBody>
-        <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 sm:items-end" noValidate>
-          <div className="flex-1">
+        <form ref={formRef} onSubmit={handleSubmit} className="flex flex-wrap gap-3 items-end" noValidate>
+          <div className="flex-1 min-w-[10rem]">
             <Label htmlFor="teammate-name">Name</Label>
             <Input id="teammate-name" name="name" placeholder="Jordan Lee" autoComplete="off" required />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-[12rem]">
             <Label htmlFor="teammate-email">Email</Label>
             <Input id="teammate-email" name="email" type="email" inputMode="email" placeholder="jordan@example.com" autoComplete="off" required />
           </div>

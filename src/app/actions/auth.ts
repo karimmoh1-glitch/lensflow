@@ -8,6 +8,8 @@ import { generatePasswordResetToken, passwordResetExpiry } from "@/lib/passwordR
 import { sendOnChannel, messagingIsLive } from "@/lib/messaging";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { track } from "@/lib/analytics";
+import { parseAnswers, savePersonalization } from "@/server/personalization";
+import { planSchema } from "@/lib/personalization";
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
 
@@ -56,7 +58,13 @@ export async function signup(formData: FormData): Promise<FormState> {
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, email, password } = parsed.data;
-  await track("signup_started");
+  // What they told us on /start, if they came that way. Invalid or absent → a plain account.
+  const answers = parseAnswers(formData.get("answers"));
+  const selectedPlanRaw = planSchema.safeParse(formData.get("selectedPlan"));
+  const selectedPlan = selectedPlanRaw.success ? selectedPlanRaw.data : null;
+  const anonRaw = formData.get("anonymousId");
+  const anonymousId = typeof anonRaw === "string" && /^[a-z0-9]{8,40}$/i.test(anonRaw) ? anonRaw : undefined;
+  await track("signup_started", { anonymousId, properties: { personalized: Boolean(answers) } });
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -81,8 +89,9 @@ export async function signup(formData: FormData): Promise<FormState> {
     return { error: "Something went wrong creating your account. Please try again." };
   }
 
-  await track("signup_completed", { businessId: business.id, properties: { method: "password" } });
+  await track("signup_completed", { businessId: business.id, anonymousId, properties: { method: "password", personalized: Boolean(answers) } });
   await track("workspace_created", { businessId: business.id });
+  if (answers) await savePersonalization(business.id, answers, { selectedPlan, anonymousId, source: "signup" }).catch((err) => console.error("[personalization] save failed", err));
   await setSessionCookie({ userId: user.id, activeBusinessId: business.id });
   redirect(homeRouteFor("OWNER", business));
 }

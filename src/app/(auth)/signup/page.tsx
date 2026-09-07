@@ -1,8 +1,7 @@
-import { googleOAuthConfigured } from "@/lib/google";
-import { SignupForm } from "./SignupForm";
+import { redirect } from "next/navigation";
 
-/** The server decides whether "Continue with Google" is offered: only when the OAuth client
- * is configured on this deployment, so the page never shows a sign-in that can't happen. */
+/** Signup starts with a few questions about how you work; /start is that flow, and the
+ * account form is its last step. Old links keep working. */
 export default function SignupPage() {
-  return <SignupForm google={googleOAuthConfigured()} />;
+  redirect("/start");
 }

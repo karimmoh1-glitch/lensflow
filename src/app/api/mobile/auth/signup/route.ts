@@ -5,11 +5,17 @@ import { hashPassword, createSessionToken, homeRouteFor } from "@/lib/auth";
 import { uniqueHandle, personalWorkspaceName } from "@/app/actions/auth";
 import { jsonError } from "@/lib/mobileApi";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { track } from "@/lib/analytics";
+import { answersSchema, planSchema } from "@/lib/personalization";
+import { savePersonalization } from "@/server/personalization";
 
 const signupSchema = z.object({
   name: z.string().trim().min(1, "Your name is required").max(80),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters").max(200),
+  /** The /start questions, answered in the app. Optional; invalid answers are ignored, never fatal. */
+  answers: answersSchema.optional(),
+  selectedPlan: planSchema.optional(),
 });
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
@@ -21,7 +27,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = signupSchema.safeParse(body);
   if (!parsed.success) return jsonError(parsed.error.issues[0]?.message ?? "Invalid input", 400);
-  const { name, email, password } = parsed.data;
+  const { name, email, password, answers, selectedPlan } = parsed.data;
 
   const ip = await getClientIp();
   if (!rateLimit(`mobile-signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok) {
@@ -48,6 +54,10 @@ export async function POST(req: Request) {
   } catch {
     return jsonError("Something went wrong creating your account. Please try again.", 500);
   }
+
+  await track("signup_completed", { businessId: business.id, properties: { method: "password", client: "mobile", personalized: Boolean(answers) } });
+  await track("workspace_created", { businessId: business.id });
+  if (answers) await savePersonalization(business.id, answers, { selectedPlan: selectedPlan ?? null, source: "mobile" }).catch((err) => console.error("[personalization] save failed", err));
 
   const token = await createSessionToken({ userId: user.id, activeBusinessId: business.id });
 

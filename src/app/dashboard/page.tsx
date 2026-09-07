@@ -14,6 +14,8 @@ import { cn, initials, toZonedDisplayDate } from "@/lib/utils";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { FixMyDayButton } from "./FixMyDayButton";
 import { OneThingCard } from "./OneThingCard";
+import { Priorities } from "./Priorities";
+import { effectivePlan } from "@/lib/billing";
 
 /**
  * Home answers three questions in order, and the layout is that order:
@@ -35,6 +37,8 @@ export default async function TodayPage() {
   const proposals = agent?.proposals.filter((p) => p.kind !== "reconnect_calendar") ?? [];
   // The first minute: show what Daythread found until the owner has replied to something.
   const showFirstLook = firstLook.total > 0 && !firstLook.hasReplied && differenceInDays(new Date(), business.createdAt) <= 30;
+  // The setup card built from their /start answers, for the first weeks — until they've replied to someone.
+  const showPriorities = !firstLook.hasReplied && differenceInDays(new Date(), business.createdAt) <= 30;
   const briefText = buildBriefText(brief, business.name);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -53,6 +57,8 @@ export default async function TodayPage() {
         </div>
         <FixMyDayButton />
       </div>
+
+      {showPriorities && <Priorities businessId={business.id} plan={effectivePlan(business)} />}
 
       {showFirstLook && (
         <section aria-labelledby="first-look-label" className="mb-8 rounded-[22px] border border-signal/25 bg-white overflow-hidden dt-land">

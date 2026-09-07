@@ -26,9 +26,9 @@ const hrefFor = (key: SettingsTab) => (key === "channels" ? "/dashboard/settings
 export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab; explicit: boolean; panels: Record<SettingsTab, ReactNode> }) {
   const current = TABS.find((t) => t.key === active)!;
   return (
-    <div className="md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-8 lg:gap-12 md:items-start">
+    <div className="lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8 lg:gap-12 lg:items-start">
       {/* Desktop: the sections, always in view. */}
-      <nav aria-label="Settings sections" className="hidden md:block md:sticky md:top-6">
+      <nav aria-label="Settings sections" className="hidden lg:block lg:sticky lg:top-6">
         <ul className="space-y-0.5">
           {TABS.map((t) => {
             const on = active === t.key;
@@ -54,7 +54,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
       {/* Phone: an index of sections, then the chosen one with a way back. */}
       {!explicit ? (
         <>
-          <ul className="md:hidden divide-y divide-border rounded-[20px] border border-border bg-white overflow-hidden" aria-label="Settings sections">
+          <ul className="lg:hidden divide-y divide-border rounded-[20px] border border-border bg-white overflow-hidden" aria-label="Settings sections">
             {TABS.map((t) => (
               <li key={t.key}>
                 <Link href={`${hrefFor(t.key)}${t.key === "channels" ? "?tab=channels" : ""}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-black/[0.02] active:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.04]">
@@ -68,14 +68,14 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
               </li>
             ))}
           </ul>
-          <div className="hidden md:block dt-swap" key={active}>{panels[active]}</div>
+          <div className="hidden lg:block dt-swap" key={active}>{panels[active]}</div>
         </>
       ) : (
         <div className="dt-swap" key={active}>
-          <Link href="/dashboard/settings" className="md:hidden inline-flex items-center gap-1 text-xs font-semibold text-ink/70 hover:text-ink mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded">
+          <Link href="/dashboard/settings" className="lg:hidden inline-flex items-center gap-1 text-xs font-semibold text-ink/70 hover:text-ink mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded">
             <ChevronLeft className="w-4 h-4" strokeWidth={2} aria-hidden />All settings
           </Link>
-          <h2 className="md:hidden font-sans font-extrabold text-xl tracking-tight text-ink mb-4">{current.label}</h2>
+          <h2 className="lg:hidden font-sans font-extrabold text-xl tracking-tight text-ink mb-4">{current.label}</h2>
           {panels[active]}
         </div>
       )}

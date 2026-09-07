@@ -35,7 +35,7 @@ export function LandingBeacon() {
       void recordLandingEvent("landing_view", id);
     }
     const onClick = (e: MouseEvent) => {
-      const a = (e.target as HTMLElement | null)?.closest?.("a[href='/signup']");
+      const a = (e.target as HTMLElement | null)?.closest?.("a[href='/start'], a[href='/signup']");
       if (!a) return;
       const source = a.closest("section[id], div[id], header, nav")?.id || (a.closest("nav") ? "nav" : "hero");
       void recordLandingEvent("landing_cta", id, source);

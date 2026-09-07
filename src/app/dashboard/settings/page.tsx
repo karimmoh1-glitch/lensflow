@@ -13,6 +13,8 @@ import { ProfileForm } from "./ProfileForm";
 import { NotificationsPanel } from "./NotificationsPanel";
 import { SubscriptionPanel } from "./SubscriptionPanel";
 import { TeamPanel } from "./TeamPanel";
+import { HowYouWorkForm } from "./HowYouWorkForm";
+import { getPersonalization } from "@/server/personalization";
 
 type Params = { tab?: string; google_connected?: string; google_error?: string; connected?: string; connect_error?: string; provider?: string; setup?: string; checkout?: string; plan?: string; interval?: string };
 
@@ -36,9 +38,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     : sp.tab === "team" ? "team"
     : "channels"; // includes the legacy ?tab=connections and every provider callback
 
-  const [services, availability] = await Promise.all([
+  const [services, availability, personalization] = await Promise.all([
     prisma.service.findMany({ where: { businessId: business.id }, orderBy: { sortOrder: "asc" } }),
     prisma.availability.findMany({ where: { businessId: business.id } }),
+    getPersonalization(business.id),
   ]);
 
   return (
@@ -59,6 +62,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           profile: (
             <>
               <ProfileForm name={ctx.user.name} email={ctx.user.email} workspaceName={business.name} timezone={business.timezone} />
+              <div className="mt-6"><HowYouWorkForm initial={personalization?.answers ?? null} /></div>
               {ctx.role === "OWNER" && <DangerZone businessName={business.name} />}
             </>
           ),

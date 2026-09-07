@@ -78,8 +78,8 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
         <Card>
           <div className="divide-y divide-border">
             {members.map((m) => (
-              <div key={m.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-4 py-3.5">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3.5">
+                <div className="flex items-center gap-3 flex-1 min-w-[12rem]">
                   <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
                     {initials(m.user.name)}
                   </div>
@@ -95,7 +95,7 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 pl-11 sm:pl-0 shrink-0">
+                <div className="flex items-center gap-3 pl-11 shrink-0 ml-auto">
                   {m.role === "PARTNER" && <ConversationAccessToggle membershipId={m.id} canViewAll={m.canViewAllConversations} />}
                   <Badge tone={m.role === "OWNER" ? "accent" : "neutral"}>{ROLE_LABEL[m.role]}</Badge>
                   <MemberActions membershipId={m.id} role={m.role} status={m.status} />

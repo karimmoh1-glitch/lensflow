@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils";
  * workspace still has it) or, on a deployment without Stripe, open the subscription page
  * that says upgrades aren't open yet. Nothing here changes a plan; Stripe's webhook does.
  */
-type Config = { plan: "FREE" | "PRO" | "BUSINESS"; billingLive: boolean; trialOffered: boolean; canBill: boolean; prices: { PRO: number; BUSINESS: number } };
+export type PersonalCopy = { title: string; lede: string };
+type Config = { plan: "FREE" | "PRO" | "BUSINESS"; billingLive: boolean; trialOffered: boolean; canBill: boolean; prices: { PRO: number; BUSINESS: number }; personal?: { PRO?: PersonalCopy | null; BUSINESS?: PersonalCopy | null } };
 type Ctx = { open: (feature: PaywallFeature, source: string) => void; config: Config };
 const PaywallContext = createContext<Ctx | null>(null);
 
@@ -46,6 +47,8 @@ export function PaywallProvider({ config, children }: { config: Config; children
 function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallFeature; source: string; config: Config; onClose: () => void }) {
   const copy = PAYWALLS[feature];
   const plan = copy.plan;
+  // What they told us on /start makes the headline theirs; the feature copy stays as the detail.
+  const personal = config.personal?.[plan] ?? null;
   const price = config.prices[plan];
   const trial = plan === "PRO" && config.trialOffered;
   const [pending, startTransition] = useTransition();
@@ -84,8 +87,9 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
     <BottomSheet open onClose={dismiss} title={`Daythread ${plan === "PRO" ? "Pro" : "Business"}`} subtitle={copy.eyebrow} icon={<Sparkles className="w-4 h-4" strokeWidth={2} aria-hidden />} size="lg">
       <div className="px-5 pb-6 pt-1 sm:px-7">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">{copy.eyebrow}</p>
-        <h2 className="mt-2 font-sans font-extrabold text-[1.9rem] sm:text-[2.3rem] leading-[0.98] tracking-[-0.04em] text-ink text-balance">{copy.title}</h2>
-        <p className="mt-3 text-[15px] text-ink/70 leading-relaxed max-w-lg">{copy.lede}</p>
+        <h2 className="mt-2 font-sans font-extrabold text-[1.9rem] sm:text-[2.3rem] leading-[0.98] tracking-[-0.04em] text-ink text-balance">{personal?.title ?? copy.title}</h2>
+        <p className="mt-3 text-[15px] text-ink/70 leading-relaxed max-w-lg">{personal ? personal.lede : copy.lede}</p>
+        {personal && <p className="mt-2 text-sm text-ink/65 leading-relaxed max-w-lg">{copy.title} {copy.lede}</p>}
 
         <ul className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {copy.bullets.map((b) => (

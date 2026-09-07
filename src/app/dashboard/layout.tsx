@@ -8,6 +8,8 @@ import { PROVIDERS } from "@/lib/integrations/registry";
 import { PLANS, effectivePlan, trialEligible } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { PaywallProvider } from "@/components/Paywall";
+import { getPersonalization } from "@/server/personalization";
+import { personalPaywallCopy } from "@/lib/personalization";
 import type { Metadata, Viewport } from "next";
 
 /** The dashboard as an installed app: standalone on iPhone, no double-tap zoom on controls,
@@ -33,6 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const wantedRows = await prisma.integration.findMany({ where: { businessId: business.id, wanted: true, status: "NOT_CONNECTED" }, select: { provider: true } });
   const wanted = wantedRows.map((r) => PROVIDERS[r.provider as keyof typeof PROVIDERS]?.name).filter((n): n is string => Boolean(n));
   const workspaces = memberships.map((m) => ({ businessId: m.businessId, name: m.business.name, role: m.role }));
+  const personalization = await getPersonalization(business.id);
 
   const paywall = {
     plan: effectivePlan(business),
@@ -40,6 +43,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     trialOffered: subscriptionBillingIsLive && trialEligible(business),
     canBill: role === "OWNER" || role === "ADMIN",
     prices: { PRO: PLANS.PRO.priceCents, BUSINESS: PLANS.BUSINESS.priceCents },
+    personal: personalization ? { PRO: personalPaywallCopy(personalization, "PRO"), BUSINESS: personalPaywallCopy(personalization, "BUSINESS") } : undefined,
   };
   return (
     <Toaster>

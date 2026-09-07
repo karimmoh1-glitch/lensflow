@@ -20,7 +20,7 @@ export function Hero() {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
             <MagneticLink
-              href="/signup"
+              href="/start"
               className="group inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent-strong text-white text-[15px] font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] hover:scale-[1.04] hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_rgba(240,82,77,0.8)] active:scale-[0.97] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
             >
               Build your Daythread <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>

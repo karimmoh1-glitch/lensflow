@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getPersonalization } from "@/server/personalization";
 import { PageHeader, Card, EmptyState } from "@/components/ui";
 import { Thread, ThreadNode } from "@/components/Thread";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,7 @@ export default async function AutomationsPage() {
   // Which switched-on automations actually run under a count cap: the oldest N, same rule as the runner.
   const running = new Set(automations.filter((a) => a.enabled).slice(0, capped ? limits.maxAutomations : undefined).map((a) => a.id));
 
+  const personalization = await getPersonalization(business.id);
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
       <PageHeader
@@ -69,12 +71,12 @@ export default async function AutomationsPage() {
         description="The repetitive parts of your business, handled while you work."
         action={
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></span>
+            <span className="hidden lg:inline text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></span>
             <NewAutomationButton />
           </div>
         }
       />
-      <p className="sm:hidden -mt-4 mb-5 text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></p>
+      <p className="lg:hidden -mt-4 mb-5 text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></p>
       {capped && on >= limits.maxAutomations && !overCap && (
         <div className="mb-5 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span><span className="font-semibold text-ink">Automation limit reached.</span> {PLANS[plan].name} includes {limits.maxAutomations} switched on at once. Turn one off to enable another, or upgrade to Pro for {limitLabel(PLANS.PRO.maxAutomations).toLowerCase()} automations.</span>
@@ -89,8 +91,8 @@ export default async function AutomationsPage() {
 
       {automations.length === 0 ? (
         <EmptyState
-          title="Nothing runs on its own yet"
-          description="Confirmations, reminders, thank-yous and follow-ups can send themselves the moment a booking changes or a lead goes quiet. Start from a recipe; every message is yours to edit."
+          title={personalization?.wantsAutomations ? "Create your first automation" : "Nothing runs on its own yet"}
+          description={personalization?.wantsAutomations ? `You mentioned ${personalization.answers.painPoints.includes("follow_ups") ? "missed follow-ups" : personalization.answers.painPoints.includes("repetitive") ? "repetitive tasks" : "automations"} during setup. Confirmations, reminders, thank-yous and follow-ups can send themselves the moment a booking changes or a lead goes quiet. Start from a recipe; every message is yours to edit.` : "Confirmations, reminders, thank-yous and follow-ups can send themselves the moment a booking changes or a lead goes quiet. Start from a recipe; every message is yours to edit."}
           action={<NewAutomationButton />}
         />
       ) : (

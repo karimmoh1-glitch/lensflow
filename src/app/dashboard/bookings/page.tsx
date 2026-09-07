@@ -79,7 +79,16 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
       </div>
 
       {all.length === 0 ? (
-        <EmptyState title="No bookings yet" description="Bookings created from your inbox or public booking page will show up here." />
+        <EmptyState
+          title="No bookings yet"
+          description="Bookings made from a conversation or your public booking page show up here — on the calendar, with the confirmation sent for you."
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link href="/dashboard/settings?tab=business" className="inline-flex items-center h-9 px-3.5 rounded-full bg-ink text-white text-sm font-semibold hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Set your services and hours</Link>
+              <Link href="/dashboard/inbox" className="inline-flex items-center h-9 px-3.5 rounded-full border border-border bg-white text-sm font-semibold text-ink hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Book from a conversation</Link>
+            </div>
+          }
+        />
       ) : rows.length === 0 ? (
         <EmptyState title={scope === "upcoming" ? "Nothing coming up" : scope === "past" ? "Nothing completed yet" : "No canceled bookings"} description={scope === "upcoming" ? "Book someone from their thread, or share your booking page and let them pick a time." : undefined} />
       ) : (

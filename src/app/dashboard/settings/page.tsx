@@ -42,9 +42,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   ]);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
+    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
       <PageHeader title="Settings" />
       <SettingsTabs
+        explicit={Boolean(sp.tab) || Boolean(sp.connected) || Boolean(sp.connect_error) || Boolean(sp.setup) || Boolean(sp.checkout)}
         active={tab}
         panels={{
           channels: <IntegrationsHub business={business} role={ctx.role} connected={sp.connected ?? (sp.google_connected === "1" ? "EMAIL" : undefined)} connectError={sp.connect_error ?? sp.google_error} errorProvider={sp.provider} />,

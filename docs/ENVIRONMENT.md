@@ -65,3 +65,13 @@ address gets a user and their own workspace exactly as the signup form does.
 Yearly prices are created in Stripe on first use, next to the monthly ones, under the lookup
 keys `daythread_pro_yearly` and `daythread_business_yearly` at ten months' price (two months
 free). No Stripe dashboard configuration is needed beyond `STRIPE_SECRET_KEY` and the webhook.
+
+## 7-day Pro trial
+
+No Stripe dashboard configuration: the trial is a `trial_period_days: 7` on the checkout
+session with `payment_method_collection: "always"` (card required) and
+`missing_payment_method: cancel`. Stripe's own checkout page shows "7 days free, then $20/month".
+The app offers it only to a business that has never had a subscription (`trialUsedAt` is null
+and no `stripeSubscriptionId`), only for Pro, and decides that server-side; the webhook records
+`trialEndsAt` / `trialUsedAt`. Requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, like
+every other billing feature; without them the trial is not offered anywhere.

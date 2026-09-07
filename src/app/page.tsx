@@ -11,6 +11,7 @@ import { Spine } from "./landing/Spine";
 import { Proof } from "./landing/Proof";
 import { Faq, FAQ } from "./landing/Faq";
 import { PLANS } from "@/lib/billing";
+import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { PricingSection } from "./PricingSection";
 import { FinalCta } from "./landing/FinalCta";
 import { Footer } from "./landing/Footer";
@@ -93,7 +94,7 @@ export default function LandingPage() {
       </section>
 
       <div id="pricing" className="bg-white border-t border-border scroll-mt-16">
-        <PricingSection />
+        <PricingSection trial={subscriptionBillingIsLive} />
       </div>
 
       <section id="faq" className="relative py-20 md:py-24 bg-paper border-t border-border scroll-mt-16">

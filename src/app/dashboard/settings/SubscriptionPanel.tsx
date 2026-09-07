@@ -2,12 +2,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui";
 import { formatMoney, cn } from "@/lib/utils";
-import { PLANS, effectivePlan, VISIBLE_PLANS, PLAN_ORDER, limitLabel, type PlanKey } from "@/lib/billing";
+import { PLANS, effectivePlan, VISIBLE_PLANS, PLAN_ORDER, limitLabel, type PlanKey, trialEligible, TRIAL_DAYS } from "@/lib/billing";
 import { usageFor } from "@/server/integrationQuota";
 import { priceCentsFor, subscriptionBillingIsLive, getBillingSnapshot } from "@/lib/subscriptionBilling";
 import { PlanButton, ManageBillingButton, CheckoutReturn } from "@/app/dashboard/billing/PlanActions";
 import { MobileUpgradeBar } from "@/app/dashboard/billing/MobileUpgradeBar";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import type { Business } from "@prisma/client";
 
 const STATUS: Record<string, { tone: "success" | "warning" | "danger" | "neutral"; label: string }> = {
@@ -29,6 +29,9 @@ const STATUS: Record<string, { tone: "success" | "warning" | "danger" | "neutral
 export async function SubscriptionPanel({ business, role, checkout, plan: expectedPlan, interval: intervalParam }: { business: Business; role: string; checkout?: string; plan?: string; interval?: string }) {
   const interval: "month" | "year" = intervalParam === "year" ? "year" : "month";
   const priceFor = (key: "PRO" | "BUSINESS") => priceCentsFor(key, interval);
+  const trialOffered = subscriptionBillingIsLive && trialEligible(business);
+  const trialFirstCharge = format(addDays(new Date(), TRIAL_DAYS), "MMM d");
+  const onTrial = business.billingStatus === "TRIALING" && business.trialEndsAt;
   const current = effectivePlan(business);
   const plan = PLANS[current];
   const canBill = role === "OWNER" || role === "ADMIN";
@@ -99,7 +102,7 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
         </div>
         {paid ? (
           <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border border-t border-border">
-            <Fact label={business.cancelAtPeriodEnd ? "Ends" : "Next charge"} value={live && business.currentPeriodEnd ? format(business.currentPeriodEnd, "MMM d, yyyy") : "—"} sub={live && business.stripeCustomerId && !business.cancelAtPeriodEnd ? formatMoney(snapshot?.nextInvoice?.amountCents ?? plan.priceCents) : undefined} />
+            <Fact label={onTrial ? (business.cancelAtPeriodEnd ? "Trial ends" : "First charge") : business.cancelAtPeriodEnd ? "Ends" : "Next charge"} value={onTrial ? format(business.trialEndsAt!, "MMM d, yyyy") : live && business.currentPeriodEnd ? format(business.currentPeriodEnd, "MMM d, yyyy") : "—"} sub={live && business.stripeCustomerId && !business.cancelAtPeriodEnd ? formatMoney(snapshot?.nextInvoice?.amountCents ?? plan.priceCents) : undefined} />
             <Fact label="Payment method" value={snapshot?.paymentMethod ? `${cap(snapshot.paymentMethod.brand)} ···· ${snapshot.paymentMethod.last4}` : business.stripeCustomerId ? "None on file" : "—"} sub={snapshot?.paymentMethod ? `Expires ${String(snapshot.paymentMethod.expMonth).padStart(2, "0")}/${String(snapshot.paymentMethod.expYear).slice(-2)}` : undefined} tone={pastDue ? "warning" : undefined} />
             <Fact label="Connected" value={Number.isFinite(usage.limit) ? `${usage.active} of ${usage.limit}` : `${usage.active} · unlimited`} tone={usage.overQuota ? "warning" : undefined} />
             <Fact label="People" value={plan.maxTeamSeats === Infinity ? `${seatCount} · unlimited` : `${seatCount} of ${plan.maxTeamSeats}`} tone={seatsOver ? "warning" : undefined} />
@@ -144,7 +147,8 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
                   ))}
                 </ul>
                 <div className="mt-5">
-                  {label && key !== "FREE" && subscriptionBillingIsLive && canBill && <PlanButton planKey={key as "PRO" | "BUSINESS"} label={label} variant={rank > currentRank ? "primary" : "outline"} interval={interval} />}
+                  {label && key !== "FREE" && subscriptionBillingIsLive && canBill && <PlanButton planKey={key as "PRO" | "BUSINESS"} label={key === "PRO" && trialOffered ? `Start ${TRIAL_DAYS}-day free trial` : label} variant={rank > currentRank ? "primary" : "outline"} interval={interval} trial={key === "PRO" && trialOffered} />}
+                  {label && key === "PRO" && trialOffered && canBill && <p className="mt-2 text-xs text-ink/70 leading-relaxed">Card required. Nothing is charged for {TRIAL_DAYS} days; the first charge of {formatMoney(priceFor("PRO"))} is on {trialFirstCharge}. Cancel before then from Manage subscription and you pay nothing.</p>}
                   {label && key !== "FREE" && !subscriptionBillingIsLive && <p className="text-xs text-ink/65">Available once billing opens.</p>}
                   {label && key !== "FREE" && subscriptionBillingIsLive && !canBill && <p className="text-xs text-ink/65">Ask the workspace owner to change the plan.</p>}
                   {isCurrent && <p className="text-xs text-ink/65">{key === "FREE" ? "No card on file." : business.cancelAtPeriodEnd ? "Cancels at the end of the period." : "Renews monthly."}</p>}

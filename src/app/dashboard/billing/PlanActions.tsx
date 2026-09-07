@@ -12,7 +12,7 @@ import type { PlanKey } from "@/lib/billing";
  * "Redirecting" once we have a URL, a toast on any failure. Nothing here changes the
  * plan — Stripe's webhook does; the button only asks.
  */
-export function PlanButton({ planKey, label, variant = "primary", interval = "month" }: { planKey: Extract<PlanKey, "PRO" | "BUSINESS">; label: string; variant?: "primary" | "outline"; interval?: "month" | "year" }) {
+export function PlanButton({ planKey, label, variant = "primary", interval = "month", trial = false }: { planKey: Extract<PlanKey, "PRO" | "BUSINESS">; label: string; variant?: "primary" | "outline"; interval?: "month" | "year"; trial?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [redirecting, setRedirecting] = useState(false);
   const router = useRouter();
@@ -20,7 +20,7 @@ export function PlanButton({ planKey, label, variant = "primary", interval = "mo
 
   function handleClick() {
     startTransition(async () => {
-      const result = await startUpgradeCheckout(planKey, interval);
+      const result = await startUpgradeCheckout(planKey, interval, undefined, { trial });
       if (result.url) {
         setRedirecting(true);
         window.location.href = result.url;

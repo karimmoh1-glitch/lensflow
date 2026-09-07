@@ -127,6 +127,8 @@ export async function syncSubscription(subscription: Stripe.Subscription): Promi
       billingStatus,
       currentPeriodEnd: subscriptionPeriodEnd(subscription),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      trialEndsAt: subscription.status === "trialing" && subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+      ...(subscription.trial_end ? { trialUsedAt: new Date() } : {}),
     },
   });
 }

@@ -134,6 +134,7 @@ export async function createSubscriptionCheckout(params: {
   ownerEmail: string;
   planKey: PaidPlanKey;
   interval?: BillingInterval;
+  trialDays?: number;
   successUrl: string;
   cancelUrl: string;
 }): Promise<{ url: string }> {
@@ -146,7 +147,10 @@ export async function createSubscriptionCheckout(params: {
     customer: customerId,
     client_reference_id: params.business.id,
     line_items: [{ price: priceId, quantity: 1 }],
-    subscription_data: { metadata: { businessId: params.business.id, planTier: params.planKey } },
+    subscription_data: { metadata: { businessId: params.business.id, planTier: params.planKey }, ...(params.trialDays ? { trial_period_days: params.trialDays, trial_settings: { end_behavior: { missing_payment_method: "cancel" } } } : {}) },
+    // A trial still takes a card, so the first charge on day 8 is never a surprise and a
+    // trial with no card simply ends instead of turning into an unpaid subscription.
+    ...(params.trialDays ? { payment_method_collection: "always" as const } : {}),
     metadata: { businessId: params.business.id, planTier: params.planKey },
     allow_promotion_codes: true,
     success_url: params.successUrl,

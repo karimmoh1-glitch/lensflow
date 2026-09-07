@@ -5,10 +5,10 @@ import { AuthShell } from "@/components/auth/AuthShell";
 import { AcceptInviteForm } from "./AcceptInviteForm";
 
 const ROLE_COPY: Record<string, string> = {
-  CLIENT: "You'll see your bookings, payments and project details in one place.",
-  PARTNER: "You'll get the bookings and projects assigned to you.",
-  ADMIN: "You'll have full access to run this business.",
-  PHOTOGRAPHER: "You'll manage bookings, clients and payments.",
+  ADMIN: "You'll share the inbox with full access to its settings.",
+  PHOTOGRAPHER: "You'll share the inbox: read every conversation, reply, and take the threads assigned to you.",
+  PARTNER: "You'll share the inbox: read every conversation, reply, and take the threads assigned to you.",
+  CLIENT: "This invitation is from an older version of Daythread and can't be used any more.",
 };
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
@@ -36,7 +36,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     <AuthShell
       eyebrow={`${invitation.businessName} invited you`}
       title={`Join ${invitation.businessName}.`}
-      lede={ROLE_COPY[invitation.role] ?? ROLE_COPY.PARTNER}
+      lede={ROLE_COPY[invitation.role] ?? ROLE_COPY.PHOTOGRAPHER}
     >
       <AcceptInviteForm token={token} email={invitation.email} existingAccount={invitation.existingAccount} />
     </AuthShell>

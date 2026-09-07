@@ -36,8 +36,6 @@ const subscription = (o: { id: string; businessId: string; customer: string; sta
 describe("Stripe webhook", () => {
   let aId: string;
   let bId: string;
-  let paymentId: string;
-  let bookingId: string;
 
   beforeAll(async () => {
     vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_dummy");
@@ -49,12 +47,6 @@ describe("Stripe webhook", () => {
     const b = await prisma.business.create({ data: { name: "Stripe B", handle: `stripe-b-${stamp}` } });
     aId = a.id;
     bId = b.id;
-    const service = await prisma.service.create({ data: { businessId: aId, name: "Session", priceCents: 40000, durationMins: 60 } });
-    const client = await prisma.client.create({ data: { businessId: aId, name: "Payer", email: `payer-${stamp}@example.com` } });
-    const booking = await prisma.booking.create({ data: { businessId: aId, clientId: client.id, serviceId: service.id, startAt: new Date(Date.now() + 86400000), endAt: new Date(Date.now() + 90000000), status: "BOOKED", totalCents: 40000, depositCents: 12000 } });
-    bookingId = booking.id;
-    const payment = await prisma.payment.create({ data: { businessId: aId, bookingId, clientId: client.id, method: "CARD", purpose: "DEPOSIT", amountCents: 12000, status: "AWAITING_CONFIRMATION" } });
-    paymentId = payment.id;
   });
 
   afterAll(async () => {
@@ -128,40 +120,11 @@ describe("Stripe webhook", () => {
     expect((await prisma.business.findUnique({ where: { id: bId } }))?.planTier).toBe("FREE");
   });
 
-  it("marks a client deposit paid exactly once from a payment-mode checkout, and a retry does not double-apply", async () => {
-    const session = { id: "cs_dep_1", object: "checkout.session", mode: "payment", payment_status: "paid", payment_intent: "pi_123", customer: null, metadata: { paymentId, businessId: aId, bookingId } };
-    const event = evt("checkout.session.completed", session);
-    const res = await POST(signed(event));
+  it("ignores a payment-mode checkout: Daythread only bills its own subscription", async () => {
+    const session = { id: "cs_pay_1", object: "checkout.session", mode: "payment", payment_status: "paid", payment_intent: "pi_123", customer: null, metadata: { businessId: aId } };
+    const res = await POST(signed(evt("checkout.session.completed", session)));
     expect(res.status).toBe(200);
-    let payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-    expect(payment?.status).toBe("PAID");
-    expect(payment?.stripePaymentIntentId).toBe("pi_123");
-    expect((await prisma.booking.findUnique({ where: { id: bookingId } }))?.status).toBe("DEPOSIT_PAID");
-    const confirmedAt = payment?.confirmedAt;
-    // Same session in a new event id (Stripe retried with a fresh delivery) — still once.
-    await POST(signed(evt("checkout.session.async_payment_succeeded", session)));
-    payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-    expect(payment?.confirmedAt?.getTime()).toBe(confirmedAt?.getTime());
-    expect(await prisma.payment.count({ where: { bookingId } })).toBe(1);
-  });
-
-  it("a payment event scoped to the wrong tenant changes nothing", async () => {
-    const client = await prisma.client.create({ data: { businessId: bId, name: "B Client" } });
-    const other = await prisma.payment.create({ data: { businessId: bId, clientId: client.id, method: "CARD", purpose: "DEPOSIT", amountCents: 500, status: "AWAITING_CONFIRMATION" } });
-    // Business A's id with B's payment id — the helper scopes by business and finds nothing.
-    const res = await POST(signed(evt("checkout.session.completed", { id: "cs_x", object: "checkout.session", mode: "payment", payment_status: "paid", payment_intent: "pi_x", metadata: { paymentId: other.id, businessId: aId } })));
-    expect(res.status).toBe(500); // not found → processing error → claim released for a retry
-    expect((await prisma.payment.findUnique({ where: { id: other.id } }))?.status).toBe("AWAITING_CONFIRMATION");
-    expect(await prisma.webhookEvent.count({ where: { eventId: { contains: "evt_test" }, receivedAt: { gte: new Date(Date.now() - 1000) } } })).toBeGreaterThanOrEqual(0);
-  });
-});
-
-describe("simulated card confirmation is closed once Stripe is live", () => {
-  it("completeCardCheckout refuses when a key is configured", async () => {
-    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_dummy");
-    vi.resetModules();
-    const { completeCardCheckout } = await import("@/app/actions/bookings");
-    await expect(completeCardCheckout("anything", { userId: "x", activeBusinessId: "y" })).rejects.toThrow(/confirmed by Stripe/);
-    vi.unstubAllEnvs();
+    expect(await res.json()).toMatchObject({ ok: true, handled: false });
+    expect((await prisma.business.findUnique({ where: { id: aId } }))?.planTier).not.toBe("PRO");
   });
 });

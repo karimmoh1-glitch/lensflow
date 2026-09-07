@@ -35,7 +35,7 @@ export function FinalCta() {
       </svg>
       <div className={cn("relative max-w-3xl mx-auto text-center", inView ? "dt-land" : "opacity-0")} style={{ animationDelay: "500ms" }}>
         <p className="font-sans font-extrabold text-[clamp(2.6rem,6.4vw,5.5rem)] leading-[0.92] tracking-[-0.05em] text-balance">
-          Your business,<br />finally on one thread.
+          Every message,<br />finally on one thread.
         </p>
         <div className="mt-10 flex flex-col items-center gap-3">
           <Link
@@ -44,14 +44,13 @@ export function FinalCta() {
           >
             Start for free <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
           </Link>
-          <span className="text-sm text-paper/45">No card. Pro is $20 a month when you need it.</span>
+          <span className="text-sm text-paper/45">No card. Pro is $20 a month when your inbox needs it.</span>
         </div>
       </div>
       <footer className="relative max-w-[1200px] mx-auto mt-28 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-paper/40">
         <span className="inline-flex items-center gap-2 text-paper/70"><LogoMark className="w-5 h-5" /><span className="font-extrabold tracking-tight text-sm">Daythread</span></span>
         <nav className="flex items-center gap-6">
           <Link href="#pricing" className="hover:text-paper transition-colors">Pricing</Link>
-          <Link href="/demo" className="hover:text-paper transition-colors">Live demo</Link>
           <Link href="/login" className="hover:text-paper transition-colors">Log in</Link>
         </nav>
         <span>© {new Date().getFullYear()} Daythread</span>

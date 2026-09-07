@@ -6,8 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Daythread",
     short_name: "Daythread",
-    description: "Every conversation, booking and payment on one thread.",
-    start_url: "/dashboard",
+    description: "Every message from every channel, in one inbox.",
+    start_url: "/dashboard/inbox",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

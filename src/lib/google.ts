@@ -12,8 +12,7 @@ const USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
 const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/userinfo.email"];
-const CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.readonly", "https://www.googleapis.com/auth/userinfo.email"];
-export const SCOPES_BY_PURPOSE = { gmail: GMAIL_SCOPES.join(" "), calendar: CALENDAR_SCOPES.join(" ") } as const;
+export const SCOPES_BY_PURPOSE = { gmail: GMAIL_SCOPES.join(" ") } as const;
 const SCOPES = SCOPES_BY_PURPOSE.gmail;
 const REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 
@@ -78,12 +77,12 @@ export async function verifyGoogleState(state: string): Promise<{ businessId: st
   }
 }
 
-export async function getGoogleAuthUrl(state: string, purpose: "gmail" | "calendar" = "gmail") {
+export async function getGoogleAuthUrl(state: string, purpose: "gmail" = "gmail") {
   const params = new URLSearchParams({
     client_id: clientId()!,
     redirect_uri: redirectUri(),
     response_type: "code",
-    scope: purpose === "calendar" ? SCOPES_BY_PURPOSE.calendar : SCOPES,
+    scope: purpose === "gmail" ? SCOPES_BY_PURPOSE.gmail : SCOPES,
     include_granted_scopes: "true",
     access_type: "offline",
     prompt: "consent",

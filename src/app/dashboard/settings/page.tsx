@@ -1,51 +1,48 @@
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
-import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/ui";
-import { BusinessProfileForm } from "./BusinessProfileForm";
-import { ServicesEditor } from "./ServicesEditor";
-import { AvailabilityEditor } from "./AvailabilityEditor";
-import { PaymentSettingsForm } from "./PaymentSettingsForm";
-import { IntegrationsHub } from "./IntegrationsHub";
-import { SettingsTabs } from "./SettingsTabs";
+import { ChannelsHub } from "./ChannelsHub";
+import { SettingsTabs, type SettingsTab } from "./SettingsTabs";
+import { ProfileForm } from "./ProfileForm";
 import { DangerZone } from "./DangerZone";
 import { PasswordForm } from "./PasswordForm";
+import { TeamPanel } from "./TeamPanel";
+import { SubscriptionPanel } from "./SubscriptionPanel";
 
-export default async function SettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string; google_connected?: string; google_error?: string; connected?: string; connect_error?: string; provider?: string; setup?: string }>;
-}) {
+type Params = { tab?: string; google_connected?: string; google_error?: string; connected?: string; connect_error?: string; provider?: string; checkout?: string; plan?: string };
+
+/**
+ * Settings: the channels connected to this inbox, your profile, security, the Daythread
+ * subscription, and (on Pro) the team sharing the inbox. The tab lives in the URL so a
+ * provider's callback, a Stripe return and a teammate's link all land on the right panel.
+ */
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const ctx = await requireRole(["OWNER", "ADMIN"]);
-  if (!ctx) redirect("/dashboard");
+  if (!ctx) redirect("/dashboard/inbox");
   const { business } = ctx;
-  const { tab, google_connected, google_error, connected, connect_error, provider, setup } = await searchParams;
-
-  const [services, availability] = await Promise.all([
-    prisma.service.findMany({ where: { businessId: business.id }, orderBy: { sortOrder: "asc" } }),
-    prisma.availability.findMany({ where: { businessId: business.id } }),
-  ]);
+  const sp = await searchParams;
+  const tab: SettingsTab =
+    sp.tab === "profile" ? "profile"
+    : sp.tab === "security" ? "security"
+    : sp.tab === "subscription" || sp.checkout ? "subscription"
+    : sp.tab === "team" ? "team"
+    : "channels";
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
       <PageHeader title="Settings" />
       <SettingsTabs
-        initialTab={tab === "connections" || connected || connect_error || setup ? "Connections" : undefined}
+        active={tab}
+        channels={<ChannelsHub business={business} role={ctx.role} connected={sp.connected ?? (sp.google_connected === "1" ? "EMAIL" : undefined)} connectError={sp.connect_error ?? sp.google_error} errorProvider={sp.provider} />}
         profile={
           <>
-            <BusinessProfileForm business={business} />
-            <PasswordForm email={ctx.user.email} />
+            <ProfileForm name={ctx.user.name} email={ctx.user.email} workspaceName={business.name} timezone={business.timezone} />
             {ctx.role === "OWNER" && <DangerZone businessName={business.name} />}
           </>
         }
-        services={
-          <ServicesEditor initialServices={services.map((s) => ({ id: s.id, name: s.name, priceCents: s.priceCents, durationMins: s.durationMins }))} />
-        }
-        availability={
-          <AvailabilityEditor initialWindows={availability.map((a) => ({ weekday: a.weekday, startMin: a.startMin, endMin: a.endMin }))} />
-        }
-        payments={<PaymentSettingsForm business={business} />}
-        connections={<IntegrationsHub business={business} role={ctx.role} connected={connected ?? (google_connected === "1" ? "EMAIL" : undefined)} connectError={connect_error ?? google_error} errorProvider={provider} />}
+        security={<PasswordForm email={ctx.user.email} />}
+        subscription={<SubscriptionPanel business={business} role={ctx.role} checkout={sp.checkout} plan={sp.plan} />}
+        team={<TeamPanel business={business} />}
       />
     </div>
   );

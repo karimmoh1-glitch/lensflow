@@ -2,7 +2,7 @@ import type { IntegrationProvider, IntegrationStatus } from "@prisma/client";
 import { metaProductReady } from "@/lib/meta/config";
 
 /**
- * What each integration is, what it can genuinely do, and what has to be true on this
+ * What each channel is, what it can genuinely do, and what has to be true on this
  * deployment for it to work. Capabilities are declared per provider from the provider's
  * documented API — never claimed beyond what is implemented and supported.
  */
@@ -10,22 +10,18 @@ export type Capability =
   | "READ_MESSAGES"
   | "SEND_MESSAGES"
   | "READ_CONTACTS"
-  | "READ_CALENDAR"
-  | "CREATE_EVENTS"
-  | "UPDATE_EVENTS"
-  | "DELETE_EVENTS"
   | "WEBHOOKS"
   | "POLLING"
   | "MEDIA"
   | "THREADS"
   | "DELIVERY_STATUS";
 
-export type AuthKind = "oauth" | "app_password" | "platform" | "none";
+export type AuthKind = "oauth" | "platform" | "none";
 
 export type ProviderSpec = {
   key: IntegrationProvider;
   name: string;
-  kind: "channel" | "calendar" | "payments" | "site";
+  kind: "channel" | "site";
   auth: AuthKind;
   capabilities: Capability[];
   /** Env vars Daythread's operator must set (names only). */
@@ -35,7 +31,7 @@ export type ProviderSpec = {
   summary: string;
 };
 
-export const PROVIDERS: Record<Exclude<IntegrationProvider, "CALENDAR" | "PHONE">, ProviderSpec> = {
+export const PROVIDERS: Record<Exclude<IntegrationProvider, "CALENDAR" | "PHONE" | "GOOGLE_CALENDAR" | "APPLE_CALENDAR" | "STRIPE">, ProviderSpec> = {
   EMAIL: {
     key: "EMAIL",
     name: "Gmail",
@@ -75,47 +71,18 @@ export const PROVIDERS: Record<Exclude<IntegrationProvider, "CALENDAR" | "PHONE"
     env: ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"],
     summary: "A dedicated business number. Texts arrive here; replies go from it.",
   },
-  GOOGLE_CALENDAR: {
-    key: "GOOGLE_CALENDAR",
-    name: "Google Calendar",
-    kind: "calendar",
-    auth: "oauth",
-    capabilities: ["READ_CALENDAR", "CREATE_EVENTS", "UPDATE_EVENTS", "DELETE_EVENTS", "POLLING"],
-    env: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
-    approval: "Google OAuth verification for the calendar scope (sensitive) before accounts outside the app's test users can connect.",
-    summary: "Bookings appear on your calendar; busy time on it can't be double-booked.",
-  },
-  APPLE_CALENDAR: {
-    key: "APPLE_CALENDAR",
-    name: "Apple Calendar",
-    kind: "calendar",
-    auth: "app_password",
-    capabilities: ["READ_CALENDAR", "CREATE_EVENTS", "UPDATE_EVENTS", "DELETE_EVENTS", "POLLING"],
-    env: [],
-    summary: "iCloud Calendar over CalDAV, with an app-specific password you can revoke any time.",
-  },
   WEBSITE: {
     key: "WEBSITE",
-    name: "Booking page",
+    name: "Contact form",
     kind: "site",
     auth: "none",
     capabilities: ["READ_MESSAGES"],
     env: [],
-    summary: "Your public booking page. Always on.",
-  },
-  STRIPE: {
-    key: "STRIPE",
-    name: "Stripe",
-    kind: "payments",
-    auth: "platform",
-    capabilities: ["WEBHOOKS"],
-    env: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
-    summary: "Card deposits and balances, confirmed by Stripe. Payments are an outcome, not a channel.",
+    summary: "A contact form for your site. Always on.",
   },
 };
 
 export const CHANNEL_PROVIDERS: IntegrationProvider[] = ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS", "WEBSITE"];
-export const CALENDAR_PROVIDERS: IntegrationProvider[] = ["GOOGLE_CALENDAR", "APPLE_CALENDAR"];
 
 /**
  * Whether the deployment has what this provider needs. Never returns a value, only whether
@@ -134,13 +101,12 @@ export type DisplayStatus = "connected" | "needs_attention" | "sync_issue" | "di
 /** The display state of an integration row, derived — never a toggle. */
 export function displayStatus(spec: ProviderSpec, row: { status: IntegrationStatus; refreshToken?: string | null; accessToken?: string | null; lastSyncStatus?: string | null } | null | undefined, configured: boolean): DisplayStatus {
   if (spec.auth === "none") return "always_on";
-  if (!configured && spec.auth !== "app_password") return "unavailable";
+  if (!configured) return "unavailable";
   if (!row) return "disconnected";
   if (row.status === "NEEDS_ATTENTION") return "needs_attention";
   if (row.status === "SYNC_ERROR") return "sync_issue";
   if (row.status === "CONNECTED") {
     if (spec.auth === "oauth" && !row.refreshToken && !row.accessToken) return "needs_attention";
-    if (spec.auth === "app_password" && !row.accessToken) return "needs_attention";
     return row.lastSyncStatus === "failed" ? "sync_issue" : "connected";
   }
   return "disconnected";

@@ -57,7 +57,7 @@ export function Composer({ conversationId, windowNotice = null }: { conversation
       if (result.simulated) {
         // The exact reason from the server — the 24-hour WhatsApp window, a connection that
         // needs renewing, a channel that was never connected. Never a generic guess.
-        toast({ tone: "signal", title: "Saved, not delivered", body: result.reason ?? "This channel isn't connected yet, so nothing was sent. Connect it in Settings → Integrations.", ttl: 9000 });
+        toast({ tone: "signal", title: "Saved, not delivered", body: result.reason ?? "This channel isn't connected yet, so nothing was sent. Connect it under Settings → Channels.", ttl: 9000 });
       } else {
         toast({ tone: "outcome", title: "Sent" });
       }

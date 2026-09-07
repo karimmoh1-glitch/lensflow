@@ -1,51 +1,42 @@
 import Link from "next/link";
-import { PLANS, type PlanKey } from "@/lib/billing";
+import { PLANS, VISIBLE_PLANS, type PlanKey } from "@/lib/billing";
 import { formatMoney, cn } from "@/lib/utils";
 import { RevealOnScroll } from "./RevealOnScroll";
-import { ValueLadder } from "./landing/ValueLadder";
 
 /**
- * The value ladder in one glance: who each plan is for, the price, four things you get,
- * and why you'd step up. Prices come from the real plan table so marketing can never
- * drift from billing.
+ * Two plans, in one glance. Prices and limits come from the real plan table so marketing
+ * can never drift from what is enforced.
  */
-const LADDER: Record<PlanKey, { who: string; why?: string; gets: string[] }> = {
+const COPY: Record<PlanKey, { who: string; why?: string; gets: string[] }> = {
   FREE: {
-    who: "Get your business onto one thread.",
-    gets: ["2 connected integrations — your inbox and your calendar, to start", "3 automations and a booking page that takes deposits", "Priority inbox: automated and promotional mail kept out of your way", "Limited AI — a few Copilot questions a day"],
+    who: "One inbox, on your own.",
+    gets: [`${PLANS.FREE.maxIntegrations} connected channels`, "Every message in one place, sorted", "Search across people and messages", "Reply from the channel it came from"],
   },
   PRO: {
-    who: "Know what deserves your attention.",
-    why: "For people who are serious about running their business without living inside their inbox.",
-    gets: ["6 connected integrations — Gmail, Instagram, WhatsApp, SMS, Google and Apple Calendar", "Unlimited automations that actually run", "Full AI and Copilot — summaries and reply drafts, grounded in your prices", "Up to 3 team members"],
+    who: "Every channel, and your team.",
+    why: "For anyone whose messages arrive in more places than they can keep up with.",
+    gets: ["All channels — Gmail, Instagram, WhatsApp, and a dedicated text number", `Up to ${PLANS.PRO.maxTeamSeats} people on one inbox, with assignment`, "AI-drafted replies and summaries, grounded in the thread", "Everything in Free"],
   },
-  BUSINESS: {
-    who: "Let Daythread run more of the business.",
-    why: "For businesses that want Daythread to operate their workflow, not just organize it.",
-    gets: ["Daythread Business Agent — proposes and carries out the day's work across conversations, bookings, calendars, follow-ups and payments", "Unlimited connected integrations, automations and team members", "Advanced analytics — what's at risk, what's converting, how fast you respond", "Advanced and custom workflows"],
-  },
+  BUSINESS: { who: "", gets: [] },
 };
 
 export function PricingSection() {
-  const order: PlanKey[] = ["FREE", "PRO", "BUSINESS"];
   return (
     <section className="px-6 py-20 md:py-28 max-w-[1200px] mx-auto">
-      <ValueLadder />
       <div className="max-w-2xl mb-12">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/45 mb-4">Pricing</p>
-        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">Start free. Step up when it&rsquo;s obvious.</h2>
+        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">Start free. Go Pro when the inbox fills up.</h2>
       </div>
-      <div className="grid md:grid-cols-3 gap-4 md:gap-5 items-stretch">
-        {order.map((key, i) => {
+      <div className="grid md:grid-cols-2 gap-4 md:gap-5 items-stretch max-w-4xl">
+        {VISIBLE_PLANS.map((key, i) => {
           const plan = PLANS[key];
-          const l = LADDER[key];
+          const l = COPY[key];
           const pro = key === "PRO";
           return (
             <RevealOnScroll key={key} delay={i * 90} className="h-full">
               <div className={cn("relative h-full rounded-[22px] border p-6 md:p-7 flex flex-col transition-all duration-300 hover:-translate-y-1", pro ? "border-accent bg-white shadow-[0_24px_60px_-24px_rgba(240,82,77,0.45)]" : "border-border bg-white hover:shadow-popover")}>
                 {pro && <span className="absolute -top-3 left-6 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white bg-accent rounded-full px-2.5 py-1">Most people</span>}
-                {key === "BUSINESS" && <span className="absolute -top-3 left-6 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white bg-ink rounded-full px-2.5 py-1">Operators</span>}
-                <div className="text-sm font-semibold text-ink/70 leading-snug min-h-[2.5rem]">{l.who}</div>
+                <div className="text-sm font-semibold text-ink/70 leading-snug">{l.who}</div>
                 <div className="mt-3 flex items-baseline gap-1.5">
                   <span className="font-sans font-extrabold text-4xl tracking-[-0.04em] text-ink">{plan.priceCents === 0 ? "Free" : formatMoney(plan.priceCents)}</span>
                   {plan.priceCents > 0 && <span className="text-sm text-ink/50">/ month</span>}
@@ -61,14 +52,14 @@ export function PricingSection() {
                   href="/signup"
                   className={cn("mt-6 inline-flex items-center justify-center h-11 rounded-full text-sm font-extrabold transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", pro ? "bg-accent text-white" : "bg-ink text-white")}
                 >
-                  {key === "FREE" ? "Start free" : `Start with ${plan.name}`}
+                  {key === "FREE" ? "Start free" : "Start free, upgrade in Settings"}
                 </Link>
               </div>
             </RevealOnScroll>
           );
         })}
       </div>
-      <p className="mt-6 text-xs text-ink/45">No card to start. Cancel anytime. No usage counters — you pay for what Daythread does, not how much you type.</p>
+      <p className="mt-6 text-xs text-ink/45">No card to start. Cancel anytime. Daythread never handles payments between you and the people who write to you.</p>
     </section>
   );
 }

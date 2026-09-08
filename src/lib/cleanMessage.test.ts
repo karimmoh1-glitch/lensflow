@@ -51,3 +51,52 @@ describe("splitMessage", () => {
     expect(previewOf("a\n\n\nb")).toBe("a b");
   });
 });
+
+describe("the attribution line, however the client wraps it", () => {
+  it("removes a Gmail header broken before \"wrote:\" — the shape a real reply arrives in", () => {
+    const raw = [
+      "The location will be at Redmond Town Center. My budget is $500, and I want this done for my newborn child.",
+      "",
+      "On Sun, Aug 30, 2026 at 4:35 PM karim photography <karimamwa@gmail.com>",
+      "wrote:",
+      "",
+      "> Hi there, thanks for reaching out about a session.",
+      "> Let me know what you had in mind.",
+    ].join("\n");
+    const r = splitMessage(raw);
+    expect(r.text).toBe("The location will be at Redmond Town Center. My budget is $500, and I want this done for my newborn child.");
+    expect(r.text).not.toMatch(/wrote:|On Sun|@gmail\.com/);
+    expect(r.quoted).toContain("thanks for reaching out");
+    expect(r.changed).toBe(true);
+  });
+
+  it("removes it on one line too, and with a long display name", () => {
+    const oneLine = "Thanks!\n\nOn Sun, Aug 30, 2026 at 4:35 PM Karim <k@g.com> wrote:\n\n> earlier";
+    expect(splitMessage(oneLine).text).toBe("Thanks!");
+    const longName = `Sounds good.\n\nOn Mon, Sep 1, 2026 at 9:02 AM ${"Very Long Studio Name ".repeat(5)}<studio@example.com>\nwrote:\n\n> earlier`;
+    expect(splitMessage(longName).text).toBe("Sounds good.");
+  });
+
+  it("removes a single quoted line, not just a run of them", () => {
+    const one = "Yes, Saturday works.\n\n> Are you free Saturday?";
+    const r = splitMessage(one);
+    expect(r.text).toBe("Yes, Saturday works.");
+    expect(r.quoted).toBe("> Are you free Saturday?");
+  });
+
+  it("keeps a sentence that merely contains the word wrote", () => {
+    const raw = "I wrote: please bring the contract. Also, can we start at 3?";
+    expect(splitMessage(raw).text).toBe(raw);
+  });
+
+  it("never empties a message that is only a quote", () => {
+    const onlyQuote = "On Sun, Aug 30, 2026 at 4:35 PM Karim <k@g.com>\nwrote:\n\n> the whole thing";
+    expect(splitMessage(onlyQuote).text.length).toBeGreaterThan(0);
+  });
+
+  it("leaves the other localized headers working when they wrap", () => {
+    expect(splitMessage("D'accord.\n\nLe dim. 30 août 2026 à 16:35, Karim <k@g.com>\na écrit :\n\n> avant").text).toBe("D'accord.");
+    expect(splitMessage("Gut.\n\nAm So., 30. Aug. 2026 um 16:35 Uhr schrieb Karim <k@g.com>:\n\n> vorher").text).toBe("Gut.");
+  });
+});
+

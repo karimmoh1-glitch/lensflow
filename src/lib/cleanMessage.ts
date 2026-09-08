@@ -20,16 +20,22 @@ export type SplitMessage = {
 };
 
 // Where quoted history begins. Each pattern anchors at a line start.
+//
+// The attribution line wraps: Gmail breaks "On <date> <name> <address>" before "wrote:"
+// whenever the address makes the line long, which is most of the time. So the date/name
+// span is matched across newlines ([\s\S]) and given room for a long display name and
+// address, rather than assuming one short line. Anything longer than that is not an
+// attribution line, and the bound keeps the pattern from swallowing a real paragraph.
 const QUOTE_BOUNDARIES: RegExp[] = [
-  /^On .{5,120}?wrote:\s*$/im, // Gmail / Apple Mail: "On Sun, Aug 30, 2026 at 4:35 PM Name <a@b> wrote:"
-  /^On .{5,120}?wrote:\s*\n?>/im,
+  /^On\s[\s\S]{5,300}?\bwrote:\s*$/im, // Gmail / Apple Mail, on one line or wrapped
+  /^On\s[\s\S]{5,300}?\bwrote:\s*\n?>/im,
   /^-{2,}\s*Original Message\s*-{2,}\s*$/im, // Outlook
   /^-{2,}\s*Forwarded message\s*-{2,}\s*$/im, // Gmail forward
   /^Begin forwarded message:\s*$/im, // Apple Mail forward
   /^From:\s.+\n(?:Sent|Date):\s.+\n(?:To|Cc):\s.+/im, // Outlook header block
-  /^Le .{5,120}? a écrit\s*:\s*$/im, // French clients
-  /^Am .{5,120}? schrieb .{0,60}:\s*$/im, // German clients
-  /^El .{5,120}? escribió:\s*$/im, // Spanish clients
+  /^Le\s[\s\S]{5,300}?\ba écrit\s*:\s*$/im, // French clients
+  /^Am\s[\s\S]{5,300}?\bschrieb[\s\S]{0,80}?:\s*$/im, // German clients
+  /^El\s[\s\S]{5,300}?\bescribió:\s*$/im, // Spanish clients
   /^_{10,}\s*$/m, // Outlook divider
 ];
 
@@ -57,8 +63,9 @@ export function splitMessage(raw: string): SplitMessage {
     const m = re.exec(text);
     if (m && m.index >= 0 && (cut === -1 || m.index < cut)) cut = m.index;
   }
-  // A run of ">" lines with no header still counts as quoting.
-  const gtRun = /(?:^|\n)(?:>.*\n?){2,}/.exec(text);
+  // Quoted lines with no attribution header still count as quoting — one is enough, since
+  // a line that begins with ">" is never something a person typed as their own message.
+  const gtRun = /(?:^|\n)>.*/.exec(text);
   if (gtRun && (cut === -1 || gtRun.index < cut)) cut = gtRun.index;
   if (cut > 0) {
     quoted = text.slice(cut).trim() || null;

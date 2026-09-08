@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { subDays, subHours, addHours, addDays } from "date-fns";
+import { subDays, subHours, addHours, addDays, startOfDay, setHours } from "date-fns";
 import { prisma } from "@/lib/db";
 import { getAttention } from "./attention";
 
 let a: string, b: string;
 const now = new Date();
+// Anchored to the calendar, not to a fixed offset: "tomorrow" must not depend on the hour the suite runs.
+const tomorrowAt10 = setHours(startOfDay(addDays(now, 1)), 10);
 async function person(businessId: string, name: string, opts: { inbound: Date | null; responded: Date | null; followUp?: Date | null; status?: "NEW" | "CONTACTED" | "BOOKED"; archived?: boolean; category?: "PRIORITY" | "PROMOTIONAL"; service?: boolean }) {
   const client = await prisma.client.create({ data: { businessId, name, email: `${name.toLowerCase().replace(/\s+/g, "-")}@attention-fixture.invalid` } });
   const conv = await prisma.conversation.create({ data: { businessId, clientId: client.id, channel: "EMAIL", archived: opts.archived ?? false, category: opts.category ?? "PRIORITY", lastMessageAt: opts.inbound ?? now } });
@@ -33,7 +35,7 @@ describe("getAttention", () => {
     await person(a, "Archived", { inbound: subHours(now, 1), responded: null, archived: true });
     await person(a, "Newsletter", { inbound: subHours(now, 1), responded: null, category: "PROMOTIONAL" });
     const booked = await person(a, "Booked Soon", { inbound: subDays(now, 9), responded: subDays(now, 8), status: "CONTACTED" });
-    await prisma.booking.create({ data: { businessId: a, clientId: booked.client.id, serviceId: (await prisma.service.create({ data: { businessId: a, name: "Wedding", priceCents: 100000, durationMins: 480 } })).id, startAt: addHours(now, 30), endAt: addHours(now, 38), status: "BOOKED", totalCents: 100000 } });
+    await prisma.booking.create({ data: { businessId: a, clientId: booked.client.id, serviceId: (await prisma.service.create({ data: { businessId: a, name: "Wedding", priceCents: 100000, durationMins: 480 } })).id, startAt: tomorrowAt10, endAt: addHours(tomorrowAt10, 8), status: "BOOKED", totalCents: 100000 } });
     // The other tenant: never visible here.
     await person(b, "Other Tenant", { inbound: subHours(now, 1), responded: null });
 

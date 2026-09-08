@@ -9,6 +9,7 @@ import { PLANS, effectivePlan, trialEligible } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { PaywallProvider } from "@/components/Paywall";
 import { getPersonalization } from "@/server/personalization";
+import { touchLastActive } from "@/server/awayDigest";
 import { personalPaywallCopy } from "@/lib/personalization";
 import type { Metadata, Viewport } from "next";
 
@@ -36,6 +37,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const wanted = wantedRows.map((r) => PROVIDERS[r.provider as keyof typeof PROVIDERS]?.name).filter((n): n is string => Boolean(n));
   const workspaces = memberships.map((m) => ({ businessId: m.businessId, name: m.business.name, role: m.role }));
   const personalization = await getPersonalization(business.id);
+  // Where "while you were away" is measured from. Written at most every ten minutes.
+  await touchLastActive(ctx.membership.id).catch(() => null);
 
   const paywall = {
     plan: effectivePlan(business),

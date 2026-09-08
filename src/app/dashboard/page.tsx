@@ -16,6 +16,10 @@ import { FixMyDayButton } from "./FixMyDayButton";
 import { OneThingCard } from "./OneThingCard";
 import { Priorities } from "./Priorities";
 import { AttentionList } from "./AttentionList";
+import { AwayDigest } from "./AwayDigest";
+import { ColdLeads } from "./ColdLeads";
+import { getAwayDigest, touchLastActive } from "@/server/awayDigest";
+import { getColdLeads } from "@/server/coldLeads";
 import { AutoGmailSync } from "./inbox/AutoGmailSync";
 import { prisma } from "@/lib/db";
 import { effectivePlan } from "@/lib/billing";
@@ -38,7 +42,7 @@ export default async function TodayPage() {
   const agentOn = businessAgentEntitled(business);
   const gmail = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "EMAIL" } }, select: { refreshToken: true, status: true } });
   const gmailConnected = Boolean(gmail?.refreshToken) && gmail?.status !== "NOT_CONNECTED";
-  const [brief, week, firstLook, agent] = await Promise.all([getTodayBrief(business.id), getWeekStrip(business.id), getFirstLook(business.id), agentOn ? buildAgentBrief(business.id).catch(() => null) : Promise.resolve(null)]);
+  const [brief, week, firstLook, agent, digest, cold] = await Promise.all([getTodayBrief(business.id), getWeekStrip(business.id), getFirstLook(business.id), agentOn ? buildAgentBrief(business.id).catch(() => null) : Promise.resolve(null), touchLastActive(ctx.membership.id).then((prev) => getAwayDigest(business.id, prev)).catch(() => null), getColdLeads(business.id).catch(() => [])]);
   const proposals = agent?.proposals.filter((p) => p.kind !== "reconnect_calendar") ?? [];
   // The first minute: show what Daythread found until the owner has replied to something.
   const showFirstLook = firstLook.total > 0 && !firstLook.hasReplied && differenceInDays(new Date(), business.createdAt) <= 30;
@@ -63,6 +67,8 @@ export default async function TodayPage() {
         </div>
         <FixMyDayButton />
       </div>
+
+      {digest && <AwayDigest digest={digest} />}
 
       {showPriorities && <Priorities businessId={business.id} plan={effectivePlan(business)} />}
 
@@ -122,6 +128,8 @@ export default async function TodayPage() {
       </section>
 
       <AttentionList businessId={business.id} timezone={business.timezone} skipLeadId={top?.id ?? null} />
+
+      <ColdLeads leads={cold} />
 
       {/* TODAY + ASSISTANT */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 mt-10">

@@ -1,11 +1,25 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { businessMemorySchema } from "@/lib/businessMemory";
+import { track } from "@/lib/analytics";
 import { requireRole } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { z as zod } from "zod";
 
 const ADMIN_ROLES = ["OWNER", "ADMIN"] as const;
+
+/** "How Daythread should understand your business": owner-written, validated, stored as is. */
+export async function updateBusinessMemory(input: unknown): Promise<{ error?: string; ok?: true }> {
+  const ctx = await requireRole([...ADMIN_ROLES]);
+  if (!ctx) throw new Error("unauthorized");
+  const parsed = businessMemorySchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Something didn't fit." };
+  await prisma.business.update({ where: { id: ctx.business.id }, data: { memory: parsed.data } });
+  await track("business_memory_saved", { businessId: ctx.business.id, properties: { filled: Object.entries(parsed.data).filter(([k, v]) => k !== "tone" && v).map(([k]) => k) } });
+  revalidatePath("/dashboard/settings");
+  return { ok: true };
+}
 
 export async function updateBusinessProfile(data: {
   name: string;

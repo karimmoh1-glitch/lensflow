@@ -3,6 +3,7 @@ import { withLock } from "@/lib/dbLock";
 import { track } from "@/lib/analytics";
 import { extractLeadInfo } from "@/lib/ai";
 import { cleanEmailBody } from "@/lib/emailText";
+import { splitMessage } from "@/lib/cleanMessage";
 import { classifyMessage } from "@/lib/classifyMessage";
 import { findKnownClient } from "@/server/identity";
 import type { ChannelType } from "@prisma/client";
@@ -145,7 +146,8 @@ async function ingestUnlocked(params: {
   });
 
   const services = await prisma.service.findMany({ where: { businessId, active: true } });
-  const extracted = await extractLeadInfo(body, { businessId });
+  // What they wrote now, not the chain underneath it: a date in a quoted reply is not their ask.
+  const extracted = await extractLeadInfo(splitMessage(body).text, { businessId });
   const matchedService = extracted.serviceHint
     ? services.find((s) => s.name.toLowerCase().includes(extracted.serviceHint!.toLowerCase()))
     : null;

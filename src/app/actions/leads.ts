@@ -113,3 +113,26 @@ export async function markLeadHandled(leadId: string): Promise<{ error?: string 
   revalidatePath("/dashboard/inbox");
   return {};
 }
+
+
+const OVERRIDES = new Set(["QUALIFIED", "COLD", "LOST", "CONTACTED"]);
+
+/**
+ * The owner's word over the inferred stage: dismiss a lead going cold (COLD, out of the
+ * lists until they write again), mark it lost, or mark it qualified. "Won" is a booking,
+ * made the usual way. Tenant-scoped; an id from another workspace is not found.
+ */
+export async function setLeadStatus(leadId: string, status: string): Promise<{ error?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+  if (!ctx) return { error: "Please log in again." };
+  if (!OVERRIDES.has(status)) return { error: "That isn't a stage you can set by hand." };
+  const lead = await prisma.lead.findFirst({ where: { id: leadId, businessId: ctx.business.id }, select: { id: true, status: true } });
+  if (!lead) return { error: "That lead isn't here anymore." };
+  if (lead.status === "BOOKED") return { error: "This person is booked; manage it from the booking." };
+  await prisma.lead.update({ where: { id: lead.id }, data: { status: status as "QUALIFIED" | "COLD" | "LOST" | "CONTACTED", ...(status === "COLD" || status === "LOST" ? { followUpAt: null } : {}) } });
+  await track("lead_stage_set", { businessId: ctx.business.id, properties: { status, from: lead.status } });
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/inbox");
+  revalidatePath("/dashboard/clients");
+  return {};
+}

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Sparkles, RotateCcw, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui";
 import { generateDraftAction, sendReplyAction } from "@/app/actions/inbox";
+import { DRAFT_MODES, isDraftMode, type DraftMode } from "@/lib/draftModes";
+import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toaster";
 import { EntitlementNotice } from "@/components/UpgradePrompt";
@@ -37,12 +39,22 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
     el.style.height = `${Math.min(el.scrollHeight, 168)}px`;
   }, [body]);
 
-  function draft() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const requested = searchParams.get("draft");
+  // Arrived from "Draft follow-up": start the draft without a click.
+  useEffect(() => {
+    if (isDraftMode(requested) && !body && !drafting) draft(requested);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requested]);
+
+  function draft(mode: DraftMode = "reply") {
+    setMenuOpen(false);
     setDrafting(true);
     setError(null);
     startTransition(async () => {
       try {
-        const res = await generateDraftAction(conversationId);
+        const res = await generateDraftAction(conversationId, undefined, mode);
         if (res.error) {
           setError(res.error);
           if (/daythread pro/i.test(res.error)) paywall?.open("ai_draft", "composer-draft");
@@ -110,15 +122,29 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
           className="block w-full resize-none bg-transparent px-4 pt-3 pb-1 text-[16px] md:text-sm text-ink placeholder:text-ink/65 outline-none min-h-[44px]"
         />
         <div className="flex items-center justify-between gap-2 px-2 pb-2">
-          <button
-            type="button"
-            onClick={draft}
-            disabled={drafting || pending}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-[13px] font-semibold text-signal-text hover:bg-signal-soft transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/40"
-          >
-            {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> : <Sparkles className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />}
-            {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => (wasAiDrafted ? draft("reply") : setMenuOpen((v) => !v))}
+              disabled={drafting || pending}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-[13px] font-semibold text-signal-text hover:bg-signal-soft transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            >
+              {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> : <Sparkles className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />}
+              {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}
+            </button>
+            {menuOpen && !wasAiDrafted && (
+              <div role="menu" aria-label="What should the draft do?" className="absolute bottom-11 left-0 z-20 w-64 rounded-2xl border border-border bg-white shadow-popover p-1.5 dt-swap">
+                {DRAFT_MODES.map(([key, label, hint]) => (
+                  <button key={key} role="menuitem" type="button" onClick={() => draft(key)} className="w-full text-left rounded-xl px-3 py-2 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.05]">
+                    <span className="block text-[13px] font-semibold text-ink">{label}</span>
+                    <span className="block text-[11px] text-ink/65 leading-snug">{hint}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <span className="hidden md:inline text-[11px] text-ink/65" aria-hidden>⌘↵</span>
             <Button size="sm" onClick={send} disabled={!canSend} loading={pending && !drafting} loadingLabel={closed ? "Saving" : "Sending"} aria-label={closed ? "Save to thread" : "Send"} className={cn("min-w-[2.25rem] px-3", !canSend && "bg-ink/25")}>

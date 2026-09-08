@@ -4,6 +4,7 @@ import { AI_MODEL, MAX_TOKENS, truncateForModel, type AiErrorKind, type AiFeatur
 import { checkAiLimit, recordAiCall, recordAiBlocked, aiDisabledByFlag, modelKeyConfigured } from "@/server/aiUsage";
 import { reportFailure } from "./observe";
 import { looksLikeTime } from "./opportunity";
+import { DRAFT_MODE_INSTRUCTION, isDraftMode, type DraftMode } from "./draftModes";
 
 // Bounded: a hung model call must not hold a server action open indefinitely.
 const client = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 20_000, maxRetries: 1 }) : null;
@@ -163,7 +164,7 @@ const SERVICE_KEYWORDS: Record<string, string[]> = {
 };
 
 const DATE_PATTERN =
-  /\b((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{4})?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|next\s+(?:week|month|weekend)|this\s+weekend|tomorrow)\b/i;
+  /\b((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{4})?|(?:january|february|march|april|june|july|august|september|october|november|december)(?:\s+\d{4})?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|next\s+(?:week|month|weekend|spring|summer|fall|autumn|winter)|this\s+(?:weekend|spring|summer|fall|autumn|winter)|tomorrow)\b/i;
 
 const HIGH_INTENT = /\b(book|reserve|hold the date|sign me up|let'?s do it|confirm|deposit)\b/i;
 const MEDIUM_INTENT = /\b(how much|price|pricing|cost|available|availability|rates?)\b/i;
@@ -214,13 +215,21 @@ export type ReplyContext = {
   services: { name: string; priceCents: number; durationMins: number }[];
   customerMessage: string;
   customerName?: string | null;
+  /** What the draft is for. Defaults to answering what they asked. */
+  mode?: DraftMode;
+  /** The owner's own notes about the business, already capped by their schema. */
+  memoryLines?: string[];
+  tone?: "warm" | "professional" | "casual";
 };
 
 /** The system and user turns for a draft. The customer's message is truncated to the character cap. */
 export function draftTurns(ctx: ReplyContext): { system: string; user: string } {
   const servicesList = ctx.services.map((s) => `- ${s.name}: $${(s.priceCents / 100).toFixed(0)} (${s.durationMins} min)`).join("\n");
+  const mode: DraftMode = ctx.mode && isDraftMode(ctx.mode) ? ctx.mode : "reply";
+  const toneWord = ctx.tone === "professional" ? "professional" : ctx.tone === "casual" ? "casual, friendly" : "warm, professional";
+  const memory = (ctx.memoryLines ?? []).map((l) => truncateForModel(l, 800));
   return {
-    system: `You are drafting a short, warm, professional reply on behalf of ${ctx.businessName}. Keep it under 80 words. Answer what the person actually asked; if they ask about prices or services, only quote from the list given, and if the list is empty say the owner will follow up with details. Sign off naturally, no placeholders like [Your Name]. ${UNTRUSTED} Never promise that anything has been scheduled, sent, paid or confirmed — you only draft words for the owner to review.${servicesList ? `\n\nServices:\n${servicesList}` : ""}`,
+    system: `You are drafting a short, ${toneWord} reply on behalf of ${ctx.businessName}. Keep it under 80 words. ${DRAFT_MODE_INSTRUCTION[mode]} If they ask about prices or services, only quote from the list given, and if the list is empty say the owner will follow up with details. Sign off naturally, no placeholders like [Your Name]. ${UNTRUSTED} Never promise that anything has been scheduled, sent, paid or confirmed — you only draft words for the owner to review. The only facts you know about the business are the services list and the owner's notes below; if the reply needs a fact that is not there, ask for it or say the owner will confirm, never invent it.${servicesList ? `\n\nServices:\n${servicesList}` : ""}${memory.length ? `\n\nOwner's notes (facts you may rely on):\n${memory.join("\n")}` : ""}`,
     user: `Customer${ctx.customerName ? ` (${ctx.customerName})` : ""} wrote: """${truncateForModel(ctx.customerMessage)}"""`,
   };
 }

@@ -270,3 +270,15 @@ Done before enabling `OPENAI_API_KEY` in production, from the audit that precede
 - **Cleaning**: the wrapped Gmail attribution line (PR #62) plus footer links (unsubscribe, manage preferences, view in browser). Cleaning runs at render from the stored body, so existing messages are covered with no migration; the raw body is never changed.
 - **People** lists only people with a real conversation, a booking or a customer relationship, labelled Potential client / Client with the reason; the rest are counted, not listed.
 - **No backfill was needed**: classification is stored at ingestion for every conversation already, cleaning is applied at render, and summaries are on demand.
+
+## Action engine sprint (2026-09-08, PR #64)
+
+- **While you were away** on Today: counts since the person's previous visit (`OrgMembership.lastActiveAt`, written at most every ten minutes and shared between layout and page per request) — new people, leads waiting, follow-ups that came due, bookings made or confirmed, and the summed price of the services open leads asked about, labelled "not a forecast". Skipped for absences under two hours; shown on the first landing after a return.
+- **Leads going cold**: people who showed intent, got a reply, and went quiet (the existing `follow_up_suggested` / `follow_up_due` rules), ranked by known value, each with what happened, why it is here, and four actions — Draft follow-up (opens the thread with the follow-up mode already drafting), Follow up tomorrow, Set aside, Mark lost. Nothing sends.
+- **Business memory** (`Business.memory`, owner-written only): tone, what you do, areas served, how booking works, policies, common questions. Drafts receive it as "the only facts you know" and are told to ask rather than invent.
+- **Draft intents**: reply, follow up, ask what's missing, send pricing, confirm booking, handle a concern, wrap up — one grounded prompt, one instruction per mode, the same limits. Backward-compatible action signature (the mobile API still passes a session as the second argument).
+- **Quote → follow-up**: a reply that quotes a price to an open lead with no follow-up planned sets one three days out at 9am. A reminder only.
+- **Stage override** in the thread rail: the inferred stage (from `readRelationship`) with its reason, and the owner's word over it (qualified, set aside, lost). Won remains a booking.
+- **Founder funnel**: signup → onboarding → channel → first conversation → first action → came back after day one → trial → paid, with drop-off per step, and conversion by what people said at setup.
+- **Extraction reads the cleaned message** now, so a date in quoted history is never taken as the ask; a bare month ("in October") counts as one.
+- **Tested end to end** on ten realistic messages through the real ingestion path: inquiry, existing customer, DoorDash, receipt, junk, newsletter, high-value booking, ghosted lead, repeat customer.

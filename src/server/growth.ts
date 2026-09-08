@@ -56,6 +56,14 @@ export async function getGrowth(days = 30) {
   }, 0);
   const firstAction = await prisma.analyticsEvent.groupBy({ by: ["businessId"], where: { name: { in: FIRST_ACTION }, createdAt: { gte: since }, businessId: { not: null } } });
   const totalBusinesses = await prisma.business.count();
+  // Retained: active again at least a day after the workspace was created.
+  const retainedRows = await prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(DISTINCT e."businessId") AS n FROM "AnalyticsEvent" e JOIN "Business" b ON b.id = e."businessId" WHERE e."createdAt" >= ${since} AND e."createdAt" > b."createdAt" + interval '1 day' AND e.name NOT IN ('landing_view','landing_cta')`;
+  const retained = Number(retainedRows[0]?.n ?? 0);
+  // Persona conversion: of the profiles in the window, how many workspaces now pay.
+  const paidBiz = new Set((await prisma.business.findMany({ where: { planTier: { not: "FREE" }, billingStatus: "ACTIVE" }, select: { id: true } })).map((b) => b.id));
+  const profileRows = await prisma.onboardingProfile.findMany({ where: { createdAt: { gte: since } }, select: { businessId: true, businessStatus: true, recommendedPlan: true } });
+  const personaConv = new Map<string, { n: number; paid: number }>();
+  for (const pr of profileRows) { const k = pr.businessStatus; const cur = personaConv.get(k) ?? { n: 0, paid: 0 }; cur.n += 1; if (paidBiz.has(pr.businessId)) cur.paid += 1; personaConv.set(k, cur); }
   const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : null);
 
   return {
@@ -67,6 +75,21 @@ export async function getGrowth(days = 30) {
     funnel: { signupToChannel: pct(biz.first_channel_connected, biz.signup_completed), channelToFirstAction: pct(firstAction.length, biz.first_channel_connected), signupToTrial: pct(biz.trial_started, biz.signup_completed), trialToPaid: biz.trial_started > 0 ? pct(paidActive.length, biz.trial_started) : null, paywallToCheckout: pct(biz.checkout_started, biz.paywall_shown) },
     personas: { businessStatus: tally(profiles.map((p) => p.businessStatus)), userType: tally(profiles.map((p) => p.userType)), workCategory: tally(profiles.map((p) => p.workCategory)), teamSize: tally(profiles.map((p) => p.teamSize)), recommendedPlan: tally(profiles.map((p) => p.recommendedPlan)), selectedPlan: tally(profiles.map((p) => p.selectedPlan)), channels: tally(profiles.flatMap((p) => p.channels)), painPoints: tally(profiles.flatMap((p) => p.painPoints)), profiles: profiles.length },
     referrals: { visits: anon.referral_started, signups: biz.referral_signup, activated: biz.referral_activated, converted: biz.referral_converted },
+    // Each step counts workspaces; "drop" is the share of the previous step that did not reach this one.
+    activationFunnel: (() => {
+      const steps: [string, number][] = [
+        ["Signed up", biz.signup_completed],
+        ["Finished onboarding", biz.onboarding_completed],
+        ["Connected a channel", biz.first_channel_connected],
+        ["Opened a real conversation", biz.first_conversation_viewed],
+        ["Took a first action", firstAction.length],
+        ["Came back after day one", retained],
+        ["Started a trial", biz.trial_started],
+        ["Paid", biz.subscription_started],
+      ];
+      return steps.map(([label, n], i) => ({ label, n, drop: i === 0 || steps[i - 1][1] === 0 ? null : Math.max(0, Math.round((1 - n / steps[i - 1][1]) * 100)) }));
+    })(),
+    personaConversion: [...personaConv.entries()].map(([status, v]) => ({ status, n: v.n, paid: v.paid, rate: v.n ? Math.round((v.paid / v.n) * 100) : 0 })).sort((a, b) => b.rate - a.rate || b.n - a.n),
   };
 }
 

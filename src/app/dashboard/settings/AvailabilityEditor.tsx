@@ -41,11 +41,11 @@ export function AvailabilityEditor({ initialWindows }: { initialWindows: { weekd
         <div className="flex gap-4">
           <div className="flex-1">
             <Label>Start time</Label>
-            <Input type="time" value={toTime(startMin)} onChange={(e) => setStartMin(fromTime(e.target.value))} />
+            <Input aria-label="Start time" type="time" value={toTime(startMin)} onChange={(e) => setStartMin(fromTime(e.target.value))} />
           </div>
           <div className="flex-1">
             <Label>End time</Label>
-            <Input type="time" value={toTime(endMin)} onChange={(e) => setEndMin(fromTime(e.target.value))} />
+            <Input aria-label="End time" type="time" value={toTime(endMin)} onChange={(e) => setEndMin(fromTime(e.target.value))} />
           </div>
         </div>
         <SaveButton

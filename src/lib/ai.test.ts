@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildRequest, extractionUserMessage, draftTurns, assistantUserMessage, summaryTranscript } from "./ai";
+import { buildRequest, extractionUserMessage, draftTurns, assistantUserMessage, summaryTranscript, extractLeadInfoByRules } from "./ai";
 import { AI_INPUT_CHAR_LIMIT, AI_MODEL, MAX_TOKENS } from "./aiPolicy";
 
 /**
@@ -82,3 +82,12 @@ describe("customer text is truncated before it is sent", () => {
     expect(turns.user).not.toContain("[…]");
   });
 });
+
+describe("the rule extractor", () => {
+  it("reads a place, not a month, from \"in September\"", () => {
+    expect(extractLeadInfoByRules("Following up on pricing for a shoot in September. Around $800 is our budget.").location).toBeNull();
+    expect(extractLeadInfoByRules("We'd love to do them at Marymoor Park.").location).toBe("Marymoor Park");
+    expect(extractLeadInfoByRules("Can we meet at noon?").location).toBeNull();
+  });
+});
+

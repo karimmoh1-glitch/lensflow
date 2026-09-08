@@ -110,7 +110,7 @@ export async function getBusinessDetail(handle: string) {
     },
   });
   if (!b) return null;
-  const [events, eventTotals, leads, followUps, attention, referred, runs] = await Promise.all([
+  const [events, eventTotals, leads, followUps, attention, referred, runs, categories, potentialClients, summaries, clientsWithConversation] = await Promise.all([
     prisma.analyticsEvent.findMany({ where: { businessId: b.id, name: { notIn: ["landing_view", "landing_cta"] } }, orderBy: { createdAt: "desc" }, take: 80, select: { name: true, createdAt: true, properties: true } }),
     prisma.analyticsEvent.groupBy({ by: ["name"], where: { businessId: b.id }, _count: { _all: true } }),
     prisma.lead.groupBy({ by: ["status"], where: { businessId: b.id }, _count: { _all: true } }),
@@ -118,6 +118,10 @@ export async function getBusinessDetail(handle: string) {
     getAttention(b.id, new Date(), b.timezone),
     prisma.business.count({ where: { referredById: b.id } }),
     prisma.automationExecution.count({ where: { businessId: b.id } }),
+    prisma.conversation.groupBy({ by: ["category"], where: { businessId: b.id }, _count: { _all: true } }),
+    prisma.client.count({ where: { businessId: b.id, relationship: "LEAD", conversations: { some: { category: "PRIORITY", archived: false } } } }),
+    prisma.message.count({ where: { conversation: { businessId: b.id }, summaryAt: { not: null } } }),
+    prisma.client.count({ where: { businessId: b.id, conversations: { some: { category: "PRIORITY" } } } }),
   ]);
   // Properties are option keys, plan keys and feature ids by construction; still, only a few named keys are shown.
   const safeProps = (p: unknown) => {
@@ -134,5 +138,10 @@ export async function getBusinessDetail(handle: string) {
     attentionNow: attention.map((a) => ({ label: a.item.label, why: a.item.why })),
     referredCount: referred,
     automationRuns: runs,
+    // The intelligence layer: what was kept out of the way, who counts as a person, and what was summarized.
+    conversationsByCategory: categories.map((c) => [c.category, c._count._all] as [string, number]).sort((x, y) => y[1] - x[1]),
+    potentialClients: potentialClients,
+    peopleWithConversation: clientsWithConversation,
+    messageSummaries: summaries,
   };
 }

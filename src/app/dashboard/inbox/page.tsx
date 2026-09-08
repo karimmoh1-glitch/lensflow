@@ -6,6 +6,7 @@ import { track } from "@/lib/analytics";
 import { getPersonalization } from "@/server/personalization";
 import { PROVIDER_LABEL, list } from "@/lib/personalization";
 import { leadAttention } from "@/lib/attention";
+import { readOpportunity } from "@/lib/opportunity";
 import { EmptyState } from "@/components/ui";
 import { cn, firstName } from "@/lib/utils";
 import { ConversationRow } from "@/components/inbox/ConversationRow";
@@ -65,9 +66,9 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     prisma.conversation.findMany({
       where,
       include: {
-        client: { select: { id: true, name: true } },
+        client: { select: { id: true, name: true, relationship: true } },
         assignee: { select: { user: { select: { name: true } } } },
-        lead: { select: { extractedName: true, requestedDateText: true, requestedDate: true, serviceId: true, status: true, respondedAt: true, lastInboundAt: true, followUpAt: true, createdAt: true } },
+        lead: { select: { extractedName: true, requestedDateText: true, requestedDate: true, requestedLocation: true, budgetCents: true, estimatedValueCents: true, intent: true, serviceId: true, status: true, respondedAt: true, lastInboundAt: true, followUpAt: true, createdAt: true, service: { select: { name: true } } } },
         messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true, direction: true, createdAt: true } },
       },
       orderBy: { lastMessageAt: "desc" },
@@ -88,7 +89,16 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     // Follow-ups (due, or suggested after silence) — the same rules Today uses. "Waiting" stays the row's own reading of the thread.
     const att = conv.lead ? leadAttention({ status: conv.lead.status, respondedAt: conv.lead.respondedAt, lastInboundAt: conv.lead.lastInboundAt, followUpAt: conv.lead.followUpAt, createdAt: conv.lead.createdAt, hasService: Boolean(conv.lead.serviceId), hasDate: Boolean(conv.lead.requestedDateText || conv.lead.requestedDate), hidden: conv.archived || !isPerson, hasUpcomingBooking: false }) : null;
     const followUp = !unanswered && att && att.kind !== "waiting_reply" ? att.label : null;
-    return { conv, last, isPerson, unread, unanswered, followUp };
+    // What this conversation is worth and why — the same reading the rail and People use.
+    const opportunity = readOpportunity({
+      category: conv.category,
+      relationship: conv.client?.relationship ?? null,
+      lead: conv.lead ? { status: conv.lead.status, intent: conv.lead.intent, respondedAt: conv.lead.respondedAt, lastInboundAt: conv.lead.lastInboundAt, followUpAt: conv.lead.followUpAt, createdAt: conv.lead.createdAt, serviceName: conv.lead.service?.name ?? null, requestedDateText: conv.lead.requestedDateText, requestedLocation: conv.lead.requestedLocation, budgetCents: conv.lead.budgetCents, estimatedValueCents: conv.lead.estimatedValueCents } : null,
+      lastWordIsTheirs: unanswered,
+      lastInboundAt: last?.direction === "INBOUND" ? last.createdAt : null,
+      archived: conv.archived,
+    });
+    return { conv, last, isPerson, unread, unanswered, followUp, opportunity };
   });
 
   const inView = enriched.filter((r) => (view === "priority" ? r.isPerson : cat === "all" ? true : r.conv.category === CAT_TO_CATEGORY[cat]));
@@ -96,7 +106,8 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const rows = byChannel
     .filter((r) => (filter === "unread" ? r.unread : filter === "unanswered" ? r.unanswered : true))
     .sort((a, b) => {
-      if (view === "priority" && filter === "all" && a.unanswered !== b.unanswered) return a.unanswered ? -1 : 1;
+      // Priority is ordered by what the business stands to gain or lose, then by recency.
+      if (view === "priority" && filter === "all" && a.opportunity.rank !== b.opportunity.rank) return b.opportunity.rank - a.opportunity.rank;
       return b.conv.lastMessageAt.getTime() - a.conv.lastMessageAt.getTime();
     });
 
@@ -116,6 +127,12 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
   const filteredOut = enriched.length - people.length;
 
   const active = selectedId ? conversations.find((c) => c.id === selectedId) : undefined;
+  if (view === "priority" && !q) {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const seenToday = await prisma.analyticsEvent.count({ where: { businessId: business.id, name: "priority_viewed", createdAt: { gte: since } } });
+    if (seenToday === 0) await track("priority_viewed", { businessId: business.id, properties: { items: rows.length, waiting: waiting.length } });
+    if (active) await track("priority_item_opened", { businessId: business.id, properties: { rank: enriched.find((r) => r.conv.id === active.id)?.opportunity.rank ?? 0 } });
+  }
   // Activation signal, recorded once: the first real conversation this workspace opened.
   if (active && Date.now() - business.createdAt.getTime() < 45 * 86400000) {
     const seen = await prisma.analyticsEvent.count({ where: { businessId: business.id, name: "first_conversation_viewed" } });
@@ -218,7 +235,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
           )}
 
           <ol className="dt-rows" aria-label="Conversations">
-            {rows.map(({ conv, last, isPerson, unread, unanswered, followUp }) => (
+            {rows.map(({ conv, last, isPerson, unread, unanswered, followUp, opportunity }) => (
               <ConversationRow
                 key={conv.id}
                 href={rowHref(conv.id)}
@@ -232,6 +249,8 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 unread={unread}
                 waiting={unanswered}
                 followUp={followUp}
+                reason={view === "priority" && !q && opportunity.rank > 0 ? opportunity.reason : null}
+                kindLabel={view === "priority" && !q && opportunity.rank > 0 ? opportunity.label : null}
                 isPerson={isPerson}
                 categoryLabel={CATEGORY_LABEL[conv.category]}
                 subject={conv.subject}

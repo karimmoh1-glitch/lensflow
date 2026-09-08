@@ -122,6 +122,7 @@ async function ingestUnlocked(params: {
     await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body, providerMessageId, rawBody } });
     if (existingQuiet) await prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: new Date(), subject: existingQuiet.subject ?? subject } });
     else if ((await prisma.conversation.count({ where: { businessId, category: { not: "PRIORITY" } } })) === 1) await track("first_classified_conversation", { businessId, properties: { category: classification.category } });
+    await track("automated_message_filtered", { businessId, properties: { category: classification.category, decidedBy: classification.decidedBy, channel } });
     return { client: null, conversation, lead: null, duplicate: false as const, category: classification.category };
   }
 

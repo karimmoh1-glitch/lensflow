@@ -55,7 +55,7 @@ describe("cost", () => {
 
 describe("policy table", () => {
   it("caps output on every feature", () => {
-    expect(MAX_TOKENS).toEqual({ extraction: 200, draft: 300, agent_draft: 300, assistant: 500, summary: 100, summary_forced: 100 });
+    expect(MAX_TOKENS).toEqual({ extraction: 200, draft: 300, agent_draft: 300, assistant: 500, summary: 100, summary_forced: 100, message_summary: 120 });
     for (const value of Object.values(MAX_TOKENS)) expect(value).toBeGreaterThan(0);
   });
 
@@ -64,6 +64,7 @@ describe("policy table", () => {
     expect(AI_RATE_LIMITS.agent_draft).toEqual({ limit: 30, windowMs: 3_600_000 });
     expect(AI_RATE_LIMITS.summary_forced).toEqual({ limit: 30, windowMs: 3_600_000 });
     expect(AI_RATE_LIMITS.extraction).toEqual({ limit: 200, windowMs: 86_400_000 });
+    expect(AI_RATE_LIMITS.message_summary).toEqual({ limit: 40, windowMs: 3_600_000 });
     expect(DAILY_CALL_CEILING).toEqual({ limit: 500, windowMs: 86_400_000 });
     // A cached summary never reaches the model, so the uncached one rides the daily backstop.
     expect(AI_RATE_LIMITS.summary).toBeUndefined();

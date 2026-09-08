@@ -23,6 +23,10 @@ export type ConversationRowProps = {
   waiting?: boolean;
   /** A follow-up label from the attention rules ("Follow-up due", "Follow up"). */
   followUp?: string | null;
+  /** Why this conversation is in Priority, in words ("Asked about Newborn session and is waiting for your reply."). */
+  reason?: string | null;
+  /** "Potential client" / "Client" — who this is to the business. */
+  kindLabel?: string | null;
   isPerson?: boolean;
   categoryLabel?: string;
   subject?: string | null;
@@ -37,7 +41,7 @@ export type ConversationRowProps = {
   as?: "li" | "div";
 };
 
-export function ConversationRow({ name, channel, time, timeISO, preview, fromYou, unread, waiting, followUp, isPerson = true, categoryLabel, subject, assigneeName, active, href, onClick, tools, className, style, as = "li" }: ConversationRowProps) {
+export function ConversationRow({ name, channel, time, timeISO, preview, fromYou, unread, waiting, followUp, reason, kindLabel, isPerson = true, categoryLabel, subject, assigneeName, active, href, onClick, tools, className, style, as = "li" }: ConversationRowProps) {
   const body = (
     <>
       <span aria-hidden className={cn("absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-accent transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] origin-center", active ? "scale-y-100" : "scale-y-0")} />
@@ -59,10 +63,17 @@ export function ConversationRow({ name, channel, time, timeISO, preview, fromYou
         {waiting && <span className="ml-auto text-[11px] font-semibold text-accent-text shrink-0">Waiting on you</span>}
         {!waiting && followUp && <span className="ml-auto text-[11px] font-semibold text-signal-text shrink-0">{followUp}</span>}
       </div>
-      <p className={cn("text-[13px] leading-snug line-clamp-2 pl-12", isPerson ? (unread ? "text-ink/85" : "text-ink/70") : "text-ink/70")}>
-        {fromYou && <span className="text-ink/65">You: </span>}
-        {preview}
-      </p>
+      {reason ? (
+        <p className="text-[13px] leading-snug pl-12 text-ink/85">
+          {kindLabel && <span className={cn("font-semibold", kindLabel === "Client" ? "text-success-text" : "text-accent-text")}>{kindLabel} · </span>}
+          <span className="line-clamp-2">{reason}</span>
+        </p>
+      ) : (
+        <p className={cn("text-[13px] leading-snug line-clamp-2 pl-12", isPerson ? (unread ? "text-ink/85" : "text-ink/70") : "text-ink/70")}>
+          {fromYou && <span className="text-ink/65">You: </span>}
+          {preview}
+        </p>
+      )}
     </>
   );
   const cls = cn(

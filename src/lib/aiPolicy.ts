@@ -38,7 +38,7 @@ export function formatCostMicros(micros: number): string {
 }
 
 /** The five things Daythread asks a model to do. One key per call site. */
-export type AiFeature = "extraction" | "draft" | "agent_draft" | "assistant" | "summary" | "summary_forced";
+export type AiFeature = "extraction" | "draft" | "agent_draft" | "assistant" | "summary" | "summary_forced" | "message_summary";
 
 export const AI_FEATURE_LABEL: Record<AiFeature, string> = {
   extraction: "Reading an inbound message",
@@ -47,6 +47,7 @@ export const AI_FEATURE_LABEL: Record<AiFeature, string> = {
   assistant: "Answering a question",
   summary: "Summarizing a thread",
   summary_forced: "Re-summarizing a thread",
+  message_summary: "Summarizing one message",
 };
 
 /**
@@ -60,6 +61,7 @@ export const MAX_TOKENS: Record<AiFeature, number> = {
   assistant: 500, // a few sentences or a short list
   summary: 100, // one sentence, max 30 words
   summary_forced: 100,
+  message_summary: 120, // one to three sentences, under sixty words
 };
 
 /** Longest customer text handed to a model. Above a real inquiry, below an 8 KB email body. */
@@ -96,6 +98,7 @@ export const AI_RATE_LIMITS: Partial<Record<AiFeature, { limit: number; windowMs
   agent_draft: { limit: 30, windowMs: 60 * 60 * 1000 },
   summary_forced: { limit: 30, windowMs: 60 * 60 * 1000 },
   extraction: { limit: 200, windowMs: 24 * 60 * 60 * 1000 },
+  message_summary: { limit: 40, windowMs: 60 * 60 * 1000 },
 };
 
 /** The backstop across every feature, including ones with no limit of their own. */

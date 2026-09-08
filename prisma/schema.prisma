@@ -538,6 +538,11 @@ model Message {
   // retries after a timeout, so the same inbound email never gets ingested twice, and
   // (2) setting In-Reply-To/References on our outbound sends so the customer's mail
   // client threads the conversation correctly on their end too.
+  /// On-demand summary of this one message, cached so a second click costs nothing.
+  /// Source is "ai" or "rules"; the raw body is never replaced.
+  summary       String?
+  summaryAt     DateTime?
+  summarySource String?
   providerMessageId String?
 
   // Original pre-normalization content (whichever of text/html the provider handed

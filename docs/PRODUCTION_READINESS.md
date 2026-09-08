@@ -262,3 +262,11 @@ Done before enabling `OPENAI_API_KEY` in production, from the audit that precede
 - **Complimentary access**: `COMPED_BUSINESS_EMAILS` grants Business through the new
   additive `Business.compedPlan`, which never touches Stripe's fields, so comped workspaces
   stay out of MRR and "paying now".
+
+## Inbox intelligence sprint (2026-09-08, PR #63)
+
+- **Opportunity reading** (`src/lib/opportunity.ts`): deterministic, from the record — who the sender is (from the stored classification), what they asked (from the lead), and where it stands (from the attention rules). Priority is ordered by it and every row says why in words; the thread rail and People use the same reading, so all three agree. No score is shown.
+- **Per-message summaries**: `Message.summary` / `summaryAt` / `summarySource` (additive). On demand from a hover/focus affordance on a pointer device and a small always-present control on touch; cached, so a second click costs nothing; written by the model under the same limits as every other call (40/hour, 120 tokens), and by the rules when there is no model, it is off, or it failed — labelled either way.
+- **Cleaning**: the wrapped Gmail attribution line (PR #62) plus footer links (unsubscribe, manage preferences, view in browser). Cleaning runs at render from the stored body, so existing messages are covered with no migration; the raw body is never changed.
+- **People** lists only people with a real conversation, a booking or a customer relationship, labelled Potential client / Client with the reason; the rest are counted, not listed.
+- **No backfill was needed**: classification is stored at ingestion for every conversation already, cleaning is applied at render, and summaries are on demand.

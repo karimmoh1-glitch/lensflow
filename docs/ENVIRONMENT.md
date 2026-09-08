@@ -99,6 +99,7 @@ Every call is capped and counted. The numbers live in one file, `src/lib/aiPolic
 | Assistant proposal drafts | 30 per hour per workspace |
 | Forced re-summaries | 30 per hour per workspace |
 | Message reading | 200 per day per workspace |
+| Message summaries | 40 per hour per workspace, 120 output tokens, cached on the message |
 | Assistant questions | 40 per hour per workspace |
 | Every AI call | 500 per day per workspace |
 

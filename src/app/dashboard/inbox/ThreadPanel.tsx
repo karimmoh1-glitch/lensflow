@@ -22,6 +22,8 @@ import { readRelationship } from "@/lib/relationshipState";
 import { labelFor } from "@/lib/classifyMessage";
 import { leadAttention } from "@/lib/attention";
 import { FollowUpControl } from "./FollowUpControl";
+import { MessageSummary } from "./MessageSummary";
+import { readOpportunity, looksLikeTime } from "@/lib/opportunity";
 import type { ConversationSummary } from "@/lib/summarize";
 
 /**
@@ -93,6 +95,17 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const cachedSummary = (conversation.summary as unknown as ConversationSummary | null) ?? null;
   const canBook = Boolean(lead && lead.status !== "BOOKED" && lead.status !== "LOST");
+  const opportunity = readOpportunity({
+    category: conversation.category,
+    relationship: client?.relationship ?? null,
+    lead: lead ? { status: lead.status, intent: lead.intent, respondedAt: lead.respondedAt, lastInboundAt: lead.lastInboundAt, followUpAt: lead.followUpAt, createdAt: lead.createdAt, serviceName: lead.service?.name ?? null, requestedDateText: lead.requestedDateText, requestedLocation: lead.requestedLocation, budgetCents: lead.budgetCents, estimatedValueCents: lead.estimatedValueCents } : null,
+    lastWordIsTheirs: waitingOnYou,
+    lastInboundAt: lastInboundMsg?.createdAt ?? null,
+    hasUpcomingBooking: Boolean(upcoming),
+    upcomingUnconfirmed: upcoming ? upcoming.status === "BOOKED" : false,
+    archived: conversation.archived,
+    now,
+  });
   const attention = lead ? leadAttention({ status: lead.status, respondedAt: lead.respondedAt, lastInboundAt: lead.lastInboundAt, followUpAt: lead.followUpAt, createdAt: lead.createdAt, hasService: Boolean(lead.serviceId), hasDate: Boolean(lead.requestedDateText || lead.requestedDate), hidden: conversation.archived || !isPerson, hasUpcomingBooking: Boolean(upcoming) }, now) : null;
 
   // WhatsApp's 24-hour customer-service window, told before the person writes.
@@ -115,7 +128,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
   const facts = lead ? [
     lead.service ? { label: "Service", value: lead.service.name } : null,
     lead.requestedDateText ? { label: "Date", value: lead.requestedDateText } : null,
-    lead.requestedLocation ? { label: "Location", value: lead.requestedLocation } : null,
+    lead.requestedLocation && !looksLikeTime(lead.requestedLocation) ? { label: "Location", value: lead.requestedLocation } : null,
     lead.budgetCents ? { label: "Budget", value: `$${(lead.budgetCents / 100).toLocaleString()}` } : null,
   ].filter((x): x is NonNullable<typeof x> => x !== null) : [];
 
@@ -154,6 +167,13 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
       </div>
 
       <div className="px-5 py-4 space-y-4">
+        {opportunity.rank > 0 && (
+          <section aria-labelledby="why-title" className="rounded-2xl border border-accent/25 bg-accent-soft/30 px-3.5 py-3">
+            <h2 id="why-title" className="text-[10px] font-bold uppercase tracking-[0.14em] text-accent-text">Why this matters</h2>
+            <p className="mt-1 text-sm text-ink leading-snug"><span className="font-extrabold">{opportunity.label}.</span> {opportunity.reason}</p>
+            {opportunity.nextAction && opportunity.nextAction.kind !== "view" && <p className="mt-1.5 text-xs text-ink/70">Next: <span className="font-semibold text-ink">{opportunity.nextAction.label}</span></p>}
+          </section>
+        )}
         {understanding && (
           <UnderstandingCard
             u={understanding}
@@ -313,6 +333,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
                 <MessageBubble
                   direction={m.direction}
                   status={m.status}
+                  className="group/msg"
                   arrive={i >= conversation.messages.length - 2}
                   meta={
                     <>
@@ -326,6 +347,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
                   }
                 >
                   <MessageBody body={m.body} outbound={m.direction === "OUTBOUND"} />
+                  {m.direction === "INBOUND" && isPerson && <MessageSummary messageId={m.id} outbound={false} initial={m.summary ?? null} initialSource={m.summarySource === "ai" ? "ai" : m.summarySource === "rules" ? "rules" : null} />}
                 </MessageBubble>
               </div>
             );

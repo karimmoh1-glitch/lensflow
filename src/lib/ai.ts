@@ -3,6 +3,7 @@ import { firstName } from "./utils";
 import { AI_MODEL, MAX_TOKENS, truncateForModel, type AiErrorKind, type AiFeature } from "./aiPolicy";
 import { checkAiLimit, recordAiCall, recordAiBlocked, aiDisabledByFlag, modelKeyConfigured } from "@/server/aiUsage";
 import { reportFailure } from "./observe";
+import { looksLikeTime } from "./opportunity";
 
 // Bounded: a hung model call must not hold a server action open indefinitely.
 const client = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 20_000, maxRetries: 1 }) : null;
@@ -167,6 +168,11 @@ const DATE_PATTERN =
 const HIGH_INTENT = /\b(book|reserve|hold the date|sign me up|let'?s do it|confirm|deposit)\b/i;
 const MEDIUM_INTENT = /\b(how much|price|pricing|cost|available|availability|rates?)\b/i;
 
+/** The deterministic extractor on its own: what the rules can read from a message, for fallbacks that must never wait on a model. */
+export function extractLeadInfoByRules(text: string): ExtractedLead {
+  return ruleBasedExtraction(text);
+}
+
 function ruleBasedExtraction(text: string): ExtractedLead {
   const lower = text.toLowerCase();
 
@@ -188,7 +194,8 @@ function ruleBasedExtraction(text: string): ExtractedLead {
   const budgetCents = budgetMatch ? parseInt(budgetMatch[1], 10) * 100 : null;
 
   const locationMatch = text.match(/\b(?:at|in)\s+([A-Z][a-zA-Z\s]{2,25}?)(?:[.,!?]|$)/);
-  const location = locationMatch ? locationMatch[1].trim() : null;
+  // "in September" and "at noon" are times, not places.
+  const location = locationMatch && !looksLikeTime(locationMatch[1]) ? locationMatch[1].trim() : null;
 
   let intent: ExtractedLead["intent"] = "UNKNOWN";
   if (HIGH_INTENT.test(lower)) intent = "HIGH";
@@ -284,4 +291,22 @@ export async function summarizeConversationSentence(
 ): Promise<string | null> {
   // No retry: the caller already has a rule-written sentence to fall back on.
   return callModel(call, { system: SUMMARY_SYSTEM_PROMPT, user: summaryTranscript(input), temperature: 0.1 }, { retry: false });
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// One message, summarized — what they want, whether it is an opportunity, the constraints,
+// the ask, and what the owner should do. Short, and only from the message itself.
+// ─────────────────────────────────────────────────────────────────────────
+
+export const MESSAGE_SUMMARY_SYSTEM_PROMPT = `You summarize ONE message a customer sent to a small service business, for the owner skimming their inbox. ${UNTRUSTED}
+Write one to three plain sentences, under sixty words, in this order as far as the message supports it: what they want; whether this looks like a potential business opportunity; important details (service, date, place, budget, deadline); what they are asking; what the owner should do. Use only facts in the message — never guess a name, price, date or intent that is not there. If the message carries nothing to act on, reply exactly: Nothing important to act on.`;
+
+/** The user turn, with the message capped at the shared character limit. */
+export function messageSummaryUserTurn(text: string, personName?: string | null): string {
+  return `${personName ? `From ${personName}. ` : ""}Message: """${truncateForModel(text)}"""`;
+}
+
+export async function summarizeMessageText(text: string, personName: string | null | undefined, call: AiCallContext): Promise<string | null> {
+  // Someone clicked for this, so a transient failure is worth one retry.
+  return callModel(call, { system: MESSAGE_SUMMARY_SYSTEM_PROMPT, user: messageSummaryUserTurn(text, personName), temperature: 0.2 }, { retry: true });
 }

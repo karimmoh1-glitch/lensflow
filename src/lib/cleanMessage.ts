@@ -51,6 +51,10 @@ const NOISE_LINE = /^(sent from my (iphone|ipad|android|samsung|galaxy|pixel)|ge
 // Legal boilerplate paragraphs.
 const DISCLAIMER = /^(this (e-?mail|message)( and any attachments)? (is|are|may be) (confidential|intended)|confidentiality notice|disclaimer:|the information (contained|transmitted) in this)/i;
 
+// A paragraph that is only mailing-list footer links: nothing a person wrote.
+const FOOTER_LINK = "(unsubscribe|manage (your )?(email )?preferences|update (your )?preferences|email preferences|view (this (e-?mail|message) )?(online|in (your )?browser)|opt[- ]out|privacy policy|terms( of (use|service))?|why (did i|am i) (get|receiving) this)";
+const FOOTER_PARAGRAPH = new RegExp(`^${FOOTER_LINK}(\\s*[|·•\\-–—]\\s*${FOOTER_LINK})*[.\\s]*$`, "i");
+
 export function splitMessage(raw: string): SplitMessage {
   if (!raw || !raw.trim()) return { text: raw ?? "", quoted: null, signature: null, changed: false };
   let text = raw.replace(/\r\n/g, "\n").replace(/ /g, " ");
@@ -105,7 +109,7 @@ export function splitMessage(raw: string): SplitMessage {
   // 4. Disclaimers and tracking links.
   text = text
     .split(/\n{2,}/)
-    .filter((p) => !DISCLAIMER.test(p.trim()))
+    .filter((p) => !DISCLAIMER.test(p.trim()) && !FOOTER_PARAGRAPH.test(p.trim().replace(/\s+/g, " ")))
     .join("\n\n")
     .replace(/https?:\/\/\S{40,}/g, (url) => {
       const domain = url.match(/^https?:\/\/(?:www\.)?([^/?#]+)/)?.[1];

@@ -107,6 +107,15 @@ SELECT
 
 The founder dashboard at `/admin/growth` (gated by `FOUNDER_EMAILS`) shows every one of these as counts over 7/30/90 days, the persona mix from `OnboardingProfile`, referrals, and one workspace in depth — names, connection states, counts and event names only.
 
+The inbox intelligence layer records, without any message content:
+
+| Event | Properties |
+| --- | --- |
+| `message_summary_requested` / `message_summary_completed` / `message_summary_failed` | `direction`, `source` (ai or rules), `reason` on failure |
+| `priority_viewed` (once a day per workspace) | `items`, `waiting` |
+| `priority_item_opened` | `rank` |
+| `automated_message_filtered` | `category`, `decidedBy`, `channel` |
+
 AI spend is its own pair of events, and the only ones that carry numbers rather than keys:
 
 | Event | Properties |

@@ -78,3 +78,47 @@ describe("classifyMessage layers", () => {
     expect(r.reason).toBe("Transactional notification from Doordash.");
   });
 });
+
+describe("the senders a business actually gets", () => {
+  const base = { channel: "EMAIL" as const, headers: null, rules: [] as never[], businessDomains: ["alexrivera.photo"] };
+
+  it("a person asking about a session is a priority, with the human signals named", () => {
+    const c = classifyMessage({ ...base, senderEmail: "sarah.johnson@gmail.com", senderName: "Sarah Johnson", subject: "Family portraits in October?", body: "Hi! We're looking for family portraits in October at Marymoor Park. Our budget is around $500. Are you available?" });
+    expect(c.category).toBe("PRIORITY");
+    expect(c.signals).toEqual(expect.arrayContaining(["body:human-intent", "body:question", "domain:personal-mail"]));
+  });
+
+  it("an existing customer stays a priority even when the mail looks dull", () => {
+    const c = classifyMessage({ ...base, senderEmail: "m.lopez@gmail.com", subject: "Re: Saturday", body: "ok", knownCustomer: true });
+    expect(c.category).toBe("PRIORITY");
+    expect(c.decidedBy).toBe("relationship");
+  });
+
+  it("DoorDash, a receipt and a shipping notice are automated", () => {
+    expect(classifyMessage({ ...base, senderEmail: "no-reply@doordash.com", senderName: "DoorDash", subject: "Your order has been delivered", body: "Your order from Thai Basil has been delivered. Enjoy!" }).category).toBe("AUTOMATED");
+    expect(classifyMessage({ ...base, senderEmail: "receipts@ubereats.com", subject: "Your Uber Eats receipt", body: "Total $24.10. This is an automated message." }).category).toBe("AUTOMATED");
+    expect(classifyMessage({ ...base, senderEmail: "auto-confirm@amazon.com", subject: "Your package has shipped", body: "Track your package. Do not reply to this email." }).category).toBe("AUTOMATED");
+  });
+
+  it("a newsletter with list headers is promotional", () => {
+    const c = classifyMessage({ ...base, senderEmail: "newsletter@studiogear.co", subject: "20% off lighting this week only", body: "Flash sale on strobes. Unsubscribe | View in browser", headers: { listUnsubscribe: "<mailto:u@studiogear.co>", listId: "gear.studiogear.co" } });
+    expect(c.category).toBe("PROMOTIONAL");
+  });
+
+  it("a calendar notification and a security alert from a platform are vendor mail, not customers", () => {
+    expect(classifyMessage({ ...base, senderEmail: "calendar-notification@google.com", subject: "Invitation: Shoot @ Sat Oct 12", body: "You have been invited." }).category).toBe("VENDOR");
+    expect(classifyMessage({ ...base, senderEmail: "no-reply@accounts.google.com", subject: "Security alert", body: "A new sign-in on Windows." }).category).toBe("VENDOR");
+  });
+
+  it("an auto-submitted confirmation is automated even from a plain-looking address", () => {
+    const c = classifyMessage({ ...base, senderEmail: "bookings@somevenue.com", subject: "Your appointment is confirmed", body: "This is an automated message confirming your appointment.", headers: { autoSubmitted: "auto-generated" } });
+    expect(c.category).toBe("AUTOMATED");
+  });
+
+  it("an unusual address that asks a real question is still a person — no single crude rule decides", () => {
+    const c = classifyMessage({ ...base, senderEmail: "info@littleoakbakery.com", senderName: "Little Oak Bakery", subject: "Product photos for our new menu", body: "Hello! We'd like product photography for about 20 items next month. What are your rates and availability?" });
+    expect(c.category).toBe("PRIORITY");
+    expect(c.signals).toContain("body:shared-mailbox-asking");
+  });
+});
+

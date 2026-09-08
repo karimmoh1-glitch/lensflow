@@ -124,6 +124,9 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
                 <p>{detail._count.conversations} conversations · {detail._count.clients} people · {detail._count.leads} leads ({detail.leadsByStatus.map(([s, c]) => `${c} ${s.toLowerCase()}`).join(", ") || "none"})</p>
                 <p>{detail._count.bookings} bookings · {detail.services.length} services · {detail.automations.filter((a) => a.enabled).length}/{detail.automations.length} automations on · {detail.automationRuns} runs</p>
                 <p>{detail.followUpsSet} follow-ups set · needs attention now: {detail.attentionNow.length}</p>
+                <p className="pt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Inbox intelligence</p>
+                <p>Conversations by kind: {detail.conversationsByCategory.map(([k, c]) => `${c} ${k.toLowerCase()}`).join(", ") || "none"}</p>
+                <p>{detail.peopleWithConversation} people with a real conversation · {detail.potentialClients} potential clients · {detail.messageSummaries} message summaries</p>
                 {detail.attentionNow.slice(0, 5).map((a, i) => <p key={i} className="text-xs text-ink/70">· {a.label} — {a.why}</p>)}
               </div>
               <div className="bg-white px-5 py-4 text-sm">
@@ -133,7 +136,7 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
             </div>
             <div className="px-5 py-4 border-t border-border">
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65 mb-2">Timeline (latest 80)</p>
-              <ol className="max-h-72 overflow-y-auto text-xs space-y-0.5 tabular-nums">
+              <ol tabIndex={0} aria-label="Timeline" className="max-h-72 overflow-y-auto text-xs space-y-0.5 tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-md">
                 {detail.events.map((e, i) => <li key={i} className="flex gap-3"><span className="text-ink/60 shrink-0 w-32">{format(e.at, "MMM d HH:mm")}</span><span className="font-semibold text-ink">{e.name}</span><span className="text-ink/60 truncate">{e.props}</span></li>)}
               </ol>
             </div>

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAttention } from "@/server/attention";
 import { firstName } from "@/lib/utils";
-import { readValue, headlineFor, stageFor, isAtRisk, rankNextActions, moneyAtRisk, type NextAction, type MoneyAtRisk } from "@/lib/nextAction";
+import { readValue, headlineFor, stageFor, isAtRisk, rankNextActions, moneyAtRisk, looksLikeHandle, type NextAction, type MoneyAtRisk } from "@/lib/nextAction";
 
 export type NextActionsRead = { actions: NextAction[]; atRisk: MoneyAtRisk; generatedAt: Date };
 
@@ -25,7 +25,7 @@ export async function getNextActions(businessId: string, now = new Date(), timez
 
   const actions: NextAction[] = [];
   for (const r of rows) {
-    const first = firstName(r.name, "This person");
+    const first = looksLikeHandle(r.name) ? "Someone new" : firstName(r.name, "This person");
     if (r.leadId) {
       const lead = leadById.get(r.leadId);
       if (!lead) continue;

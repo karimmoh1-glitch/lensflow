@@ -5,9 +5,11 @@ import { prisma } from "@/lib/db";
 // function simply runs each time.
 const perRequest: <T extends (...a: never[]) => unknown>(fn: T) => T = typeof (React as { cache?: unknown }).cache === "function" ? (React as unknown as { cache: <T>(fn: T) => T }).cache : (fn) => fn;
 import { subHours } from "date-fns";
+import { readValue } from "@/lib/nextAction";
 
 export type DigestItem = { key: string; count: number; label: string; href: string; tone: "accent" | "signal" | "success" | "neutral" };
-export type AwayDigest = { since: Date; hoursAway: number; items: DigestItem[]; quotedCents: number; quotedCount: number };
+/** `quotedCents` is known money (a quote that went out or a budget they named); `estimatedCents` is service prices. */
+export type AwayDigest = { since: Date; hoursAway: number; items: DigestItem[]; quotedCents: number; estimatedCents: number; quotedCount: number };
 
 /**
  * "While you were away": only what changed since this person last opened the app, and
@@ -29,7 +31,7 @@ export async function getAwayDigest(businessId: string, since: Date | null, now 
     prisma.lead.count({ where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, followUpAt: { gte: from, lte: now }, conversation: { archived: false, category: "PRIORITY" } } }),
     prisma.booking.count({ where: { businessId, createdAt: { gte: from }, status: { not: "CANCELED" } } }),
     prisma.booking.count({ where: { businessId, updatedAt: { gte: from }, createdAt: { lt: from }, status: "CONFIRMED" } }),
-    prisma.lead.aggregate({ where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, estimatedValueCents: { gt: 0 }, conversation: { archived: false, category: "PRIORITY" } }, _sum: { estimatedValueCents: true }, _count: { _all: true } }),
+    prisma.lead.findMany({ where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, conversation: { archived: false, category: "PRIORITY" } }, select: { quotedCents: true, budgetCents: true, estimatedValueCents: true, service: { select: { priceCents: true } } } }),
   ]);
 
   const items: DigestItem[] = [];
@@ -40,7 +42,14 @@ export async function getAwayDigest(businessId: string, since: Date | null, now 
   if (bookingsMade) items.push({ key: "bookings", count: bookingsMade, label: `${bookingsMade} new ${plural(bookingsMade, "booking", "bookings")}`, href: "/dashboard/bookings", tone: "success" });
   if (bookingsConfirmed) items.push({ key: "confirmed", count: bookingsConfirmed, label: `${bookingsConfirmed} ${plural(bookingsConfirmed, "booking", "bookings")} confirmed`, href: "/dashboard/bookings", tone: "success" });
   if (items.length === 0) return null;
-  return { since: from, hoursAway, items, quotedCents: openQuoted._sum.estimatedValueCents ?? 0, quotedCount: openQuoted._count._all };
+  let quotedCents = 0, estimatedCents = 0, quotedCount = 0;
+  for (const l of openQuoted) {
+    const v = readValue({ quotedCents: l.quotedCents, budgetCents: l.budgetCents, servicePriceCents: l.service?.priceCents, estimatedValueCents: l.estimatedValueCents });
+    if (!v) continue;
+    quotedCount += 1;
+    if (v.known) quotedCents += v.cents; else estimatedCents += v.cents;
+  }
+  return { since: from, hoursAway, items, quotedCents, estimatedCents, quotedCount };
 }
 
 /**

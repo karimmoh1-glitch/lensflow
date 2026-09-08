@@ -53,7 +53,7 @@ describe("next best action: order, risk, wording", () => {
     ];
     const m = moneyAtRisk(rows);
     expect(m).toEqual({ knownCents: 50000, estimatedCents: 35000, people: 3 });
-    expect(moneyAtRiskSentence(m)).toBe("$500 quoted or budgeted and about $350 in service prices may be going cold across 3 people.");
+    expect(moneyAtRiskSentence(m)).toBe("3 people may be going cold; $500 of it is quoted or budgeted and about $350 is service prices.");
     expect(moneyAtRiskSentence({ knownCents: 0, estimatedCents: 0, people: 2 })).toBeNull();
   });
   it("speaks in a person's terms, never a score", () => {

@@ -29,7 +29,10 @@ export function AwayDigest({ digest }: { digest: Digest }) {
       </ul>
       {digest.quotedCount > 0 && (
         <p className="px-5 md:px-6 pb-4 -mt-1 text-xs text-ink/70">
-          <span className="font-semibold text-ink">{money(digest.quotedCents)}</span> across {digest.quotedCount} open {digest.quotedCount === 1 ? "opportunity" : "opportunities"} — the price of the service each person asked about, added up. Not a forecast.
+          {digest.quotedCents > 0 && <><span className="font-semibold text-ink">{money(digest.quotedCents)}</span> quoted or budgeted</>}
+          {digest.quotedCents > 0 && digest.estimatedCents > 0 && " and "}
+          {digest.estimatedCents > 0 && <>about <span className="font-semibold text-ink">{money(digest.estimatedCents)}</span> in service prices</>}
+          {" "}across {digest.quotedCount} open {digest.quotedCount === 1 ? "opportunity" : "opportunities"}. Known money first; service prices are an estimate. Not a forecast.
         </p>
       )}
     </section>

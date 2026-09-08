@@ -63,6 +63,11 @@ export type NextAction = {
 /** An inquiry left this long without a first reply counts as at risk, not just waiting. */
 export const UNANSWERED_RISK_DAYS = 2;
 
+/** A phone number, email or handle standing in for a name is not a name. */
+export function looksLikeHandle(name: string): boolean {
+  return /[\d@+()]/.test(name) || name.trim().length === 0;
+}
+
 export function headlineFor(kind: NextActionKind, first: string): string {
   switch (kind) {
     case "reply":
@@ -116,11 +121,11 @@ export function moneyAtRisk(rows: NextAction[]): MoneyAtRisk {
   return out;
 }
 
-/** "$500 quoted and about $350 more may be going cold across 3 people." Nothing when there is no money to speak of. */
+/** "3 people may be going cold; $500 of it is quoted or budgeted and about $350 is service prices." Nothing when there is no money to speak of. */
 export function moneyAtRiskSentence(m: MoneyAtRisk): string | null {
   if (m.people === 0 || (m.knownCents === 0 && m.estimatedCents === 0)) return null;
   const parts: string[] = [];
-  if (m.knownCents > 0) parts.push(`${money(m.knownCents)} quoted or budgeted`);
-  if (m.estimatedCents > 0) parts.push(`about ${money(m.estimatedCents)} in service prices`);
-  return `${parts.join(" and ")} may be going cold across ${m.people === 1 ? "1 person" : `${m.people} people`}.`;
+  if (m.knownCents > 0) parts.push(`${money(m.knownCents)} of it is quoted or budgeted`);
+  if (m.estimatedCents > 0) parts.push(`about ${money(m.estimatedCents)} is service prices`);
+  return `${m.people === 1 ? "1 person" : `${m.people} people`} may be going cold; ${parts.join(" and ")}.`;
 }

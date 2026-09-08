@@ -24,7 +24,7 @@ export function MergeSuggestion({ clientId, name, candidates }: { clientId: stri
       const r = merge ? await mergeClients(clientId, c.id) : await dismissMerge(clientId, c.id);
       if (!r.ok) { toast({ tone: "signal", title: "That didn't save", body: r.error }); return; }
       setHidden((h) => new Set(h).add(c.id));
-      toast({ tone: "outcome", title: merge ? `Merged ${c.name} into ${name}` : "Kept as two people" });
+      toast({ tone: "outcome", title: merge ? `Merged into ${name}` : "Kept as two people", body: merge ? "Their conversations and bookings are on this thread now." : undefined });
       router.refresh();
     });
   }

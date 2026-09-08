@@ -8,6 +8,7 @@ import { markLeadHandled, setLeadStatus } from "@/app/actions/leads";
 import { setFollowUp } from "@/app/actions/followUp";
 import { useToast } from "@/components/Toaster";
 import { cn, firstName, initials } from "@/lib/utils";
+import { looksLikeHandle } from "@/lib/nextAction";
 import type { NextAction, MoneyAtRisk } from "@/lib/nextAction";
 import { moneyAtRiskSentence } from "@/lib/nextAction";
 
@@ -79,7 +80,7 @@ export function NextActions({ rows, atRisk, caughtUp }: { rows: Row[]; atRisk: M
       ) : (
         <article aria-label={top.headline} className="rounded-2xl border border-accent/30 bg-gradient-to-br from-accent-soft/70 to-white px-4 sm:px-5 py-4 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
           <div className="flex items-start gap-3 sm:gap-4">
-            <span className="w-11 h-11 rounded-full bg-white text-accent-text flex items-center justify-center text-sm font-extrabold shrink-0 border border-accent/20">{initials(top.person.name)}</span>
+            <span className="w-11 h-11 rounded-full bg-white text-accent-text flex items-center justify-center text-sm font-extrabold shrink-0 border border-accent/20">{looksLikeHandle(top.person.name) ? "New" : initials(top.person.name)}</span>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h3 className="font-sans font-extrabold text-[1.15rem] leading-tight tracking-[-0.02em] text-ink">{top.headline}</h3>

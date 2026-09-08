@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui";
  * the real rows land. Announced once as busy. */
 export default function Loading() {
   return (
-    <div className="flex h-[100dvh] md:h-screen bg-white" aria-busy="true" aria-label="Loading your inbox">
+    <div className="flex h-full min-h-0 bg-white" aria-busy="true" aria-label="Loading your inbox">
       <div className="w-full lg:w-[380px] xl:w-[400px] shrink-0 border-r border-border flex flex-col">
         <div className="px-4 md:px-5 pt-3 md:pt-4 pb-3 border-b border-border space-y-3">
           <div className="flex items-center justify-between"><Skeleton className="h-6 w-16" /><Skeleton className="h-7 w-28 rounded-full" /></div>

@@ -231,7 +231,14 @@ export function AppShell({
   }, [mobileOpen]);
 
   return (
-    <div className="min-h-screen bg-paper md:flex">
+    // The application shell owns the viewport and never grows with its content: the height
+    // is fixed to the dynamic viewport (so an iOS toolbar appearing does not create a
+    // second scrollbar) and overflow is hidden here, which makes <main> the single scroll
+    // region. On a phone that is one column — header, content, tab bar — so the header and
+    // the tab bar stay put without position: fixed and the content scrolls between them;
+    // from md the sidebar becomes the first column and keeps its own full height, so a long
+    // settings page or inbox thread can never push Settings or Log out off the screen.
+    <div className="h-[100dvh] overflow-hidden bg-paper flex flex-col md:flex-row">
       <a href="#dt-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-full focus:bg-ink focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold">Skip to content</a>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-white flex-col">
@@ -255,7 +262,7 @@ export function AppShell({
       </aside>
 
       {/* Mobile top bar: where you are, search, and the More sheet under the avatar. */}
-      <header className="md:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-3 border-b border-border bg-white/95 backdrop-blur pt-[env(safe-area-inset-top)]">
+      <header className="md:hidden shrink-0 flex items-center justify-between h-14 px-3 border-b border-border bg-white/95 backdrop-blur pt-[env(safe-area-inset-top)]">
         <button
           ref={menuButtonRef}
           aria-label="Open navigation"
@@ -302,7 +309,7 @@ export function AppShell({
         </div>
       )}
 
-      <main id="dt-main" tabIndex={-1} className="flex-1 min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 focus:outline-none">
+      <main id="dt-main" tabIndex={-1} className="flex-1 min-w-0 min-h-0 overflow-y-auto overscroll-contain focus:outline-none">
         {wantedIntegrations.length > 0 && !pathname.startsWith("/dashboard/settings") && (
           <Link href="/dashboard/settings?tab=channels" className="mx-4 md:mx-8 mt-3 md:mt-4 rounded-2xl border border-signal/25 bg-signal-soft/40 px-3.5 md:px-4 py-2.5 md:py-3 flex items-center gap-3 text-sm text-ink/80 hover:bg-signal-soft/60 transition-colors">
             <span className="min-w-0 flex-1 truncate md:whitespace-normal"><span className="font-semibold text-ink">Connect {wantedIntegrations.join(", ")}</span><span className="hidden md:inline"> and your first real conversations arrive here.</span></span>
@@ -313,7 +320,7 @@ export function AppShell({
       </main>
 
       {/* Phone: the four places that matter, always under the thumb — and More for the rest. */}
-      <nav aria-label="Primary" className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+      <nav aria-label="Primary" className="md:hidden shrink-0 border-t border-border bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
         <ul className="grid grid-cols-5">
           {[
             { href: "/dashboard", label: "Today", icon: Home },

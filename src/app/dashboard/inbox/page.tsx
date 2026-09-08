@@ -145,10 +145,10 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     return { title: "Connect your customer channels.", description: `You said customers reach you on ${names}. Connect ${wanted.length === 1 ? "it" : "them"} and every message lands here — with who they are and what they need.`, cta: `Connect ${names}` };
   })() : null;
   return (
-    <div className="flex h-[100dvh] md:h-screen bg-white">
+    <div className="flex h-full min-h-0 bg-white">
       {gmailConnected && <AutoGmailSync immediate />}
       {/* Below lg the list and the thread take turns (a tablet is a wide phone here); from lg they sit side by side. */}
-      <div className={cn("w-full lg:w-[380px] xl:w-[400px] shrink-0 border-r border-border flex-col bg-white", selectedId ? "hidden lg:flex" : "flex")}>
+      <div className={cn("w-full lg:w-[380px] xl:w-[400px] shrink-0 min-h-0 border-r border-border flex-col bg-white", selectedId ? "hidden lg:flex" : "flex")}>
         <div className="px-4 md:px-5 pt-3 md:pt-4 pb-3 border-b border-border space-y-3">
           <div className="flex items-center justify-between gap-3">
             <h1 className="font-sans font-extrabold text-[19px] tracking-[-0.02em] text-ink">Inbox</h1>
@@ -198,7 +198,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-thin overscroll-contain">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin overscroll-contain">
           {rows.length === 0 && (
             <div className="p-6">
               <EmptyState

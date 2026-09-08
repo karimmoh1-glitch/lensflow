@@ -5,6 +5,8 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isFounder } from "@/lib/founder";
 import { getGrowth, listBusinesses, getBusinessDetail } from "@/server/growth";
+import { getAiSpend } from "@/server/aiUsage";
+import { formatCostMicros, AI_RATE_LIMITS, DAILY_CALL_CEILING, ASSISTANT_HOURLY_LIMIT, AI_FEATURE_LABEL, type AiFeature } from "@/lib/aiPolicy";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +25,7 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const days = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
   const detail = sp.b ? await getBusinessDetail(sp.b.slice(0, 60)) : null;
-  const [g, businesses] = await Promise.all([getGrowth(days), listBusinesses()]);
+  const [g, businesses, ai] = await Promise.all([getGrowth(days), listBusinesses(), getAiSpend()]);
   const money = (c: number) => `$${(c / 100).toFixed(0)}`;
   const n = (v: number | null | undefined) => (v === null || v === undefined ? "—" : String(v));
   const p = (v: number | null) => (v === null ? "—" : `${v}%`);
@@ -57,6 +59,46 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
           <Block title={`Personas (${g.personas.profiles} profiles)`} rows={[...g.personas.businessStatus.map(([k, v]) => [`Status · ${k}`, String(v)] as [string, string]), ...g.personas.workCategory.slice(0, 6).map(([k, v]) => [`Work · ${k}`, String(v)] as [string, string]), ...g.personas.teamSize.map(([k, v]) => [`Team · ${k}`, String(v)] as [string, string])]} />
           <Block title="Recommended vs chosen" rows={[...g.personas.recommendedPlan.map(([k, v]) => [`Recommended · ${k}`, String(v)] as [string, string]), ...g.personas.selectedPlan.map(([k, v]) => [`Chose · ${k}`, String(v)] as [string, string]), ...g.personas.channels.map(([k, v]) => [`Channel · ${k}`, String(v)] as [string, string]), ...g.personas.painPoints.slice(0, 5).map(([k, v]) => [`Pain · ${k}`, String(v)] as [string, string])]} />
         </div>
+
+        <section aria-labelledby="ai-title" className="mt-10">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-2.5">
+            <h2 id="ai-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">AI usage, last 24 hours</h2>
+            <span className={cn("text-[11px] font-semibold", ai.state === "ready" ? "text-success-text" : ai.state === "disabled" ? "text-warning-text" : "text-ink/65")}>
+              {ai.state === "ready" ? "Model configured and enabled" : ai.state === "disabled" ? "Switched off deliberately (AI_DISABLED)" : "No model configured (OPENAI_API_KEY unset)"}
+            </span>
+          </div>
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <Block title="Spend" rows={[["Estimated cost", formatCostMicros(ai.overall.costMicrosToday)], ["Calls", n(ai.overall.callsToday)], ["Calls this hour", n(ai.overall.callsThisHour)], ["Tokens", n(ai.overall.tokensToday)], ["Median latency", ai.overall.medianMs === null ? "—" : `${ai.overall.medianMs} ms`]]} />
+            <Block title="Health" rows={[["Failed calls", n(ai.overall.failuresToday)], ["Refused by a limit", n(ai.overall.blockedToday)], ...(ai.overall.byErrorKind.length ? ai.overall.byErrorKind.map(([k, v]) => [`· ${k}`, String(v)] as [string, string]) : [["No failures recorded", "—"] as [string, string]])]} />
+            <Block title="By feature" rows={ai.overall.byFeature.length ? ai.overall.byFeature.map(([k, v]) => [AI_FEATURE_LABEL[k as AiFeature] ?? k, String(v)] as [string, string]) : [["No calls yet", "—"]]} />
+            <Block title="Limits per workspace" rows={[["Drafts", `${AI_RATE_LIMITS.draft!.limit}/hour`], ["Assistant proposals", `${AI_RATE_LIMITS.agent_draft!.limit}/hour`], ["Re-summaries", `${AI_RATE_LIMITS.summary_forced!.limit}/hour`], ["Assistant questions", `${ASSISTANT_HOURLY_LIMIT}/hour`], ["Message reading", `${AI_RATE_LIMITS.extraction!.limit}/day`], ["Every AI call", `${DAILY_CALL_CEILING.limit}/day`]]} />
+          </div>
+          {ai.byBusiness.length > 0 && (
+            <div className="mt-4 overflow-x-auto rounded-[22px] border border-border bg-white">
+              <table className="w-full text-sm">
+                <thead className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65 text-left">
+                  <tr>{["Workspace", "Calls", "This hour", "Tokens", "Est. cost", "Failed", "Refused", "By feature", "Last call"].map((h) => <th key={h} className="px-3 py-2.5 whitespace-nowrap">{h}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {ai.byBusiness.map((b) => (
+                    <tr key={b.businessId} className="hover:bg-black/[0.02]">
+                      <td className="px-3 py-2 whitespace-nowrap"><Link href={`/admin/growth?days=${days}&b=${b.handle}`} className="font-semibold text-ink hover:underline">{b.name}</Link></td>
+                      <td className="px-3 py-2 tabular-nums">{b.usage.callsToday}</td>
+                      <td className="px-3 py-2 tabular-nums">{b.usage.callsThisHour}</td>
+                      <td className="px-3 py-2 tabular-nums">{b.usage.tokensToday}</td>
+                      <td className="px-3 py-2 tabular-nums font-semibold">{formatCostMicros(b.usage.costMicrosToday)}</td>
+                      <td className={cn("px-3 py-2 tabular-nums", b.usage.failuresToday > 0 && "text-danger-text font-semibold")}>{b.usage.failuresToday}</td>
+                      <td className="px-3 py-2 tabular-nums">{b.usage.blockedToday}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-ink/70">{b.usage.byFeature.map(([k, v]) => `${k} ${v}`).join(", ") || "—"}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-ink/70">{b.usage.lastCallAt ? `${formatDistanceToNowStrict(b.usage.lastCallAt)} ago` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="mt-2 text-[11px] text-ink/65">Cost is an estimate from the published price list in <code>lib/aiPolicy.ts</code>, applied to the tokens each call actually reported. No prompt, message or customer detail is recorded with a call.</p>
+        </section>
 
         {detail && (
           <section aria-labelledby="detail-title" className="mt-10 rounded-[22px] border border-signal/25 bg-white overflow-hidden">

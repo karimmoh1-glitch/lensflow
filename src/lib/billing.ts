@@ -106,7 +106,7 @@ export const PLAN_ORDER: PlanKey[] = ["FREE", "PRO", "BUSINESS"];
 // keeping access through PAST_DUE means one failed card never locks someone out.
 const ENTITLED_STATUSES = new Set(["ACTIVE", "TRIALING", "PAST_DUE"]);
 
-type BillingFields = Pick<Business, "planTier" | "billingStatus">;
+type BillingFields = Pick<Business, "planTier" | "billingStatus"> & { compedPlan?: Business["compedPlan"] };
 
 /** The plan a workspace actually has right now — never planTier alone. A lapsed paid
  * subscription falls back to Free. */
@@ -117,7 +117,15 @@ export function trialEligible(business: { stripeSubscriptionId: string | null; t
 }
 
 export function effectivePlan(business: BillingFields): PlanKey {
-  if (business.planTier === "FREE") return "FREE";
+  // Complimentary access stands on its own: no Stripe subscription, and the higher of the
+  // two if a comped workspace also subscribes later.
+  const comped = business.compedPlan && business.compedPlan !== "FREE" ? (business.compedPlan as PlanKey) : null;
+  if (business.planTier === "FREE") return comped ?? "FREE";
+  if (business.billingStatus && ENTITLED_STATUSES.has(business.billingStatus)) {
+    const paid = business.planTier as PlanKey;
+    return comped && PLAN_ORDER.indexOf(comped) > PLAN_ORDER.indexOf(paid) ? comped : paid;
+  }
+  if (comped) return comped;
   if (business.billingStatus && ENTITLED_STATUSES.has(business.billingStatus)) return business.planTier as PlanKey;
   return "FREE";
 }

@@ -7,6 +7,8 @@ import type { SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { draftReply } from "@/lib/ai";
 import { aiEntitled, smsEntitled } from "@/lib/billing";
+import { checkAiLimit } from "@/server/aiUsage";
+import { isSpendLimit } from "@/lib/aiPolicy";
 import { deliverToCustomer } from "@/server/deliver";
 import type { SendResult } from "@/lib/channels/types";
 
@@ -35,6 +37,13 @@ export async function generateDraftAction(
   });
   if (!conversation) throw new Error("not found");
 
+  // Entitlement says this workspace may draft; the limit says whether it may right now.
+  // Checked here as well as inside the model call, so a throttled person gets a real
+  // answer instead of a template that looks like the model wrote it. A missing key or a
+  // deliberate switch-off falls through to that template on purpose, unchanged.
+  const gate = await checkAiLimit(business.id, "draft");
+  if (!gate.ok && isSpendLimit(gate.reason)) return { error: gate.message };
+
   const lastInbound = conversation.messages[0];
   const services = await prisma.service.findMany({ where: { businessId: business.id, active: true }, orderBy: { sortOrder: "asc" } });
 
@@ -43,7 +52,7 @@ export async function generateDraftAction(
     services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })),
     customerMessage: lastInbound?.body ?? "",
     customerName: conversation.client?.name,
-  });
+  }, { businessId: business.id, feature: "draft" });
   if ((await prisma.analyticsEvent.count({ where: { businessId: business.id, name: "first_ai_action" } })) === 0) await track("first_ai_action", { businessId: business.id, properties: { via: "draft" } });
   return { text };
 }

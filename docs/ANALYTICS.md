@@ -107,5 +107,29 @@ SELECT
 
 The founder dashboard at `/admin/growth` (gated by `FOUNDER_EMAILS`) shows every one of these as counts over 7/30/90 days, the persona mix from `OnboardingProfile`, referrals, and one workspace in depth — names, connection states, counts and event names only.
 
+AI spend is its own pair of events, and the only ones that carry numbers rather than keys:
+
+| Event | Properties |
+| --- | --- |
+| `ai_call` | `feature`, `model`, `inputTokens`, `outputTokens`, `totalTokens`, `costMicros`, `ms`, `ok`, `errorKind` when it failed |
+| `ai_blocked` | `feature`, `reason` (`disabled`, `not_configured`, `feature_limit`, `daily_limit`) |
+| `comped_access_granted` | `tier`, `reason` |
+
+`costMicros` is millionths of a dollar, from the price list in `src/lib/aiPolicy.ts`. No
+prompt, message body, customer name or key is ever written to either event. These same rows
+are the counters the per-workspace AI limits are enforced from, so a limit holds across
+serverless instances without new infrastructure. What each workspace spent:
+
+```sql
+SELECT "businessId",
+       COUNT(*) AS calls,
+       SUM((properties->>'totalTokens')::int) AS tokens,
+       ROUND(SUM((properties->>'costMicros')::int) / 1000000.0, 4) AS est_usd,
+       COUNT(*) FILTER (WHERE properties->>'ok' = 'false') AS failures
+FROM "AnalyticsEvent"
+WHERE name = 'ai_call' AND "createdAt" > now() - interval '24 hours'
+GROUP BY 1 ORDER BY est_usd DESC;
+```
+
 Events are append-only. There is no dashboard on purpose; these queries run against the
 production database read-only.

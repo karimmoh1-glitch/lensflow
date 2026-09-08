@@ -57,6 +57,10 @@ model Business {
   stripeSubscriptionId String?       @unique
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean       @default(false)
+  /// Complimentary access granted by Daythread (a design partner, a founder's own
+  /// workspace). Entitles the plan without a subscription, and is deliberately NOT counted
+  /// as revenue anywhere — MRR and "paying now" still read billingStatus from Stripe.
+  compedPlan           PlanTier?
   /// When the Pro trial ends (from Stripe). Null when no trial is running.
   trialEndsAt          DateTime?
   /// Set the first time this business starts a subscription with a trial — one trial per business.
@@ -905,7 +909,7 @@ model ExternalEvent {
 /// message body, never a token — a category, a safe message, and ids.
 model OpsEvent {
   id         String   @id @default(cuid())
-  area       String // oauth | webhook | sync | delivery | billing | job | db
+  area       String // oauth | webhook | sync | delivery | billing | job | db | ai
   level      String   @default("error") // error | warn
   message    String
   businessId String?

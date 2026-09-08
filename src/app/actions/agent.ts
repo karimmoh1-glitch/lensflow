@@ -7,6 +7,8 @@ import { requireRole, type SessionPayload } from "@/lib/auth";
 import { businessAgentEntitled, effectivePlan, planLimits, PLANS } from "@/lib/billing";
 import { buildAgentBrief, findProposal, draftForProposal, executeProposal, type AgentBrief, type AgentProposal } from "@/server/businessAgent";
 import { dbRateLimit } from "@/lib/dbRateLimit";
+import { checkAiLimit } from "@/server/aiUsage";
+import { isSpendLimit } from "@/lib/aiPolicy";
 import { track } from "@/lib/analytics";
 import { z } from "zod";
 
@@ -38,6 +40,10 @@ export async function prepareAgentProposal(proposalId: string, session?: Session
   if (!businessAgentEntitled(ctx.business)) return denial(effectivePlan(ctx.business));
   const proposal = await findProposal(ctx.business.id, String(proposalId));
   if (!proposal) return { allowed: true, error: "That suggestion is no longer current — the situation changed." };
+  // The hourly cap on approvals governs what goes out; this one governs what is written,
+  // because writing is the part that costs a model call.
+  const gate = await checkAiLimit(ctx.business.id, "agent_draft");
+  if (!gate.ok && isSpendLimit(gate.reason)) return { allowed: true, error: gate.message };
   return { allowed: true, proposal, draft: await draftForProposal(ctx.business.id, proposal) };
 }
 

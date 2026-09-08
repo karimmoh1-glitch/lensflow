@@ -5,6 +5,7 @@ import { googleOAuthConfigured } from "@/lib/google";
 import { instagramConfigured } from "@/lib/meta/instagram";
 import { whatsappConfigured } from "@/lib/meta/whatsapp";
 import { twilioConfigured } from "@/lib/twilio";
+import { aiOperationalState } from "@/server/aiUsage";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { LogoMark } from "@/components/Logo";
 import { cn } from "@/lib/utils";
@@ -32,10 +33,13 @@ export default async function StatusPage() {
   const db = await databaseReachable();
   const checkedAt = new Date();
   const google = googleOAuthConfigured();
+  const aiState = aiOperationalState();
+  // Configured but failing is the state worth seeing at a glance; the count is failures only.
+  const aiFailures = aiState === "ready" && db ? await prisma.opsEvent.count({ where: { area: "ai", createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } }).catch(() => 0) : 0;
   const core = [
     { name: "Daythread app", ok: true, note: "Answering — this page was built by it just now." },
     { name: "Inbox, calendar, bookings, people, automations", ok: db, note: db ? "Database answering." : "The database didn't answer within three seconds. Signed-in pages may fail until it does." },
-    { name: "Assistant", ok: db, note: db ? (process.env.OPENAI_API_KEY ? "Answers from your records, written by the model." : "Answers from your records by rules; no language model is configured on this deployment.") : "Depends on the database." },
+    { name: "Assistant", ok: db, note: db ? (aiState === "ready" ? "Answers from your records, written by the model." : aiState === "disabled" ? "Answers from your records by rules; the language model is switched off deliberately." : "Answers from your records by rules; no language model is configured on this deployment.") : "Depends on the database." },
   ];
   const providers = [
     { name: "Gmail", configured: google, status: "https://www.google.com/appsstatus/dashboard/" },
@@ -44,7 +48,7 @@ export default async function StatusPage() {
     { name: "WhatsApp", configured: whatsappConfigured(), status: "https://metastatus.com/whatsapp-business-api" },
     { name: "SMS", configured: twilioConfigured(), status: "https://status.twilio.com/" },
     { name: "Apple Calendar", configured: true, status: "https://www.apple.com/support/systemstatus/", note: "Connects with an app-specific password; nothing to configure on Daythread's side." },
-    { name: "Assistant language model", configured: Boolean(process.env.OPENAI_API_KEY), status: "https://status.openai.com/", note: process.env.OPENAI_API_KEY ? "Drafts and summaries are written by the model; the rules fallback still works without it." : "Not configured: drafts and summaries come from rules, honestly labeled." },
+    { name: "Assistant language model", configured: aiState === "ready", label: aiState === "disabled" ? "Switched off" : undefined, status: "https://status.openai.com/", note: aiState === "ready" ? `Drafts and summaries are written by the model; the rules fallback still works without it.${aiFailures > 0 ? ` ${aiFailures} failed call${aiFailures === 1 ? "" : "s"} in the last 24 hours — falling back to rules while it lasts.` : ""}` : aiState === "disabled" ? "Switched off deliberately on this deployment. Drafts and summaries come from rules, honestly labeled." : "Not configured: drafts and summaries come from rules, honestly labeled." },
     { name: "Email sending (Resend)", configured: Boolean(process.env.RESEND_API_KEY), status: "https://resend-status.com/" },
     { name: "Subscription billing", configured: subscriptionBillingIsLive, status: "https://status.stripe.com/" },
   ];
@@ -75,7 +79,7 @@ export default async function StatusPage() {
             <div key={p.name} className="flex items-start gap-3 px-5 py-4">
               <span aria-hidden className={cn("mt-1.5 w-2.5 h-2.5 rounded-full shrink-0", p.configured ? "bg-success" : "bg-ink/25")} />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-ink">{p.name} <span className={cn("ml-1 text-xs font-bold", p.configured ? "text-success-text" : "text-ink/65")}>{p.configured ? "Configured" : "Not configured"}</span></div>
+                <div className="text-sm font-semibold text-ink">{p.name} <span className={cn("ml-1 text-xs font-bold", p.configured ? "text-success-text" : "text-ink/65")}>{"label" in p && p.label ? p.label : p.configured ? "Configured" : "Not configured"}</span></div>
                 <p className="text-xs text-ink/70 mt-0.5">{"note" in p && p.note ? p.note : p.configured ? "Connections can be made from Settings → Channels." : "Not available on this deployment yet; the app says so wherever it would be offered."}</p>
               </div>
               <a href={p.status} target="_blank" rel="noreferrer" className="text-xs font-semibold text-ink/70 hover:text-ink whitespace-nowrap">Provider status ↗</a>

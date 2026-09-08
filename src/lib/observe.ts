@@ -1,13 +1,15 @@
 import { prisma } from "@/lib/db";
 
 /**
- * Lightweight failure tracking. Every OAuth, webhook, sync, delivery, billing or job
+ * Lightweight failure tracking. Every OAuth, webhook, sync, delivery, billing, AI or job
  * failure lands as an OpsEvent with a category, a safe message and ids — never a token,
  * never a message body, never a raw provider payload. The setup page shows the last 24h.
  */
-export type OpsArea = "oauth" | "webhook" | "sync" | "delivery" | "billing" | "job" | "db";
+export type OpsArea = "oauth" | "webhook" | "sync" | "delivery" | "billing" | "job" | "db" | "ai";
 
-const SECRET_PATTERNS = [/sk_(live|test)_[A-Za-z0-9]+/g, /whsec_[A-Za-z0-9]+/g, /ya29\.[A-Za-z0-9_-]+/g, /EAA[A-Za-z0-9]+/g, /Bearer\s+[A-Za-z0-9._-]+/gi, /refresh_token=[^&\s]+/gi, /access_token=[^&\s]+/gi];
+// OpenAI echoes the offending key back in its 401, masked in the middle but with the
+// prefix and suffix intact; sk-[…] catches that and the unmasked form alike.
+const SECRET_PATTERNS = [/sk_(live|test)_[A-Za-z0-9]+/g, /sk-[A-Za-z0-9_*-]{6,}/g, /whsec_[A-Za-z0-9]+/g, /ya29\.[A-Za-z0-9_-]+/g, /EAA[A-Za-z0-9]+/g, /Bearer\s+[A-Za-z0-9._-]+/gi, /refresh_token=[^&\s]+/gi, /access_token=[^&\s]+/gi];
 
 export function scrub(text: string): string {
   let out = text;

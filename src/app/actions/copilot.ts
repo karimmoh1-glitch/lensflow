@@ -7,6 +7,7 @@ import { track } from "@/lib/analytics";
 import { startOfDay } from "date-fns";
 import { gatherBusinessFacts } from "@/server/copilotFacts";
 import { summarizeCopilotAnswer } from "@/lib/ai";
+import { ASSISTANT_HOURLY_LIMIT } from "@/lib/aiPolicy";
 import { answerFromRecords } from "@/lib/copilotAnswer";
 import { dbRateLimit } from "@/lib/dbRateLimit";
 
@@ -30,14 +31,14 @@ export async function askCopilot(question: string): Promise<string> {
   // Every call spends real OpenAI tokens — cap per-business usage so one account can't
   // run up the API bill or be used to hammer the model. Counted in the database, so the
   // cap holds across serverless instances, not just within one process.
-  if (!(await dbRateLimit(ctx.business.id, "copilot_question", { limit: 40, windowMs: 60 * 60 * 1000 })).ok) {
-    return "You've hit the assistant's hourly limit (40 questions). It resets within the hour — nothing was lost.";
+  if (!(await dbRateLimit(ctx.business.id, "copilot_question", { limit: ASSISTANT_HOURLY_LIMIT, windowMs: 60 * 60 * 1000 })).ok) {
+    return "You've hit the assistant's hourly limit (${ASSISTANT_HOURLY_LIMIT} questions). It resets within the hour — nothing was lost.";
   }
 
   const facts = await gatherBusinessFacts(ctx.business.id);
   // With a model configured the answer is written from the facts; without one (or if the
   // model fails) the question is answered from the same records by rules, never by dumping
   // the raw fact sheet on the owner.
-  const written = await summarizeCopilotAnswer(question, facts.text);
+  const written = await summarizeCopilotAnswer(question, facts.text, { businessId: ctx.business.id, feature: "assistant" });
   return written ?? answerFromRecords(question, facts.data);
 }

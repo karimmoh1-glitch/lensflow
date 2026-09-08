@@ -19,6 +19,10 @@ model Business {
   businessType String? // free-text category captured at signup, e.g. "Wedding photography"
   phone      String?
   bio        String?
+  /// "How Daythread should understand your business": owner-written notes that ground drafts and
+  /// answers — tone, common questions, policies, locations served, how booking works. Never
+  /// inferred by the model, never written by it; the owner is the only author.
+  memory     Json?
   logoUrl    String?
   timezone   String   @default("America/New_York")
   currency   String   @default("usd")
@@ -187,6 +191,9 @@ model OrgMembership {
   role       Role
   status     MembershipStatus  @default(ACTIVE)
   createdAt  DateTime          @default(now())
+  /// Last time this person opened the app — what "while you were away" is measured from.
+  /// Written at most once every ten minutes.
+  lastActiveAt DateTime?
 
   // Owner-controlled partner permission: by default a partner only sees conversations
   // tied to clients from bookings assigned to them. When true, they see every business

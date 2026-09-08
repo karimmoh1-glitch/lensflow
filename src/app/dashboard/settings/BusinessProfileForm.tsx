@@ -18,17 +18,17 @@ export function BusinessProfileForm({ business }: { business: Business }) {
     <Card>
       <CardBody className="space-y-4">
         <div>
-          <Label>Business name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
+          <Label htmlFor="biz-name">Business name</Label>
+          <Input id="biz-name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
-          <Label>Bio (shown on your booking page)</Label>
-          <Textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} />
+          <Label htmlFor="biz-bio">Bio (shown on your booking page)</Label>
+          <Textarea id="biz-bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} />
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <Label>Timezone</Label>
-            <Select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+            <Label htmlFor="biz-tz">Timezone</Label>
+            <Select id="biz-tz" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
               <option value="America/New_York">Eastern</option>
               <option value="America/Chicago">Central</option>
               <option value="America/Denver">Mountain</option>
@@ -36,12 +36,12 @@ export function BusinessProfileForm({ business }: { business: Business }) {
             </Select>
           </div>
           <div>
-            <Label>Buffer (min)</Label>
-            <Input type="number" value={bufferMinutes} onChange={(e) => setBufferMinutes(Number(e.target.value))} />
+            <Label htmlFor="biz-buffer">Buffer (min)</Label>
+            <Input id="biz-buffer" type="number" value={bufferMinutes} onChange={(e) => setBufferMinutes(Number(e.target.value))} />
           </div>
           <div>
-            <Label>Lead time (hrs)</Label>
-            <Input type="number" value={bookingLeadHours} onChange={(e) => setBookingLeadHours(Number(e.target.value))} />
+            <Label htmlFor="biz-lead">Lead time (hrs)</Label>
+            <Input id="biz-lead" type="number" value={bookingLeadHours} onChange={(e) => setBookingLeadHours(Number(e.target.value))} />
           </div>
         </div>
         <SaveButton

@@ -9,6 +9,9 @@ import { draftReply } from "@/lib/ai";
 import { aiEntitled, smsEntitled } from "@/lib/billing";
 import { checkAiLimit } from "@/server/aiUsage";
 import { isSpendLimit } from "@/lib/aiPolicy";
+import { isDraftMode, type DraftMode } from "@/lib/draftModes";
+import { readBusinessMemory, memoryPromptLines } from "@/lib/businessMemory";
+import { shouldScheduleQuoteFollowUp, quoteFollowUpAt } from "@/lib/quoteFollowUp";
 import { deliverToCustomer } from "@/server/deliver";
 import type { SendResult } from "@/lib/channels/types";
 
@@ -19,8 +22,10 @@ import type { SendResult } from "@/lib/channels/types";
  * capability Free is supposed to have; gating the AI-drafted-reply button doesn't. */
 export async function generateDraftAction(
   conversationId: string,
-  session?: SessionPayload | null
+  session?: SessionPayload | null,
+  modeInput?: unknown
 ): Promise<{ text?: string; error?: string }> {
+  const mode: DraftMode = isDraftMode(modeInput) ? modeInput : "reply";
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
@@ -47,12 +52,17 @@ export async function generateDraftAction(
   const lastInbound = conversation.messages[0];
   const services = await prisma.service.findMany({ where: { businessId: business.id, active: true }, orderBy: { sortOrder: "asc" } });
 
+  const memory = readBusinessMemory(business.memory);
   const text = await draftReply({
     businessName: business.name,
     services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })),
     customerMessage: lastInbound?.body ?? "",
     customerName: conversation.client?.name,
+    mode,
+    memoryLines: memoryPromptLines(memory),
+    tone: memory.tone,
   }, { businessId: business.id, feature: "draft" });
+  await track("draft_requested", { businessId: business.id, properties: { mode } });
   if ((await prisma.analyticsEvent.count({ where: { businessId: business.id, name: "first_ai_action" } })) === 0) await track("first_ai_action", { businessId: business.id, properties: { via: "draft" } });
   return { text };
 }
@@ -112,6 +122,16 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
     // The lead counts as answered only when something actually reached them.
     ...(delivery.status === "SENT" ? [prisma.lead.updateMany({ where: { conversationId }, data: { respondedAt: new Date(), status: "CONTACTED" as const } })] : []),
   ]);
+
+  // A quote that went out gets a follow-up three days later, unless one is already planned.
+  if (delivery.status === "SENT") {
+    const lead = await prisma.lead.findFirst({ where: { conversationId, businessId: business.id }, select: { id: true, status: true, followUpAt: true } });
+    if (shouldScheduleQuoteFollowUp({ body, lead })) {
+      const at = quoteFollowUpAt();
+      await prisma.lead.update({ where: { id: lead!.id }, data: { followUpAt: at } });
+      await track("followup_auto_scheduled", { businessId: business.id, properties: { reason: "quote_sent", daysAhead: 3 } });
+    }
+  }
 
   // Activation signal: the first reply that actually reached a customer. Channel only.
   if (delivery.status === "SENT" && (await prisma.message.count({ where: { direction: "OUTBOUND", status: "SENT", conversation: { businessId: business.id } } })) === 1) {

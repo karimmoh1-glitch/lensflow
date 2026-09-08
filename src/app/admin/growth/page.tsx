@@ -60,6 +60,26 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
           <Block title="Recommended vs chosen" rows={[...g.personas.recommendedPlan.map(([k, v]) => [`Recommended · ${k}`, String(v)] as [string, string]), ...g.personas.selectedPlan.map(([k, v]) => [`Chose · ${k}`, String(v)] as [string, string]), ...g.personas.channels.map(([k, v]) => [`Channel · ${k}`, String(v)] as [string, string]), ...g.personas.painPoints.slice(0, 5).map(([k, v]) => [`Pain · ${k}`, String(v)] as [string, string])]} />
         </div>
 
+        <section aria-labelledby="funnel-title" className="mt-10">
+          <h2 id="funnel-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2.5">Activation funnel, last {days} days</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="rounded-[22px] border border-border bg-white px-5 py-4">
+              <ol className="space-y-1.5">
+                {g.activationFunnel.map((st, i) => (
+                  <li key={st.label} className="flex items-baseline gap-3 text-sm">
+                    <span className="w-5 text-[11px] font-bold text-ink/55 tabular-nums">{i + 1}</span>
+                    <span className="flex-1 text-ink/85">{st.label}</span>
+                    <span className="font-extrabold text-ink tabular-nums">{st.n}</span>
+                    <span className={cn("w-16 text-right text-[11px] tabular-nums", st.drop === null ? "text-ink/40" : st.drop >= 50 ? "text-danger-text font-semibold" : "text-ink/60")}>{st.drop === null ? "" : `−${st.drop}%`}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-2 text-[11px] text-ink/65">Workspaces per step in the window; the drop is the share of the previous step that did not reach it.</p>
+            </div>
+            <Block title="Who converts, by what they said at setup" rows={g.personaConversion.length ? g.personaConversion.map((pc) => [`${pc.status} (${pc.n})`, `${pc.paid} paid · ${pc.rate}%`] as [string, string]) : [["No profiles in the window", "—"]]} />
+          </div>
+        </section>
+
         <section aria-labelledby="ai-title" className="mt-10">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-2.5">
             <h2 id="ai-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">AI usage, last 24 hours</h2>

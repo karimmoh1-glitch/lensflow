@@ -116,6 +116,15 @@ The inbox intelligence layer records, without any message content:
 | `priority_item_opened` | `rank` |
 | `automated_message_filtered` | `category`, `decidedBy`, `channel` |
 
+The action engine adds, again without content:
+
+| Event | Properties |
+| --- | --- |
+| `draft_requested` | `mode` (reply, follow_up, ask_missing, send_pricing, confirm_booking, handle_objection, close) |
+| `followup_auto_scheduled` | `reason` (quote_sent), `daysAhead` |
+| `lead_stage_set` | `status`, `from` |
+| `business_memory_saved` | `filled` (which fields have text) |
+
 AI spend is its own pair of events, and the only ones that carry numbers rather than keys:
 
 | Event | Properties |

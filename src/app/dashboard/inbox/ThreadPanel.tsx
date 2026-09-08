@@ -22,6 +22,7 @@ import { readRelationship } from "@/lib/relationshipState";
 import { labelFor } from "@/lib/classifyMessage";
 import { leadAttention } from "@/lib/attention";
 import { FollowUpControl } from "./FollowUpControl";
+import { LeadStageControl } from "./LeadStageControl";
 import { MessageSummary } from "./MessageSummary";
 import { readOpportunity, looksLikeTime } from "@/lib/opportunity";
 import type { ConversationSummary } from "@/lib/summarize";
@@ -213,6 +214,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
               <p className="rounded-xl bg-paper border border-border px-3 py-2 text-xs text-ink/80"><span className="font-bold text-ink">{attention.label}.</span> {attention.why}</p>
             )}
             <FollowUpControl leadId={lead.id} followUpAt={lead.followUpAt ? lead.followUpAt.toISOString() : null} />
+            {relationship && <LeadStageControl leadId={lead.id} status={lead.status} stageLabel={relationship.label} stageWhy={relationship.standing} />}
           </div>
         )}
 

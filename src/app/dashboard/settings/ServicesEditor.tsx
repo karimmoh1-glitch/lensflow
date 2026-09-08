@@ -19,11 +19,12 @@ export function ServicesEditor({ initialServices }: { initialServices: Svc[] }) 
           <div key={i} className="flex gap-2 items-end">
             <div className="flex-1">
               <Label>Service</Label>
-              <Input value={svc.name} onChange={(e) => setServices((prev) => prev.map((p, idx) => (idx === i ? { ...p, name: e.target.value } : p)))} />
+              <Input aria-label={`Service ${i + 1} name`} value={svc.name} onChange={(e) => setServices((prev) => prev.map((p, idx) => (idx === i ? { ...p, name: e.target.value } : p)))} />
             </div>
             <div className="w-28">
               <Label>Price $</Label>
               <Input
+                aria-label={`Service ${i + 1} price in dollars`}
                 type="number"
                 value={svc.priceCents / 100}
                 onChange={(e) => setServices((prev) => prev.map((p, idx) => (idx === i ? { ...p, priceCents: Math.round(Number(e.target.value) * 100) } : p)))}
@@ -32,6 +33,7 @@ export function ServicesEditor({ initialServices }: { initialServices: Svc[] }) 
             <div className="w-24">
               <Label>Mins</Label>
               <Input
+                aria-label={`Service ${i + 1} duration in minutes`}
                 type="number"
                 value={svc.durationMins}
                 onChange={(e) => setServices((prev) => prev.map((p, idx) => (idx === i ? { ...p, durationMins: Number(e.target.value) } : p)))}

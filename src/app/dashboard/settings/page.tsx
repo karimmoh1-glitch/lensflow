@@ -14,6 +14,8 @@ import { NotificationsPanel } from "./NotificationsPanel";
 import { SubscriptionPanel } from "./SubscriptionPanel";
 import { TeamPanel } from "./TeamPanel";
 import { HowYouWorkForm } from "./HowYouWorkForm";
+import { BusinessMemoryForm } from "./BusinessMemoryForm";
+import { readBusinessMemory } from "@/lib/businessMemory";
 import { getPersonalization } from "@/server/personalization";
 import { ensureReferralCode } from "@/server/referral";
 import { ReferralCard } from "./ReferralCard";
@@ -61,6 +63,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <BusinessProfileForm business={business} />
               <ServicesEditor initialServices={services.map((s) => ({ id: s.id, name: s.name, priceCents: s.priceCents, durationMins: s.durationMins }))} />
               <AvailabilityEditor initialWindows={availability.map((a) => ({ weekday: a.weekday, startMin: a.startMin, endMin: a.endMin }))} />
+              <BusinessMemoryForm initial={readBusinessMemory(business.memory)} />
             </div>
           ),
           profile: (

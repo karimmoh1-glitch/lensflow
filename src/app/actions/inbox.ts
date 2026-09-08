@@ -11,7 +11,7 @@ import { checkAiLimit } from "@/server/aiUsage";
 import { isSpendLimit } from "@/lib/aiPolicy";
 import { isDraftMode, type DraftMode } from "@/lib/draftModes";
 import { readBusinessMemory, memoryPromptLines } from "@/lib/businessMemory";
-import { shouldScheduleQuoteFollowUp, quoteFollowUpAt } from "@/lib/quoteFollowUp";
+import { shouldScheduleQuoteFollowUp, quoteFollowUpAt, parseQuoteCents } from "@/lib/quoteFollowUp";
 import { deliverToCustomer } from "@/server/deliver";
 import type { SendResult } from "@/lib/channels/types";
 
@@ -126,6 +126,8 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
   // A quote that went out gets a follow-up three days later, unless one is already planned.
   if (delivery.status === "SENT") {
     const lead = await prisma.lead.findFirst({ where: { conversationId, businessId: business.id }, select: { id: true, status: true, followUpAt: true } });
+    const quoted = lead ? parseQuoteCents(body) : null;
+    if (lead && quoted) await prisma.lead.update({ where: { id: lead.id }, data: { quotedCents: quoted, quotedAt: new Date() } });
     if (shouldScheduleQuoteFollowUp({ body, lead })) {
       const at = quoteFollowUpAt();
       await prisma.lead.update({ where: { id: lead!.id }, data: { followUpAt: at } });

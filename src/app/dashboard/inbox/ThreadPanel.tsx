@@ -210,9 +210,6 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
 
         {lead && lead.status !== "BOOKED" && lead.status !== "LOST" && (
           <div className="pt-4 border-t border-border space-y-3">
-            {attention && (
-              <p className="rounded-xl bg-paper border border-border px-3 py-2 text-xs text-ink/80"><span className="font-bold text-ink">{attention.label}.</span> {attention.why}</p>
-            )}
             <FollowUpControl leadId={lead.id} followUpAt={lead.followUpAt ? lead.followUpAt.toISOString() : null} />
             {relationship && <LeadStageControl leadId={lead.id} status={lead.status} stageLabel={relationship.label} stageWhy={relationship.standing} />}
           </div>

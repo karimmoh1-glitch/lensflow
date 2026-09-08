@@ -60,7 +60,7 @@ export default async function ClientsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title="People" description={`${clients.filter((c) => c.relationship === "CUSTOMER").length} customers · ${clients.filter((c) => c.relationship === "LEAD").length} potential`} action={<InviteClientButton />} />
+      <PageHeader title="People" description={`${listed.filter((r) => r.c.relationship === "CUSTOMER").length} customers · ${listed.filter((r) => r.c.relationship !== "CUSTOMER").length} potential`} action={<InviteClientButton />} />
 
       {listed.length === 0 ? (
         <EmptyState

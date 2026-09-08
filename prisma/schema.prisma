@@ -344,6 +344,10 @@ model Client {
   // booking or a payment. CONTACT is for people the business talks to who aren't buying.
   relationship ClientRelationship @default(LEAD)
 
+  // People the owner said this record is NOT the same person as, so a dismissed merge
+  // suggestion stays dismissed. Ids of other Client rows in the same business.
+  notSameAs String[] @default([])
+
   // Set once the client accepts an invitation and creates a login — before that, this is
   // just a CRM record with no portal access.
   userId String? @unique
@@ -421,6 +425,10 @@ model Lead {
   respondedAt   DateTime?
   /// A reminder the owner set on this person: "follow up on Thursday". Cleared when they write.
   followUpAt    DateTime?
+  /// The price the business actually sent this person, read from the reply that went out.
+  /// Known money — never a service list price, never a budget. Null until a quote goes out.
+  quotedCents   Int?
+  quotedAt      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

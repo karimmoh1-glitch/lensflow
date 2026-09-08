@@ -65,6 +65,12 @@ export async function getGrowth(days = 30) {
   const personaConv = new Map<string, { n: number; paid: number }>();
   for (const pr of profileRows) { const k = pr.businessStatus; const cur = personaConv.get(k) ?? { n: 0, paid: 0 }; cur.n += 1; if (paidBiz.has(pr.businessId)) cur.paid += 1; personaConv.set(k, cur); }
   const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : null);
+  // Failures the integrations reported, last 24 hours, by area — the read side of reportFailure.
+  const dayAgo = new Date(Date.now() - 24 * 3600 * 1000);
+  const opsRows = await prisma.opsEvent.findMany({ where: { createdAt: { gte: dayAgo } }, orderBy: { createdAt: "desc" }, take: 300, select: { area: true, level: true, message: true, provider: true, createdAt: true, businessId: true } });
+  const failures = new Map<string, { n: number; latest: string; at: Date; workspaces: Set<string> }>();
+  for (const e of opsRows) { const cur = failures.get(e.area) ?? { n: 0, latest: e.message, at: e.createdAt, workspaces: new Set<string>() }; cur.n += 1; if (e.businessId) cur.workspaces.add(e.businessId); failures.set(e.area, cur); }
+  const comped = await prisma.business.findMany({ where: { compedPlan: { not: null } }, select: { name: true, handle: true, compedPlan: true, orgMemberships: { where: { role: "OWNER" }, select: { user: { select: { email: true } } }, take: 1 } }, orderBy: { createdAt: "desc" }, take: 50 });
 
   return {
     days,
@@ -89,6 +95,8 @@ export async function getGrowth(days = 30) {
       ];
       return steps.map(([label, n], i) => ({ label, n, drop: i === 0 || steps[i - 1][1] === 0 ? null : Math.max(0, Math.round((1 - n / steps[i - 1][1]) * 100)) }));
     })(),
+    failures24h: [...failures.entries()].map(([area, v]) => ({ area, n: v.n, workspaces: v.workspaces.size, latest: v.latest.slice(0, 160), at: v.at })).sort((a, b) => b.n - a.n),
+    comped: comped.map((b) => ({ name: b.name, handle: b.handle, plan: b.compedPlan as string, owner: b.orgMemberships[0]?.user.email ?? null })),
     personaConversion: [...personaConv.entries()].map(([status, v]) => ({ status, n: v.n, paid: v.paid, rate: v.n ? Math.round((v.paid / v.n) * 100) : 0 })).sort((a, b) => b.rate - a.rate || b.n - a.n),
   };
 }

@@ -6,6 +6,8 @@ import { Card, CardBody, Badge, EmptyState } from "@/components/ui";
 import { Thread, ThreadNode, NextAction, type ThreadKind } from "@/components/Thread";
 import { initials, toZonedDisplayDate, cn, firstName } from "@/lib/utils";
 import { CHANNEL_META } from "@/lib/channelIcons";
+import { findMergeCandidates } from "@/server/identity";
+import { MergeSuggestion } from "./MergeSuggestion";
 import { readRelationship, humanAgo } from "@/lib/relationshipState";
 import { RelationshipControls } from "./RelationshipControls";
 import { format, formatDistanceToNowStrict, isFuture } from "date-fns";
@@ -37,6 +39,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     },
   });
   if (!client) notFound();
+  const canMerge = ctx.role === "OWNER" || ctx.role === "ADMIN";
+  const mergeCandidates = canMerge ? await findMergeCandidates(business.id, client.id) : [];
 
   const tz = business.timezone;
 
@@ -122,6 +126,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           <div className="font-display text-2xl tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</div>
         </div>
       </div>
+
+      {mergeCandidates.length > 0 && <MergeSuggestion clientId={client.id} name={client.name} candidates={mergeCandidates} />}
 
       {/* WHO IS THIS — the relationship, first. */}
       <section aria-label="Where we stand" className="mb-8 rounded-[22px] border border-border bg-white overflow-hidden">

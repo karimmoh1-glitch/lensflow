@@ -147,7 +147,7 @@ async function ingestUnlocked(params: {
 
   const services = await prisma.service.findMany({ where: { businessId, active: true } });
   // What they wrote now, not the chain underneath it: a date in a quoted reply is not their ask.
-  const extracted = await extractLeadInfo(splitMessage(body).text, { businessId });
+  const extracted = await extractLeadInfo(splitMessage(body).text, { businessId, serviceNames: services.map((s) => s.name) });
   const matchedService = extracted.serviceHint
     ? services.find((s) => s.name.toLowerCase().includes(extracted.serviceHint!.toLowerCase()))
     : null;

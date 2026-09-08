@@ -11,6 +11,7 @@ import { track } from "@/lib/analytics";
 import { parseAnswers, savePersonalization } from "@/server/personalization";
 import { planSchema } from "@/lib/personalization";
 import { attributeReferral } from "@/server/referral";
+import { applyCompedAccess } from "@/server/compedAccess";
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
 
@@ -94,6 +95,7 @@ export async function signup(formData: FormData): Promise<FormState> {
   await track("workspace_created", { businessId: business.id });
   if (answers) await savePersonalization(business.id, answers, { selectedPlan, anonymousId, source: "signup" }).catch((err) => console.error("[personalization] save failed", err));
   await attributeReferral(business.id, formData.get("ref"), anonymousId).catch((err) => console.error("[referral] attribution failed", err));
+  await applyCompedAccess(user.id, user.email);
   await setSessionCookie({ userId: user.id, activeBusinessId: business.id });
   redirect(homeRouteFor("OWNER", business));
 }
@@ -118,6 +120,8 @@ export async function login(formData: FormData): Promise<FormState> {
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
     return { error: "Incorrect email or password" };
   }
+
+  await applyCompedAccess(user.id, user.email);
 
   const memberships = await getUserMemberships(user.id);
   if (memberships.length === 0) {

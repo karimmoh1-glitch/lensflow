@@ -64,6 +64,11 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
           Upgrades aren&apos;t open on this deployment yet — plans are shown for reference and nothing is charged.
         </div>
       )}
+      {business.compedPlan && business.compedPlan !== "FREE" && (
+        <div className="mb-6 rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-3.5 text-sm text-ink/80">
+          <span className="font-semibold text-ink">Daythread {PLANS[business.compedPlan].name} is on this workspace as complimentary access.</span> There is no subscription and nothing is charged. If that ever changes you&rsquo;ll be told before it does.
+        </div>
+      )}
       {recommended && (
         <div className="mb-6 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3.5 text-sm text-ink/80">
           <span className="font-semibold text-ink">Based on what you told us during setup, we&rsquo;d recommend {PLANS[recommended.recommendedPlan].name}.</span> {recommended.reasons[0]} <Link href="/dashboard/settings?tab=profile" className="text-signal-text font-semibold hover:underline">Change how you work →</Link>

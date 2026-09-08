@@ -144,7 +144,7 @@ async function ingestUnlocked(params: {
   });
 
   const services = await prisma.service.findMany({ where: { businessId, active: true } });
-  const extracted = await extractLeadInfo(body);
+  const extracted = await extractLeadInfo(body, { businessId });
   const matchedService = extracted.serviceHint
     ? services.find((s) => s.name.toLowerCase().includes(extracted.serviceHint!.toLowerCase()))
     : null;

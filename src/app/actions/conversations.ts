@@ -8,6 +8,8 @@ import { labelFor, type MessageCategory } from "@/lib/classifyMessage";
 import { summarizeDeterministically, type ConversationSummary } from "@/lib/summarize";
 import { summarizeConversationSentence } from "@/lib/ai";
 import { aiEntitled, teamEntitled } from "@/lib/billing";
+import { checkAiLimit } from "@/server/aiUsage";
+import { isSpendLimit } from "@/lib/aiPolicy";
 import { splitMessage } from "@/lib/cleanMessage";
 import { format } from "date-fns";
 import { toZonedDisplayDate } from "@/lib/utils";
@@ -138,7 +140,12 @@ export async function summarizeConversation(conversationId: string, opts: { forc
 
   let summary = base;
   if (aiEntitled(business)) {
-    const sentence = await summarizeConversationSentence({ personName, businessName: business.name, messages: cleaned });
+    // A forced re-summary is a deliberate model call; the cached path above never reaches here.
+    if (opts.force) {
+      const gate = await checkAiLimit(business.id, "summary_forced");
+      if (!gate.ok && isSpendLimit(gate.reason)) return { error: gate.message };
+    }
+    const sentence = await summarizeConversationSentence({ personName, businessName: business.name, messages: cleaned }, { businessId: business.id, feature: opts.force ? "summary_forced" : "summary" });
     if (sentence) summary = { ...base, summary: sentence, source: "ai" };
   }
 

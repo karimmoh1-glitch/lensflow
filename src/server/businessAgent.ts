@@ -173,7 +173,7 @@ export async function draftForProposal(businessId: string, proposal: AgentPropos
     prisma.service.findMany({ where: { businessId, active: true }, orderBy: { sortOrder: "asc" } }),
   ]);
   if (!conversation) return null;
-  return draftReply({ businessName: business.name, services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })), customerMessage: conversation.messages[0]?.body ?? "", customerName: conversation.client?.name });
+  return draftReply({ businessName: business.name, services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })), customerMessage: conversation.messages[0]?.body ?? "", customerName: conversation.client?.name }, { businessId, feature: "agent_draft" });
 }
 
 export type ExecutionResult = { ok: true; status: "SENT" | "NOT_DELIVERED"; note: string } | { ok: false; error: string };

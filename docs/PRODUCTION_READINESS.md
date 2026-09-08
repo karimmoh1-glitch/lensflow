@@ -236,3 +236,29 @@ Verified on dev with real clicks (persona A–D, widths 375/390/768/1440/1728): 
 - **Security smoke on production:** mobile API 401 without a session and with a forged bearer; admin routes 401 without and with a wrong secret; cron 401; every webhook 501 while its provider is unconfigured; forged OAuth state ends on the settings page with `connect_error=state`; `/login?next=` is ignored; HSTS, CSP, frame, nosniff, referrer and permissions headers present.
 - **Privacy:** states when and why conversation text would go to OpenAI, and that without a model nothing leaves Daythread.
 - **Mobile:** every dashboard section at 375 and 390 without overflow; onboarding at 390 with reload, back and forward; keyboard audit passing.
+
+## AI production-safety sprint (2026-09-07, PR #61)
+
+Done before enabling `OPENAI_API_KEY` in production, from the audit that preceded it.
+
+- **Every call is capped**: an output ceiling per feature and a 6,000-character input cap on
+  customer text, keeping the head and the tail so the ask and the date both survive.
+- **Every call is gated**: `checkAiLimit` runs before the request, in the server action and
+  again inside the call itself, so no call site can forget. Drafts 60/hour, assistant
+  proposal drafts 30/hour, forced re-summaries 30/hour, message reading 200/day, and a
+  500/day backstop across every feature. A cached summary reaches no model and counts
+  against nothing.
+- **Every call is recorded**: one `ai_call` row with feature, model, tokens, latency,
+  outcome and estimated cost. No prompt, message, name or key.
+- **Every failure is classified** (`auth`, `provider_rate_limit`, `timeout`,
+  `provider_error`, `bad_response`, `internal`) and reported through `reportFailure` under a
+  new `ai` ops area, scrubbed of key-shaped strings.
+- **`AI_DISABLED`** stops all requests without removing the key. Fallbacks keep working and
+  the Status page says the model is off deliberately, not missing.
+- **Retries**: user-facing calls retry once; background calls with a rule-based fallback do
+  not, so a workspace is never billed twice for something nobody is waiting on.
+- **Founder visibility**: `/admin/growth` shows spend, calls, tokens, latency, failures by
+  kind, refusals and a per-workspace table. Prices live in `src/lib/aiPolicy.ts` alone.
+- **Complimentary access**: `COMPED_BUSINESS_EMAILS` grants Business through the new
+  additive `Business.compedPlan`, which never touches Stripe's fields, so comped workspaces
+  stay out of MRR and "paying now".

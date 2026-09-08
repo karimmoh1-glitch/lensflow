@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { parseAnswers, savePersonalization } from "@/server/personalization";
 import { planSchema } from "@/lib/personalization";
 import { attributeReferral } from "@/server/referral";
+import { applyCompedAccess } from "@/server/compedAccess";
 
 /**
  * "Continue with Google" — sign in or sign up with a Google account, on the same OAuth
@@ -54,6 +55,7 @@ export async function completeGoogleSignIn(code: string): Promise<{ ok: true; re
       return { row, created: true };
     });
 
+    await applyCompedAccess(user.row.id, user.row.email);
     const memberships = await getUserMemberships(user.row.id);
     const start = await readStartCookie();
     await track(user.created ? "signup_completed" : "login_completed", { businessId: memberships[0]?.businessId ?? null, anonymousId: start?.anonymousId ?? undefined, properties: { method: "google", personalized: Boolean(start?.answers) } });

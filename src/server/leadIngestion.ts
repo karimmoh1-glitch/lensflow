@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/db";
+import { pushToBusiness } from "@/server/push";
 import { withLock } from "@/lib/dbLock";
 import { track } from "@/lib/analytics";
 import { extractLeadInfo } from "@/lib/ai";
 import { cleanEmailBody } from "@/lib/emailText";
 import { splitMessage } from "@/lib/cleanMessage";
-import { classifyMessage } from "@/lib/classifyMessage";
+import { FREEMAIL, classifyMessage } from "@/lib/classifyMessage";
 import { findKnownClient } from "@/server/identity";
 import type { ChannelType } from "@prisma/client";
 
@@ -84,7 +85,7 @@ async function ingestUnlocked(params: {
   // every gmail.com sender a teammate.
   const businessDomains = owners
     .map((o) => o.user.email.split("@")[1]?.toLowerCase())
-    .filter((d): d is string => Boolean(d) && !/^(gmail|googlemail|yahoo|outlook|hotmail|live|icloud|me|aol|proton|protonmail|msn)\.(com|net|me)$/i.test(d));
+    .filter((d): d is string => Boolean(d) && !FREEMAIL.test(d));
   const classification = classifyMessage({
     channel,
     senderEmail,
@@ -193,6 +194,7 @@ async function ingestUnlocked(params: {
     await prisma.notification.create({
       data: { businessId, title: "New message", body: `${client.name} sent a new message on ${channel.toLowerCase()}.` },
     });
+    void pushToBusiness(businessId, { title: `${client.name} wrote to you`, body: `New message on ${channel.toLowerCase()}.`, data: { path: `/conversation/${existingConversation.id}` } });
 
     return { client, conversation: existingConversation, lead: existingConversation.lead, duplicate: false as const, category: "PRIORITY" as const };
   }
@@ -223,6 +225,7 @@ async function ingestUnlocked(params: {
   await prisma.notification.create({
     data: { businessId, title: "New lead", body: `${extracted.name ?? senderName} messaged you on ${channel.toLowerCase()}.` },
   });
+  void pushToBusiness(businessId, { title: `${extracted.name ?? senderName} wrote to you`, body: `New inquiry on ${channel.toLowerCase()}.`, data: { path: `/conversation/${conversation.id}` } });
 
   return { client, conversation, lead, duplicate: false as const, category: "PRIORITY" as const };
 }

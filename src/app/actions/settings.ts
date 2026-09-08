@@ -3,15 +3,15 @@
 import { prisma } from "@/lib/db";
 import { businessMemorySchema } from "@/lib/businessMemory";
 import { track } from "@/lib/analytics";
-import { requireRole } from "@/lib/auth";
+import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { z as zod } from "zod";
 
 const ADMIN_ROLES = ["OWNER", "ADMIN"] as const;
 
 /** "How Daythread should understand your business": owner-written, validated, stored as is. */
-export async function updateBusinessMemory(input: unknown): Promise<{ error?: string; ok?: true }> {
-  const ctx = await requireRole([...ADMIN_ROLES]);
+export async function updateBusinessMemory(input: unknown, session?: SessionPayload | null): Promise<{ error?: string; ok?: true }> {
+  const ctx = await requireRole([...ADMIN_ROLES], session);
   if (!ctx) throw new Error("unauthorized");
   const parsed = businessMemorySchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Something didn't fit." };
@@ -78,8 +78,8 @@ export async function saveAvailability(windows: { weekday: number; startMin: num
  * told to stop first (Google revocation; Twilio number released), then the business row is
  * deleted and every child row cascades. Other workspaces the owner belongs to are untouched.
  */
-export async function deleteWorkspace(confirmName: string): Promise<{ error?: string } | never> {
-  const ctx = await requireRole(["OWNER"]);
+export async function deleteWorkspace(confirmName: string, session?: SessionPayload | null): Promise<{ error?: string } | never> {
+  const ctx = await requireRole(["OWNER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
   if (confirmName.trim() !== business.name) return { error: "The name doesn't match." };
@@ -110,6 +110,7 @@ export async function deleteWorkspace(confirmName: string): Promise<{ error?: st
   // account goes with the workspace. Someone with other workspaces keeps theirs.
   const remaining = await prisma.orgMembership.count({ where: { userId: ctx.session.userId } });
   if (remaining === 0) await prisma.user.delete({ where: { id: ctx.session.userId } }).catch((err) => console.error("[settings] account cleanup after last workspace failed", err instanceof Error ? err.message : err));
+  if (session) return {}; // a bearer session (the app) has no cookie to clear; the app drops its token
   const { logout } = await import("@/app/actions/auth");
   await logout();
   return {};

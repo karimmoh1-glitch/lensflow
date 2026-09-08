@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireRole, type SessionPayload } from "@/lib/auth";
 import { track } from "@/lib/analytics";
 
 /**
@@ -11,8 +11,8 @@ import { track } from "@/lib/analytics";
  * the reason is "waiting for your reply", which outranks it. Tenant-scoped: a lead from
  * another workspace is simply not found.
  */
-export async function setFollowUp(leadId: string, at: string | null): Promise<{ error?: string; followUpAt?: string | null }> {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function setFollowUp(leadId: string, at: string | null, session?: SessionPayload | null): Promise<{ error?: string; followUpAt?: string | null }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) return { error: "Please log in again." };
   const lead = await prisma.lead.findFirst({ where: { id: leadId, businessId: ctx.business.id }, select: { id: true, conversationId: true } });
   if (!lead) return { error: "That person isn't here anymore." };

@@ -194,6 +194,8 @@ model OrgMembership {
   /// Last time this person opened the app — what "while you were away" is measured from.
   /// Written at most once every ten minutes.
   lastActiveAt DateTime?
+  /// Expo push tokens for this person's devices. A token that stops working is dropped.
+  pushTokens String[] @default([])
 
   // Owner-controlled partner permission: by default a partner only sees conversations
   // tied to clients from bookings assigned to them. When true, they see every business

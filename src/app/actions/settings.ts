@@ -105,6 +105,11 @@ export async function deleteWorkspace(confirmName: string): Promise<{ error?: st
     if (outcome === "failed") return { error: "Your subscription couldn't be canceled with Stripe just now, so nothing was deleted. Try again in a minute, or cancel it first under Settings → Subscription." };
   }
   await prisma.business.delete({ where: { id: business.id } });
+  // Someone whose only workspace is gone has nothing left to sign in to; leaving the login
+  // behind would refuse both their password and a fresh signup with the same email. Their
+  // account goes with the workspace. Someone with other workspaces keeps theirs.
+  const remaining = await prisma.orgMembership.count({ where: { userId: ctx.session.userId } });
+  if (remaining === 0) await prisma.user.delete({ where: { id: ctx.session.userId } }).catch((err) => console.error("[settings] account cleanup after last workspace failed", err instanceof Error ? err.message : err));
   const { logout } = await import("@/app/actions/auth");
   await logout();
   return {};

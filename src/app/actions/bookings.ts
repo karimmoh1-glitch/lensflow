@@ -5,7 +5,6 @@ import { fireAutomationEvent } from "@/server/automationRunner";
 import { pushBookingToCalendars } from "@/server/calendarSync";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { sendOnChannel } from "@/lib/messaging";
 import { deliverToCustomer } from "@/server/deliver";
 import { getAvailableSlots, isSlotStillAvailable } from "@/lib/availability";
 import { toZonedDisplayDate, firstName } from "@/lib/utils";
@@ -112,19 +111,14 @@ export async function sendQuestionnaire(bookingId: string) {
   });
   if (!booking) throw new Error("not found");
 
-  await prisma.questionnaire.upsert({
-    where: { bookingId },
-    create: { bookingId, sentAt: new Date() },
-    update: { sentAt: new Date() },
-  });
-
-  if (booking.conversation) {
-    await sendOnChannel({
-      channel: booking.conversation.channel,
-      to: booking.conversation.externalHandle,
-      body: `Hi ${booking.client.name}! Ahead of your ${booking.service.name} session, please fill out this quick questionnaire so we can make the most of it.`,
-    });
-  }
+  if (!booking.conversation) throw new Error("There's no conversation with this person to send it on.");
+  const body = `Hi ${firstName(booking.client.name)}! Ahead of your ${booking.service.name} session, please fill out this quick questionnaire so we can make the most of it.`;
+  const lastInbound = await prisma.message.findFirst({ where: { conversationId: booking.conversation.id, direction: "INBOUND" }, orderBy: { createdAt: "desc" }, select: { createdAt: true, providerMessageId: true } });
+  const delivery = await deliverToCustomer({ businessId: business.id, businessName: business.name, businessHandle: business.handle, channel: booking.conversation.channel, to: booking.conversation.externalHandle, body, subject: `${business.name}: a quick questionnaire`, inReplyTo: booking.conversation.channel === "EMAIL" ? lastInbound?.providerMessageId ?? null : null, lastInboundAt: lastInbound?.createdAt ?? null }).catch(() => ({ status: "FAILED" as const, via: "none" as const, error: "Send failed" }));
+  await prisma.message.create({ data: { conversationId: booking.conversation.id, direction: "OUTBOUND", body, status: delivery.status, statusDetail: (delivery as { statusDetail?: string }).statusDetail, sentByUserId: ctx.session.userId, providerMessageId: (delivery as { providerMessageId?: string }).providerMessageId } });
+  if (delivery.status !== "SENT") throw new Error(delivery.error ?? "It couldn't be delivered on this channel. Nothing was marked as sent.");
+  // Stamped only once it actually left, so "Questionnaire sent" is never a claim.
+  await prisma.questionnaire.upsert({ where: { bookingId }, create: { bookingId, sentAt: new Date() }, update: { sentAt: new Date() } });
 
   revalidatePath(`/dashboard/bookings/${bookingId}`);
 }

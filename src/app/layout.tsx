@@ -18,7 +18,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: { default: TITLE, template: "%s · Daythread" },
   description: DESCRIPTION,
-  alternates: { canonical: "/" },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,

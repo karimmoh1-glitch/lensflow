@@ -218,14 +218,19 @@ export type FetchedGmailMessage = {
  * simulation. Real-time push would need a Cloud Pub/Sub topic and users.watch(), which
  * is a heavier setup than a hackathon-scoped OAuth connection can assume exists; this
  * is the honest, immediately-workable alternative, triggered on demand or by a cron. */
-export async function listRecentGmailMessages(accessToken: string, maxResults = 15): Promise<FetchedGmailMessage[]> {
+export async function listRecentGmailMessages(accessToken: string, maxResults = 15, since?: Date | null): Promise<FetchedGmailMessage[]> {
   // category:primary leans on Gmail's own classifier to exclude promotions/social/updates
   // tabs — the same signal the Gmail web UI uses to keep newsletters out of the main
   // inbox view. Real customer inquiries land in Primary; a Redfin listing alert doesn't.
   // Everything in the inbox, not only Primary: Daythread's own classifier decides what is
   // automated, promotional or a vendor, and All Inbox keeps it all. Gmail's tabs are one
   // opinion; the product's is the one the owner can correct.
-  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${maxResults}&q=${encodeURIComponent("in:inbox")}`, {
+  // `after:` is Gmail's own epoch-seconds filter, so a burst of mail between two polls is
+  // never skipped by a fixed page size: the window covers everything since the last sync
+  // (with a day of overlap for clock skew and late delivery; duplicates are dropped on the
+  // provider message id).
+  const q = since ? `in:inbox after:${Math.floor((since.getTime() - 24 * 3600 * 1000) / 1000)}` : "in:inbox";
+  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${maxResults}&q=${encodeURIComponent(q)}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!listRes.ok) throw new Error(`Gmail list failed: ${listRes.status} ${await listRes.text()}`);

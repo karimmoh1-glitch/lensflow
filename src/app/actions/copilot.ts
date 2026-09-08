@@ -32,7 +32,7 @@ export async function askCopilot(question: string): Promise<string> {
   // run up the API bill or be used to hammer the model. Counted in the database, so the
   // cap holds across serverless instances, not just within one process.
   if (!(await dbRateLimit(ctx.business.id, "copilot_question", { limit: ASSISTANT_HOURLY_LIMIT, windowMs: 60 * 60 * 1000 })).ok) {
-    return "You've hit the assistant's hourly limit (${ASSISTANT_HOURLY_LIMIT} questions). It resets within the hour — nothing was lost.";
+    return `You've hit the assistant's hourly limit (${ASSISTANT_HOURLY_LIMIT} questions). It resets within the hour — nothing was lost.`;
   }
 
   const facts = await gatherBusinessFacts(ctx.business.id);

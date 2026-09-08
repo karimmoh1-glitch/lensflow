@@ -24,7 +24,7 @@ export async function toggleAutomation(id: string, enabled: boolean): Promise<{ 
     // inside a transaction so two quick toggles can't both squeeze past the cap.
     const refused = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${ctx.business.id} FOR UPDATE`;
-      const fresh = await tx.business.findUniqueOrThrow({ where: { id: ctx.business.id }, select: { planTier: true, billingStatus: true } });
+      const fresh = await tx.business.findUniqueOrThrow({ where: { id: ctx.business.id }, select: { planTier: true, billingStatus: true, compedPlan: true } });
       const on = await tx.automation.count({ where: { businessId: ctx.business.id, enabled: true, id: { not: id } } });
       if (!canEnableAutomation(fresh, on)) return { limit: planLimits(fresh).maxAutomations, plan: effectivePlan(fresh) };
       await tx.automation.updateMany({ where: { id, businessId: ctx.business.id }, data: { enabled: true } });
@@ -78,7 +78,7 @@ export async function createAutomation(input: AutomationInput, session?: Session
   if (twin) return { error: `You already have an automation that does this (“${twin.name}”). Edit that one instead of adding a copy.` };
   const result = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${ctx.business.id} FOR UPDATE`;
-    const fresh = await tx.business.findUniqueOrThrow({ where: { id: ctx.business.id }, select: { planTier: true, billingStatus: true } });
+    const fresh = await tx.business.findUniqueOrThrow({ where: { id: ctx.business.id }, select: { planTier: true, billingStatus: true, compedPlan: true } });
     const on = await tx.automation.count({ where: { businessId: ctx.business.id, enabled: true } });
     const enabled = canEnableAutomation(fresh, on);
     const row = await tx.automation.create({ data: { businessId: ctx.business.id, name: data.name, trigger: data.trigger, action: data.action, offsetHours: data.offsetHours, messageTemplate: data.messageTemplate, enabled } });

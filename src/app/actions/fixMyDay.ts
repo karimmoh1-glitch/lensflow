@@ -58,7 +58,7 @@ export async function runFixMyDay(): Promise<FixMyDayItem[]> {
     items.push({
       id: `payment-${p.id}`,
       title: `${p.client.name} has a payment awaiting confirmation — $${(p.amountCents / 100).toFixed(0)}`,
-      href: `/dashboard/payments`,
+      href: `/dashboard/clients/${p.clientId}`,
       actionLabel: "Confirm payment",
     });
   }

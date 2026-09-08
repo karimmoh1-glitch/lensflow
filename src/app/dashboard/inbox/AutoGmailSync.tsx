@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { syncGmailNow } from "@/app/actions/googleAuth";
 
-const POLL_MS = 20_000;
+const POLL_MS = 45_000;
 
 /**
  * Renders nothing — just keeps a connected Gmail account's inbox current without a

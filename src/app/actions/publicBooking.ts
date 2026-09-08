@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { normalizeEmail, normalizePhone } from "@/server/identity";
 import { track } from "@/lib/analytics";
 import { fireAutomationEvent } from "@/server/automationRunner";
 import { pushBookingToCalendars } from "@/server/calendarSync";
@@ -49,9 +50,13 @@ export async function createPublicBooking(params: {
       await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${business.id} FOR UPDATE`;
       const stillAvailable = await isSlotStillAvailable(business.id, start, end);
       if (!stillAvailable) throw new Error("That time is no longer available. Please pick another slot.");
+      const email = normalizeEmail(params.email) ?? params.email.trim().toLowerCase();
+      const phone = normalizePhone(params.phone) ?? (params.phone || null);
       const client =
-        (await tx.client.findFirst({ where: { businessId: business.id, email: params.email } })) ??
-        (await tx.client.create({ data: { businessId: business.id, name: params.name, email: params.email, phone: params.phone || undefined } }));
+        (await tx.client.findFirst({ where: { businessId: business.id, email: { equals: email, mode: "insensitive" } } })) ??
+        (phone ? await tx.client.findFirst({ where: { businessId: business.id, phone } }) : null) ??
+        (await tx.client.create({ data: { businessId: business.id, name: params.name, email, phone: phone ?? undefined } }));
+      if ((!client.email && email) || (!client.phone && phone)) await tx.client.update({ where: { id: client.id }, data: { email: client.email ?? email, phone: client.phone ?? phone ?? undefined } });
       return tx.booking.create({
         data: {
           businessId: business.id,

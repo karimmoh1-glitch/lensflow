@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { deliverToCustomer, type Delivery } from "@/server/deliver";
 import { draftReply } from "@/lib/ai";
+import { readBusinessMemory, memoryPromptLines } from "@/lib/businessMemory";
+import { shouldScheduleQuoteFollowUp, quoteFollowUpAt } from "@/lib/quoteFollowUp";
 import { track } from "@/lib/analytics";
 import { toZonedDisplayDate, firstName } from "@/lib/utils";
 import { addHours, format, subDays, subHours } from "date-fns";
@@ -173,7 +175,8 @@ export async function draftForProposal(businessId: string, proposal: AgentPropos
     prisma.service.findMany({ where: { businessId, active: true }, orderBy: { sortOrder: "asc" } }),
   ]);
   if (!conversation) return null;
-  return draftReply({ businessName: business.name, services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })), customerMessage: conversation.messages[0]?.body ?? "", customerName: conversation.client?.name }, { businessId, feature: "agent_draft" });
+  const memory = readBusinessMemory(business.memory);
+  return draftReply({ businessName: business.name, services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })), customerMessage: conversation.messages[0]?.body ?? "", customerName: conversation.client?.name, mode: "reply", memoryLines: memoryPromptLines(memory), tone: memory.tone }, { businessId, feature: "agent_draft" });
 }
 
 export type ExecutionResult = { ok: true; status: "SENT" | "NOT_DELIVERED"; note: string } | { ok: false; error: string };
@@ -187,7 +190,7 @@ export type ExecutionResult = { ok: true; status: "SENT" | "NOT_DELIVERED"; note
 export async function executeProposal(params: { businessId: string; userId: string; proposal: AgentProposal; body: string }): Promise<ExecutionResult> {
   const { businessId, userId, proposal, body } = params;
   const business = await prisma.business.findUniqueOrThrow({ where: { id: businessId } });
-  const log = (result: string) => track("agent_action_executed", { businessId, properties: { proposalId: proposal.id, kind: proposal.kind, title: proposal.title, result, userId } });
+  const log = (result: string) => track("agent_action_executed", { businessId, properties: { proposalId: proposal.id, kind: proposal.kind, result, userId } });
 
   if (proposal.kind === "reconnect_calendar") {
     return { ok: false, error: "Open the calendar's settings to reconnect it." };
@@ -228,6 +231,14 @@ export async function executeProposal(params: { businessId: string; userId: stri
     ]);
   }
   if (delivery.status === "SENT" && bookingId) await prisma.booking.updateMany({ where: { id: bookingId, businessId, status: "BOOKED" }, data: { status: "CONFIRMED", confirmedAt: new Date() } });
+  // Same rule as the composer: a price that went out gets a follow-up three days later.
+  if (delivery.status === "SENT" && conversationId) {
+    const lead = await prisma.lead.findFirst({ where: { conversationId, businessId }, select: { id: true, status: true, followUpAt: true } });
+    if (lead && shouldScheduleQuoteFollowUp({ body, lead })) {
+      await prisma.lead.update({ where: { id: lead.id }, data: { followUpAt: quoteFollowUpAt() } });
+      await track("followup_auto_scheduled", { businessId, properties: { reason: "quote_sent", daysAhead: 3, via: "agent" } });
+    }
+  }
 
   if (delivery.status === "SENT") {
     await log("sent");

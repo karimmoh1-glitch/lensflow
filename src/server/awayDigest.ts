@@ -26,7 +26,7 @@ export async function getAwayDigest(businessId: string, since: Date | null, now 
   const [newPeople, waiting, followUpsDue, bookingsMade, bookingsConfirmed, openQuoted] = await Promise.all([
     prisma.conversation.count({ where: { businessId, category: "PRIORITY", archived: false, createdAt: { gte: from } } }),
     prisma.lead.count({ where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, respondedAt: null, lastInboundAt: { gte: from }, conversation: { archived: false, category: "PRIORITY" } } }),
-    prisma.lead.count({ where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, followUpAt: { gte: from, lte: now } } }),
+    prisma.lead.count({ where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, followUpAt: { gte: from, lte: now }, conversation: { archived: false, category: "PRIORITY" } } }),
     prisma.booking.count({ where: { businessId, createdAt: { gte: from }, status: { not: "CANCELED" } } }),
     prisma.booking.count({ where: { businessId, updatedAt: { gte: from }, createdAt: { lt: from }, status: "CONFIRMED" } }),
     prisma.lead.aggregate({ where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, estimatedValueCents: { gt: 0 }, conversation: { archived: false, category: "PRIORITY" } }, _sum: { estimatedValueCents: true }, _count: { _all: true } }),

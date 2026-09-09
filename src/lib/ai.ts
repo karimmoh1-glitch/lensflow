@@ -136,7 +136,21 @@ export function extractionUserMessage(messageText: string): string {
   return `Message: """${truncateForModel(messageText)}"""\n\nRespond as JSON: {"name": string|null, "serviceHint": string|null, "dateText": string|null, "location": string|null, "budgetCents": number|null, "intent": "UNKNOWN"|"LOW"|"MEDIUM"|"HIGH"}`;
 }
 
-export async function extractLeadInfo(messageText: string, ctx: { businessId: string }): Promise<ExtractedLead> {
+/**
+ * Words that mark a message as being about one of the business's own services: the full
+ * name and its distinctive words ("deep clean" → deep clean, clean; "Strategy engagement"
+ * → strategy, engagement). Generic words never count on their own.
+ */
+const GENERIC = new Set(["session", "sessions", "service", "services", "package", "packages", "call", "hour", "hours", "day", "basic", "standard", "premium", "full", "half", "mini", "the", "and", "for", "with"]);
+export function serviceKeywords(names: string[]): Array<{ name: string; words: string[] }> {
+  return names.map((name) => {
+    const lower = name.toLowerCase().trim();
+    const words = lower.split(/[\s/&,-]+/).filter((w) => w.length >= 4 && !GENERIC.has(w));
+    return { name, words: [lower, ...words] };
+  });
+}
+
+export async function extractLeadInfo(messageText: string, ctx: { businessId: string; serviceNames?: string[] }): Promise<ExtractedLead> {
   // No retry: ingestion must not bill twice for something the rules can answer.
   const raw = await callModel({ businessId: ctx.businessId, feature: "extraction" }, { system: EXTRACTION_SYSTEM_PROMPT, user: extractionUserMessage(messageText), temperature: 0, responseFormat: "json_object" }, { retry: false });
   if (raw) {
@@ -147,7 +161,7 @@ export async function extractLeadInfo(messageText: string, ctx: { businessId: st
       await reportFailure("ai", OPERATOR_NOTE.bad_response, { businessId: ctx.businessId, provider: "openai", error: err, meta: { feature: "extraction", kind: "bad_response" } });
     }
   }
-  return ruleBasedExtraction(messageText);
+  return ruleBasedExtraction(messageText, ctx.serviceNames);
 }
 
 function emptyExtraction(): ExtractedLead {
@@ -167,24 +181,34 @@ const DATE_PATTERN =
   /\b((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{4})?|(?:january|february|march|april|june|july|august|september|october|november|december)(?:\s+\d{4})?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|next\s+(?:week|month|weekend|spring|summer|fall|autumn|winter)|this\s+(?:weekend|spring|summer|fall|autumn|winter)|tomorrow)\b/i;
 
 const HIGH_INTENT = /\b(book|reserve|hold the date|sign me up|let'?s do it|confirm|deposit)\b/i;
-const MEDIUM_INTENT = /\b(how much|price|pricing|cost|available|availability|rates?)\b/i;
+const MEDIUM_INTENT = /\b(how much|price|pricing|cost|available|availability|rates?|quote|estimate|packages?|what do you charge)\b/i;
 
 /** The deterministic extractor on its own: what the rules can read from a message, for fallbacks that must never wait on a model. */
-export function extractLeadInfoByRules(text: string): ExtractedLead {
-  return ruleBasedExtraction(text);
+export function extractLeadInfoByRules(text: string, serviceNames?: string[]): ExtractedLead {
+  return ruleBasedExtraction(text, serviceNames);
 }
 
-function ruleBasedExtraction(text: string): ExtractedLead {
+function ruleBasedExtraction(text: string, serviceNames?: string[]): ExtractedLead {
   const lower = text.toLowerCase();
 
   const nameMatch = text.match(/\b(?:i'?m|this is|my name is)\s+([A-Z][a-z]+)/);
   const name = nameMatch ? nameMatch[1] : null;
 
+  // The business's own services first — a cleaner's "deep clean", a consultant's
+  // "strategy engagement" — then the generic photography words for a workspace with none.
   let serviceHint: string | null = null;
-  for (const [service, keywords] of Object.entries(SERVICE_KEYWORDS)) {
-    if (keywords.some((k) => lower.includes(k))) {
-      serviceHint = service;
+  for (const { name: serviceName, words } of serviceKeywords(serviceNames ?? [])) {
+    if (words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(lower))) {
+      serviceHint = serviceName;
       break;
+    }
+  }
+  if (!serviceHint) {
+    for (const [service, keywords] of Object.entries(SERVICE_KEYWORDS)) {
+      if (keywords.some((k) => lower.includes(k))) {
+        serviceHint = service;
+        break;
+      }
     }
   }
 
@@ -262,7 +286,7 @@ function ruleBasedReply(ctx: ReplyContext): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 /** Writes an answer from the fact sheet when a model is configured; null when there is no model or it failed. */
-export const ASSISTANT_SYSTEM_PROMPT = `You are an independent business's copilot. Answer the owner's question using ONLY the facts provided. Be concise and direct — a few sentences or a short list. Never invent numbers or names not present in the facts. You cannot take actions: never say something was booked, sent, canceled, connected or updated. ${UNTRUSTED}`;
+export const ASSISTANT_SYSTEM_PROMPT = `You are an independent business's copilot. Answer the owner's question using ONLY the facts provided. Be concise and direct — a few sentences or a short list. Never invent numbers, names, prices, policies or availability not present in the facts; if the facts don't contain the answer, say exactly: I don't have enough information to determine that. Label estimates as estimates. You cannot take actions: never say something was booked, sent, canceled, connected or updated. ${UNTRUSTED}`;
 
 /** The user turn for the assistant. The question is the owner's own, and the fact sheet is built from their records; both are capped. */
 export function assistantUserMessage(question: string, facts: string): string {

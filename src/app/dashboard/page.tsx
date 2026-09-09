@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { getTodayBrief, buildBriefText } from "@/server/dashboardData";
 import { getWeekStrip } from "@/server/weekStrip";
@@ -8,30 +7,26 @@ import { getFirstLook } from "@/server/firstLook";
 import { businessAgentEntitled } from "@/lib/billing";
 import { buildAgentBrief } from "@/server/businessAgent";
 import { differenceInDays } from "date-fns";
-import { Users, Zap, Sparkles, CalendarDays } from "lucide-react";
+import { Users, Zap, Sparkles } from "lucide-react";
 import { Card, Badge, EmptyState } from "@/components/ui";
 import { cn, initials, toZonedDisplayDate } from "@/lib/utils";
-import { format, formatDistanceToNowStrict } from "date-fns";
+import { format } from "date-fns";
 import { FixMyDayButton } from "./FixMyDayButton";
-import { OneThingCard } from "./OneThingCard";
 import { Priorities } from "./Priorities";
-import { AttentionList } from "./AttentionList";
 import { AwayDigest } from "./AwayDigest";
-import { ColdLeads } from "./ColdLeads";
+import { NextActions } from "./NextActions";
 import { getAwayDigest, touchLastActive } from "@/server/awayDigest";
-import { getColdLeads } from "@/server/coldLeads";
+import { getNextActions } from "@/server/nextActions";
 import { AutoGmailSync } from "./inbox/AutoGmailSync";
 import { prisma } from "@/lib/db";
 import { effectivePlan } from "@/lib/billing";
 
 /**
- * Home answers three questions in order, and the layout is that order:
- *   NOW    — who needs you (one card, the action color, the button to do it)
- *   TODAY  — what's on, and what isn't confirmed
- *   ASSISTANT — what Daythread would do next
- * then PEOPLE and AUTOMATION, quieter, and a strip of what Daythread handled this
- * week (real counts; the minutes figure is labeled as an estimate). The most important
- * thing is the biggest thing.
+ * Home answers, in order: what happened while you were away, what to do now (one list —
+ * who, why, where things stand, what it's worth, and the button that does it), what's on
+ * today, and what Daythread would do next. Then PEOPLE and AUTOMATION, quieter, and a
+ * strip of what Daythread handled this week (real counts; the minutes figure is labeled
+ * as an estimate). The most important thing is the biggest thing.
  */
 export default async function TodayPage() {
   const ctx = await requireBusiness();
@@ -42,7 +37,7 @@ export default async function TodayPage() {
   const agentOn = businessAgentEntitled(business);
   const gmail = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "EMAIL" } }, select: { refreshToken: true, status: true } });
   const gmailConnected = Boolean(gmail?.refreshToken) && gmail?.status !== "NOT_CONNECTED";
-  const [brief, week, firstLook, agent, digest, cold] = await Promise.all([getTodayBrief(business.id), getWeekStrip(business.id), getFirstLook(business.id), agentOn ? buildAgentBrief(business.id).catch(() => null) : Promise.resolve(null), touchLastActive(ctx.membership.id).then((prev) => getAwayDigest(business.id, prev)).catch(() => null), getColdLeads(business.id).catch(() => [])]);
+  const [brief, week, firstLook, agent, digest, next] = await Promise.all([getTodayBrief(business.id), getWeekStrip(business.id), getFirstLook(business.id), agentOn ? buildAgentBrief(business.id).catch(() => null) : Promise.resolve(null), touchLastActive(ctx.membership.id).then((prev) => getAwayDigest(business.id, prev)).catch(() => null), getNextActions(business.id, new Date(), business.timezone)]);
   const proposals = agent?.proposals.filter((p) => p.kind !== "reconnect_calendar") ?? [];
   // The first minute: show what Daythread found until the owner has replied to something.
   const showFirstLook = firstLook.total > 0 && !firstLook.hasReplied && differenceInDays(new Date(), business.createdAt) <= 30;
@@ -52,8 +47,8 @@ export default async function TodayPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const firstName = user.name.split(" ")[0];
-  const waitingOnReply = brief.leads.needsResponse.slice(0, 3);
-  const top = waitingOnReply[0];
+  const needsYou = next.actions.length;
+  const rows = next.actions.map((a) => ({ ...a, since: a.since.toISOString(), booking: a.booking ? { ...a.booking, startAt: a.booking.startAt.toISOString() } : null }));
 
   return (
     <div className="max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10 dt-stagger">
@@ -97,39 +92,13 @@ export default async function TodayPage() {
           </div>
           <div className="px-5 md:px-6 py-3 border-t border-border bg-paper/60 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink/65">
             <span>Priority shows only the people. Everything else stays in <Link href="/dashboard/inbox?view=all" className="text-ink font-semibold hover:underline">All</Link>, and you can correct any of it.</span>
-            {waitingOnReply.length > 0 && <span className="text-accent-text font-semibold">Here {waitingOnReply.length === 1 ? "is the thing" : `are the ${waitingOnReply.length} things`} I&rsquo;d handle first ↓</span>}
+            {needsYou > 0 && <span className="text-accent-text font-semibold">Here {needsYou === 1 ? "is the thing" : `are the ${needsYou} things`} I&rsquo;d handle first ↓</span>}
           </div>
         </section>
       )}
 
-      {/* NOW */}
-      <section aria-labelledby="now-label">
-        <h2 id="now-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-accent-text mb-2.5">
-          Now
-        </h2>
-        {!top ? (
-          <div className="rounded-2xl border border-success/25 bg-success-soft/50 px-5 py-4 flex items-center gap-3 dt-swap">
-            <span className="w-2.5 h-2.5 rounded-full bg-success shrink-0" />
-            <p className="text-sm text-ink/80">{briefText}</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <OneThingCard
-              key={top.id}
-              leadId={top.id}
-              name={top.extractedName || ""}
-              href={top.conversationId ? `/dashboard/inbox?c=${top.conversationId}` : "/dashboard/inbox"}
-              waiting={top.lastInboundAt ? `Waiting ${formatDistanceToNowStrict(top.lastInboundAt)}.` : null}
-              detail={top.service ? `Asked about ${top.service.name}${top.requestedDateText ? ` for ${top.requestedDateText}` : ""}` : top.requestedDateText ? `Asked for ${top.requestedDateText}` : "New inquiry"}
-              more={Math.max(0, brief.leads.needsResponse.length - 1)}
-            />
-          </div>
-        )}
-      </section>
-
-      <AttentionList businessId={business.id} timezone={business.timezone} skipLeadId={top?.id ?? null} />
-
-      <ColdLeads leads={cold} />
+      {/* NOW — what to do next, from the record */}
+      <NextActions rows={rows} atRisk={next.atRisk} caughtUp={briefText} />
 
       {/* TODAY + ASSISTANT */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 mt-10">

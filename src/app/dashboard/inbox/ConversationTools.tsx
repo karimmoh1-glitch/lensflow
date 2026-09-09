@@ -135,7 +135,7 @@ export function ConversationTools({ conversationId, unread, category, clientId, 
       aria-label={label}
       title={label}
       className={cn(
-        "w-7 h-7 rounded-md flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+        "w-7 h-7 [@media(pointer:coarse)]:w-10 [@media(pointer:coarse)]:h-10 rounded-md flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
         variant === "header" ? "text-ink/70 hover:text-ink hover:bg-black/[0.05]" : "text-ink/65 hover:text-ink hover:bg-white shadow-none hover:shadow-xs",
         tone === "signal" && "hover:text-signal-text"
       )}

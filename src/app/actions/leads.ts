@@ -98,8 +98,8 @@ export async function bookLead(leadId: string, startISO: string, serviceId?: str
  * reply sets — so the next priority rises. Tenant-scoped: a lead id from another business
  * is simply not found. Returns { error } for expected outcomes instead of throwing.
  */
-export async function markLeadHandled(leadId: string): Promise<{ error?: string }> {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function markLeadHandled(leadId: string, session?: SessionPayload | null): Promise<{ error?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) return { error: "Please log in again." };
   const lead = await prisma.lead.findFirst({ where: { id: leadId, businessId: ctx.business.id }, select: { id: true, status: true } });
   if (!lead) return { error: "That lead isn't here anymore." };
@@ -122,8 +122,8 @@ const OVERRIDES = new Set(["QUALIFIED", "COLD", "LOST", "CONTACTED"]);
  * lists until they write again), mark it lost, or mark it qualified. "Won" is a booking,
  * made the usual way. Tenant-scoped; an id from another workspace is not found.
  */
-export async function setLeadStatus(leadId: string, status: string): Promise<{ error?: string }> {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function setLeadStatus(leadId: string, status: string, session?: SessionPayload | null): Promise<{ error?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) return { error: "Please log in again." };
   if (!OVERRIDES.has(status)) return { error: "That isn't a stage you can set by hand." };
   const lead = await prisma.lead.findFirst({ where: { id: leadId, businessId: ctx.business.id }, select: { id: true, status: true } });

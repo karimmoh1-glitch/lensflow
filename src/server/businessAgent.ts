@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/db";
 import { deliverToCustomer, type Delivery } from "@/server/deliver";
 import { draftReply } from "@/lib/ai";
+import { readBusinessMemory, memoryPromptLines } from "@/lib/businessMemory";
+import { shouldScheduleQuoteFollowUp, quoteFollowUpAt, parseQuoteCents } from "@/lib/quoteFollowUp";
+import { getNextActions } from "@/server/nextActions";
 import { track } from "@/lib/analytics";
 import { toZonedDisplayDate, firstName } from "@/lib/utils";
-import { addHours, format, subDays, subHours } from "date-fns";
+import { format, subDays } from "date-fns";
 import type { ChannelType } from "@prisma/client";
 
 /**
@@ -50,87 +53,68 @@ export async function buildAgentBrief(businessId: string, now = new Date()): Pro
   const recent = await prisma.analyticsEvent.findMany({ where: { businessId, name: "agent_action_executed", createdAt: { gte: subDays(now, RECENT_DAYS) } }, orderBy: { createdAt: "desc" }, take: 50 });
   const done = new Set(recent.map((e) => String((e.properties as { proposalId?: string } | null)?.proposalId ?? "")));
 
-  const [waiting, unconfirmed, quiet, calendars] = await Promise.all([
-    prisma.lead.findMany({
-      where: { businessId, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] }, respondedAt: null, conversation: { archived: false, category: "PRIORITY" } },
-      include: { client: true, service: true, conversation: { include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } } } },
-      orderBy: { lastInboundAt: "asc" },
-      take: 12,
-    }),
-    prisma.booking.findMany({
-      where: { businessId, status: "BOOKED", startAt: { gt: now, lte: addHours(now, 72) } },
-      include: { client: true, service: true },
-      orderBy: { startAt: "asc" },
-      take: 10,
-    }),
-    prisma.lead.findMany({
-      where: { businessId, status: { in: ["CONTACTED", "QUALIFIED"] }, respondedAt: { not: null, lte: subHours(now, 72) }, lastInboundAt: { lte: subHours(now, 72) } },
-      include: { client: true, service: true, conversation: true },
-      orderBy: { lastInboundAt: "asc" },
-      take: 8,
-    }),
+  const [next, calendars] = await Promise.all([
+    getNextActions(businessId, now, tz),
     prisma.integration.findMany({ where: { businessId, provider: { in: ["GOOGLE_CALENDAR", "APPLE_CALENDAR"] }, status: { in: ["NEEDS_ATTENTION", "SYNC_ERROR"] } } }),
   ]);
 
   const proposals: AgentProposal[] = [];
   const first = (name: string | null | undefined) => firstName(name);
 
-  for (const lead of waiting) {
-    const id = `reply:${lead.id}`;
-    if (done.has(id) || !lead.conversation) continue;
-    const hours = lead.lastInboundAt ? Math.round((now.getTime() - lead.lastInboundAt.getTime()) / 3_600_000) : null;
-    const value = lead.service?.priceCents ?? lead.estimatedValueCents ?? 0;
-    proposals.push({
-      id,
-      kind: "reply",
-      title: `Reply to ${lead.client?.name ?? lead.extractedName ?? "a new inquiry"}`,
-      why: `${hours !== null ? `Waiting ${hours < 1 ? "under an hour" : `${hours}h`}` : "Waiting on you"}${lead.service ? ` · asked about ${lead.service.name}` : ""}${lead.requestedDateText ? ` for ${lead.requestedDateText}` : ""}.`,
-      clientName: lead.client?.name ?? null,
-      conversationId: lead.conversation.id,
-      channel: lead.conversation.channel,
-      draft: null, // drafted on approval, from the real thread and the real price list
-      href: `/dashboard/inbox?c=${lead.conversation.id}`,
-      priority: 100 + Math.min(50, hours ?? 0),
-      valueCents: value || null,
-    });
-  }
-
-  for (const b of unconfirmed) {
-    const id = `confirm_booking:${b.id}`;
-    if (done.has(id)) continue;
-    const start = toZonedDisplayDate(b.startAt, tz);
-    proposals.push({
-      id,
-      kind: "confirm_booking",
-      title: `Confirm ${b.client.name}'s ${b.service.name}`,
-      why: `${format(start, "EEEE h:mm a")} isn't confirmed yet.`,
-      clientName: b.client.name,
-      conversationId: b.conversationId ?? null,
-      channel: null,
-      draft: `Hi ${first(b.client.name)} — confirming your ${b.service.name} with ${business.name} on ${format(start, "EEEE, MMMM d")} at ${format(start, "h:mm a")}${b.location ? ` at ${b.location}` : ""}. Reply here if anything needs to change. See you then!`,
-      href: `/dashboard/bookings/${b.id}`,
-      priority: 90,
-      valueCents: b.totalCents,
-    });
-  }
-
-  for (const lead of quiet) {
-    const id = `follow_up:${lead.id}`;
-    if (done.has(id)) continue;
-    const days = lead.lastInboundAt ? Math.round((now.getTime() - lead.lastInboundAt.getTime()) / 86_400_000) : null;
-    proposals.push({
-      id,
-      kind: "follow_up",
-      title: `Follow up with ${lead.client?.name ?? lead.extractedName ?? "a lead"}`,
-      why: `You replied; they went quiet${days ? ` ${days} day${days === 1 ? "" : "s"} ago` : ""}${lead.service ? ` · ${lead.service.name}` : ""}. Nothing is booked.`,
-      clientName: lead.client?.name ?? null,
-      conversationId: lead.conversation?.id ?? null,
-      channel: lead.conversation?.channel ?? null,
-      draft: `Hi ${first(lead.client?.name ?? lead.extractedName)} — just checking in from ${business.name}${lead.service ? ` about the ${lead.service.name}` : ""}${lead.requestedDateText ? ` for ${lead.requestedDateText}` : ""}. Happy to hold a date or answer anything — is this still on your mind?`,
-      href: lead.conversation ? `/dashboard/inbox?c=${lead.conversation.id}` : "/dashboard/inbox",
-      priority: 60,
-      valueCents: lead.service?.priceCents ?? lead.estimatedValueCents ?? null,
-    });
+  for (const a of next.actions) {
+    const idTail = a.person.leadId ?? a.person.bookingId ?? "";
+    if (a.kind === "reply" && a.person.leadId) {
+      const id = `reply:${idTail}`;
+      if (done.has(id) || !a.person.conversationId) continue;
+      const hours = Math.round((now.getTime() - a.since.getTime()) / 3_600_000);
+      proposals.push({
+        id,
+        kind: "reply",
+        title: `Reply to ${a.person.name}`,
+        why: `Waiting ${hours < 1 ? "under an hour" : `${hours}h`}${a.serviceName ? ` · asked about ${a.serviceName}` : ""}${a.requestedDateText ? ` for ${a.requestedDateText}` : ""}.`,
+        clientName: a.person.name,
+        conversationId: a.person.conversationId,
+        channel: a.channel as ChannelType | null,
+        draft: null, // drafted on approval, from the real thread and the real price list
+        href: a.href,
+        priority: 100 + Math.min(50, hours),
+        valueCents: a.value?.cents ?? null,
+      });
+    } else if (a.kind === "confirm_booking" && a.booking && a.person.bookingId) {
+      const id = `confirm_booking:${idTail}`;
+      if (done.has(id)) continue;
+      const start = toZonedDisplayDate(a.booking.startAt, tz);
+      proposals.push({
+        id,
+        kind: "confirm_booking",
+        title: `Confirm ${a.person.name}'s ${a.booking.serviceName}`,
+        why: `${format(start, "EEEE h:mm a")} isn't confirmed yet.`,
+        clientName: a.person.name,
+        conversationId: a.person.conversationId,
+        channel: null,
+        draft: `Hi ${first(a.person.name)} — confirming your ${a.booking.serviceName} with ${business.name} on ${format(start, "EEEE, MMMM d")} at ${format(start, "h:mm a")}${a.booking.location ? ` at ${a.booking.location}` : ""}. Reply here if anything needs to change. See you then!`,
+        href: a.href,
+        priority: 90,
+        valueCents: a.booking.totalCents,
+      });
+    } else if (a.kind === "follow_up" && a.person.leadId) {
+      const id = `follow_up:${idTail}`;
+      if (done.has(id)) continue;
+      const days = Math.round((now.getTime() - a.since.getTime()) / 86_400_000);
+      proposals.push({
+        id,
+        kind: "follow_up",
+        title: `Follow up with ${a.person.name}`,
+        why: `${a.why} Nothing is booked.`,
+        clientName: a.person.name,
+        conversationId: a.person.conversationId,
+        channel: a.channel as ChannelType | null,
+        draft: `Hi ${first(a.person.name)} — just checking in from ${business.name}${a.serviceName ? ` about the ${a.serviceName}` : ""}${a.requestedDateText ? ` for ${a.requestedDateText}` : ""}. Happy to hold a date or answer anything — is this still on your mind?`,
+        href: a.href,
+        priority: 60 + Math.min(20, days),
+        valueCents: a.value?.cents ?? null,
+      });
+    }
   }
 
   for (const cal of calendars) {
@@ -173,7 +157,8 @@ export async function draftForProposal(businessId: string, proposal: AgentPropos
     prisma.service.findMany({ where: { businessId, active: true }, orderBy: { sortOrder: "asc" } }),
   ]);
   if (!conversation) return null;
-  return draftReply({ businessName: business.name, services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })), customerMessage: conversation.messages[0]?.body ?? "", customerName: conversation.client?.name }, { businessId, feature: "agent_draft" });
+  const memory = readBusinessMemory(business.memory);
+  return draftReply({ businessName: business.name, services: services.map((s) => ({ name: s.name, priceCents: s.priceCents, durationMins: s.durationMins })), customerMessage: conversation.messages[0]?.body ?? "", customerName: conversation.client?.name, mode: "reply", memoryLines: memoryPromptLines(memory), tone: memory.tone }, { businessId, feature: "agent_draft" });
 }
 
 export type ExecutionResult = { ok: true; status: "SENT" | "NOT_DELIVERED"; note: string } | { ok: false; error: string };
@@ -187,7 +172,7 @@ export type ExecutionResult = { ok: true; status: "SENT" | "NOT_DELIVERED"; note
 export async function executeProposal(params: { businessId: string; userId: string; proposal: AgentProposal; body: string }): Promise<ExecutionResult> {
   const { businessId, userId, proposal, body } = params;
   const business = await prisma.business.findUniqueOrThrow({ where: { id: businessId } });
-  const log = (result: string) => track("agent_action_executed", { businessId, properties: { proposalId: proposal.id, kind: proposal.kind, title: proposal.title, result, userId } });
+  const log = (result: string) => track("agent_action_executed", { businessId, properties: { proposalId: proposal.id, kind: proposal.kind, result, userId } });
 
   if (proposal.kind === "reconnect_calendar") {
     return { ok: false, error: "Open the calendar's settings to reconnect it." };
@@ -228,6 +213,16 @@ export async function executeProposal(params: { businessId: string; userId: stri
     ]);
   }
   if (delivery.status === "SENT" && bookingId) await prisma.booking.updateMany({ where: { id: bookingId, businessId, status: "BOOKED" }, data: { status: "CONFIRMED", confirmedAt: new Date() } });
+  // Same rule as the composer: a price that went out gets a follow-up three days later.
+  if (delivery.status === "SENT" && conversationId) {
+    const lead = await prisma.lead.findFirst({ where: { conversationId, businessId }, select: { id: true, status: true, followUpAt: true } });
+    const quoted = lead ? parseQuoteCents(body) : null;
+    if (lead && quoted) await prisma.lead.update({ where: { id: lead.id }, data: { quotedCents: quoted, quotedAt: new Date() } });
+    if (lead && shouldScheduleQuoteFollowUp({ body, lead })) {
+      await prisma.lead.update({ where: { id: lead.id }, data: { followUpAt: quoteFollowUpAt() } });
+      await track("followup_auto_scheduled", { businessId, properties: { reason: "quote_sent", daysAhead: 3, via: "agent" } });
+    }
+  }
 
   if (delivery.status === "SENT") {
     await log("sent");

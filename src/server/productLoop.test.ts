@@ -100,9 +100,11 @@ describe("the product loop, end to end", () => {
     expect(keys).toContain("new_people");
     expect(keys).toContain("waiting");
     expect(digest!.items.every((i) => i.href.startsWith("/dashboard"))).toBe(true);
-    // Sarah's family session ($450), Jordan's wedding ($3,200) and Maria's family session ($450); Alex is COLD, so out.
+    // Sarah named a $500 budget (known money, over the $450 list price); Jordan's wedding ($3,200)
+    // and Maria's family session ($450) are service prices, so estimates. Alex is COLD, so out.
     expect(digest!.quotedCount).toBe(3);
-    expect(digest!.quotedCents).toBe(45000 + 320000 + 45000);
+    expect(digest!.quotedCents).toBe(50000);
+    expect(digest!.estimatedCents).toBe(320000 + 45000);
     expect(await getAwayDigest(businessId, new Date(Date.now() - 30 * 60_000))).toBeNull();
     expect(await getAwayDigest(businessId, null)).toBeNull();
   });

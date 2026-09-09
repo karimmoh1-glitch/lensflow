@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@/lib/auth";
+import { requireRole, type SessionPayload } from "@/lib/auth";
 import { planLimits, PLANS, effectivePlan } from "@/lib/billing";
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
@@ -11,13 +11,13 @@ import { ASSISTANT_HOURLY_LIMIT } from "@/lib/aiPolicy";
 import { answerFromRecords } from "@/lib/copilotAnswer";
 import { dbRateLimit } from "@/lib/dbRateLimit";
 
-export async function askCopilot(question: string): Promise<string> {
+export async function askCopilot(question: string, session?: SessionPayload | null): Promise<string> {
   // Bounded input: a question is a sentence or two, not a document to smuggle instructions in.
   question = String(question ?? "").trim().slice(0, 500);
   if (!question) return "Ask about your conversations, bookings, calendar or customers.";
   // Facts include every customer's status — a client or partner asking must never be able
   // to see the rest of the workspace's business.
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   // Free gets a limited copilot: a handful of questions a day, counted in the database
   // (not the browser) so a refresh or a second tab doesn't reset it.
@@ -32,7 +32,7 @@ export async function askCopilot(question: string): Promise<string> {
   // run up the API bill or be used to hammer the model. Counted in the database, so the
   // cap holds across serverless instances, not just within one process.
   if (!(await dbRateLimit(ctx.business.id, "copilot_question", { limit: ASSISTANT_HOURLY_LIMIT, windowMs: 60 * 60 * 1000 })).ok) {
-    return "You've hit the assistant's hourly limit (${ASSISTANT_HOURLY_LIMIT} questions). It resets within the hour — nothing was lost.";
+    return `You've hit the assistant's hourly limit (${ASSISTANT_HOURLY_LIMIT} questions). It resets within the hour — nothing was lost.`;
   }
 
   const facts = await gatherBusinessFacts(ctx.business.id);

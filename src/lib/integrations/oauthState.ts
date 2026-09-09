@@ -53,7 +53,7 @@ export async function verifyOAuthState(provider: OAuthProvider, state: string | 
   store.delete(COOKIE[provider]);
   if (!cookieNonce || cookieNonce !== payload.nonce) return { ok: false, reason: "nonce_mismatch" };
   const purpose = payload.purpose;
-  if (purpose !== "gmail" && purpose !== "calendar" && purpose !== "messaging") return { ok: false, reason: "invalid" };
+  if (purpose !== "gmail" && purpose !== "calendar" && purpose !== "messaging" && purpose !== "signin") return { ok: false, reason: "invalid" };
   return { ok: true, state: { businessId: payload.businessId, userId: payload.userId, purpose } };
 }
 
@@ -72,7 +72,7 @@ export async function verifyOAuthStateWithNonce(provider: OAuthProvider, state: 
   if (payload.provider !== provider) return { ok: false, reason: "wrong_provider" };
   if (!cookieNonce || cookieNonce !== payload.nonce) return { ok: false, reason: "nonce_mismatch" };
   const purpose = payload.purpose;
-  if (purpose !== "gmail" && purpose !== "calendar" && purpose !== "messaging") return { ok: false, reason: "invalid" };
+  if (purpose !== "gmail" && purpose !== "calendar" && purpose !== "messaging" && purpose !== "signin") return { ok: false, reason: "invalid" };
   return { ok: true, state: { businessId: payload.businessId, userId: payload.userId, purpose } };
 }
 

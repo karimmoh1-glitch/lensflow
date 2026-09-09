@@ -12,6 +12,16 @@ const facts: BusinessFacts = {
   calendars: [],
   todayKey: "2026-09-06",
   weekKeys: ["2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12"],
+  next: [
+    { headline: "Maya needs your reply", why: "They wrote today; nothing has gone back yet.", value: { label: "Their budget: $500", known: true } },
+    { headline: "Jordan may be going cold", why: "You replied 4 days ago; they haven't answered.", value: { label: "About $350, the service's price", known: false } },
+  ],
+  atRisk: { knownCents: 0, estimatedCents: 35000, people: 1 },
+  quotes: [{ name: "Jordan Lee", cents: 35000, when: "4 days", answered: false, booked: false }],
+  biggest: { name: "Maya Chen", label: "Their budget: $500", known: true },
+  channels: null,
+  medianReplyHours: null,
+  sinceYesterday: { people: 1, bookings: 0 },
 };
 
 describe("answerFromRecords", () => {
@@ -46,5 +56,35 @@ describe("answerFromRecords", () => {
     expect(answerFromRecords("anything going cold?", empty)).toContain("No inquiries are going cold");
     expect(answerFromRecords("unconfirmed bookings?", empty)).toContain("no upcoming bookings");
     expect(answerFromRecords("is google calendar synced?", empty)).toContain("Settings → Channels");
+  });
+
+  it("says what to work on, in the engine's order, with money labelled", () => {
+    const a = answerFromRecords("What should I work on today?", facts);
+    expect(a).toMatch(/^In order:\n1\. Maya needs your reply/);
+    expect(a).toContain("2. Jordan may be going cold");
+    expect(a).toContain("(About $350, the service's price, estimate)");
+  });
+  it("answers who was quoted this week from the record, never from bookings", () => {
+    const a = answerFromRecords("Who did I quote this week?", facts);
+    expect(a).toContain("Jordan Lee — $350, 4 days ago · no reply yet");
+    expect(a).not.toContain("Sam Okafor");
+  });
+  it("names the biggest opportunity and keeps estimates apart from known money", () => {
+    const a = answerFromRecords("What is my biggest opportunity right now?", facts);
+    expect(a).toContain("Maya Chen — Their budget: $500");
+    expect(a).toContain("about $350 in service prices (an estimate)");
+  });
+  it("refuses to guess where leads come from on too little data", () => {
+    const a = answerFromRecords("Where are most of my leads coming from?", facts);
+    expect(a).toMatch(/^I don't have enough information/);
+    expect(answerFromRecords("Where are my leads coming from?", { ...facts, channels: [{ channel: "Instagram", count: 7 }, { channel: "Email", count: 3 }] })).toContain("Most came from Instagram");
+  });
+  it("matches 'who needs a response' and 'what happened while I was away'", () => {
+    expect(answerFromRecords("Who needs a response?", facts)).toMatch(/^2 people are waiting on a reply/);
+    expect(answerFromRecords("What happened while I was away?", facts)).toMatch(/^Since yesterday: 1 new person wrote in and 0 bookings were made/);
+  });
+  it("says so when the records can't answer, instead of a status summary", () => {
+    const a = answerFromRecords("What is my cancellation policy?", facts);
+    expect(a).toMatch(/^I don't have enough information to determine that/);
   });
 });

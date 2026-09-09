@@ -6,7 +6,7 @@ import { askCopilot } from "@/app/actions/copilot";
 import { WorkingDots } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-const PROMPTS = ["Who is waiting on me right now?", "What's on my calendar this week?", "Which inquiries are going cold?", "Is anything not confirmed yet?"];
+const PROMPTS = ["What should I work on today?", "Who did I quote this week?", "What's my biggest opportunity right now?", "Where are my leads coming from?"];
 
 /**
  * Ask the assistant about your own business. Every answer is grounded in the workspace's

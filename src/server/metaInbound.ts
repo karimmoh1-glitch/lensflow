@@ -28,9 +28,11 @@ type Messaging = {
   postback?: unknown;
 };
 
-/** Only rows whose credentials still work own inbound traffic. A disconnected integration
- * owns nothing, even if Meta is still delivering for that account. */
-const OWNING_STATUS = ["CONNECTED", "SYNC_ERROR"] as const;
+/** Rows that still belong to a business own inbound traffic — including one whose token
+ * expired (NEEDS_ATTENTION): the customer's message is in the webhook payload and Meta
+ * does not replay it, so it is stored now and answered after the reconnect. A
+ * disconnected integration owns nothing. */
+const OWNING_STATUS = ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] as const;
 
 export async function processMetaEnvelope(env: MetaEnvelope): Promise<MetaResult> {
   const out: MetaResult = { handled: 0, ignored: 0, statuses: 0 };

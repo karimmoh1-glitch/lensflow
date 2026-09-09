@@ -130,3 +130,9 @@ not exist yet is covered the moment it does. It writes `Business.compedPlan` and
 pays and a comped workspace is never counted in MRR or in "paying now". The subscription
 page tells the owner their access is complimentary and that nothing is charged. Removing an
 address stops new grants; it does not revoke one already given.
+
+## Mobile app
+
+`EXPO_ACCESS_TOKEN` — server, optional. Sent as a bearer to Expo's push service (`exp.host`) when set; push works without it unless enhanced push security is turned on in the Expo project. Push tokens are stored on `OrgMembership.pushTokens`; a token Expo reports as unregistered is dropped.
+
+The app itself reads one variable at build time: `EXPO_PUBLIC_API_URL` in `mobile/.env` — the origin of this deployment (`https://daythread.org` in production, a LAN IP or `http://localhost:3100` in development).

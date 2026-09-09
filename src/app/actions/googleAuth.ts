@@ -55,9 +55,16 @@ export type SyncGmailResult = { ok: true; found: number; ingested: number } | { 
 /** The real, on-demand equivalent of a webhook for Gmail: pulls recent inbox messages now
  * and routes each new one through the same ingestion every channel uses. A revoked grant
  * flips the row to NEEDS_ATTENTION instead of failing silently forever. */
+/** Manual and on-open pulls closer together than this reuse the last one. */
+const MIN_SYNC_GAP_MS = 30_000;
+
 export async function syncGmailNow(): Promise<SyncGmailResult> {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (!ctx) return { ok: false, error: "unauthorized" };
+  // Every open tab polls; the record, not the process, decides whether a pull is due, so
+  // two tabs (or two serverless instances) can't multiply Gmail API calls.
+  const recent = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "EMAIL" } }, select: { lastSyncedAt: true, lastSyncStatus: true } });
+  if (recent?.lastSyncedAt && recent.lastSyncStatus === "ok" && Date.now() - recent.lastSyncedAt.getTime() < MIN_SYNC_GAP_MS) return { ok: true, found: 0, ingested: 0 };
   const result = await syncGmailForBusiness(ctx.business.id);
   if (result.ok) {
     revalidatePath("/dashboard/inbox");

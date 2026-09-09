@@ -14,6 +14,15 @@ export function looksLikeQuote(body: string): boolean {
   return PRICE.test(body);
 }
 
+/** The first dollar amount in a reply, in cents — the number the business actually sent. Null when there is none. */
+export function parseQuoteCents(body: string): number | null {
+  const m = body.match(/\$\s?(\d[\d,]*)(?:\.(\d{2}))?/);
+  if (!m) return null;
+  const dollars = Number(m[1].replace(/,/g, ""));
+  if (!Number.isFinite(dollars) || dollars <= 0 || dollars > 1_000_000) return null;
+  return Math.round(dollars * 100 + (m[2] ? Number(m[2]) : 0));
+}
+
 export function quoteFollowUpAt(now = new Date()): Date {
   return setMinutes(setHours(startOfDay(addDays(now, QUOTE_FOLLOW_UP_DAYS)), 9), 0);
 }

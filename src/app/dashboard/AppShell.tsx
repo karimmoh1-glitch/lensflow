@@ -298,7 +298,7 @@ export function AppShell({
               <button
                 aria-label="Close navigation"
                 onClick={() => setMobileOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-md text-ink/70 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                className="w-10 h-10 flex items-center justify-center rounded-md text-ink/70 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
               >
                 <X className="w-[18px] h-[18px]" strokeWidth={2} />
               </button>

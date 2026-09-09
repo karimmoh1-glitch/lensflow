@@ -6,6 +6,8 @@ import { Card, CardBody, Badge, EmptyState } from "@/components/ui";
 import { Thread, ThreadNode, NextAction, type ThreadKind } from "@/components/Thread";
 import { initials, toZonedDisplayDate, cn, firstName } from "@/lib/utils";
 import { CHANNEL_META } from "@/lib/channelIcons";
+import { findMergeCandidates } from "@/server/identity";
+import { MergeSuggestion } from "./MergeSuggestion";
 import { readRelationship, humanAgo } from "@/lib/relationshipState";
 import { RelationshipControls } from "./RelationshipControls";
 import { format, formatDistanceToNowStrict, isFuture } from "date-fns";
@@ -37,6 +39,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     },
   });
   if (!client) notFound();
+  const canMerge = ctx.role === "OWNER" || ctx.role === "ADMIN";
+  const mergeCandidates = canMerge ? await findMergeCandidates(business.id, client.id) : [];
 
   const tz = business.timezone;
 
@@ -123,6 +127,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
+      {mergeCandidates.length > 0 && <MergeSuggestion clientId={client.id} name={client.name} candidates={mergeCandidates} />}
+
       {/* WHO IS THIS — the relationship, first. */}
       <section aria-label="Where we stand" className="mb-8 rounded-[22px] border border-border bg-white overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] divide-y md:divide-y-0 md:divide-x divide-border">
@@ -135,8 +141,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             <p className="mt-2 font-sans font-extrabold text-[1.35rem] leading-tight tracking-[-0.02em] text-ink">{standing.standing}</p>
             {(standing.theyWaitFor || standing.youWaitFor) && (
               <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                {standing.theyWaitFor && <div><dt className="inline text-ink/65">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor}</dd></div>}
-                {standing.youWaitFor && <div><dt className="inline text-ink/65">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor}</dd></div>}
+                {standing.theyWaitFor && <div><dt className="inline text-ink/65">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor.charAt(0).toLowerCase() + standing.theyWaitFor.slice(1)}</dd></div>}
+                {standing.youWaitFor && <div><dt className="inline text-ink/65">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor.charAt(0).toLowerCase() + standing.youWaitFor.slice(1)}</dd></div>}
               </dl>
             )}
             {lastInteraction && (
@@ -169,10 +175,10 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Came in via</dt>
               <dd className="mt-1 text-sm font-semibold text-ink">{firstConversation ? `${CHANNEL_META[firstConversation.channel].label} · ${format(firstConversation.createdAt, "MMM yyyy")}` : <span className="text-ink/65 font-medium">Added by you</span>}</dd>
             </div>
-            <div className="col-span-2 pt-1">
-              <RelationshipControls clientId={client.id} relationship={client.relationship} name={client.name} />
-            </div>
           </dl>
+          <div className="px-5 md:px-6 pb-5 md:col-start-2">
+            <RelationshipControls clientId={client.id} relationship={client.relationship} name={client.name} />
+          </div>
         </div>
       </section>
 
@@ -201,7 +207,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           </div>
         </section>
 
-        <aside className="space-y-4">
+        <aside aria-label="About this person" className="space-y-4">
           {client.subscriptions.length > 0 && (
             <Card>
               <CardBody>

@@ -16,7 +16,7 @@ export async function syncGmailForBusiness(businessId: string): Promise<GmailSyn
   if (!integration?.refreshToken || integration.status === "NOT_CONNECTED") return { ok: false, error: "Gmail isn't connected for this business.", skipped: true };
   try {
     const accessToken = await getValidAccessToken(integration);
-    const messages = await listRecentGmailMessages(accessToken, integration.lastSyncedAt ? 15 : 60);
+    const messages = await listRecentGmailMessages(accessToken, integration.lastSyncedAt ? 100 : 60, integration.lastSyncedAt);
     let ingested = 0;
     for (const m of messages) {
       const result = await ingestInboundMessage({ businessId, channel: "EMAIL", senderName: m.fromName || m.from.split("@")[0], senderHandle: m.from, body: m.body, subject: m.subject, clientEmail: m.from, providerMessageId: m.messageIdHeader || m.id, headers: m.headers, rawBody: m.rawBody });

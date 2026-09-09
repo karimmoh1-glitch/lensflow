@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { findKnownClient } from "@/server/identity";
 import { sendOnChannel } from "@/lib/messaging";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
@@ -39,9 +40,16 @@ export async function submitWebsiteLead(
 
   const service = serviceId ? await prisma.service.findFirst({ where: { id: serviceId, businessId: business.id } }) : null;
 
+  // Same identity rule as every channel: a normalized email or E.164 phone joins the
+  // person who already wrote in, so a form submission never creates a second "Sarah".
+  const known = await findKnownClient({ businessId: business.id, channel: "WEBSITE", senderHandle: email, senderName: name, email, phone: phone || null });
   const client =
-    (await prisma.client.findFirst({ where: { businessId: business.id, email } })) ??
-    (await prisma.client.create({ data: { businessId: business.id, name, email, phone: phone || undefined } }));
+    known.client ??
+    (await prisma.client.create({ data: { businessId: business.id, name, email: known.email ?? email.trim().toLowerCase(), phone: known.phone ?? (phone || undefined) } }));
+  // A known person who just told us a new identifier keeps it; a known value is never replaced.
+  if (known.client && ((!known.client.email && known.email) || (!known.client.phone && known.phone))) {
+    await prisma.client.update({ where: { id: client.id }, data: { email: known.client.email ?? known.email ?? undefined, phone: known.client.phone ?? known.phone ?? undefined } });
+  }
 
   const conversation = await prisma.conversation.create({
     data: { businessId: business.id, clientId: client.id, channel: "WEBSITE", externalHandle: email, lastMessageAt: new Date() },

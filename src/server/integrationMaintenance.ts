@@ -8,8 +8,21 @@ import { reportFailure } from "@/lib/observe";
  * 60-day tokens before they expire, and flag anything whose credentials have gone. Only
  * rows that are actually connected — a disconnected integration is never touched again.
  */
-export async function runIntegrationMaintenance(): Promise<{ calendars: number; calendarFailures: number; instagramRefreshed: number; flagged: number }> {
-  const out = { calendars: 0, calendarFailures: 0, instagramRefreshed: 0, flagged: 0 };
+/** Operational rows have a shelf life: failures older than 90 days and AI call records older
+ * than 180 days are removed by the daily run, so the tables never grow without bound. Product
+ * analytics (the funnel) are kept. */
+export const OPS_EVENT_RETENTION_DAYS = 90;
+export const AI_CALL_RETENTION_DAYS = 180;
+
+export async function pruneOperationalRows(now = new Date()): Promise<{ opsEvents: number; aiCalls: number }> {
+  const ops = await prisma.opsEvent.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - OPS_EVENT_RETENTION_DAYS * 86_400_000) } } });
+  const ai = await prisma.analyticsEvent.deleteMany({ where: { name: { in: ["ai_call", "ai_blocked"] }, createdAt: { lt: new Date(now.getTime() - AI_CALL_RETENTION_DAYS * 86_400_000) } } });
+  return { opsEvents: ops.count, aiCalls: ai.count };
+}
+
+export async function runIntegrationMaintenance(): Promise<{ calendars: number; calendarFailures: number; instagramRefreshed: number; flagged: number; pruned: { opsEvents: number; aiCalls: number } }> {
+  const out = { calendars: 0, calendarFailures: 0, instagramRefreshed: 0, flagged: 0, pruned: { opsEvents: 0, aiCalls: 0 } };
+  out.pruned = await pruneOperationalRows().catch((err) => { void reportFailure("job", "Retention prune failed", { error: err }); return { opsEvents: 0, aiCalls: 0 }; });
   const calendars = await prisma.integration.findMany({ where: { provider: { in: ["GOOGLE_CALENDAR", "APPLE_CALENDAR"] }, status: { in: ["CONNECTED", "SYNC_ERROR"] } } });
   for (const row of calendars) {
     const r = await syncCalendarIn(row);

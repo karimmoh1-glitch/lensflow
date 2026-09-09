@@ -14,6 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
   return {
     title: `${business.name} — Book now`,
     description,
+    alternates: { canonical: `/book/${handle}` },
     openGraph: { title: `${business.name} — Book now`, description },
   };
 }

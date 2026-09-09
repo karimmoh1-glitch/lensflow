@@ -84,7 +84,7 @@ setting, URL and variable.
 
 ## 6. TEST RESULTS
 
-- Automated: 225 tests, 34 files, all passing (vitest, real Postgres)
+- Automated: 487 tests, 63 files, all passing (vitest, real Postgres)
 - Typecheck: clean
 - Lint: clean
 - Production build: passes on Vercel (this deploy) and locally
@@ -282,3 +282,13 @@ Done before enabling `OPENAI_API_KEY` in production, from the audit that precede
 - **Founder funnel**: signup → onboarding → channel → first conversation → first action → came back after day one → trial → paid, with drop-off per step, and conversion by what people said at setup.
 - **Extraction reads the cleaned message** now, so a date in quoted history is never taken as the ask; a bare month ("in October") counts as one.
 - **Tested end to end** on ten realistic messages through the real ingestion path: inquiry, existing customer, DoorDash, receipt, junk, newsletter, high-value booking, ghosted lead, repeat customer.
+
+## Final launch pass (2026-09-08, PR #65, `b791e6c`)
+
+- **Audit first**, 53 areas, every claim checked against source. Fixed what was live: Sign in with Google (state purpose refused by its own verifier), comped workspaces held to Free limits at server-side quota reads, an orphaned unauthenticated business search and password oracle, Gmail's fixed 15-message poll (now a time window since the last sync, throttled on the record), Meta DMs dropped after a token expired, public forms creating duplicate people, questionnaire "sent" before it left, the last-workspace deletion lockout, customer names in analytics, canonical on booking pages, no root-level error page, sub-40px touch targets.
+- **One next-best-action engine** (`src/lib/nextAction.ts`, `src/server/nextActions.ts`) feeds Today, the agent's proposals and the assistant. Known money (a quote that went out, a budget they named) is kept apart from estimates (a service's price) everywhere it is shown. `Lead.quotedCents/quotedAt` record the price actually sent.
+- **Assistant** grounded on the engine, quotes, channel mix and response time — each only with enough data, "I don't have enough information" otherwise.
+- **Identity**: merge candidates on exact identifiers or an uncontradicted full name; the owner decides.
+- **Mobile app** rebuilt (`mobile/`, `docs/MOBILE.md`) on `/api/mobile/*` bearer routes over the same server code; push through Expo; verified through Expo's web target in headless Chrome at 375–430 in light and dark. Not verified: native simulator, push delivery, TestFlight (no Xcode on the build machine).
+- **Verified on the deployed build**: routes, security headers (HSTS, CSP, frame-deny, nosniff, referrer, permissions), 56 page×width combinations at 375–1728 with no document scroll, no horizontal overflow, zero axe violations; the mobile API with the demo account, 401 without a token, 404 across tenants.
+- **Still external**: OpenAI billing (calls return 429 "no credit" → rules fallback), Stripe keys, Meta app + App Review, Twilio, Resend, Apple Developer account for TestFlight.

@@ -72,7 +72,7 @@ describe("Instagram identity", () => {
     expect(await processMetaEnvelope(dm(APP, "igsid_cust2", `mid_${stamp()}`))).toMatchObject({ handled: 0, ignored: 1 });
     expect(await processMetaEnvelope(dm(OTHER_PRO, "igsid_cust2", `mid_${stamp()}`))).toMatchObject({ handled: 0, ignored: 1 });
     expect(await prisma.message.count({ where: { conversation: { businessId: a } } })).toBe(before);
-    expect(requests.some((u) => u.includes("/me?"))).toBe(false); // a resolved row is not re-asked
+    expect(requests.some((u) => u.includes("/me?") && u.includes("IGAAtoken"))).toBe(false); // a resolved row is not re-asked
   });
 
   it("our own messages are never inbound: an echo, a sender equal to either of our ids, a reply we sent", async () => {

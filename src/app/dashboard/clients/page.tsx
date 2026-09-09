@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { isAcknowledgement, splitMessage } from "@/lib/cleanMessage";
 import { PageHeader, EmptyState, Card, Badge } from "@/components/ui";
 import { initials } from "@/lib/utils";
 import { InviteClientButton } from "./InviteClientButton";
@@ -22,10 +23,12 @@ export default async function ClientsPage() {
         bookings: true,
         subscriptions: { where: { status: "ACTIVE" } },
         // The latest conversation that is a real person's, with what they asked and where it stands.
-        conversations: { where: { category: "PRIORITY", archived: false }, orderBy: { lastMessageAt: "desc" }, take: 1, select: { channel: true, lastMessageAt: true, messages: { orderBy: { createdAt: "desc" }, take: 1, select: { direction: true, createdAt: true } } } },
+        conversations: { where: { category: "PRIORITY", archived: false }, orderBy: { lastMessageAt: "desc" }, take: 1, select: { channel: true, lastMessageAt: true, messages: { orderBy: { createdAt: "desc" }, take: 1, select: { direction: true, createdAt: true, body: true } } } },
         leads: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true, intent: true, respondedAt: true, lastInboundAt: true, followUpAt: true, createdAt: true, requestedDateText: true, requestedLocation: true, budgetCents: true, estimatedValueCents: true, service: { select: { name: true } } } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { updatedAt: "desc" },
+      // The most recent 600 people keep the page fast at volume; search reaches everyone from the inbox.
+      take: 600,
     }),
     prisma.orgMembership.findMany({
       where: { businessId: business.id, role: "CLIENT" },
@@ -46,7 +49,7 @@ export default async function ClientsPage() {
       category: conv ? "PRIORITY" : c.relationship === "CUSTOMER" || c.bookings.length > 0 ? "PRIORITY" : null,
       relationship: c.relationship,
       lead: lead ? { status: lead.status, intent: lead.intent, respondedAt: lead.respondedAt, lastInboundAt: lead.lastInboundAt, followUpAt: lead.followUpAt, createdAt: lead.createdAt, serviceName: lead.service?.name ?? null, requestedDateText: lead.requestedDateText, requestedLocation: lead.requestedLocation, budgetCents: lead.budgetCents, estimatedValueCents: lead.estimatedValueCents } : null,
-      lastWordIsTheirs: last?.direction === "INBOUND",
+      lastWordIsTheirs: last?.direction === "INBOUND" && !isAcknowledgement(splitMessage(last.body).text),
       lastInboundAt: last?.direction === "INBOUND" ? last.createdAt : null,
       hasUpcomingBooking: Boolean(upcoming),
       upcomingUnconfirmed: upcoming ? upcoming.status === "BOOKED" : false,

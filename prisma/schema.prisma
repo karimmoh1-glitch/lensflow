@@ -369,6 +369,8 @@ model Client {
 
   @@index([businessId])
   @@index([businessId, email])
+  @@index([businessId, phone])
+  @@index([businessId, instagram])
 }
 
 model ClientNote {
@@ -436,6 +438,8 @@ model Lead {
   updatedAt DateTime @updatedAt
 
   @@index([businessId, status])
+  @@index([businessId, followUpAt])
+  @@index([businessId, quotedAt])
 }
 
 // ─────────────────────────────────────────────────────────────────────────

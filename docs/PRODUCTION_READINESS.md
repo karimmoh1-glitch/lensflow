@@ -84,7 +84,7 @@ setting, URL and variable.
 
 ## 6. TEST RESULTS
 
-- Automated: 487 tests, 63 files, all passing (vitest, real Postgres)
+- Automated: 490 tests, 63 files, all passing (vitest, real Postgres)
 - Typecheck: clean
 - Lint: clean
 - Production build: passes on Vercel (this deploy) and locally
@@ -292,3 +292,10 @@ Done before enabling `OPENAI_API_KEY` in production, from the audit that precede
 - **Mobile app** rebuilt (`mobile/`, `docs/MOBILE.md`) on `/api/mobile/*` bearer routes over the same server code; push through Expo; verified through Expo's web target in headless Chrome at 375–430 in light and dark. Not verified: native simulator, push delivery, TestFlight (no Xcode on the build machine).
 - **Verified on the deployed build**: routes, security headers (HSTS, CSP, frame-deny, nosniff, referrer, permissions), 56 page×width combinations at 375–1728 with no document scroll, no horizontal overflow, zero axe violations; the mobile API with the demo account, 401 without a token, 404 across tenants.
 - **Still external**: OpenAI billing (calls return 429 "no credit" → rules fallback), Stripe keys, Meta app + App Review, Twilio, Resend, Apple Developer account for TestFlight.
+
+## Final readiness sprint (2026-09-08)
+
+- **Acknowledgements are not questions.** "Thanks, see you Saturday!" after your reply keeps the lead answered and a planned follow-up planned; anything with a question, a number or a request reopens the thread (`isAcknowledgement` in `src/lib/cleanMessage.ts`, applied in ingestion and every "waiting" read: inbox, thread, People, mobile). Tested.
+- **Scroll behaviour under long content is tested, not eyeballed** (`scratchpad/qa/scroll-qa.mjs` + `scripts-dev/stage-stress.ts`): a 140-message thread, 320 conversations, 220 people and 60 bookings at 375–1728 — the document never scrolls, the shell never grows, main or the inbox column or the thread owns the scroll, navigation stays on screen, the composer stays visible. 49 combinations, no problems.
+- **Bounded lists**: People reads the most recent 600; Bookings reads each tab's own rows (300) with counts for the tabs. Indexes added for identity lookups by phone and Instagram and for follow-up and quote reads.
+- **44px** touch targets on coarse pointers for Summarize, clear, follow-up and thread tools; the founder dashboard shows connections that need reconnecting, by provider.

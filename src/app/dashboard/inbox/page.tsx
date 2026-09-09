@@ -17,7 +17,7 @@ import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
 import { AutoGmailSync } from "./AutoGmailSync";
 import { ConversationTools } from "./ConversationTools";
 import { SearchBox } from "./SearchBox";
-import { previewOf } from "@/lib/cleanMessage";
+import { previewOf, isAcknowledgement, splitMessage } from "@/lib/cleanMessage";
 
 /**
  * The inbox. One list of every conversation from every connected channel, newest first,
@@ -85,7 +85,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     const isPerson = conv.category === "PRIORITY";
     const unread = Boolean(last && last.direction === "INBOUND" && (!conv.lastReadAt || conv.lastReadAt < last.createdAt));
     // Waiting on you: the last word in the thread is theirs.
-    const unanswered = isPerson && last?.direction === "INBOUND";
+    const unanswered = isPerson && last?.direction === "INBOUND" && !isAcknowledgement(splitMessage(last.body).text);
     // Follow-ups (due, or suggested after silence) — the same rules Today uses. "Waiting" stays the row's own reading of the thread.
     const att = conv.lead ? leadAttention({ status: conv.lead.status, respondedAt: conv.lead.respondedAt, lastInboundAt: conv.lead.lastInboundAt, followUpAt: conv.lead.followUpAt, createdAt: conv.lead.createdAt, hasService: Boolean(conv.lead.serviceId), hasDate: Boolean(conv.lead.requestedDateText || conv.lead.requestedDate), hidden: conv.archived || !isPerson, hasUpcomingBooking: false }) : null;
     const followUp = !unanswered && att && att.kind !== "waiting_reply" ? att.label : null;

@@ -36,16 +36,18 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
   const now = new Date();
   const tz = business.timezone;
 
-  const all = await prisma.booking.findMany({
-    where: { businessId: business.id },
-    include: { client: true, service: true },
-    orderBy: { startAt: "asc" },
-  });
-  const upcoming = all.filter((b) => b.status !== "CANCELED" && b.endAt >= now);
-  const past = all.filter((b) => b.status !== "CANCELED" && b.endAt < now).sort((a, b) => b.startAt.getTime() - a.startAt.getTime());
-  const canceled = all.filter((b) => b.status === "CANCELED").sort((a, b) => b.startAt.getTime() - a.startAt.getTime());
+  // Each tab reads only its own rows, most relevant first, capped so a long history stays fast.
+  const include = { client: true, service: true } as const;
+  const [upcoming, past, canceled, unconfirmed, pastCount, canceledCount] = await Promise.all([
+    prisma.booking.findMany({ where: { businessId: business.id, status: { not: "CANCELED" }, endAt: { gte: now } }, include, orderBy: { startAt: "asc" }, take: 300 }),
+    scope === "past" ? prisma.booking.findMany({ where: { businessId: business.id, status: { not: "CANCELED" }, endAt: { lt: now } }, include, orderBy: { startAt: "desc" }, take: 300 }) : Promise.resolve([]),
+    scope === "canceled" ? prisma.booking.findMany({ where: { businessId: business.id, status: "CANCELED" }, include, orderBy: { startAt: "desc" }, take: 300 }) : Promise.resolve([]),
+    prisma.booking.count({ where: { businessId: business.id, status: "BOOKED", endAt: { gte: now } } }),
+    prisma.booking.count({ where: { businessId: business.id, status: { not: "CANCELED" }, endAt: { lt: now } } }),
+    prisma.booking.count({ where: { businessId: business.id, status: "CANCELED" } }),
+  ]);
+  const total = upcoming.length + pastCount + canceledCount;
   const rows = scope === "upcoming" ? upcoming : scope === "past" ? past : canceled;
-  const unconfirmed = upcoming.filter((b) => b.status === "BOOKED").length;
 
   const groupOf = (d: Date) => {
     const z = toZonedDisplayDate(d, tz);
@@ -73,14 +75,14 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
       />
 
       <div className="flex items-center gap-1 mb-5 rounded-full bg-black/[0.04] p-1 w-fit" role="tablist" aria-label="Which bookings">
-        {([["upcoming", "Upcoming", upcoming.length], ["past", "Past", past.length], ["canceled", "Canceled", canceled.length]] as const).map(([key, label, n]) => (
+        {([["upcoming", "Upcoming", upcoming.length], ["past", "Past", pastCount], ["canceled", "Canceled", canceledCount]] as const).map(([key, label, n]) => (
           <Link key={key} href={key === "upcoming" ? "/dashboard/bookings" : `/dashboard/bookings?view=${key}`} role="tab" aria-selected={scope === key} className={cn("inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-[13px] font-semibold transition-colors", scope === key ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink")}>
             {label} <span className={cn("text-[11px] tabular-nums", scope === key ? "text-ink/65" : "text-ink/65")}>{n}</span>
           </Link>
         ))}
       </div>
 
-      {all.length === 0 ? (
+      {total === 0 ? (
         <EmptyState
           title={personalization?.usesBookings ? "Set up your first booking workflow" : "No bookings yet"}
           description={personalization?.usesBookings ? "You said customers book with you. Add your services and hours once; then book anyone from their conversation, or share your booking page and let them pick a time. The confirmation is sent for you." : "Bookings made from a conversation or your public booking page show up here — on the calendar, with the confirmation sent for you."}

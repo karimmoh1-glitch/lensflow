@@ -37,7 +37,7 @@ export function FollowUpControl({ leadId, followUpAt }: { leadId: string; follow
       {current ? (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-signal/25 bg-signal-soft/40 px-3 py-2">
           <span className="text-xs text-ink/80"><span className="font-semibold text-ink">{format(new Date(current), "EEE, MMM d")}</span>{new Date(current) <= new Date() ? " · due now" : ""}</span>
-          <button type="button" onClick={() => save(null)} disabled={pending} aria-label="Clear follow-up reminder" className="w-7 h-7 [@media(pointer:coarse)]:w-10 [@media(pointer:coarse)]:h-10 rounded-full inline-flex items-center justify-center text-ink/60 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden /></button>
+          <button type="button" onClick={() => save(null)} disabled={pending} aria-label="Clear follow-up reminder" className="w-7 h-7 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-full inline-flex items-center justify-center text-ink/60 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden /></button>
         </div>
       ) : (
         <div className="flex flex-wrap gap-1.5">

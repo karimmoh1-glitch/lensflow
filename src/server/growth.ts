@@ -31,13 +31,14 @@ const tally = (values: (string | null | undefined)[]) => {
 
 export async function getGrowth(days = 30) {
   const since = subDays(new Date(), days);
-  const [anon, biz, businesses, profiles, subs, integrations, convCount, inboundCount, bookingCount, automationsOn, agentApprovals, activeRows] = await Promise.all([
+  const [anon, biz, businesses, profiles, subs, integrations, attention, convCount, inboundCount, bookingCount, automationsOn, agentApprovals, activeRows] = await Promise.all([
     distinctAnonymous(["landing_view", "landing_cta", "referral_started", "onboarding_started", "onboarding_skipped", "personalization_completed", "recommended_plan_shown"], since),
     distinctBusinesses(["signup_completed", "workspace_created", "onboarding_completed", "first_channel_connected", "first_message_received", "first_conversation_viewed", ...FIRST_ACTION, "first_automation_created", "paywall_shown", "paywall_cta", "checkout_started", "trial_started", "subscription_started", "subscription_canceled", "referral_signup", "referral_activated", "referral_converted", "personalization_created"], since),
     prisma.business.findMany({ where: { createdAt: { gte: since } }, select: { id: true } }),
     prisma.onboardingProfile.findMany({ where: { createdAt: { gte: since } }, select: { businessStatus: true, userType: true, teamSize: true, recommendedPlan: true, selectedPlan: true, channels: true, painPoints: true, workCategory: true } }),
     prisma.business.findMany({ where: { planTier: { not: "FREE" } }, select: { planTier: true, billingStatus: true, currentPeriodEnd: true, trialEndsAt: true, cancelAtPeriodEnd: true } }),
     prisma.integration.groupBy({ by: ["provider"], where: { status: { in: [...ACTIVE] } }, _count: { _all: true } }),
+    prisma.integration.groupBy({ by: ["provider"], where: { status: { in: ["NEEDS_ATTENTION", "SYNC_ERROR"] } }, _count: { _all: true } }),
     prisma.conversation.count({ where: { createdAt: { gte: since } } }),
     prisma.message.count({ where: { createdAt: { gte: since }, direction: "INBOUND" } }),
     prisma.booking.count({ where: { createdAt: { gte: since } } }),
@@ -76,7 +77,7 @@ export async function getGrowth(days = 30) {
     days,
     acquisition: { visitors: anon.landing_view, startClicks: anon.landing_cta, referralVisits: anon.referral_started, startOpened: anon.onboarding_started, questionsFinished: anon.personalization_completed, skipped: anon.onboarding_skipped, signups: biz.signup_completed, newWorkspaces: businesses.length },
     activation: { onboardingCompleted: biz.onboarding_completed, firstChannel: biz.first_channel_connected, firstMessage: biz.first_message_received, firstConversationViewed: biz.first_conversation_viewed, firstAction: firstAction.length, firstFollowUp: biz.first_followup_created, firstBooking: biz.first_booking_created, firstAutomation: biz.first_automation_created, firstAgent: biz.first_ai_action },
-    engagement: { totalBusinesses, activeBusinesses7d: activeRows.length, conversations: convCount, inboundMessages: inboundCount, bookings: bookingCount, automationsOn, agentApprovals, connectedByProvider: Object.fromEntries(integrations.map((i) => [i.provider, i._count._all])) },
+    engagement: { totalBusinesses, activeBusinesses7d: activeRows.length, conversations: convCount, inboundMessages: inboundCount, bookings: bookingCount, automationsOn, agentApprovals, connectedByProvider: Object.fromEntries(integrations.map((i) => [i.provider, i._count._all])), attentionByProvider: Object.fromEntries(attention.map((i) => [i.provider, i._count._all])) },
     revenue: { paywallShown: biz.paywall_shown, paywallCta: biz.paywall_cta, checkoutStarted: biz.checkout_started, trialsStarted: biz.trial_started, trialingNow: trialing.length, paidNow: paidActive.length, byPlan: tally(paidActive.map((s) => s.planTier)), mrrCents, cancellations: biz.subscription_canceled, cancelAtPeriodEnd: subs.filter((s) => s.cancelAtPeriodEnd).length, subscriptionsStarted: biz.subscription_started },
     funnel: { signupToChannel: pct(biz.first_channel_connected, biz.signup_completed), channelToFirstAction: pct(firstAction.length, biz.first_channel_connected), signupToTrial: pct(biz.trial_started, biz.signup_completed), trialToPaid: biz.trial_started > 0 ? pct(paidActive.length, biz.trial_started) : null, paywallToCheckout: pct(biz.checkout_started, biz.paywall_shown) },
     personas: { businessStatus: tally(profiles.map((p) => p.businessStatus)), userType: tally(profiles.map((p) => p.userType)), workCategory: tally(profiles.map((p) => p.workCategory)), teamSize: tally(profiles.map((p) => p.teamSize)), recommendedPlan: tally(profiles.map((p) => p.recommendedPlan)), selectedPlan: tally(profiles.map((p) => p.selectedPlan)), channels: tally(profiles.flatMap((p) => p.channels)), painPoints: tally(profiles.flatMap((p) => p.painPoints)), profiles: profiles.length },

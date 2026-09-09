@@ -164,4 +164,19 @@ describe("one human on three channels", () => {
     expect(await mergeClientRecords(stranger.id, gm.client!.id, sms.client!.id)).toMatchObject({ ok: false });
     expect(await prisma.client.count({ where: { businessId: biz.id } })).toBe(4);
   });
+
+  it("a thank-you after your reply keeps the lead answered; a follow-up question reopens it", async () => {
+    const b = await prisma.business.create({ data: { name: "Ack Studio", handle: `ack-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` } });
+    made.push(b.id);
+    const first = await ingestInboundMessage({ businessId: b.id, channel: "EMAIL", senderName: "Dana Ortiz", senderHandle: "dana.ortiz@outlook.com", clientEmail: "dana.ortiz@outlook.com", subject: "Headshots", body: "Hi! Do you do headshots for a team of six? What would that cost?", providerMessageId: `ack-1-${Date.now()}` });
+    await prisma.lead.update({ where: { id: first.lead!.id }, data: { respondedAt: new Date(), status: "CONTACTED" } });
+    await ingestInboundMessage({ businessId: b.id, channel: "EMAIL", senderName: "Dana Ortiz", senderHandle: "dana.ortiz@outlook.com", clientEmail: "dana.ortiz@outlook.com", subject: "Re: Headshots", body: "Perfect, thank you so much! Talk soon.", providerMessageId: `ack-2-${Date.now()}` });
+    let lead = await prisma.lead.findUnique({ where: { id: first.lead!.id } });
+    expect(lead?.respondedAt).not.toBeNull();
+    expect((await getNextActions(b.id)).actions.find((a) => a.person.leadId === lead!.id)).toBeUndefined();
+    await ingestInboundMessage({ businessId: b.id, channel: "EMAIL", senderName: "Dana Ortiz", senderHandle: "dana.ortiz@outlook.com", clientEmail: "dana.ortiz@outlook.com", subject: "Re: Headshots", body: "Thanks! Actually, could we do it on the 20th instead?", providerMessageId: `ack-3-${Date.now()}` });
+    lead = await prisma.lead.findUnique({ where: { id: first.lead!.id } });
+    expect(lead?.respondedAt).toBeNull();
+    expect((await getNextActions(b.id)).actions.find((a) => a.person.leadId === lead!.id)?.kind).toBe("reply");
+  });
 });

@@ -128,6 +128,21 @@ export function splitMessage(raw: string): SplitMessage {
 }
 
 /** The one-line preview an inbox row shows: the new content, single-spaced, capped. */
+/**
+ * A closing acknowledgement — "Thanks!", "Perfect, see you Saturday", "Sounds good 👍" — is
+ * not a question waiting for an answer. Only short messages made entirely of such words
+ * count; anything with a question mark, a number, a price or a date request does not.
+ */
+const ACK_WORDS = new Set("ok okay k thanks thank thankyou thx ty you so much very perfect great awesome amazing wonderful lovely brilliant fantastic excellent sounds good got it will do noted appreciate appreciated that works for me yes yep yup sure thing looking forward to see then there talk soon bye cheers all best have a nice day weekend night morning evening take care many again really super cool fine alright received confirmed confirm confirming glad happy no problem worries can't wait cant wait excited we'll well be will me us our i am i'm the this is and of on at in".split(/\s+/));
+const DAYS = /^(mon|tues?|wed(nes)?|thu(rs)?|fri|sat(ur)?|sun)(day)?$|^(today|tomorrow|tonight|weekend)$/;
+export function isAcknowledgement(text: string): boolean {
+  const t = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, " ").trim();
+  if (!t || t.length > 160 || /[?$\d]/.test(t)) return false;
+  const words = t.toLowerCase().replace(/[^a-z'\s]/g, " ").split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 25) return false;
+  return words.every((w) => ACK_WORDS.has(w) || DAYS.test(w));
+}
+
 export function previewOf(raw: string, max = 160): string {
   const { text } = splitMessage(raw);
   const oneLine = text.replace(/\s+/g, " ").trim();

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { splitMessage, previewOf } from "@/lib/cleanMessage";
+import { splitMessage, previewOf, isAcknowledgement } from "@/lib/cleanMessage";
 import { readOpportunity, looksLikeTime } from "@/lib/opportunity";
 import { leadAttention } from "@/lib/attention";
 import { readRelationship } from "@/lib/relationshipState";
@@ -67,7 +67,7 @@ export async function listConversations(businessId: string, opts: { view: "prior
     const last = conv.messages[0];
     const isPerson = conv.category === "PRIORITY";
     const unread = Boolean(last && last.direction === "INBOUND" && (!conv.lastReadAt || conv.lastReadAt < last.createdAt));
-    const waiting = isPerson && last?.direction === "INBOUND";
+    const waiting = isPerson && last?.direction === "INBOUND" && !isAcknowledgement(splitMessage(last.body).text);
     const att = conv.lead ? leadAttention({ status: conv.lead.status, respondedAt: conv.lead.respondedAt, lastInboundAt: conv.lead.lastInboundAt, followUpAt: conv.lead.followUpAt, createdAt: conv.lead.createdAt, hasService: Boolean(conv.lead.serviceId), hasDate: Boolean(conv.lead.requestedDateText || conv.lead.requestedDate), hidden: conv.archived || !isPerson, hasUpcomingBooking: false }) : null;
     const opportunity = readOpportunity({
       category: conv.category,
@@ -121,7 +121,7 @@ export async function readThread(businessId: string, conversationId: string, tim
   const lastInbound = [...conversation.messages].reverse().find((m) => m.direction === "INBOUND") ?? null;
   const lastOutbound = [...conversation.messages].reverse().find((m) => m.direction === "OUTBOUND") ?? null;
   const lastMsg = conversation.messages[conversation.messages.length - 1];
-  const waitingOnYou = isPerson && lastMsg?.direction === "INBOUND";
+  const waitingOnYou = isPerson && lastMsg?.direction === "INBOUND" && !isAcknowledgement(splitMessage(lastMsg.body).text);
   const upcoming = client?.bookings.filter((b) => b.startAt >= now && b.status !== "CANCELED").sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0] ?? null;
   const lastCompleted = client?.bookings.filter((b) => b.startAt < now && b.status !== "CANCELED").sort((a, b) => b.startAt.getTime() - a.startAt.getTime())[0] ?? null;
   const upcomingLabel = upcoming ? `${upcoming.service.name} · ${format(toZonedDisplayDate(upcoming.startAt, timezone), "EEE, MMM d · h:mm a")}` : null;
@@ -193,7 +193,7 @@ export async function listPeople(businessId: string, q?: string | null) {
   const clients = await prisma.client.findMany({
     where: { businessId, ...(contains ? { OR: [{ name: contains }, { email: contains }, { phone: contains }] } : {}) },
     include: {
-      conversations: { where: { archived: false, category: "PRIORITY" }, orderBy: { lastMessageAt: "desc" }, take: 1, select: { id: true, channel: true, lastMessageAt: true, messages: { orderBy: { createdAt: "desc" }, take: 1, select: { direction: true, createdAt: true } } } },
+      conversations: { where: { archived: false, category: "PRIORITY" }, orderBy: { lastMessageAt: "desc" }, take: 1, select: { id: true, channel: true, lastMessageAt: true, messages: { orderBy: { createdAt: "desc" }, take: 1, select: { direction: true, createdAt: true, body: true } } } },
       bookings: { where: { status: { not: "CANCELED" } }, select: { id: true, startAt: true, status: true }, orderBy: { startAt: "desc" }, take: 3 },
       leads: { orderBy: { createdAt: "desc" }, take: 1, include: { service: { select: { name: true } } } },
     },
@@ -209,7 +209,7 @@ export async function listPeople(businessId: string, q?: string | null) {
       category: conv ? "PRIORITY" : c.relationship === "CUSTOMER" || c.bookings.length > 0 ? "PRIORITY" : null,
       relationship: c.relationship,
       lead: lead ? { status: lead.status, intent: lead.intent, respondedAt: lead.respondedAt, lastInboundAt: lead.lastInboundAt, followUpAt: lead.followUpAt, createdAt: lead.createdAt, serviceName: lead.service?.name ?? null, requestedDateText: lead.requestedDateText, requestedLocation: lead.requestedLocation, budgetCents: lead.budgetCents, estimatedValueCents: lead.estimatedValueCents } : null,
-      lastWordIsTheirs: last?.direction === "INBOUND",
+      lastWordIsTheirs: last?.direction === "INBOUND" && !isAcknowledgement(splitMessage(last.body).text),
       lastInboundAt: last?.direction === "INBOUND" ? last.createdAt : null,
       hasUpcomingBooking: Boolean(upcoming),
       upcomingUnconfirmed: upcoming ? upcoming.status === "BOOKED" : false,

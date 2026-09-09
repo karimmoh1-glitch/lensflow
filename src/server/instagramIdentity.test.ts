@@ -69,10 +69,14 @@ describe("Instagram identity", () => {
 
   it("the app-scoped id is not a routing key: an event addressed to it is unknown, and so is a professional id nobody holds", async () => {
     const before = await prisma.message.count({ where: { conversation: { businessId: a } } });
+    const resolvedAt = ((await prisma.integration.findUnique({ where: { businessId_provider: { businessId: a, provider: "INSTAGRAM" } } }))?.settings as { identityResolvedAt?: string }).identityResolvedAt;
     expect(await processMetaEnvelope(dm(APP, "igsid_cust2", `mid_${stamp()}`))).toMatchObject({ handled: 0, ignored: 1 });
     expect(await processMetaEnvelope(dm(OTHER_PRO, "igsid_cust2", `mid_${stamp()}`))).toMatchObject({ handled: 0, ignored: 1 });
     expect(await prisma.message.count({ where: { conversation: { businessId: a } } })).toBe(before);
-    expect(requests.some((u) => u.includes("/me?") && u.includes("IGAAtoken"))).toBe(false); // a resolved row is not re-asked
+    // A resolved row is not re-asked: its identity record is untouched (other suites' rows in the shared database may be asked concurrently).
+    const rowA = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: a, provider: "INSTAGRAM" } } });
+    expect(rowA?.externalId).toBe(PRO);
+    expect((rowA?.settings as { identityResolvedAt?: string }).identityResolvedAt).toBe(resolvedAt);
   });
 
   it("our own messages are never inbound: an echo, a sender equal to either of our ids, a reply we sent", async () => {

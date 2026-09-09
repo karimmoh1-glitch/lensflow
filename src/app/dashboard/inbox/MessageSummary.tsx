@@ -40,7 +40,7 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
         aria-expanded={summary ? open : undefined}
         aria-label={summary ? (open ? "Hide summary" : "Show summary") : "Summarize this message"}
         className={cn(
-          "inline-flex items-center gap-1 h-6 px-1.5 -ml-1.5 rounded-md text-[11px] font-semibold transition-opacity duration-150 [@media(pointer:coarse)]:h-10 [@media(pointer:coarse)]:px-2.5 [@media(pointer:coarse)]:text-[12px]",
+          "inline-flex items-center gap-1 h-6 px-1.5 -ml-1.5 rounded-md text-[11px] font-semibold transition-opacity duration-150 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:px-2.5 [@media(pointer:coarse)]:text-[12px]",
           // Always present for touch; on a hover-capable device it fades in with the message.
           "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/msg:opacity-100 [@media(hover:hover)]:group-focus-within/msg:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100",
           summary && open && "[@media(hover:hover)]:opacity-100",
@@ -56,7 +56,7 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
         <div role="status" className={cn("mt-1 rounded-xl px-3 py-2 text-[13px] leading-snug", outbound ? "bg-white/10 text-white" : "bg-white border border-border text-ink")}>
           <div className="flex items-start gap-2">
             <p className="flex-1">{summary}</p>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Hide summary" className={cn("shrink-0 w-5 h-5 [@media(pointer:coarse)]:w-10 [@media(pointer:coarse)]:h-10 rounded-md inline-flex items-center justify-center", tone)}><X className="w-3 h-3" strokeWidth={2.5} aria-hidden /></button>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Hide summary" className={cn("shrink-0 w-5 h-5 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-md inline-flex items-center justify-center", tone)}><X className="w-3 h-3" strokeWidth={2.5} aria-hidden /></button>
           </div>
           <p className={cn("mt-1 text-[10px] font-bold uppercase tracking-[0.12em]", outbound ? "text-white/70" : "text-ink/65")}>{source === "ai" ? "Written by the model from this message" : "From the message, by rules"}</p>
         </div>

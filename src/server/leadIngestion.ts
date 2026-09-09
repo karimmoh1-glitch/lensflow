@@ -4,7 +4,7 @@ import { withLock } from "@/lib/dbLock";
 import { track } from "@/lib/analytics";
 import { extractLeadInfo } from "@/lib/ai";
 import { cleanEmailBody } from "@/lib/emailText";
-import { splitMessage } from "@/lib/cleanMessage";
+import { isAcknowledgement, splitMessage } from "@/lib/cleanMessage";
 import { FREEMAIL, classifyMessage } from "@/lib/classifyMessage";
 import { findKnownClient } from "@/server/identity";
 import type { ChannelType } from "@prisma/client";
@@ -185,8 +185,9 @@ async function ingestUnlocked(params: {
           intent: mergedIntent,
           estimatedValueCents: mergedServicePrice ?? lead.estimatedValueCents,
           lastInboundAt: new Date(),
-          respondedAt: null,
-          followUpAt: null,
+          // "Thanks, see you Saturday!" after your reply is not a question: the lead stays
+          // answered and a planned follow-up stays planned. Anything else reopens the thread.
+          ...(lead.respondedAt && isAcknowledgement(splitMessage(body).text) ? { respondedAt: new Date() } : { respondedAt: null, followUpAt: null }),
         },
       });
     }

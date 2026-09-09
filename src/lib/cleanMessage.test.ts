@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { normalizeEmailContent } from "./emailNormalize";
-import { splitMessage, previewOf } from "./cleanMessage";
+import { isAcknowledgement, splitMessage, previewOf } from "./cleanMessage";
 
 const GMAIL_REPLY = `The location will be at Redmond Town Center. My budget is $500, and I want this done for my newborn child.
 
@@ -152,5 +152,13 @@ describe("the noise a real inbox carries", () => {
     expect(r.text).toContain("[track.example.com link]");
     expect(r.text.length).toBeGreaterThan(10);
   });
-});
 
+  describe("isAcknowledgement", () => {
+    it("recognises a closing thank-you that needs no reply", () => {
+      for (const m of ["Thanks!", "Thank you so much!!", "Perfect, see you Saturday 👍", "Sounds good, looking forward to it.", "Got it, thanks again", "ok great"]) expect(isAcknowledgement(m), m).toBe(true);
+    });
+    it("never mistakes a question, a number or a request for one", () => {
+      for (const m of ["Thanks! Can we do 3pm instead?", "Thank you. Is the $500 package still available", "Great — what should we wear?", "Thanks, could you send the address", "Perfect. October 14 works", "Thanks so much, one more thing: do you travel to Tacoma"]) expect(isAcknowledgement(m), m).toBe(false);
+    });
+  });
+});

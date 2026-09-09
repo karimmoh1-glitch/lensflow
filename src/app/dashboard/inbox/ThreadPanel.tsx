@@ -16,7 +16,7 @@ import { LeadBooking } from "./LeadBooking";
 import { MarkLostButton } from "./MarkLostButton";
 import { AssignMenu } from "./AssignMenu";
 import { teamEntitled } from "@/lib/billing";
-import { splitMessage } from "@/lib/cleanMessage";
+import { splitMessage, isAcknowledgement } from "@/lib/cleanMessage";
 import { understand } from "@/lib/understand";
 import { readRelationship } from "@/lib/relationshipState";
 import { labelFor } from "@/lib/classifyMessage";
@@ -73,7 +73,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
   const lastOutboundMsg = [...conversation.messages].reverse().find((m) => m.direction === "OUTBOUND");
   const lastMsg = conversation.messages[conversation.messages.length - 1];
   const unread = Boolean(lastInboundMsg && (!conversation.lastReadAt || conversation.lastReadAt < lastInboundMsg.createdAt));
-  const waitingOnYou = isPerson && lastMsg?.direction === "INBOUND";
+  const waitingOnYou = isPerson && lastMsg?.direction === "INBOUND" && !isAcknowledgement(splitMessage(lastMsg.body).text);
   const upcoming = client?.bookings.filter((b) => b.startAt >= now && b.status !== "CANCELED").sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0] ?? null;
   const lastCompleted = client?.bookings.filter((b) => b.startAt < now && b.status !== "CANCELED").sort((a, b) => b.startAt.getTime() - a.startAt.getTime())[0] ?? null;
   const upcomingLabel = upcoming ? `${upcoming.service.name} · ${format(toZonedDisplayDate(upcoming.startAt, tz), "EEE, MMM d · h:mm a")}` : null;

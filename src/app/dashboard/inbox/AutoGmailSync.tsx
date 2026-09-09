@@ -2,16 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { syncGmailNow } from "@/app/actions/googleAuth";
+import { reconcileChannels } from "@/app/actions/sync";
 
-const POLL_MS = 45_000;
+const POLL_MS = 120_000;
 
 /**
- * Renders nothing — just keeps a connected Gmail account's inbox current without a
- * manual click. Polls the same real syncGmailNow() the "Check for new emails" button
- * calls, on an interval, and only refreshes the page when it actually finds something
- * new so an in-progress reply draft is never disturbed. Stops polling while the tab is
- * hidden so it doesn't burn API quota in a background tab.
+ * Renders nothing. The normal path is provider webhooks plus the live stream (InboxLive);
+ * this is the bounded fallback for providers that only offer polling (Gmail) — the same
+ * throttled reconciliation the "Check for messages" button runs, every two minutes while
+ * the tab is visible. Refreshes only when something new actually landed.
  */
 export function AutoGmailSync({ immediate = false }: { immediate?: boolean }) {
   const router = useRouter();
@@ -24,7 +23,7 @@ export function AutoGmailSync({ immediate = false }: { immediate?: boolean }) {
       if (inFlight.current || cancelled || document.hidden) return;
       inFlight.current = true;
       try {
-        const result = await syncGmailNow();
+        const result = await reconcileChannels();
         if (!cancelled && result.ok && result.ingested > 0) {
           router.refresh();
         }

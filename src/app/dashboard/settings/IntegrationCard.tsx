@@ -32,6 +32,8 @@ export type CardModel = {
   status: DisplayStatus;
   account: string | null;
   lastSyncedAt: string | null;
+  /** When the provider last delivered a verified event here (webhook channels). */
+  lastReceivedAt: string | null;
   lastError: string | null;
   detail: string | null;
   adminNote: string | null;
@@ -188,6 +190,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
                 <li key={c} className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink/65 bg-black/[0.04] rounded-md px-1.5 py-0.5">{c}</li>
               ))}
             </ul>
+            {model.status === "connected" && model.lastReceivedAt && <p className="mt-2 text-[11px] text-ink/65">Last message received {model.lastReceivedAt}</p>}
             {model.status === "connected" && model.lastSyncedAt && <p className="mt-2 text-[11px] text-ink/65">Last synced {model.lastSyncedAt}</p>}
             {model.status === "sync_issue" && !model.lastError && (
               <p className="mt-2 text-[11px] text-warning-text">

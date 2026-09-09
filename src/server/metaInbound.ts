@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
 import { instagramUserProfile } from "@/lib/meta/instagram";
 import { reportFailure } from "@/lib/observe";
+import { markWebhookSeen } from "@/server/inboxSignal";
 import type { Integration } from "@prisma/client";
 
 /**
@@ -57,6 +58,7 @@ async function processInstagram(env: MetaEnvelope, out: MetaResult): Promise<voi
       await noteUnknownAccount("INSTAGRAM", igAccountId);
       continue;
     }
+    await markWebhookSeen(integration.businessId, "INSTAGRAM");
     // Instagram Login delivers `entry[].messaging[]`; some app configurations deliver the
     // same events under `entry[].changes[].value.messaging[]`. Both are read.
     const messaging: Messaging[] = [
@@ -150,6 +152,7 @@ async function processWhatsApp(env: MetaEnvelope, out: MetaResult): Promise<void
         await noteUnknownAccount("WHATSAPP", phoneNumberId);
         continue;
       }
+      await markWebhookSeen(integration.businessId, "WHATSAPP");
       const contacts = v.contacts ?? [];
       for (const msg of v.messages ?? []) {
         const from = String(msg.from ?? "");

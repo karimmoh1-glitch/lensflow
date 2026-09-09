@@ -32,7 +32,17 @@ export default function InboxScreen() {
   const rows = (r.data?.rows ?? []).filter((x) => view === "priority" || cat === "all" || x.category === cat);
   const channels = Array.from(new Set((r.data?.rows ?? []).map((x) => x.channel)));
   const refresh = useCallback(async () => { if (session) await api("/api/mobile/gmail", { method: "POST", token: session.token }).catch(() => {}); await r.refresh(); }, [session, r]);
-  useFocusEffect(useCallback(() => { void r.reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [path, session?.token]));
+  useFocusEffect(useCallback(() => {
+    void r.reload();
+    // While this screen is in front, ask the server every 30 s whether the inbox version moved
+    // (one indexed row) and reload only then. Never a provider call from the app.
+    let last: number | null = null; let stopped = false;
+    const tick = async () => { if (stopped || !session) return; try { const v = (await api<{ version: number }>("/api/mobile/sync", { token: session.token })).version; if (last !== null && v !== last) await r.reload(); last = v; } catch { /* next tick */ } };
+    void tick();
+    const id = setInterval(tick, 30_000);
+    return () => { stopped = true; clearInterval(id); };
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [path, session?.token]));
 
   if (!focused) return <Screen />;
   return (

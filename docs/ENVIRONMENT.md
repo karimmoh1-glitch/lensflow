@@ -136,3 +136,33 @@ address stops new grants; it does not revoke one already given.
 `EXPO_ACCESS_TOKEN` — server, optional. Sent as a bearer to Expo's push service (`exp.host`) when set; push works without it unless enhanced push security is turned on in the Expo project. Push tokens are stored on `OrgMembership.pushTokens`; a token Expo reports as unregistered is dropped.
 
 The app itself reads one variable at build time: `EXPO_PUBLIC_API_URL` in `mobile/.env` — the origin of this deployment (`https://daythread.org` in production, a LAN IP or `http://localhost:3100` in development).
+
+## Canonical integration variables
+
+Every value is server-only unless its name starts with `NEXT_PUBLIC_`; the only public one is
+`NEXT_PUBLIC_APP_URL`. "Now" means required for the current production product.
+
+| Variable | Purpose | Required | From | Env | Secret |
+|---|---|---|---|---|---|
+| `DATABASE_URL` | Postgres | Now | Neon | all | yes |
+| `JWT_SECRET` | Sessions, OAuth state | Now | generated | all | yes |
+| `INTEGRATION_TOKEN_ENCRYPTION_KEY` | Tokens at rest | Now | generated | prod | yes |
+| `CRON_SECRET` | Daily cron auth | Now | Vercel cron | prod | yes |
+| `NEXT_PUBLIC_APP_URL` | Redirect URIs, webhook URLs | Now | `https://daythread.org` | all | no |
+| `FOUNDER_EMAILS` | Founder dashboard | Now | you | prod | no |
+| `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` | Instagram Login + signatures | Instagram | Meta app → Instagram → API setup with Instagram login → Business login settings | prod | secret |
+| `META_WEBHOOK_VERIFY_TOKEN` | Meta webhook handshake | Instagram, WhatsApp | generated, pasted into Meta | prod | yes |
+| `META_APP_ID` / `META_APP_SECRET` / `WHATSAPP_CONFIG_ID` | WhatsApp Embedded Signup + signatures | WhatsApp | Meta app → Settings → Basic; WhatsApp → Embedded Signup | prod | secret |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | SMS numbers, sends, webhook signatures | SMS | Twilio Console → Account Info | prod | yes |
+| `TWILIO_FROM_NUMBER` | Shared fallback sender | No | Twilio | prod | no |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Gmail, Google Calendar, Google sign-in | Gmail | Google Cloud → OAuth client | prod | secret |
+| `RESEND_API_KEY` | Password reset, notifications, outbound email | Now | Resend | prod | yes |
+| `RESEND_WEBHOOK_SECRET` / `RESEND_INBOUND_DOMAIN` | Inbound email | Inbound email | Resend | prod | secret / no |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Billing | Paid plans | Stripe | prod | yes / yes / no |
+| `OPENAI_API_KEY` | Drafts, summaries, assistant | AI | OpenAI | prod | yes |
+| `AI_DISABLED` | Kill switch | No | you | prod | no |
+| `COMPED_BUSINESS_EMAILS` | Complimentary plans | No | you | prod | no |
+| `EXPO_ACCESS_TOKEN` | Push via Expo (optional auth) | No | Expo | prod | yes |
+
+A missing optional integration variable degrades that channel to "not available on this
+deployment"; nothing else fails.

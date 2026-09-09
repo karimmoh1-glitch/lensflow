@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { syncCalendarIn } from "@/server/calendarSync";
 import { refreshInstagramToken } from "@/lib/meta/instagram";
+import { checkInstagramSubscription, syncInstagramForBusiness } from "@/server/instagramSync";
 import { reportFailure } from "@/lib/observe";
 
 /**
@@ -32,6 +33,9 @@ export async function runIntegrationMaintenance(): Promise<{ calendars: number; 
   const instagram = await prisma.integration.findMany({ where: { provider: "INSTAGRAM", status: { in: ["CONNECTED", "SYNC_ERROR"] } } });
   for (const row of instagram) {
     if (!row.accessToken) continue;
+    // Is Meta still delivering? And did anything slip past the webhook since yesterday?
+    await checkInstagramSubscription(row);
+    await syncInstagramForBusiness(row.businessId);
     const expiresSoon = !row.tokenExpiresAt || row.tokenExpiresAt.getTime() < Date.now() + 7 * 86400000;
     const oldEnough = !row.updatedAt || Date.now() - row.updatedAt.getTime() > 86400000; // Meta refreshes tokens ≥ 24h old
     if (!expiresSoon || !oldEnough) continue;

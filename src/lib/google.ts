@@ -218,6 +218,36 @@ export type FetchedGmailMessage = {
  * simulation. Real-time push would need a Cloud Pub/Sub topic and users.watch(), which
  * is a heavier setup than a hackathon-scoped OAuth connection can assume exists; this
  * is the honest, immediately-workable alternative, triggered on demand or by a cron. */
+/** Gmail's own position marker for incremental sync: the mailbox's current history id. */
+export async function getGmailHistoryId(accessToken: string): Promise<string | null> {
+  const res = await fetch(`${GMAIL_API}/profile`, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { historyId?: string };
+  return data.historyId ?? null;
+}
+
+/**
+ * Message ids added to the inbox since `startHistoryId`, or null when Gmail no longer has
+ * that history (404: the cursor is too old) — the caller falls back to the time window.
+ */
+export async function listGmailMessageIdsSince(accessToken: string, startHistoryId: string): Promise<{ ids: string[]; historyId: string | null } | null> {
+  const ids = new Set<string>();
+  let pageToken: string | undefined;
+  let historyId: string | null = null;
+  for (let page = 0; page < 10; page++) {
+    const q = new URLSearchParams({ startHistoryId, historyTypes: "messageAdded", labelId: "INBOX", maxResults: "500", ...(pageToken ? { pageToken } : {}) });
+    const res = await fetch(`${GMAIL_API}/history?${q}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`Gmail history failed: ${res.status} ${await res.text()}`);
+    const data = (await res.json()) as { history?: Array<{ messagesAdded?: Array<{ message?: { id?: string; labelIds?: string[] } }> }>; nextPageToken?: string; historyId?: string };
+    for (const h of data.history ?? []) for (const a of h.messagesAdded ?? []) if (a.message?.id && (a.message.labelIds ?? ["INBOX"]).includes("INBOX")) ids.add(a.message.id);
+    historyId = data.historyId ?? historyId;
+    pageToken = data.nextPageToken;
+    if (!pageToken) break;
+  }
+  return { ids: [...ids], historyId };
+}
+
 export async function listRecentGmailMessages(accessToken: string, maxResults = 15, since?: Date | null): Promise<FetchedGmailMessage[]> {
   // category:primary leans on Gmail's own classifier to exclude promotions/social/updates
   // tabs — the same signal the Gmail web UI uses to keep newsletters out of the main
@@ -236,7 +266,12 @@ export async function listRecentGmailMessages(accessToken: string, maxResults = 
   if (!listRes.ok) throw new Error(`Gmail list failed: ${listRes.status} ${await listRes.text()}`);
   const { messages } = (await listRes.json()) as { messages?: { id: string }[] };
   if (!messages?.length) return [];
+  return fetchGmailMessages(accessToken, messages.map((m) => m.id));
+}
 
+/** Full messages for the given ids, in the given order; ids Gmail no longer returns are skipped. */
+export async function fetchGmailMessages(accessToken: string, ids: string[]): Promise<FetchedGmailMessage[]> {
+  const messages = ids.map((id) => ({ id }));
   const results: FetchedGmailMessage[] = [];
   for (const m of messages) {
     const res = await fetch(`${GMAIL_API}/messages/${m.id}?format=full`, {

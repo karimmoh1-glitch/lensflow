@@ -40,10 +40,53 @@ function decryptTokenFields<T extends { accessToken?: string | null; refreshToke
  * that can accidentally skip it. Only the `integration` model is touched — every other
  * model's queries pass through unchanged.
  */
-const basePrisma = new PrismaClient({
-  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-}).$extends({
+/**
+ * Any write to a Message bumps the owning workspace's inbox version (see
+ * src/server/inboxSignal.ts). Done here so an ingestion path, an outbound send, a delivery
+ * receipt or an automation cannot forget to; best-effort, never allowed to fail the write.
+ */
+const rawPrisma = new PrismaClient({ log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"] });
+async function bumpFor(conversationIds: string[], messageIds: string[]): Promise<void> {
+  try {
+    const convIds = new Set(conversationIds);
+    if (messageIds.length) for (const r of await rawPrisma.message.findMany({ where: { id: { in: messageIds } }, select: { conversationId: true } })) convIds.add(r.conversationId);
+    if (!convIds.size) return;
+    const convs = await rawPrisma.conversation.findMany({ where: { id: { in: [...convIds] } }, select: { businessId: true } });
+    const businessIds = [...new Set(convs.map((c) => c.businessId))];
+    if (businessIds.length) await rawPrisma.business.updateMany({ where: { id: { in: businessIds } }, data: { inboxVersion: { increment: 1 } } });
+  } catch {
+    // a missed bump means one late refresh, never a lost message
+  }
+}
+const listOf = (v: unknown): string[] => (typeof v === "string" ? [v] : Array.isArray((v as { in?: string[] })?.in) ? (v as { in: string[] }).in : []);
+
+const basePrisma = rawPrisma.$extends({
   query: {
+    message: {
+      async create({ args, query }) {
+        const result = await query(args);
+        const convId = (args.data as { conversationId?: string }).conversationId ?? (args.data as { conversation?: { connect?: { id?: string } } }).conversation?.connect?.id;
+        await bumpFor(convId ? [convId] : [], convId ? [] : [(result as { id: string }).id]);
+        return result;
+      },
+      async createMany({ args, query }) {
+        const result = await query(args);
+        const rows = Array.isArray(args.data) ? args.data : [args.data];
+        await bumpFor(rows.map((r) => (r as { conversationId: string }).conversationId).filter(Boolean), []);
+        return result;
+      },
+      async update({ args, query }) {
+        const result = await query(args);
+        await bumpFor([], [(result as { id: string }).id]);
+        return result;
+      },
+      async updateMany({ args, query }) {
+        const result = await query(args);
+        const w = args.where as { id?: unknown; conversationId?: unknown } | undefined;
+        if ((result as { count: number }).count > 0) await bumpFor(listOf(w?.conversationId), listOf(w?.id));
+        return result;
+      },
+    },
     integration: {
       async create({ args, query }) {
         args.data = encryptTokenFields(args.data);

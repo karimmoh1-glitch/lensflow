@@ -1,14 +1,19 @@
 {
   "expo": {
     "name": "Daythread",
-    "slug": "lensflow-mobile",
-    "scheme": "lensflow",
+    "slug": "daythread",
+    "scheme": "daythread",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "org.daythread.app",
+      "infoPlist": {
+        "NSUserNotificationsUsageDescription": "Daythread tells you when a customer writes so you can reply before they go elsewhere.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +22,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "org.daythread.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -25,7 +31,17 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#C75A32"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {}
+    }
   }
 }

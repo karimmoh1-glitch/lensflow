@@ -240,3 +240,19 @@ With the variables set and your own account added as a tester:
 - `Integration.lastWebhookAt` records the last verified event Meta delivered for the account.
 - A message that arrives for an account whose token expired is still stored (Meta does not
   replay), and answered once the owner reconnects.
+
+## Identity
+
+Under Instagram Login, `GET /me?fields=id,user_id,username` returns two ids for one
+professional account: `user_id` is the **professional account id** — Meta addresses webhooks
+with it (`entry[].id`) and the messaging endpoints take it; `id` is the **app-scoped user
+id**. Daythread stores the professional id as `Integration.externalId` (the routing key) and
+the app-scoped id in `settings.appScopedUserId`; both count as "us" when deciding whether a
+message is ours or a customer's.
+
+Connections made before 2026-09-09 stored the app-scoped id in `externalId`, so webhooks never
+matched. They are repaired once, automatically and without reconnecting, by
+`resolveInstagramIdentity` — the row's own token asks Meta who it is, the username must agree,
+and the professional id moves into `externalId`. It runs at the first of: the next webhook
+naming that account, the next reconciliation ("Check for messages", the open-tab fallback), or
+the daily cron. The repair is recorded in `settings.identityResolvedAt`.

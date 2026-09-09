@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { verifyOAuthState } from "@/lib/integrations/oauthState";
-import { exchangeInstagramCode, instagramProfile, instagramGrantedScopes, subscribeInstagramWebhooks, listInstagramConversations, isProfessionalAccount, IG_SCOPES } from "@/lib/meta/instagram";
+import { exchangeInstagramCode, instagramProfile, instagramIdentity, instagramGrantedScopes, subscribeInstagramWebhooks, listInstagramConversations, isProfessionalAccount, IG_SCOPES } from "@/lib/meta/instagram";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { appBaseUrl, metaCredentialsPresent } from "@/lib/meta/config";
 import { reportFailure } from "@/lib/observe";
@@ -55,6 +55,8 @@ export async function GET(req: Request) {
     const tokens = await exchangeInstagramCode(code);
     const profile = await instagramProfile(tokens.accessToken);
     if (!isProfessionalAccount(profile.account_type)) return fail("account_type");
+    const identity = instagramIdentity(profile);
+    const selfIds = new Set([identity.professionalId, identity.appScopedId]);
 
     // What the token actually carries. A connection without the messaging permission would
     // look connected and fail on every send, so it is refused here instead.
@@ -62,19 +64,20 @@ export async function GET(req: Request) {
     if (granted && !granted.includes("instagram_business_manage_messages")) return fail("scopes");
 
     // One Instagram account can only feed one workspace.
-    const elsewhere = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: profile.id, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
+    const elsewhere = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: { in: [...selfIds] }, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
     if (elsewhere) return fail("in_use");
 
     let webhooksOk = true;
-    await subscribeInstagramWebhooks(tokens.accessToken, profile.id).catch(async (err) => {
+    await subscribeInstagramWebhooks(tokens.accessToken, identity.professionalId).catch(async (err) => {
       webhooksOk = false;
       await reportFailure("oauth", "Instagram webhook subscription failed", { businessId, provider: "INSTAGRAM", error: err, level: "warn" });
     });
 
-    const settings = { instagramUserId: profile.id, username: profile.username, accountType: profile.account_type ?? null, webhooksSubscribed: webhooksOk, scopes: granted ?? IG_SCOPES };
+    const settings = { instagramUserId: identity.professionalId, professionalAccountId: identity.professionalId, appScopedUserId: identity.appScopedId, identityResolvedAt: new Date().toISOString(), username: profile.username, accountType: profile.account_type ?? null, webhooksSubscribed: webhooksOk, scopes: granted ?? IG_SCOPES };
     const credentials = {
       externalAccount: `@${profile.username}`,
-      externalId: profile.id,
+      // The professional account id: what Meta puts in webhook entry[].id.
+      externalId: identity.professionalId,
       accessToken: tokens.accessToken,
       tokenExpiresAt: tokens.expiresAt,
       scopes: (granted ?? IG_SCOPES).join(","),
@@ -106,10 +109,10 @@ export async function GET(req: Request) {
     try {
       const convos = await listInstagramConversations(tokens.accessToken, 20);
       for (const c of convos) {
-        const other = c.participants.find((p) => p.id !== profile.id);
+        const other = c.participants.find((p) => !selfIds.has(p.id));
         if (!other) continue;
         for (const m of [...c.messages].reverse()) {
-          if (m.from?.id === profile.id || !m.message) continue;
+          if (!m.from?.id || selfIds.has(m.from.id) || !m.message) continue;
           await ingestInboundMessage({
             businessId,
             channel: "INSTAGRAM",

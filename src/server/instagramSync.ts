@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
-import { listInstagramConversations, listInstagramSubscriptions, subscribeInstagramWebhooks } from "@/lib/meta/instagram";
+import { listInstagramConversations, listInstagramSubscriptions, subscribeInstagramWebhooks, instagramProfile, instagramIdentity, instagramSelfIds } from "@/lib/meta/instagram";
 import { MetaApiError } from "@/lib/meta/common";
 import { reportFailure } from "@/lib/observe";
 import type { Integration } from "@prisma/client";
@@ -15,21 +15,60 @@ import type { Integration } from "@prisma/client";
  */
 export type InstagramSyncResult = { ok: true; found: number; ingested: number } | { ok: false; error: string; skipped?: boolean };
 
+/**
+ * One-time identity repair for connections made before the professional account id was
+ * stored (they hold the app-scoped id in externalId, so Meta's webhooks — addressed by the
+ * professional id — never matched). Asks Meta, with the row's own token, who the token
+ * belongs to; requires the username to agree with what was connected; then moves the
+ * professional id into externalId and keeps the app-scoped id alongside. Idempotent, never
+ * creates a row, never touches the token, refuses to collide with another workspace.
+ */
+export async function resolveInstagramIdentity(row: Integration): Promise<{ repaired: boolean; professionalId: string | null; reason?: string }> {
+  const settings = (row.settings as Record<string, unknown> | null) ?? {};
+  if (typeof settings.professionalAccountId === "string" && settings.professionalAccountId === row.externalId) return { repaired: false, professionalId: row.externalId };
+  if (!row.accessToken) return { repaired: false, professionalId: row.externalId, reason: "no token" };
+  try {
+    const profile = await instagramProfile(row.accessToken);
+    const identity = instagramIdentity(profile);
+    const knownName = (typeof settings.username === "string" ? settings.username : row.externalAccount?.replace(/^@/, "") ?? "").toLowerCase();
+    if (knownName && profile.username.toLowerCase() !== knownName) {
+      await reportFailure("sync", "Instagram identity repair refused: username changed", { businessId: row.businessId, provider: "INSTAGRAM", level: "warn" });
+      return { repaired: false, professionalId: row.externalId, reason: "username mismatch" };
+    }
+    const taken = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: identity.professionalId, id: { not: row.id } }, select: { id: true } });
+    if (taken) {
+      await reportFailure("sync", "Instagram identity repair refused: professional id already held by another connection", { businessId: row.businessId, provider: "INSTAGRAM" });
+      return { repaired: false, professionalId: row.externalId, reason: "id in use" };
+    }
+    await prisma.integration.update({ where: { id: row.id }, data: { externalId: identity.professionalId, settings: { ...settings, instagramUserId: identity.professionalId, professionalAccountId: identity.professionalId, appScopedUserId: identity.appScopedId, username: profile.username, identityResolvedAt: new Date().toISOString() } } });
+    return { repaired: identity.professionalId !== row.externalId, professionalId: identity.professionalId };
+  } catch (err) {
+    await reportFailure("sync", "Instagram identity repair failed", { businessId: row.businessId, provider: "INSTAGRAM", error: err, level: "warn" });
+    return { repaired: false, professionalId: row.externalId, reason: "meta error" };
+  }
+}
+
 const TOKEN_ERRORS = new Set([190, 102]);
 
 export async function syncInstagramForBusiness(businessId: string, now = new Date()): Promise<InstagramSyncResult> {
-  const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId, provider: "INSTAGRAM" } } });
+  let row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId, provider: "INSTAGRAM" } } });
   if (!row?.accessToken || !row.externalId || row.status === "NOT_CONNECTED") return { ok: false, error: "Instagram isn't connected.", skipped: true };
+  const repaired = await resolveInstagramIdentity(row);
+  if (repaired.repaired) row = (await prisma.integration.findUnique({ where: { id: row.id } })) ?? row;
+  const token = row.accessToken;
+  if (!token || !row.externalId) return { ok: false, error: "Instagram isn't connected.", skipped: true };
+  const selfIds = instagramSelfIds(row);
   const since = row.lastSyncedAt ? new Date(row.lastSyncedAt.getTime() - 24 * 3600 * 1000) : new Date(now.getTime() - 30 * 86400 * 1000);
   try {
-    const convos = await listInstagramConversations(row.accessToken, 20);
+    const convos = await listInstagramConversations(token, 20);
     let found = 0;
     let ingested = 0;
     for (const c of convos) {
-      const other = c.participants.find((p) => p.id !== row.externalId);
+      const other = c.participants.find((p) => !selfIds.has(p.id));
       if (!other) continue;
       for (const m of [...c.messages].reverse()) {
-        if (m.from?.id === row.externalId || !m.message) continue;
+        // Direction from Meta's sender identity only: anything we sent — under either of our ids — is never inbound.
+        if (!m.from?.id || selfIds.has(m.from.id) || !m.message) continue;
         if (new Date(m.created_time) < since) continue;
         found++;
         const r = await ingestInboundMessage({ businessId, channel: "INSTAGRAM", senderName: other.username ? `@${other.username}` : `Instagram user ${other.id.slice(-4)}`, senderHandle: other.id, body: m.message, providerMessageId: m.id });
@@ -51,7 +90,10 @@ export async function syncInstagramForBusiness(businessId: string, now = new Dat
  * `messages` field is missing, subscribes again once; the outcome is recorded on the row so
  * the channel card can say "connected but not receiving" instead of "connected".
  */
-export async function checkInstagramSubscription(row: Integration): Promise<{ subscribed: boolean; repaired: boolean }> {
+export async function checkInstagramSubscription(input: Integration): Promise<{ subscribed: boolean; repaired: boolean }> {
+  // The subscription is read and, if needed, made against the professional account id.
+  const fixed = await resolveInstagramIdentity(input);
+  const row = fixed.repaired ? (await prisma.integration.findUnique({ where: { id: input.id } })) ?? input : input;
   if (!row.accessToken || !row.externalId) return { subscribed: false, repaired: false };
   const settings = (row.settings as Record<string, unknown> | null) ?? {};
   try {

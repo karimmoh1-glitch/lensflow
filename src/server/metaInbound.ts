@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
-import { instagramUserProfile } from "@/lib/meta/instagram";
+import { instagramUserProfile, instagramSelfIds } from "@/lib/meta/instagram";
+import { resolveInstagramIdentity } from "@/server/instagramSync";
 import { reportFailure } from "@/lib/observe";
 import { markWebhookSeen } from "@/server/inboxSignal";
 import type { Integration } from "@prisma/client";
@@ -52,12 +53,15 @@ async function processInstagram(env: MetaEnvelope, out: MetaResult): Promise<voi
       out.ignored++;
       continue;
     }
-    const integration = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: igAccountId, status: { in: [...OWNING_STATUS] } } });
+    // Meta addresses the event by the professional account id; the row holding that id owns it.
+    let integration = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: igAccountId, status: { in: [...OWNING_STATUS] } } });
+    if (!integration) integration = await repairLegacyInstagramRow(igAccountId);
     if (!integration) {
       out.ignored++;
       await noteUnknownAccount("INSTAGRAM", igAccountId);
       continue;
     }
+    const selfIds = instagramSelfIds(integration);
     await markWebhookSeen(integration.businessId, "INSTAGRAM");
     // Instagram Login delivers `entry[].messaging[]`; some app configurations deliver the
     // same events under `entry[].changes[].value.messaging[]`. Both are read.
@@ -79,7 +83,7 @@ async function processInstagram(env: MetaEnvelope, out: MetaResult): Promise<voi
       }
       // An echo is our own send coming back, and a message whose recipient isn't the
       // connected account isn't this workspace's conversation.
-      if (message.is_echo || recipient !== igAccountId || sender === igAccountId) {
+      if (message.is_echo || recipient !== igAccountId || selfIds.has(sender)) {
         out.ignored++;
         continue;
       }
@@ -101,6 +105,24 @@ async function processInstagram(env: MetaEnvelope, out: MetaResult): Promise<voi
       out.handled++;
     }
   }
+}
+
+/**
+ * Transition, explicit and temporary: a connection made before the professional id was
+ * stored holds the app-scoped id. When an event names an account no row holds, the rows
+ * that have not yet been resolved are asked — with their own tokens — which professional
+ * account they are; only a row Meta itself says is that account receives the event. Nothing
+ * in the payload can steer this: the token proves ownership. Bounded to a handful of rows.
+ */
+async function repairLegacyInstagramRow(igAccountId: string) {
+  const candidates = await prisma.integration.findMany({ where: { provider: "INSTAGRAM", status: { in: [...OWNING_STATUS] }, accessToken: { not: null } }, orderBy: { updatedAt: "asc" }, take: 5 });
+  for (const row of candidates) {
+    const settings = (row.settings as { professionalAccountId?: string } | null) ?? {};
+    if (settings.professionalAccountId) continue; // already resolved; a mismatch here is a genuine unknown account
+    const r = await resolveInstagramIdentity(row);
+    if (r.professionalId === igAccountId) return prisma.integration.findUnique({ where: { id: row.id } });
+  }
+  return null;
 }
 
 function messageText(message: { text?: string; attachments?: Array<{ type?: string }> }): string {

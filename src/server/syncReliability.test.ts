@@ -74,7 +74,7 @@ describe("sync reliability", () => {
 
   it("a webhook DM and the same DM found by reconciliation are one message; a DM the webhook missed is recovered", async () => {
     const igId = `ig_${stamp()}`;
-    await prisma.integration.create({ data: { businessId: a, provider: "INSTAGRAM", status: "CONNECTED", externalId: igId, externalAccount: "@a", accessToken: "IGAAtoken", lastSyncedAt: new Date(Date.now() - 3600e3) } });
+    await prisma.integration.create({ data: { businessId: a, provider: "INSTAGRAM", status: "CONNECTED", externalId: igId, externalAccount: "@a", accessToken: "IGAAtoken", lastSyncedAt: new Date(Date.now() - 3600e3), settings: { professionalAccountId: igId, username: "a" } } });
     const midWebhook = `mid_w_${stamp()}`; const midMissed = `mid_m_${stamp()}`;
     recorded = [{ status: 200, body: { username: "sarah.j", name: "Sarah" } }];
     await processMetaEnvelope({ object: "instagram", entry: [{ id: igId, time: 1, messaging: [{ sender: { id: "igsid_777" }, recipient: { id: igId }, timestamp: Date.now(), message: { mid: midWebhook, text: "Do you shoot weddings?" } }] }] });

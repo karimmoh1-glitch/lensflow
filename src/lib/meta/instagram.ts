@@ -68,11 +68,30 @@ export async function refreshInstagramToken(token: string): Promise<{ accessToke
   return { accessToken: r.access_token, expiresAt: new Date(Date.now() + (Number.isFinite(seconds) && seconds > 0 ? seconds : 60 * 86400) * 1000) };
 }
 
-export type IgProfile = { id: string; username: string; name?: string; account_type?: string };
+/**
+ * Two ids describe one Instagram professional account under Instagram Login:
+ *   `user_id` — the professional account id. Meta addresses webhooks with it (`entry[].id`)
+ *              and the messaging endpoints take it. This is the canonical
+ *              `Integration.externalId`.
+ *   `id`      — the app-scoped user id. Stable per app, never used by Meta to address
+ *              events. Kept in `settings.appScopedUserId` so a conversation participant or
+ *              sender that Meta reports under it is still recognised as us.
+ * Older responses omitted `user_id`; then `id` is all there is and is used for both.
+ */
+export type IgProfile = { id: string; user_id?: string; username: string; name?: string; account_type?: string };
+export type IgIdentity = { professionalId: string; appScopedId: string };
 export async function instagramProfile(token: string): Promise<IgProfile> {
-  const p = await graphFetch<IgProfile>(`${IG_GRAPH}/me?${new URLSearchParams({ fields: "id,username,name,account_type", access_token: token })}`);
+  const p = await graphFetch<IgProfile>(`${IG_GRAPH}/me?${new URLSearchParams({ fields: "id,user_id,username,name,account_type", access_token: token })}`);
   if (!p?.id || !p?.username) throw new MetaApiError(502, null, "Instagram returned no account for this authorization.");
   return p;
+}
+export function instagramIdentity(p: IgProfile): IgIdentity {
+  return { professionalId: String(p.user_id ?? p.id), appScopedId: String(p.id) };
+}
+/** Every id Meta may use for the connected account itself, for self-detection. */
+export function instagramSelfIds(row: { externalId: string | null; settings: unknown }): Set<string> {
+  const s = (row.settings as { appScopedUserId?: string; professionalAccountId?: string; instagramUserId?: string } | null) ?? {};
+  return new Set([row.externalId, s.professionalAccountId, s.appScopedUserId, s.instagramUserId].filter((x): x is string => Boolean(x)));
 }
 
 /** What the token actually carries. Used to refuse a connection that is missing the

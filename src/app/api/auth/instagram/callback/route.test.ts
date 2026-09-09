@@ -14,7 +14,7 @@ const session = { current: null as { userId: string; activeBusinessId: string } 
 vi.mock("@/lib/auth", async (orig) => ({ ...(await orig<typeof import("@/lib/auth")>()), getSession: async () => session.current }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
-const profile = { id: "17841400000001", username: "karim.photo", account_type: "BUSINESS" };
+const profile = { id: "26270000000001", user_id: "17841400000001", username: "karim.photo", account_type: "BUSINESS" };
 const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
   const url = String(input);
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -67,7 +67,9 @@ describe("Instagram callback", () => {
     expect(loc.searchParams.get("connected")).toBe("INSTAGRAM");
     const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId, provider: "INSTAGRAM" } } });
     expect(row?.status).toBe("CONNECTED");
-    expect(row?.externalId).toBe(profile.id);
+    expect(row?.externalId).toBe(profile.user_id);
+    expect((row?.settings as { appScopedUserId?: string; professionalAccountId?: string }).appScopedUserId).toBe(profile.id);
+    expect((row?.settings as { professionalAccountId?: string }).professionalAccountId).toBe(profile.user_id);
     expect(row?.externalAccount).toBe("@karim.photo");
     expect(row?.accessToken).toBe("IGQVJ-long-lived-token"); // decrypted for the owner…
     const raw = await prisma.$queryRaw<Array<{ accessToken: string }>>`SELECT "accessToken" FROM "Integration" WHERE id = ${row!.id}`;
@@ -106,7 +108,7 @@ describe("Instagram callback", () => {
     profile.account_type = "BUSINESS";
     // Same Instagram account already feeds another workspace.
     await prisma.integration.deleteMany({ where: { businessId, provider: "INSTAGRAM" } });
-    await prisma.integration.create({ data: { businessId: otherBusinessId, provider: "INSTAGRAM", status: "CONNECTED", externalId: profile.id, accessToken: "t" } });
+    await prisma.integration.create({ data: { businessId: otherBusinessId, provider: "INSTAGRAM", status: "CONNECTED", externalId: profile.user_id, accessToken: "t" } });
     expect(location(await hit({ code: "abc", state: await state() })).searchParams.get("connect_error")).toBe("in_use");
     await prisma.integration.deleteMany({ where: { businessId: otherBusinessId } });
   });

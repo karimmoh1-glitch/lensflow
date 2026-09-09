@@ -149,14 +149,14 @@ export async function disconnectIntegration(provider: IntegrationProvider, sessi
   return {};
 }
 
-export async function retrySync(provider: IntegrationProvider): Promise<{ ok: boolean; error?: string }> {
+export async function retrySync(provider: IntegrationProvider, session?: SessionPayload | null): Promise<{ ok: boolean; error?: string }> {
   if (provider === "GOOGLE_CALENDAR" || provider === "APPLE_CALENDAR") return syncCalendarNow(provider);
   return { ok: false, error: "This integration syncs by webhook; nothing to retry." };
 }
 
 /** SMS: a dedicated number for this business, bought from Daythread's Twilio account. */
-export async function searchSmsNumbers(areaCode?: string): Promise<{ numbers: Array<{ phoneNumber: string; friendlyName: string; locality: string | null; region: string | null }>; error?: string }> {
-  const ctx = await requireRole([...ADMIN]);
+export async function searchSmsNumbers(areaCode?: string, session?: SessionPayload | null): Promise<{ numbers: Array<{ phoneNumber: string; friendlyName: string; locality: string | null; region: string | null }>; error?: string }> {
+  const ctx = await requireRole([...ADMIN], session);
   if (!ctx) return { numbers: [], error: "unauthorized" };
   if (!twilioConfigured()) return { numbers: [], error: "Text messaging isn't available on this deployment yet." };
   if (!smsEntitled(ctx.business)) return { numbers: [], error: "A text number is part of the Pro plan and above." };
@@ -168,8 +168,8 @@ export async function searchSmsNumbers(areaCode?: string): Promise<{ numbers: Ar
   }
 }
 
-export async function claimSmsNumber(phoneNumber: string): Promise<{ error?: string; phoneNumber?: string }> {
-  const ctx = await requireRole([...ADMIN]);
+export async function claimSmsNumber(phoneNumber: string, session?: SessionPayload | null): Promise<{ error?: string; phoneNumber?: string }> {
+  const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!twilioConfigured()) return { error: "Text messaging isn't available on this deployment yet." };
   if (!smsEntitled(ctx.business)) return { error: "A text number is part of the Pro plan and above." };
@@ -205,8 +205,8 @@ export async function claimSmsNumber(phoneNumber: string): Promise<{ error?: str
   }
 }
 
-export async function releaseSmsNumber(): Promise<{ error?: string }> {
-  const ctx = await requireRole([...ADMIN]);
+export async function releaseSmsNumber(session?: SessionPayload | null): Promise<{ error?: string }> {
+  const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "SMS" } } });
   if (row?.externalId && twilioConfigured()) await releaseNumber(row.externalId);

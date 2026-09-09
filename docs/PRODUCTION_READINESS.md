@@ -299,3 +299,9 @@ Done before enabling `OPENAI_API_KEY` in production, from the audit that precede
 - **Scroll behaviour under long content is tested, not eyeballed** (`scratchpad/qa/scroll-qa.mjs` + `scripts-dev/stage-stress.ts`): a 140-message thread, 320 conversations, 220 people and 60 bookings at 375–1728 — the document never scrolls, the shell never grows, main or the inbox column or the thread owns the scroll, navigation stays on screen, the composer stays visible. 49 combinations, no problems.
 - **Bounded lists**: People reads the most recent 600; Bookings reads each tab's own rows (300) with counts for the tabs. Indexes added for identity lookups by phone and Instagram and for follow-up and quote reads.
 - **44px** touch targets on coarse pointers for Summarize, clear, follow-up and thread tools; the founder dashboard shows connections that need reconnecting, by provider.
+
+## Mobile parity sprint (2026-09-08)
+
+- The app reaches every web capability through 29 new or extended `/api/mobile/*` routes over the existing actions (which now accept an optional bearer session; web callers unchanged). Route tests cover tenant isolation and roles on every write (`src/app/api/mobile/parity.test.ts`).
+- Exercised through Expo's web target at 375/390/430, light and dark: 30 steps from forgot-password through booking from a thread, rescheduling, notes, the automation editor, business settings, profile, a team invitation, notifications, search, workspaces, channels and an agent proposal review. See `docs/MOBILE.md`.
+- `META_WEBHOOK_VERIFY_TOKEN` is set in Vercel production (sensitive; the value was handed to the founder once for Meta's dashboard).

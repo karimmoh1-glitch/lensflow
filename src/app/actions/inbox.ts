@@ -2,8 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
-import { requireRole } from "@/lib/auth";
-import type { SessionPayload } from "@/lib/auth";
+import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { draftReply } from "@/lib/ai";
 import { aiEntitled, smsEntitled } from "@/lib/billing";
@@ -160,8 +159,8 @@ export async function markLeadLost(leadId: string) {
  * default Inbox view. A real hard-delete of customer correspondence is the kind of
  * irreversible action that shouldn't be one click away.
  */
-export async function deleteConversation(conversationId: string) {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function deleteConversation(conversationId: string, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const result = await prisma.conversation.updateMany({
     where: { id: conversationId, businessId: ctx.business.id },

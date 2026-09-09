@@ -9,6 +9,7 @@ import { useResource } from "../../lib/cache";
 import { Badge, Button, Card, ErrorState, Header, Note, Screen, Skeleton, StaleBanner } from "../../components/ui";
 import { radius, spacing, type, useTheme } from "../../lib/theme";
 import { ago, channelLabel } from "../../lib/format";
+import { SlotPicker } from "../../components/SlotPicker";
 
 type Msg = { id: string; direction: "INBOUND" | "OUTBOUND"; text: string; hasMore: boolean; original: string; createdAt: string; status: string | null; statusDetail: string | null; aiDrafted: boolean; summary: string | null; summarySource: string | null };
 type Thread = { id: string; channel: string; subject: string | null; name: string; isPerson: boolean; waitingOnYou: boolean; client: { id: string; name: string; email: string | null; phone: string | null; relationship: string } | null; lead: { id: string; status: string; followUpAt: string | null; canBook: boolean } | null; relationship: { label: string; standing: string; nextAction: { label: string; why: string } | null } | null; opportunity: { label: string; reason: string; nextAction: { kind: string; label: string } | null }; facts: Array<{ label: string; value: string }>; upcoming: { id: string; label: string; confirmed: boolean } | null; window: { open: boolean; text: string } | null; summary: { summary: string; source: string } | null; messages: Msg[] };
@@ -30,6 +31,11 @@ export default function ConversationScreen() {
   const [showModes, setShowModes] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [summarizing, setSummarizing] = useState<string | null>(null);
+  const [booking, setBooking] = useState(false);
+  const [bookBusy, setBookBusy] = useState(false);
+  const [tools, setTools] = useState(false);
+  const team = useResource<{ canManage: boolean; you: string; members: Array<{ id: string; name: string; role: string; status: string }> }>("team", "/api/mobile/team", session?.token);
+  const loadSlots = useCallback(async (date: string) => { const lid = r.data?.lead?.id; if (!lid) return []; return (await api<{ slots: Array<{ start: string; end: string }> }>(`/api/mobile/leads/${lid}/availability?date=${date}`, { token: session?.token })).slots; }, [r.data?.lead?.id, session?.token]);
   const scroll = useRef<ScrollView>(null);
   const autoDrafted = useRef(false);
 
@@ -79,6 +85,44 @@ export default function ConversationScreen() {
       await r.reload();
     } catch (e) { Alert.alert("That didn't save", describeError(e)); }
   }
+  async function book(startISO: string) {
+    if (!session || !r.data?.lead) return;
+    setBookBusy(true);
+    try { const made = await api<{ bookingId: string }>(`/api/mobile/leads/${r.data.lead.id}/book`, { method: "POST", body: { startISO }, token: session.token }); setBooking(false); router.push({ pathname: "/booking/[id]", params: { id: made.bookingId } } as never); }
+    catch (e) { Alert.alert("Couldn't book", describeError(e)); }
+    finally { setBookBusy(false); }
+  }
+  async function tool(body: Record<string, unknown>, done?: string) {
+    if (!session) return;
+    setTools(false);
+    try {
+      const res = await api<{ ok: true; ruleFor?: string | null }>(`/api/mobile/conversations/${id}/tools`, { method: "POST", body, token: session.token });
+      if (body.action === "delete" || (body.action === "archive" && body.archived)) { router.back(); return; }
+      await r.reload();
+      if (done) Alert.alert(done, res.ruleFor ? `Daythread will remember ${res.ruleFor}.` : undefined);
+    } catch (e) { Alert.alert("That didn't work", describeError(e)); }
+  }
+  async function summarizeThread() {
+    if (!session) return;
+    setSummarizing("thread");
+    try { await api(`/api/mobile/conversations/${id}/summary`, { method: "POST", token: session.token }); await r.reload(); }
+    catch (e) { Alert.alert("Couldn't summarize", describeError(e)); }
+    finally { setSummarizing(null); }
+  }
+  function openTools() {
+    const t = r.data; if (!t) return;
+    const items: Array<{ text: string; style?: "destructive" | "cancel"; onPress?: () => void }> = [
+      { text: "Mark unread", onPress: () => tool({ action: "read", read: false }) },
+      { text: "Archive", onPress: () => tool({ action: "archive", archived: true }) },
+      t.isPerson ? { text: "Not a priority (automated)", onPress: () => tool({ action: "reclassify", category: "AUTOMATED" }, "Moved out of Priority") } : { text: "This is a person — show in Priority", onPress: () => tool({ action: "reclassify", category: "PRIORITY" }, "Now in Priority") },
+      t.isPerson ? { text: "It's a vendor", onPress: () => tool({ action: "reclassify", category: "VENDOR" }, "Marked as a vendor") } : { text: "It's marketing", onPress: () => tool({ action: "reclassify", category: "PROMOTIONAL" }, "Marked as marketing") },
+    ];
+    if (t.client) items.push({ text: t.client.relationship === "CUSTOMER" ? "Not a customer (potential)" : "Mark as customer", onPress: () => tool({ action: "relationship", clientId: t.client!.id, relationship: t.client!.relationship === "CUSTOMER" ? "LEAD" : "CUSTOMER" }) });
+    if (team.data?.members.length && team.data.members.length > 1) items.push({ text: "Assign to a teammate…", onPress: () => Alert.alert("Assign to", undefined, [...team.data!.members.filter((m) => m.status === "ACTIVE").map((m) => ({ text: m.name, onPress: () => tool({ action: "assign", membershipId: m.id }) })), { text: "Nobody", onPress: () => tool({ action: "assign", membershipId: null }) }, { text: "Cancel", style: "cancel" as const }]) });
+    items.push({ text: "Delete conversation", style: "destructive", onPress: () => Alert.alert("Delete this conversation?", "Its messages are removed for everyone in the workspace. This can't be undone.", [{ text: "Keep it", style: "cancel" }, { text: "Delete", style: "destructive", onPress: () => tool({ action: "delete" }) }]) });
+    items.push({ text: "Cancel", style: "cancel" });
+    Alert.alert(t.name, "What would you like to do?", items);
+  }
   async function stage(status: "QUALIFIED" | "COLD" | "LOST") {
     if (!session || !r.data?.lead) return;
     try { await api(`/api/mobile/leads/${r.data.lead.id}/status`, { method: "POST", body: { status }, token: session.token }); await r.reload(); }
@@ -88,7 +132,7 @@ export default function ConversationScreen() {
 
   return (
     <Screen>
-      <Header back title={t?.name ?? "Conversation"} subtitle={t ? `${channelLabel(t.channel)}${t.subject ? ` · ${t.subject}` : ""}` : undefined} right={t?.client ? <Pressable onPress={() => router.push(`/person/${t.client!.id}` as never)} accessibilityRole="button" accessibilityLabel={`Open ${t.name}'s profile`} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}><Ionicons name="person-circle-outline" size={26} color={c.ink} /></Pressable> : undefined} />
+      <Header back title={t?.name ?? "Conversation"} subtitle={t ? `${channelLabel(t.channel)}${t.subject ? ` · ${t.subject}` : ""}` : undefined} right={t ? <View style={{ flexDirection: "row" }}>{t.client && <Pressable onPress={() => router.push(`/person/${t.client!.id}` as never)} accessibilityRole="button" accessibilityLabel={`Open ${t.name}'s profile`} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}><Ionicons name="person-circle-outline" size={26} color={c.ink} /></Pressable>}<Pressable onPress={() => { setTools(true); openTools(); }} accessibilityRole="button" accessibilityLabel="More actions" accessibilityState={{ expanded: tools }} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}><Ionicons name="ellipsis-horizontal-circle-outline" size={26} color={c.ink} /></Pressable></View> : undefined} />
       {r.stale && <StaleBanner at={r.cachedAt} onRetry={r.reload} />}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
         {r.loading && !t ? <Skeleton lines={6} /> : !t ? <ErrorState message={r.error ?? "Couldn't load this conversation."} onRetry={r.reload} /> : (
@@ -102,7 +146,7 @@ export default function ConversationScreen() {
                 {t.upcoming && <Pressable onPress={() => router.push(`/booking/${t.upcoming!.id}` as never)} accessibilityRole="button" accessibilityLabel={`On the calendar: ${t.upcoming.label}${t.upcoming.confirmed ? "" : ", not confirmed"}`} style={{ marginTop: 8, minHeight: 44, justifyContent: "center" }}><Text style={{ ...type.small, color: c.successText, fontWeight: "600" }}>On the calendar: {t.upcoming.label}{t.upcoming.confirmed ? "" : " · not confirmed"} →</Text></Pressable>}
               </Card>
             )}
-            {t.summary && <Note>{t.summary.summary} <Text style={{ color: c.inkFaint }}>· {t.summary.source === "ai" ? "AI summary" : "from the record"}</Text></Note>}
+            {t.summary ? <Note>{t.summary.summary} <Text style={{ color: c.inkFaint }}>· {t.summary.source === "ai" ? "AI summary" : "from the record"}</Text></Note> : t.isPerson && t.messages.length > 1 ? <Pressable onPress={summarizeThread} accessibilityRole="button" accessibilityLabel="Summarize this conversation" style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ ...type.small, color: c.accentText, fontWeight: "600" }}>{summarizing === "thread" ? "Summarizing the conversation…" : "Summarize the whole conversation"}</Text></Pressable> : null}
             {t.messages.map((m) => {
               const mine = m.direction === "OUTBOUND";
               const open = expanded.has(m.id);
@@ -122,7 +166,10 @@ export default function ConversationScreen() {
             })}
             {t.lead && t.lead.canBook && (
               <Card style={{ marginTop: spacing.sm }}>
-                <Text style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginBottom: 6 }}>Follow-up</Text>
+                <Text style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginBottom: 6 }}>Book them from here</Text>
+                {!booking ? <Button small variant="accent" icon="calendar-outline" title={t.facts.some((f) => f.label === "Service") ? "Find a time" : "Find a time (assign a service first)"} disabled={!t.facts.some((f) => f.label === "Service")} onPress={() => setBooking(true)} /> : <SlotPicker load={loadSlots} onPick={book} busy={bookBusy} confirmLabel="Book" />}
+                {booking && <Button small variant="ghost" title="Not now" onPress={() => setBooking(false)} />}
+                <Text style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginTop: spacing.md, marginBottom: 6 }}>Follow-up</Text>
                 <Text style={{ ...type.small, color: c.inkSoft, marginBottom: 8 }}>{t.lead.followUpAt ? `Reminder set for ${new Date(t.lead.followUpAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}.` : "No reminder set."}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                   <Button small variant="secondary" title="Tomorrow" onPress={() => followUp(1)} />

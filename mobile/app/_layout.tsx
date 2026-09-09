@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "../lib/auth-context";
 import { useTheme } from "../lib/theme";
 import { listenForNotificationTaps } from "../lib/notifications";
 
-const PUBLIC = ["/login", "/signup"];
+const PUBLIC = ["/login", "/signup", "/forgot"];
 
 /**
  * The session guard: the moment there is no session — sign-out, a token the server refused,

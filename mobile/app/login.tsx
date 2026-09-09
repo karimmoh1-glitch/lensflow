@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View, Linking } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { Link, router } from "expo-router";
 import { useAuth } from "../lib/auth-context";
 import { describeError } from "../lib/api";
 import { Button, Field, Screen } from "../components/ui";
 import { spacing, type, useTheme } from "../lib/theme";
-
-const WEB = process.env.EXPO_PUBLIC_API_URL ?? "https://daythread.org";
 
 export default function LoginScreen() {
   const { login, expired } = useAuth();
@@ -33,9 +31,7 @@ export default function LoginScreen() {
           <Field label="Password" secureTextEntry autoComplete="password" textContentType="password" value={password} onChangeText={setPassword} placeholder="••••••••" returnKeyType="go" onSubmitEditing={submit} />
           {error ? <Text accessibilityLiveRegion="polite" style={{ color: c.dangerText, fontSize: 14, marginBottom: spacing.md }}>{error}</Text> : null}
           <Button title="Sign in" onPress={submit} loading={pending} disabled={!email || !password} style={{ marginTop: spacing.sm }} />
-          <Pressable onPress={() => Linking.openURL(`${WEB}/forgot-password`)} accessibilityRole="link" style={{ alignSelf: "center", minHeight: 44, justifyContent: "center", marginTop: spacing.md }}>
-            <Text style={{ color: c.inkSoft, fontSize: 14 }}>Forgot your password?</Text>
-          </Pressable>
+          <Link href="/forgot" accessibilityRole="link" style={{ alignSelf: "center", minHeight: 44, marginTop: spacing.md }}><Text style={{ color: c.inkSoft, fontSize: 14 }}>Forgot your password?</Text></Link>
           <View style={{ flexDirection: "row", justifyContent: "center", marginTop: spacing.lg, gap: 4, alignItems: "center", minHeight: 44 }}>
             <Text style={{ color: c.inkSoft, fontSize: 14 }}>New here?</Text>
             <Link href="/signup" replace accessibilityRole="link"><Text style={{ color: c.accentText, fontSize: 14, fontWeight: "700" }}>Start free</Text></Link>

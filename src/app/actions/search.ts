@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireRole, type SessionPayload } from "@/lib/auth";
 
 /**
  * One search across the whole thread — people, conversations, bookings, automations —
@@ -14,8 +14,8 @@ export type SearchHit =
   | { kind: "booking"; id: string; title: string; subtitle: string; href: string }
   | { kind: "automation"; id: string; title: string; subtitle: string; href: string };
 
-export async function universalSearch(q: string): Promise<{ hits: SearchHit[]; summary?: { name: string; conversations: number; bookings: number; nextAction: string | null; href: string } }> {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function universalSearch(q: string, session?: SessionPayload | null): Promise<{ hits: SearchHit[]; summary?: { name: string; conversations: number; bookings: number; nextAction: string | null; href: string } }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) return { hits: [] };
   const term = q.trim();
   if (term.length < 2) return { hits: [] };

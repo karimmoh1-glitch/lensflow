@@ -6,6 +6,7 @@ import { readRelationship } from "@/lib/relationshipState";
 import { getNextActions } from "@/server/nextActions";
 import { getAwayDigest, touchLastActive } from "@/server/awayDigest";
 import { getTodayBrief } from "@/server/dashboardData";
+import { getWeekStrip } from "@/server/weekStrip";
 import { findMergeCandidates } from "@/server/identity";
 import { toZonedDisplayDate } from "@/lib/utils";
 import { differenceInMinutes, format } from "date-fns";
@@ -20,7 +21,7 @@ import type { ChannelType, ConversationCategory } from "@prisma/client";
 
 export async function readToday(businessId: string, membershipId: string, timezone: string) {
   const now = new Date();
-  const [next, brief, prev] = await Promise.all([getNextActions(businessId, now, timezone), getTodayBrief(businessId), touchLastActive(membershipId)]);
+  const [next, brief, prev, week, unread] = await Promise.all([getNextActions(businessId, now, timezone), getTodayBrief(businessId), touchLastActive(membershipId), getWeekStrip(businessId).catch(() => null), prisma.notification.count({ where: { businessId, read: false } })]);
   const digest = await getAwayDigest(businessId, prev, now).catch(() => null);
   const booking = (b: { id: string; startAt: Date; status: string; location: string | null; client: { name: string }; service: { name: string } }) => ({ id: b.id, startAt: b.startAt.toISOString(), when: format(toZonedDisplayDate(b.startAt, timezone), "EEE, MMM d · h:mm a"), status: b.status, location: b.location, clientName: b.client.name, serviceName: b.service.name });
   return {
@@ -30,6 +31,8 @@ export async function readToday(businessId: string, membershipId: string, timezo
     atRisk: next.atRisk,
     today: brief.todaysBookings.map(booking),
     upcoming: brief.upcoming.map(booking),
+    week: week ? { automatedSent: week.automatedSent, keptOut: week.keptOut, structuredLeads: week.structuredLeads, bookedLeads: week.bookedLeads, automationsOn: week.automationsOn, estimatedMinutes: week.estimatedMinutes } : null,
+    unreadNotifications: unread,
   };
 }
 

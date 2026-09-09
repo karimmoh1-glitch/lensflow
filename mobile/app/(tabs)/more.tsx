@@ -7,13 +7,19 @@ import { Avatar, Screen , useTabFocused } from "../../components/ui";
 import { radius, spacing, type, useTheme } from "../../lib/theme";
 
 const ITEMS: Array<{ href: string; icon: keyof typeof Ionicons.glyphMap; title: string; body: string }> = [
-  { href: "/settings/assistant", icon: "sparkles-outline", title: "Assistant", body: "Ask what to work on, who was quoted, what's going cold." },
+  { href: "/settings/assistant", icon: "sparkles-outline", title: "Assistant", body: "Proposals for your approval, and answers from your records." },
+  { href: "/bookings", icon: "clipboard-outline", title: "Bookings", body: "Upcoming, past and canceled." },
+  { href: "/settings/notifications", icon: "notifications-outline", title: "Notifications", body: "What Daythread noticed for you." },
+  { href: "/settings/search", icon: "search-outline", title: "Search", body: "People, conversations, bookings." },
   { href: "/settings/automations", icon: "flash-outline", title: "Automations", body: "Confirmations, reminders and follow-ups sent for you." },
-  { href: "/settings/memory", icon: "book-outline", title: "Business memory", body: "What drafts are allowed to know about your business." },
+  { href: "/settings/memory", icon: "book-outline", title: "Business memory", body: "What drafts are allowed to know." },
+  { href: "/settings/business", icon: "storefront-outline", title: "Business", body: "Profile, services, hours, booking page." },
   { href: "/settings/integrations", icon: "link-outline", title: "Channels", body: "Gmail, Instagram, WhatsApp, SMS, calendars." },
-  { href: "/settings/team", icon: "people-circle-outline", title: "Team", body: "Who works in this workspace." },
+  { href: "/settings/team", icon: "people-circle-outline", title: "Team", body: "Who works here, invitations, partners." },
   { href: "/settings/subscription", icon: "card-outline", title: "Subscription", body: "Your plan and what it includes." },
-  { href: "/settings/account", icon: "person-circle-outline", title: "Account", body: "You, your workspace, sign out, delete." },
+  { href: "/settings/profile", icon: "person-outline", title: "Profile", body: "Your name, password, referral link." },
+  { href: "/settings/workspaces", icon: "swap-horizontal-outline", title: "Workspaces", body: "Switch between businesses you belong to." },
+  { href: "/settings/account", icon: "person-circle-outline", title: "Account", body: "Sign out, delete the workspace." },
 ];
 
 export default function MoreScreen() {

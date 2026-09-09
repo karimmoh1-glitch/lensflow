@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -10,8 +10,8 @@ import { revalidatePath } from "next/cache";
  * filtered out of getUserMemberships(), so it's a real, enforced block on login/access,
  * not just a hidden UI row.
  */
-export async function setMembershipStatus(membershipId: string, active: boolean) {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function setMembershipStatus(membershipId: string, active: boolean, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
 
   const membership = await prisma.orgMembership.findFirst({ where: { id: membershipId, businessId: ctx.business.id } });
@@ -29,8 +29,8 @@ export async function setMembershipStatus(membershipId: string, active: boolean)
  * only conversations tied to clients from bookings assigned to them. On: they see every
  * business conversation. Never automatic — the owner explicitly grants it per partner.
  */
-export async function setPartnerConversationAccess(membershipId: string, canViewAll: boolean) {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function setPartnerConversationAccess(membershipId: string, canViewAll: boolean, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
 
   const membership = await prisma.orgMembership.findFirst({ where: { id: membershipId, businessId: ctx.business.id } });

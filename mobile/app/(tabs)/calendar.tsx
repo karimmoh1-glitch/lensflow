@@ -26,7 +26,10 @@ export default function CalendarScreen() {
   return (
     <Screen>
       <View style={{ paddingTop: insets.top + spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
-        <Text accessibilityRole="header" style={{ ...type.heading, color: c.ink }}>Calendar</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text accessibilityRole="header" style={{ ...type.heading, color: c.ink }}>Calendar</Text>
+          <Pressable onPress={() => router.push("/bookings" as never)} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}><Text style={{ ...type.small, color: c.accentText, fontWeight: "600" }}>All bookings →</Text></Pressable>
+        </View>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }} contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: 6, paddingBottom: spacing.sm, alignItems: "flex-start" }} accessibilityRole="tablist">
         {days.map((d) => {

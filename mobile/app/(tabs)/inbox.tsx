@@ -4,11 +4,13 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../lib/auth-context";
+import { api } from "../../lib/api";
 import { useResource } from "../../lib/cache";
 import { Avatar, Chip, EmptyState, ErrorState, ListRow, Screen, Skeleton, StaleBanner, Button , useTabFocused } from "../../components/ui";
 import { radius, spacing, type, useTheme } from "../../lib/theme";
 import { ago, CHANNEL } from "../../lib/format";
 
+type Cat = "all" | "AUTOMATED" | "PROMOTIONAL" | "VENDOR" | "SPAM";
 type Row = { id: string; channel: string; category: string; name: string; subject: string | null; preview: string; lastMessageAt: string; unread: boolean; waiting: boolean; label: string; reason: string; followUp: string | null };
 type List = { rows: Row[]; counts: { priority: number; all: number; waiting: number; unread: number } };
 
@@ -20,11 +22,16 @@ export default function InboxScreen() {
   const insets = useSafeAreaInsets();
   const [view, setView] = useState<"priority" | "all">("priority");
   const [filter, setFilter] = useState<"all" | "waiting" | "unread">("all");
+  const [cat, setCat] = useState<Cat>("all");
+  const [channel, setChannel] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   useMemo(() => { const t = setTimeout(() => setDebounced(q.trim()), 250); return () => clearTimeout(t); }, [q]);
-  const path = `/api/mobile/conversations?view=${view}&filter=${filter}${debounced ? `&q=${encodeURIComponent(debounced)}` : ""}`;
-  const r = useResource<List>(debounced ? null : `inbox:${view}:${filter}`, path, session?.token);
+  const path = `/api/mobile/conversations?view=${view}&filter=${filter}${channel ? `&channel=${channel}` : ""}${debounced ? `&q=${encodeURIComponent(debounced)}` : ""}`;
+  const r = useResource<List>(debounced ? null : `inbox:${view}:${filter}:${channel ?? ""}`, path, session?.token);
+  const rows = (r.data?.rows ?? []).filter((x) => view === "priority" || cat === "all" || x.category === cat);
+  const channels = Array.from(new Set((r.data?.rows ?? []).map((x) => x.channel)));
+  const refresh = useCallback(async () => { if (session) await api("/api/mobile/gmail", { method: "POST", token: session.token }).catch(() => {}); await r.refresh(); }, [session, r]);
   useFocusEffect(useCallback(() => { void r.reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [path, session?.token]));
 
   if (!focused) return <Screen />;
@@ -44,14 +51,20 @@ export default function InboxScreen() {
           <Chip label="Waiting" active={filter === "waiting"} onPress={() => setFilter(filter === "waiting" ? "all" : "waiting")} count={r.data?.counts.waiting} />
           <Chip label="Unread" active={filter === "unread"} onPress={() => setFilter(filter === "unread" ? "all" : "unread")} count={r.data?.counts.unread} />
         </View>
+        {(view === "all" || channels.length > 1) && (
+          <View style={{ flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" }}>
+            {view === "all" && (["all", "AUTOMATED", "PROMOTIONAL", "VENDOR", "SPAM"] as Cat[]).map((k) => <Chip key={k} label={k === "all" ? "Everything" : k === "AUTOMATED" ? "Automated" : k === "PROMOTIONAL" ? "Promotions" : k === "VENDOR" ? "Vendors" : "Spam"} active={cat === k} onPress={() => setCat(k)} />)}
+            {channels.length > 1 && channels.map((ch) => <Chip key={ch} label={CHANNEL[ch]?.label ?? ch} active={channel === ch} onPress={() => setChannel(channel === ch ? null : ch)} />)}
+          </View>
+        )}
       </View>
       {r.stale && <StaleBanner at={r.cachedAt} onRetry={r.reload} />}
       {r.loading && !r.data ? <Skeleton lines={6} /> : !r.data ? <ErrorState message={r.error ?? "Couldn't load the inbox."} onRetry={r.reload} /> : (
         <FlatList
-          data={r.data.rows}
+          data={rows}
           keyExtractor={(x) => x.id}
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 }}
-          refreshControl={<RefreshControl refreshing={r.refreshing} onRefresh={r.refresh} tintColor={c.ink} />}
+          refreshControl={<RefreshControl refreshing={r.refreshing} onRefresh={refresh} tintColor={c.ink} />}
           keyboardDismissMode="on-drag"
           ListEmptyComponent={
             debounced ? <EmptyState icon="search-outline" title="Nothing matches" body={`No conversation mentions “${debounced}”.`} />

@@ -3,14 +3,14 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireRole, hashPassword, verifyPassword, setSessionCookie } from "@/lib/auth";
+import { requireRole, hashPassword, verifyPassword, setSessionCookie, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 // The self-serve "search a business and request to join" path was removed: it was
 // unauthenticated, unthrottled, and had no caller. Joining happens by invitation only.
 
-export async function listJoinRequests() {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function listJoinRequests(session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) return [];
   return prisma.joinRequest.findMany({
     where: { businessId: ctx.business.id, status: "PENDING" },
@@ -19,8 +19,8 @@ export async function listJoinRequests() {
   });
 }
 
-export async function respondToJoinRequest(id: string, accept: boolean) {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function respondToJoinRequest(id: string, accept: boolean, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
 
   const joinRequest = await prisma.joinRequest.findFirst({

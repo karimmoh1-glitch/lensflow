@@ -15,12 +15,15 @@ export async function GET(req: Request) {
   if (isErrorResponse(ctx)) return ctx;
 
   const url = new URL(req.url);
-  const parsed = schema.safeParse({ from: url.searchParams.get("from"), to: url.searchParams.get("to") });
-  if (!parsed.success) return jsonError("from and to (ISO datetimes) are required", 400);
+  const scope = url.searchParams.get("scope");
+  const now = new Date();
+  const parsed = scope ? null : schema.safeParse({ from: url.searchParams.get("from"), to: url.searchParams.get("to") });
+  if (!scope && !parsed?.success) return jsonError("from and to (ISO datetimes), or scope=upcoming|past|canceled, are required", 400);
 
+  // scope: the same three tabs as the web's Bookings page, each capped so a long history stays fast.
   const where: Prisma.BookingWhereInput = {
     businessId: ctx.business.id,
-    startAt: { gte: new Date(parsed.data.from), lte: new Date(parsed.data.to) },
+    ...(scope === "upcoming" ? { status: { not: "CANCELED" }, endAt: { gte: now } } : scope === "past" ? { status: { not: "CANCELED" }, endAt: { lt: now } } : scope === "canceled" ? { status: "CANCELED" } : { startAt: { gte: new Date(parsed!.data!.from), lte: new Date(parsed!.data!.to) } }),
   };
 
   if (ctx.role === "PARTNER") {
@@ -33,7 +36,8 @@ export async function GET(req: Request) {
   const bookings = await prisma.booking.findMany({
     where,
     include: { client: true, service: true },
-    orderBy: { startAt: "asc" },
+    orderBy: { startAt: scope === "past" || scope === "canceled" ? "desc" : "asc" },
+    take: 300,
   });
 
   return NextResponse.json({

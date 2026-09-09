@@ -16,8 +16,8 @@ const inviteSchema = z.object({
   phone: z.string().optional(),
 });
 
-export async function inviteClient(formData: FormData): Promise<{ error?: string; link?: string }> {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function inviteClient(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
 
@@ -72,8 +72,8 @@ const partnerInviteSchema = z.object({
   email: z.string().email("Enter a valid email"),
 });
 
-export async function invitePartner(formData: FormData): Promise<{ error?: string; link?: string }> {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function invitePartner(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
   if (!teamEntitled(business)) return { error: "Partners and teammates are part of Daythread Pro. Upgrade under Settings → Subscription." };
@@ -174,8 +174,8 @@ export async function inviteTeammate(formData: FormData, actingSession?: Session
   });
 }
 
-export async function revokeInvitation(id: string) {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function revokeInvitation(id: string, actingSession?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) throw new Error("unauthorized");
   await prisma.invitation.updateMany({
     where: { id, businessId: ctx.business.id, status: "PENDING" },
@@ -184,8 +184,8 @@ export async function revokeInvitation(id: string) {
   revalidatePath("/dashboard/team");
 }
 
-export async function resendInvitation(id: string): Promise<{ link?: string; error?: string }> {
-  const ctx = await requireRole(["OWNER", "ADMIN"]);
+export async function resendInvitation(id: string, actingSession?: SessionPayload | null): Promise<{ link?: string; error?: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   const invitation = await prisma.invitation.findFirst({ where: { id, businessId: ctx.business.id } });
   if (!invitation) return { error: "not found" };

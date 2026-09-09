@@ -1,10 +1,12 @@
-import { Alert, Linking, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, Linking, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { api, describeError } from "../../lib/api";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
 import { useResource } from "../../lib/cache";
 import { Avatar, Badge, Button, Card, ErrorState, Header, Screen, Skeleton, StaleBanner, EmptyState } from "../../components/ui";
-import { spacing, type, useTheme } from "../../lib/theme";
+import { radius, spacing, type, useTheme } from "../../lib/theme";
 import { ago } from "../../lib/format";
 
 type Person = { id: string; name: string; email: string | null; phone: string | null; instagram: string | null; relationship: string; since: string; standing: { label: string; standing: string; nextAction: { label: string; why: string } | null; theyWaitFor: string | null; youWaitFor: string | null }; nextBooking: { id: string; label: string; confirmed: boolean } | null; conversations: Array<{ id: string; channel: string; lastMessageAt: string }>; timeline: Array<{ when: string; kind: "conversation" | "booking" | "quote" | "note"; title: string; meta: string | null; href: string | null }>; mergeCandidates: Array<{ id: string; name: string; basis: string; why: string }> };
@@ -18,6 +20,15 @@ export default function PersonScreen() {
   const { c } = useTheme();
   const r = useResource<Person>(`person:${id}`, `/api/mobile/clients/${id}`, session?.token);
   const p = r.data;
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  async function call(path: string, body: unknown, key: string, done?: string) {
+    if (!session) return;
+    setBusy(key);
+    try { const res = await api<{ link?: string }>(path, { method: "POST", body, token: session.token }); await r.reload(); if (done) Alert.alert(done, res.link ? `Share this link with them:\n${res.link}` : undefined); return res; }
+    catch (e) { Alert.alert("That didn't work", describeError(e)); }
+    finally { setBusy(null); }
+  }
   const latest = p?.conversations[0];
   return (
     <Screen>
@@ -47,10 +58,29 @@ export default function PersonScreen() {
           {p.mergeCandidates.length > 0 && (
             <Card style={{ marginTop: spacing.lg, borderColor: c.warning }}>
               <Text style={{ ...type.micro, color: c.warningText, textTransform: "uppercase" }}>Might be the same person</Text>
-              {p.mergeCandidates.map((m) => <Text key={m.id} style={{ ...type.small, color: c.inkSoft, marginTop: 4 }}>{m.name} — {m.why}</Text>)}
-              <Text style={{ ...type.small, color: c.inkFaint, marginTop: 6 }}>Merge or dismiss this from the person's page on the web, where the full records sit side by side.</Text>
+              {p.mergeCandidates.map((m) => (
+                <View key={m.id} style={{ marginTop: 8 }}>
+                  <Text style={{ ...type.small, color: c.inkSoft }}>{m.name} — {m.why}</Text>
+                  <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
+                    <Button small variant="accent" title="Merge into this person" loading={busy === `merge:${m.id}`} onPress={() => Alert.alert("Merge?", `${m.name}'s conversations, bookings and notes move to ${p.name}. This can't be undone.`, [{ text: "Cancel", style: "cancel" }, { text: "Merge", onPress: () => call(`/api/mobile/clients/${p.id}/merge`, { otherId: m.id, decision: "merge" }, `merge:${m.id}`, "Merged") }])} />
+                    <Button small variant="secondary" title="Not the same" loading={busy === `no:${m.id}`} onPress={() => call(`/api/mobile/clients/${p.id}/merge`, { otherId: m.id, decision: "not_same" }, `no:${m.id}`)} />
+                  </View>
+                </View>
+              ))}
             </Card>
           )}
+          <Card style={{ marginTop: spacing.lg }}>
+            <Text style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginBottom: 6 }}>Relationship</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {(["LEAD", "CUSTOMER", "CONTACT"] as const).map((rel) => <Button key={rel} small variant={p.relationship === rel ? "primary" : "secondary"} title={rel === "LEAD" ? "Potential customer" : rel === "CUSTOMER" ? "Customer" : "Contact"} loading={busy === `rel:${rel}`} onPress={() => p.relationship !== rel && call(`/api/mobile/clients/${p.id}/relationship`, { relationship: rel }, `rel:${rel}`)} />)}
+            </View>
+            {session?.role === "OWNER" || session?.role === "ADMIN" ? <Button small variant="ghost" icon="link-outline" title="Invite to the client portal" loading={busy === "invite"} style={{ marginTop: 8, alignSelf: "flex-start" }} onPress={() => call(`/api/mobile/clients/${p.id}/invite`, {}, "invite", "Invitation ready")} /> : null}
+          </Card>
+          <Card style={{ marginTop: spacing.md }}>
+            <Text style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginBottom: 6 }}>Add a note</Text>
+            <TextInput value={note} onChangeText={setNote} placeholder="Something to remember about them…" placeholderTextColor={c.inkFaint} multiline accessibilityLabel="New note" maxLength={2000} style={{ minHeight: 64, borderWidth: 1, borderColor: c.borderStrong, borderRadius: radius.md, padding: 12, fontSize: 16, color: c.ink, backgroundColor: c.paper, textAlignVertical: "top" }} />
+            <Button small title="Save note" disabled={!note.trim()} loading={busy === "note"} style={{ marginTop: 8, alignSelf: "flex-start" }} onPress={async () => { await call(`/api/mobile/clients/${p.id}/notes`, { body: note.trim() }, "note"); setNote(""); }} />
+          </Card>
           {p.nextBooking && <Pressable onPress={() => router.push(`/booking/${p.nextBooking!.id}` as never)} accessibilityRole="button" accessibilityLabel={`Upcoming: ${p.nextBooking.label}`}><Card tone="success" style={{ marginTop: spacing.lg }}><Text style={{ ...type.micro, color: c.successText, textTransform: "uppercase" }}>Upcoming</Text><Text style={{ ...type.bodyMedium, color: c.ink, marginTop: 4 }}>{p.nextBooking.label}{p.nextBooking.confirmed ? "" : " · not confirmed"}</Text></Card></Pressable>}
           <Text accessibilityRole="header" style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginTop: spacing.xl, marginBottom: spacing.sm }}>Timeline</Text>
           {p.timeline.length === 0 ? <EmptyState icon="time-outline" title="Nothing on the thread yet" body="Every conversation, quote, booking and note with this person builds up here, in order." /> : p.timeline.map((e, i) => (
@@ -63,7 +93,7 @@ export default function PersonScreen() {
               <Text style={{ ...type.small, color: c.inkFaint }}>{new Date(e.when).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</Text>
             </Pressable>
           ))}
-          <Text style={{ ...type.small, color: c.inkFaint, marginTop: spacing.lg }}>Last activity {latest ? ago(latest.lastMessageAt) : "—"}. Notes are added on the web.</Text>
+          <Text style={{ ...type.small, color: c.inkFaint, marginTop: spacing.lg }}>Last activity {latest ? ago(latest.lastMessageAt) : "—"}.</Text>
           {p.relationship !== "CUSTOMER" && <Text style={{ ...type.small, color: c.inkFaint, marginTop: 4 }} onPress={() => Alert.alert("Becoming a customer", "A person becomes a customer when a booking is made. Book them from their thread.")}>How does someone become a customer?</Text>}
         </ScrollView>
       )}

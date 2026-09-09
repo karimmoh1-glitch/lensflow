@@ -27,15 +27,15 @@ export async function updateBusinessProfile(data: {
   timezone: string;
   bufferMinutes: number;
   bookingLeadHours: number;
-}) {
-  const ctx = await requireRole([...ADMIN_ROLES]);
+}, session?: SessionPayload | null) {
+  const ctx = await requireRole([...ADMIN_ROLES], session);
   if (!ctx) throw new Error("unauthorized");
   await prisma.business.update({ where: { id: ctx.business.id }, data });
   revalidatePath("/dashboard/settings");
 }
 
-export async function saveServices(services: { id?: string; name: string; priceCents: number; durationMins: number }[]) {
-  const ctx = await requireRole([...ADMIN_ROLES]);
+export async function saveServices(services: { id?: string; name: string; priceCents: number; durationMins: number }[], session?: SessionPayload | null) {
+  const ctx = await requireRole([...ADMIN_ROLES], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 
@@ -61,8 +61,8 @@ export async function saveServices(services: { id?: string; name: string; priceC
   revalidatePath("/dashboard/settings");
 }
 
-export async function saveAvailability(windows: { weekday: number; startMin: number; endMin: number }[]) {
-  const ctx = await requireRole([...ADMIN_ROLES]);
+export async function saveAvailability(windows: { weekday: number; startMin: number; endMin: number }[], session?: SessionPayload | null) {
+  const ctx = await requireRole([...ADMIN_ROLES], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 
@@ -131,7 +131,7 @@ const PasswordChangeSchema = z.object({
  * alone cannot lock the owner out), invalidates every other session by bumping the session
  * version, and re-issues this one so the person stays signed in.
  */
-export async function changePassword(input: { current: string; next: string }): Promise<{ error?: string; ok?: true }> {
+export async function changePassword(input: { current: string; next: string }, actingSession?: SessionPayload | null): Promise<{ error?: string; ok?: true }> {
   const session = await getSession();
   if (!session) throw new Error("unauthorized");
   const parsed = PasswordChangeSchema.safeParse(input);
@@ -154,8 +154,8 @@ const ProfileSchema = zod.object({
 });
 
 /** Your name, the workspace's name, and the timezone every time is shown in. */
-export async function updateProfile(input: { name: string; workspaceName: string; timezone: string }): Promise<{ error?: string; ok?: true }> {
-  const ctx = await requireRole([...ADMIN_ROLES]);
+export async function updateProfile(input: { name: string; workspaceName: string; timezone: string }, session?: SessionPayload | null): Promise<{ error?: string; ok?: true }> {
+  const ctx = await requireRole([...ADMIN_ROLES], session);
   if (!ctx) throw new Error("unauthorized");
   const parsed = ProfileSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the details." };
@@ -175,8 +175,8 @@ export async function updateProfile(input: { name: string; workspaceName: string
 // ── Notifications ───────────────────────────────────────────────────────────
 
 /** Marks this workspace's notifications read — all of them, or the ids given. Tenant-scoped. */
-export async function markNotificationsRead(ids?: string[]): Promise<{ ok: true }> {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"]);
+export async function markNotificationsRead(ids?: string[], session?: SessionPayload | null): Promise<{ ok: true }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER", "PARTNER"], session);
   if (!ctx) throw new Error("unauthorized");
   await prisma.notification.updateMany({ where: { businessId: ctx.business.id, read: false, ...(ids?.length ? { id: { in: ids.slice(0, 200) } } : {}) }, data: { read: true } });
   revalidatePath("/dashboard/settings");

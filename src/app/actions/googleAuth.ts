@@ -58,8 +58,8 @@ export type SyncGmailResult = { ok: true; found: number; ingested: number } | { 
 /** Manual and on-open pulls closer together than this reuse the last one. */
 const MIN_SYNC_GAP_MS = 30_000;
 
-export async function syncGmailNow(): Promise<SyncGmailResult> {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function syncGmailNow(session?: SessionPayload | null): Promise<SyncGmailResult> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) return { ok: false, error: "unauthorized" };
   // Every open tab polls; the record, not the process, decides whether a pull is due, so
   // two tabs (or two serverless instances) can't multiply Gmail API calls.

@@ -11,8 +11,8 @@ import { toZonedDisplayDate, firstName } from "@/lib/utils";
 import { addMinutes, format } from "date-fns";
 import type { BookingStatus } from "@prisma/client";
 
-export async function assignPartner(bookingId: string, membershipId: string | null) {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function assignPartner(bookingId: string, membershipId: string | null, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
 
   if (membershipId) {
@@ -100,8 +100,8 @@ export async function markDelivered(bookingId: string, url: string, note: string
   revalidatePath("/portal");
 }
 
-export async function sendQuestionnaire(bookingId: string) {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
+export async function sendQuestionnaire(bookingId: string, session?: SessionPayload | null) {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 

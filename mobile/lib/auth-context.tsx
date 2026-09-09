@@ -18,6 +18,8 @@ type AuthState = {
   signup: (input: SignupInput) => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
+  /** Take over a token issued for another workspace (the switcher). */
+  adoptSession: (token: string, me: { user: Session["user"]; business: Session["business"]; role: Role }) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -90,7 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => drop("logout"), [drop]);
 
-  return <AuthContext.Provider value={{ session, loading, expired, login, signup, logout, refreshMe }}>{children}</AuthContext.Provider>;
+  const adoptSession = useCallback(async (token: string, me: Me) => { await clearCache(); await adopt(token, me); }, [adopt]);
+  return <AuthContext.Provider value={{ session, loading, expired, login, signup, logout, refreshMe, adoptSession }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

@@ -13,7 +13,7 @@ import { firstName, money } from "../../lib/format";
 type Value = { cents: number; basis: string; known: boolean; label: string };
 type Action = { id: string; kind: "reply" | "follow_up" | "confirm_booking"; rule: string; person: { name: string; clientId: string | null; conversationId: string | null; leadId: string | null; bookingId: string | null }; headline: string; why: string; stage: string; detail: string | null; value: Value | null; atRisk: boolean; since: string; draftMode: "reply" | "follow_up" | null };
 type Booking = { id: string; when: string; status: string; clientName: string; serviceName: string; location: string | null };
-type Today = { generatedAt: string; digest: { hoursAway: number; items: Array<{ key: string; count: number; label: string; href: string }>; quotedCents: number; estimatedCents: number; quotedCount: number } | null; next: Action[]; atRisk: { knownCents: number; estimatedCents: number; people: number }; today: Booking[]; upcoming: Booking[] };
+type Today = { generatedAt: string; week: { automatedSent: number; keptOut: number; structuredLeads: number; bookedLeads: number; automationsOn: number; estimatedMinutes: number } | null; unreadNotifications: number; digest: { hoursAway: number; items: Array<{ key: string; count: number; label: string; href: string }>; quotedCents: number; estimatedCents: number; quotedCount: number } | null; next: Action[]; atRisk: { knownCents: number; estimatedCents: number; people: number }; today: Booking[]; upcoming: Booking[] };
 
 function greeting() { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; }
 
@@ -53,7 +53,11 @@ export default function TodayScreen() {
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + spacing.lg, paddingBottom: spacing.xxl }} refreshControl={<RefreshControl refreshing={r.refreshing} onRefresh={r.refresh} tintColor={c.ink} />}>
         <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.lg }}>
           <Text style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginBottom: 6 }}>{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</Text>
-          <Text accessibilityRole="header" style={{ ...type.title, color: c.ink }}>{greeting()}, {firstName(session?.user.name, "there")}.</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Text accessibilityRole="header" style={{ ...type.title, color: c.ink, flex: 1 }}>{greeting()}, {firstName(session?.user.name, "there")}.</Text>
+            <Pressable onPress={() => router.push("/settings/search" as never)} accessibilityRole="button" accessibilityLabel="Search" style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}><Ionicons name="search-outline" size={22} color={c.ink} /></Pressable>
+            <Pressable onPress={() => router.push("/settings/notifications" as never)} accessibilityRole="button" accessibilityLabel={d?.unreadNotifications ? `Notifications, ${d.unreadNotifications} unread` : "Notifications"} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}><Ionicons name={d?.unreadNotifications ? "notifications" : "notifications-outline"} size={22} color={d?.unreadNotifications ? c.accentText : c.ink} />{d?.unreadNotifications ? <View accessible={false} style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: c.accent }} /> : null}</Pressable>
+          </View>
         </View>
         {r.stale && <StaleBanner at={r.cachedAt} onRetry={r.reload} />}
         {r.loading && !d ? <Skeleton lines={5} /> : !d ? <ErrorState message={r.error ?? "Couldn't load today."} onRetry={r.reload} /> : (
@@ -100,8 +104,19 @@ export default function TodayScreen() {
             )}
             <SectionLabel>Today</SectionLabel>
             {d.today.length === 0 ? <Card><Text style={{ ...type.body, color: c.inkSoft }}>Nothing on the calendar today. Warm leads are the best use of it.</Text></Card> : d.today.map((b) => <BookingRow key={b.id} b={b} />)}
-            <SectionLabel>Coming up</SectionLabel>
+            <SectionLabel right={<Pressable onPress={() => router.push("/bookings" as never)} accessibilityRole="link" style={{ minHeight: 32, justifyContent: "center" }}><Text style={{ ...type.small, color: c.accentText, fontWeight: "600" }}>All bookings →</Text></Pressable>}>Coming up</SectionLabel>
             {d.upcoming.length === 0 ? <Card><Text style={{ ...type.body, color: c.inkSoft }}>No upcoming bookings yet. Confirmed bookings line up here.</Text></Card> : d.upcoming.map((b) => <BookingRow key={b.id} b={b} />)}
+            {d.week && (
+              <Card tone="signal" style={{ marginTop: spacing.lg }}>
+                <Text style={{ ...type.micro, color: c.signalText, textTransform: "uppercase" }}>Daythread handled, last 7 days</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>
+                  {[["Messages sent for you", d.week.automatedSent], ["Kept out of your way", d.week.keptOut], ["Inquiries structured", d.week.structuredLeads], ["Turned into bookings", d.week.bookedLeads]].map(([k, v]) => (
+                    <View key={String(k)} style={{ width: "50%", marginBottom: 8 }}><Text style={{ ...type.heading, color: c.ink }}>{String(v)}</Text><Text style={{ ...type.small, color: c.inkSoft }}>{String(k)}</Text></View>
+                  ))}
+                </View>
+                <Text style={{ ...type.small, color: c.inkFaint }}>≈{d.week.estimatedMinutes < 60 ? `${d.week.estimatedMinutes} min` : `${(d.week.estimatedMinutes / 60).toFixed(1)} h`} of your time · estimate</Text>
+              </Card>
+            )}
           </View>
         )}
       </ScrollView>

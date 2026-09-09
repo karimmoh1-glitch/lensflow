@@ -19,7 +19,8 @@ export async function GET(req: Request) {
   if (!ctx) return new Response("Unauthorized", { status: 401 });
   const businessId = ctx.business.id;
   const url = new URL(req.url);
-  const known = Number(url.searchParams.get("since"));
+  const sinceParam = url.searchParams.get("since");
+  const known = sinceParam === null ? NaN : Number(sinceParam);
   const from = Number.isFinite(known) && known >= 0 ? known : await getInboxVersion(businessId);
   const encoder = new TextEncoder();
   const abort = new AbortController();

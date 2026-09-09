@@ -2,6 +2,7 @@ import "./dashboard.css";
 import { redirect } from "next/navigation";
 import { getSession, requireBusiness, getUserMemberships } from "@/lib/auth";
 import { AppShell } from "./AppShell";
+import { InboxLive } from "./InboxLive";
 import { Toaster } from "@/components/Toaster";
 import { prisma } from "@/lib/db";
 import { PROVIDERS } from "@/lib/integrations/registry";
@@ -54,6 +55,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AppShell businessName={business.name} handle={business.handle} role={role} plan={PLANS[effectivePlan(business)].name as "Free" | "Pro" | "Business"} workspaces={workspaces} wantedIntegrations={wanted}>
           {children}
         </AppShell>
+        <InboxLive />
       </PaywallProvider>
     </Toaster>
   );

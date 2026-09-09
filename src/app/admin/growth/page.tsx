@@ -139,9 +139,21 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
               </div>
               <div className="bg-white px-5 py-4 text-sm space-y-1.5">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Channels</p>
-                {detail.integrations.length === 0 ? <p className="text-ink/60">Nothing connected yet.</p> : detail.integrations.map((i) => (
-                  <p key={i.provider}><span className="font-semibold text-ink">{i.provider}</span> · {i.status}{i.wanted && i.status === "NOT_CONNECTED" ? " · wanted" : ""}{i.lastSyncedAt ? ` · synced ${formatDistanceToNowStrict(i.lastSyncedAt)} ago` : ""}{i.lastSyncStatus ? ` · ${i.lastSyncStatus}` : ""}{i.lastErrorAt ? ` · error ${formatDistanceToNowStrict(i.lastErrorAt)} ago` : ""}</p>
-                ))}
+                {detail.integrations.length === 0 ? <p className="text-ink/60">Nothing connected yet.</p> : detail.integrations.map((i) => {
+                  const sub = (i.settings as { webhooksSubscribed?: boolean } | null)?.webhooksSubscribed;
+                  return (
+                    <div key={i.provider} className="text-sm">
+                      <span className="font-semibold text-ink">{i.provider}</span> · {i.status.toLowerCase().replaceAll("_", " ")}{i.externalAccount ? ` · ${i.externalAccount}` : ""}
+                      <div className="text-xs text-ink/65">
+                        {i.lastWebhookAt ? `last event ${format(i.lastWebhookAt, "MMM d, HH:mm")}` : "no provider event yet"}
+                        {i.lastSyncedAt ? ` · last sync ${format(i.lastSyncedAt, "MMM d, HH:mm")} (${i.lastSyncStatus ?? "?"})` : " · never synced"}
+                        {i.tokenExpiresAt ? ` · token until ${format(i.tokenExpiresAt, "MMM d")}` : ""}
+                        {i.provider === "INSTAGRAM" ? ` · webhook ${sub === true ? "subscribed" : sub === false ? "NOT subscribed" : "unchecked"}` : ""}
+                        {i.lastError ? ` · ${i.lastError}` : ""}
+                      </div>
+                    </div>
+                  );
+                })}
                 <p className="pt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Work</p>
                 <p>{detail._count.conversations} conversations · {detail._count.clients} people · {detail._count.leads} leads ({detail.leadsByStatus.map(([s, c]) => `${c} ${s.toLowerCase()}`).join(", ") || "none"})</p>
                 <p>{detail._count.bookings} bookings · {detail.services.length} services · {detail.automations.filter((a) => a.enabled).length}/{detail.automations.length} automations on · {detail.automationRuns} runs</p>

@@ -98,6 +98,13 @@ export async function subscribeInstagramWebhooks(token: string, igUserId: string
   await graphFetch(`${IG_GRAPH}/${igUserId}/subscribed_apps?${new URLSearchParams({ subscribed_fields: "messages", access_token: token })}`, { method: "POST" });
 }
 
+/** What the account is subscribed to on this app; `messages` must be present for DMs to arrive. */
+export async function listInstagramSubscriptions(token: string, igUserId: string): Promise<{ subscribed: boolean; fields: string[] }> {
+  const r = await graphFetch<{ data?: Array<{ subscribed_fields?: string[] }> }>(`${IG_GRAPH}/${igUserId}/subscribed_apps?${new URLSearchParams({ access_token: token })}`);
+  const fields = (r.data ?? []).flatMap((d) => d.subscribed_fields ?? []);
+  return { subscribed: fields.includes("messages"), fields };
+}
+
 /** Stops Meta delivering this account's events to Daythread. Called on disconnect so a
  * disconnected account genuinely stops sending, rather than only being ignored here. */
 export async function unsubscribeInstagramWebhooks(token: string, igUserId: string): Promise<void> {

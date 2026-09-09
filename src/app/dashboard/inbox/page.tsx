@@ -15,6 +15,7 @@ import type { ChannelType, ConversationCategory, Prisma } from "@prisma/client";
 import { ThreadPanel } from "./ThreadPanel";
 import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
 import { AutoGmailSync } from "./AutoGmailSync";
+import { CheckMessagesButton } from "./CheckMessagesButton";
 import { ConversationTools } from "./ConversationTools";
 import { SearchBox } from "./SearchBox";
 import { previewOf, isAcknowledgement, splitMessage } from "@/lib/cleanMessage";
@@ -169,6 +170,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         <div className="px-4 md:px-5 pt-3 md:pt-4 pb-3 border-b border-border space-y-3">
           <div className="flex items-center justify-between gap-3">
             <h1 className="font-sans font-extrabold text-[19px] tracking-[-0.02em] text-ink">Inbox</h1>
+            <CheckMessagesButton />
             <div role="tablist" aria-label="Inbox view" className="inline-flex items-center rounded-full bg-black/[0.05] p-0.5 text-xs font-semibold">
               <Link role="tab" aria-selected={view === "priority"} href={href({ view: "priority", cat: "all" })} className={cn("px-3 py-1 rounded-full transition-all", view === "priority" ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink")}>
                 Priority

@@ -23,6 +23,10 @@ model Business {
   /// answers — tone, common questions, policies, locations served, how booking works. Never
   /// inferred by the model, never written by it; the owner is the only author.
   memory     Json?
+  /// Bumped on every message write or delivery-state change in this workspace; the live
+  /// inbox stream watches it, so the browser learns about a webhook-delivered message
+  /// without polling any provider.
+  inboxVersion Int @default(0)
   logoUrl    String?
   timezone   String   @default("America/New_York")
   currency   String   @default("usd")
@@ -580,6 +584,9 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@index([providerMessageId])
+  // The database's own guarantee against a redelivered or concurrently processed provider
+  // event: one provider message id per conversation, whatever the application checked.
+  @@unique([conversationId, providerMessageId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -900,6 +907,9 @@ model Integration {
   lastErrorAt    DateTime?
   // The user said they use this during onboarding but hasn't connected it yet.
   wanted Boolean @default(false)
+  /// When the provider last delivered a verified event for this connection. Diagnoses
+  /// "connected but silent".
+  lastWebhookAt DateTime?
 
   events ExternalEvent[]
 

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { pushToBusiness } from "@/server/push";
 import { withLock } from "@/lib/dbLock";
 import { track } from "@/lib/analytics";
@@ -241,5 +242,15 @@ type IngestParams = Parameters<typeof ingestUnlocked>[0];
  */
 export async function ingestInboundMessage(params: IngestParams) {
   const key = `ingest:${params.businessId}:${params.providerMessageId ?? `${params.channel}:${params.senderHandle}`}`;
-  return withLock(key, () => ingestUnlocked(params));
+  try {
+    return await withLock(key, () => ingestUnlocked(params));
+  } catch (err) {
+    // Two deliveries of the same provider message processed at once on different instances:
+    // the database's unique constraint refused the second write. That is a duplicate, not a failure.
+    if (params.providerMessageId && err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const existing = await prisma.message.findFirst({ where: { providerMessageId: params.providerMessageId, conversation: { businessId: params.businessId } }, include: { conversation: true } });
+      if (existing) return { client: null, conversation: existing.conversation, lead: null, duplicate: true as const, category: existing.conversation.category };
+    }
+    throw err;
+  }
 }

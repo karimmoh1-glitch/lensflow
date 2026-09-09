@@ -134,7 +134,7 @@ export async function getBusinessDetail(handle: string) {
     select: {
       id: true, name: true, handle: true, planTier: true, billingStatus: true, createdAt: true, timezone: true, onboardingComplete: true, trialEndsAt: true, currentPeriodEnd: true, referredById: true, referralCode: true,
       onboardingProfile: true,
-      integrations: { select: { provider: true, status: true, lastSyncedAt: true, lastSyncStatus: true, lastErrorAt: true, wanted: true, updatedAt: true } },
+      integrations: { select: { provider: true, status: true, lastSyncedAt: true, lastSyncStatus: true, lastError: true, lastErrorAt: true, lastWebhookAt: true, tokenExpiresAt: true, externalAccount: true, settings: true, wanted: true, updatedAt: true } },
       orgMemberships: { where: { status: "ACTIVE" }, select: { role: true, createdAt: true, user: { select: { name: true, email: true } } } },
       automations: { select: { name: true, enabled: true, createdAt: true } },
       services: { select: { name: true, durationMins: true, priceCents: true } },

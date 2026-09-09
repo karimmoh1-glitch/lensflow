@@ -3,6 +3,7 @@ import { readBoundedText } from "@/lib/http";
 import { validateRequest } from "twilio";
 import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
+import { markWebhookSeen } from "@/server/inboxSignal";
 
 /**
  * Twilio's SMS webhook — configure this URL as the "A message comes in" webhook on the
@@ -36,7 +37,9 @@ export async function POST(req: Request) {
 
   const from = String(form.get("From") ?? "");
   const to = String(form.get("To") ?? "");
-  const body = String(form.get("Body") ?? "");
+  // A picture with no caption is still a message; the attachment count is Twilio's own field.
+  const media = Number(form.get("NumMedia") ?? 0);
+  const body = String(form.get("Body") ?? "").trim() || (media > 0 ? `[${media === 1 ? "media attachment" : `${media} media attachments`}]` : "");
 
   if (!from || !to || !body) {
     return new NextResponse("<Response></Response>", { status: 400, headers: { "Content-Type": "text/xml" } });
@@ -60,6 +63,7 @@ export async function POST(req: Request) {
     clientPhone: from,
     providerMessageId: messageSid || undefined,
   });
+  await markWebhookSeen(business.id, "SMS");
 
   return new NextResponse("<Response></Response>", { headers: { "Content-Type": "text/xml" } });
 }

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getValidAccessToken, listRecentGmailMessages } from "@/lib/google";
+import { getValidAccessToken, listRecentGmailMessages, listGmailMessageIdsSince, fetchGmailMessages, getGmailHistoryId } from "@/lib/google";
 import { ingestInboundMessage } from "@/server/leadIngestion";
 import { reportFailure } from "@/lib/observe";
 
@@ -16,13 +16,25 @@ export async function syncGmailForBusiness(businessId: string): Promise<GmailSyn
   if (!integration?.refreshToken || integration.status === "NOT_CONNECTED") return { ok: false, error: "Gmail isn't connected for this business.", skipped: true };
   try {
     const accessToken = await getValidAccessToken(integration);
-    const messages = await listRecentGmailMessages(accessToken, integration.lastSyncedAt ? 100 : 60, integration.lastSyncedAt);
+    // Incremental first: Gmail's history since the last cursor names exactly the messages
+    // added, however many. When the cursor is gone (Gmail keeps about a week), or there is
+    // none yet, the time window since the last sync is the bounded fallback.
+    let messages;
+    let cursor: string | null = null;
+    const history = integration.syncCursor ? await listGmailMessageIdsSince(accessToken, integration.syncCursor).catch(() => null) : null;
+    if (history) {
+      messages = history.ids.length ? await fetchGmailMessages(accessToken, history.ids.slice(0, 200)) : [];
+      cursor = history.historyId;
+    } else {
+      messages = await listRecentGmailMessages(accessToken, integration.lastSyncedAt ? 100 : 60, integration.lastSyncedAt);
+    }
+    cursor = (await getGmailHistoryId(accessToken).catch(() => null)) ?? cursor ?? integration.syncCursor ?? null;
     let ingested = 0;
     for (const m of messages) {
       const result = await ingestInboundMessage({ businessId, channel: "EMAIL", senderName: m.fromName || m.from.split("@")[0], senderHandle: m.from, body: m.body, subject: m.subject, clientEmail: m.from, providerMessageId: m.messageIdHeader || m.id, headers: m.headers, rawBody: m.rawBody });
       if (!result.duplicate) ingested += 1;
     }
-    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, status: "CONNECTED" } });
+    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, status: "CONNECTED", syncCursor: cursor } });
     return { ok: true, found: messages.length, ingested };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Gmail sync failed";

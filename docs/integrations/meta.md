@@ -227,3 +227,16 @@ With the variables set and your own account added as a tester:
 | `connect_error=limit` | The plan's connected-integrations allowance is full |
 | `connect_error=state` / `session` / `tenant` | The callback could not be tied back to the browser, user and workspace that started it — start again from the Integrations page |
 | Connected, but no DMs arrive | The webhook subscription failed; the card says so. Reconnect to retry, and check the `messages` field is subscribed in the Meta dashboard |
+
+## Reconciliation and subscription health
+
+- The daily cron checks each connected Instagram account's subscription (`subscribed_apps`)
+  for the `messages` field, re-subscribes once when it is missing, and records the result in
+  `Integration.settings.webhooksSubscribed`; the channel card and the founder dashboard say
+  "connected but not receiving" instead of "connected" when it is false.
+- "Check for messages" and the daily cron pull the recent conversations from the Graph API
+  and ingest anything newer than the last sync, idempotent on Meta's message id — a DM whose
+  webhook was missed still lands; one that was delivered is never duplicated.
+- `Integration.lastWebhookAt` records the last verified event Meta delivered for the account.
+- A message that arrives for an account whose token expired is still stored (Meta does not
+  replay), and answered once the owner reconnects.

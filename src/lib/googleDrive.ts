@@ -39,3 +39,30 @@ export async function listDriveFolder(accessToken: string, folderId: string): Pr
 }
 
 export const driveFolderUrl = (id: string) => `https://drive.google.com/drive/folders/${id}`;
+
+/**
+ * Give one named person read access to one folder. Least privilege on purpose: a reader,
+ * addressed by email, not "anyone with the link". Google emails them the link itself unless
+ * asked not to; Daythread sends its own message, so the notification is suppressed here to
+ * avoid two.
+ *
+ * Already-has-access is not a failure — Google answers 400 with a duplicate error and the
+ * person can already open the folder, which is the outcome we wanted.
+ */
+export async function shareDriveFolderWithEmail(accessToken: string, folderId: string, email: string): Promise<{ shared: true } | { shared: false; reason: string }> {
+  try {
+    await bearerJson(`${API}/files/${encodeURIComponent(folderId)}/permissions?sendNotificationEmail=false`, accessToken, {
+      method: "POST",
+      body: { role: "reader", type: "user", emailAddress: email },
+    });
+    return { shared: true };
+  } catch (err) {
+    if (err instanceof OAuthError) {
+      if (/duplicate/i.test(`${err.code ?? ""} ${err.message}`)) return { shared: true };
+      if (err.status === 403) return { shared: false, reason: "Google refused to share this folder. The account may not be allowed to share outside its organisation." };
+      if (err.status === 400 && /invalid.*email|invalidSharingRequest/i.test(`${err.code ?? ""} ${err.message}`)) return { shared: false, reason: "Google would not accept that email address." };
+      return { shared: false, reason: "Google could not share the folder just now." };
+    }
+    throw err;
+  }
+}

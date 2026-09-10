@@ -6,7 +6,7 @@ import { tokenRequest, validAccessToken, bearerJson, appUrl, OAuthError, type OA
  * Dropbox. OAuth 2 with PKCE and offline refresh tokens (Dropbox's short-lived tokens
  * expire in four hours). Folder references only, never file contents.
  */
-const SCOPES = ["account_info.read", "files.metadata.read", "files.content.write", "sharing.write"];
+const SCOPES = ["account_info.read", "files.metadata.read", "files.content.write", "sharing.write", "sharing.read"];
 const API = "https://api.dropboxapi.com/2";
 const appKey = () => process.env.DROPBOX_APP_KEY;
 const appSecret = () => process.env.DROPBOX_APP_SECRET;
@@ -35,9 +35,15 @@ export async function revokeDropboxToken(accessToken: string): Promise<void> {
 
 export const dropboxToken = (integration: Integration) => validAccessToken(integration, refreshDropboxToken, { label: "Dropbox" });
 
-/** Dropbox RPC endpoints take JSON and answer JSON; an empty body must be sent as "null". */
-function rpc<T>(accessToken: string, path: string, body: unknown): Promise<T> {
-  return bearerJson<T>(`${API}/${path}`, accessToken, { method: "POST", body: body === undefined ? "null" : body, headers: { "Content-Type": "application/json" } });
+/**
+ * Dropbox RPC. Endpoints that take arguments want JSON; endpoints that take none reject a
+ * JSON content type outright ("Bad HTTP Content-Type header"), so those are sent with no
+ * body and no content type at all. Getting this wrong fails the very first call after
+ * authorization — identifying the account — and so fails the whole connection.
+ */
+function rpc<T>(accessToken: string, path: string, body?: unknown): Promise<T> {
+  if (body === undefined) return bearerJson<T>(`${API}/${path}`, accessToken, { method: "POST" });
+  return bearerJson<T>(`${API}/${path}`, accessToken, { method: "POST", body, headers: { "Content-Type": "application/json" } });
 }
 
 export type DropboxAccount = { accountId: string; email: string; displayName: string };
@@ -70,10 +76,15 @@ export async function listDropboxFolder(accessToken: string, path: string): Prom
 
 /** A link the owner can open in Dropbox. Shared links are the documented way to get one for an app-folder path. */
 export async function dropboxFolderLink(accessToken: string, path: string): Promise<string | null> {
+  // No requested_visibility: Dropbox then applies the most restrictive setting the account
+  // allows. Asking for "team_only" is refused outright on a personal account, which left
+  // every folder without a link.
   try {
-    const r = await rpc<{ url: string }>(accessToken, "sharing/create_shared_link_with_settings", { path, settings: { requested_visibility: "team_only" } });
+    const r = await rpc<{ url: string }>(accessToken, "sharing/create_shared_link_with_settings", { path });
     return r.url;
   } catch (err) {
+    // 409 covers "a link already exists" as well as a settings refusal; either way the
+    // existing link is the answer, and finding it needs sharing.read.
     if (err instanceof OAuthError && err.status === 409) {
       const r = await rpc<{ links: Array<{ url: string }> }>(accessToken, "sharing/list_shared_links", { path, direct_only: true }).catch(() => ({ links: [] }));
       return r.links?.[0]?.url ?? null;

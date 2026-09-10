@@ -11,7 +11,18 @@ import type { Integration } from "@prisma/client";
  * Dropbox and are only listed (names, dates, links). Never uploaded, never copied.
  */
 export type FileProvider = "GOOGLE_DRIVE" | "DROPBOX";
-export type FolderRef = { id?: string; path?: string; url: string | null; createdAt: string };
+export type FolderRef = {
+  id?: string;
+  path?: string;
+  url: string | null;
+  createdAt: string;
+  /** When the folder was last shared, and with whom. An email, never anything else. */
+  sharedAt?: string;
+  sharedWith?: string | null;
+  /** When the link was last sent to the client, and how it went out. */
+  deliveredAt?: string;
+  deliveredVia?: string;
+};
 export type ExternalFolders = Partial<Record<FileProvider, FolderRef>>;
 export type ClientFile = { id: string; name: string; url: string | null; modifiedAt: string | null; size: number | null; isFolder: boolean };
 

@@ -38,3 +38,14 @@ export function providerMaturity(provider: string): Maturity {
   }
   return "ga";
 }
+
+/**
+ * Whether the hub should show the invite-only control instead of Connect. Only a row that
+ * is genuinely active (connected, or connected-but-ailing) is exempt: a legacy DEMO row or
+ * a NOT_CONNECTED row is not a connection and must not open the gate.
+ */
+export function accessGated(maturity: Maturity, accessStatus: string | null | undefined, rowStatus: string | null | undefined): boolean {
+  if (maturity !== "beta") return false;
+  if (accessStatus === "APPROVED") return false;
+  return !(rowStatus === "CONNECTED" || rowStatus === "SYNC_ERROR" || rowStatus === "NEEDS_ATTENTION");
+}

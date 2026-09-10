@@ -23,6 +23,7 @@ import { completeOAuthConnect, type OAuthConnectSpec } from "@/server/oauthConne
 import { runWebhook, retryFailedWebhooks, MAX_ATTEMPTS } from "@/server/webhookInbox";
 import { requestAccess, decideAccess, accessGranted, accessRequestFor } from "@/server/accessRequests";
 import { GROUPS, PROVIDERS, providerMaturity, type RegisteredProvider } from "@/lib/integrations/registry";
+import { accessGated } from "@/lib/integrations/flags";
 import { notifyBusiness, postToSlack } from "@/server/notify";
 
 const stamp = () => `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -212,6 +213,18 @@ describe("invite-only access", () => {
     vi.stubEnv("INTEGRATION_WHATSAPP_MODE", "open");
     expect(providerMaturity("WHATSAPP")).toBe("ga");
     for (const p of ["EMAIL", "SLACK", "STRIPE", "CALENDLY", "DROPBOX", "MICROSOFT_OUTLOOK"] as const) expect(providerMaturity(p)).toBe("ga");
+  });
+});
+
+describe("beta gate", () => {
+  it("only a genuinely active row or an approval opens the gate; a legacy DEMO or NOT_CONNECTED row does not", () => {
+    expect(accessGated("beta", null, null)).toBe(true);
+    expect(accessGated("beta", "PENDING", "NOT_CONNECTED")).toBe(true);
+    expect(accessGated("beta", null, "DEMO")).toBe(true);
+    expect(accessGated("beta", "APPROVED", null)).toBe(false);
+    for (const active of ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"]) expect(accessGated("beta", null, active)).toBe(false);
+    expect(accessGated("ga", null, null)).toBe(false);
+    expect(accessGated("coming_soon", null, null)).toBe(false);
   });
 });
 

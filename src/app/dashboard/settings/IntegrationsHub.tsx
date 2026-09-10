@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { formatDistanceToNowStrict } from "date-fns";
 import { PROVIDERS, GROUPS, providerConfigured, providerMaturity, displayStatus, type ProviderSpec, type RegisteredProvider } from "@/lib/integrations/registry";
+import { accessGated } from "@/lib/integrations/flags";
 import { smsEntitled, PLANS, limitLabel } from "@/lib/billing";
 import { usageFor, countsTowardQuota, limitMessage } from "@/server/integrationQuota";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
@@ -110,7 +111,7 @@ export async function IntegrationsHub({ business, role, connected, connectError,
     const needsSlot = (status === "disconnected" || status === "needs_attention") && !holdsSlot;
     const limitReached = needsSlot && usage.atLimit;
     const access = provider === "INSTAGRAM" && igAccess ? { status: igAccess.status, decisionNote: igAccess.decisionNote, requestedAt: igAccess.requestedAt?.toISOString() ?? null } : null;
-    const gated = maturity === "beta" && access?.status !== "APPROVED" && !(row && row.status !== "NOT_CONNECTED");
+    const gated = accessGated(maturity, access?.status, row?.status);
     const pill: CardModel["pill"] =
       status === "connected" ? { label: "Connected", tone: "success" }
       : status === "always_on" ? { label: "Always on", tone: "success" }

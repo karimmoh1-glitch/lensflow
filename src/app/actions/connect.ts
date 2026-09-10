@@ -16,6 +16,8 @@ import { recordAudit } from "@/server/audit";
 import { syncOutlookForBusiness } from "@/server/outlookSync";
 import { syncCalendlyForBusiness, type CalendlySettings } from "@/server/calendlySync";
 import { postToSlack, type SlackSettings } from "@/server/notify";
+import { runInstagramDeliveryCheck, type DeliveryCheck } from "@/server/instagramDelivery";
+import { enforceRateLimit } from "@/lib/rateLimit";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { instagramConfigured, instagramAuthUrl, unsubscribeInstagramWebhooks } from "@/lib/meta/instagram";
 import { whatsappConfigured, whatsappAuthUrl, unsubscribeWabaWebhooks, listPhoneNumbers, tokenOwnsWaba } from "@/lib/meta/whatsapp";
@@ -115,6 +117,24 @@ export async function connectStripe(session?: SessionPayload | null) {
   if (!ctx) throw new Error("unauthorized");
   const owner = await prisma.user.findUnique({ where: { id: ctx.session.userId }, select: { email: true } });
   return startOAuth({ provider: "STRIPE", oauthProvider: "stripe", purpose: "payments", configured: stripeConnectConfigured(), name: "Stripe", url: (state) => stripeConnectAuthUrl(state, { email: owner?.email ?? null, businessName: ctx.business.name, url: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/book/${ctx.business.handle}` : null }) }, session);
+}
+
+/**
+ * "Is Instagram going to deliver DMs here?" — asks Meta, rather than reporting the boolean
+ * written when the subscription was first made. Owner or admin, tenant-scoped to their own
+ * connection. Returns states and counts; never a token, a secret or a message.
+ */
+export async function checkInstagramDelivery(session?: SessionPayload | null): Promise<{ ok: true; check: DeliveryCheck } | { ok: false; error: string }> {
+  const ctx = await requireRole([...ADMIN], session);
+  if (!ctx) return { ok: false, error: "unauthorized" };
+  try {
+    await enforceRateLimit(`ig-delivery-check:${ctx.business.id}`, { limit: 10, windowMs: 10 * 60 * 1000 });
+  } catch {
+    return { ok: false, error: "Checked too many times just now. Try again in a few minutes." };
+  }
+  const r = await runInstagramDeliveryCheck(ctx.business.id);
+  revalidatePath("/dashboard/settings");
+  return r;
 }
 
 /** The channels the Slack bot can post to, for the picker in Manage. */

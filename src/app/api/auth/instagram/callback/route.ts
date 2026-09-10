@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { verifyOAuthState } from "@/lib/integrations/oauthState";
-import { exchangeInstagramCode, instagramProfile, instagramIdentity, instagramGrantedScopes, subscribeInstagramWebhooks, listInstagramConversations, isProfessionalAccount, IG_SCOPES } from "@/lib/meta/instagram";
+import { exchangeInstagramCode, instagramProfile, instagramIdentity, instagramGrantedScopes, subscribeInstagramWebhooks, listInstagramConversations, isProfessionalAccount, IG_SCOPES, listInstagramSubscriptions } from "@/lib/meta/instagram";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { appBaseUrl, metaCredentialsPresent } from "@/lib/meta/config";
 import { reportFailure } from "@/lib/observe";
@@ -67,11 +67,18 @@ export async function GET(req: Request) {
     const elsewhere = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: { in: [...selfIds] }, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
     if (elsewhere) return fail("in_use");
 
+    // Subscribe, then ask Meta what it actually recorded. A POST that does not throw is not
+    // evidence the field is subscribed, and a connection that looks healthy while Meta
+    // delivers nothing is the worst state to be in.
     let webhooksOk = true;
-    await subscribeInstagramWebhooks(tokens.accessToken, identity.professionalId).catch(async (err) => {
+    try {
+      await subscribeInstagramWebhooks(tokens.accessToken, identity.professionalId);
+      const confirmed = await listInstagramSubscriptions(tokens.accessToken, identity.professionalId).catch(() => null);
+      if (confirmed) webhooksOk = confirmed.subscribed;
+    } catch (err) {
       webhooksOk = false;
       await reportFailure("oauth", "Instagram webhook subscription failed", { businessId, provider: "INSTAGRAM", error: err, level: "warn" });
-    });
+    }
 
     const settings = { instagramUserId: identity.professionalId, professionalAccountId: identity.professionalId, appScopedUserId: identity.appScopedId, identityResolvedAt: new Date().toISOString(), username: profile.username, accountType: profile.account_type ?? null, webhooksSubscribed: webhooksOk, scopes: granted ?? IG_SCOPES };
     const credentials = {

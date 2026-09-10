@@ -4,6 +4,17 @@ import { parseMultistatus } from "./caldav";
 import { connectAppleCalendar } from "@/app/actions/connect";
 import { saveCalendarSelection, getCalendarState } from "@/app/actions/calendars";
 
+/**
+ * The iCloud fixture used to carry a fixed calendar date, which quietly turned the suite red
+ * the day real time passed it: an event that was "upcoming busy time" became "past busy
+ * time". The date is derived from today instead, and the assertion checks the TZID
+ * conversion — which is what this test is actually about — rather than a frozen instant.
+ */
+const FIXTURE_DAY = new Date(Date.now() + 2 * 86_400_000);
+const YMD = `${FIXTURE_DAY.getUTCFullYear()}${String(FIXTURE_DAY.getUTCMonth() + 1).padStart(2, "0")}${String(FIXTURE_DAY.getUTCDate()).padStart(2, "0")}`;
+const chicagoHour = (d: Date) => new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "2-digit", hour12: false }).format(d);
+
+
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
 /** iCloud replaced by a scripted CalDAV server: discovery, calendar listing, a
@@ -25,8 +36,8 @@ vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit
 BEGIN:VEVENT
 UID:dentist
 SUMMARY:Dentist
-DTSTART;TZID=America/Chicago:20260910T090000
-DTEND;TZID=America/Chicago:20260910T100000
+DTSTART;TZID=America/Chicago:${YMD}T090000
+DTEND;TZID=America/Chicago:${YMD}T100000
 END:VEVENT
 END:VCALENDAR</c:calendar-data></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response><d:sync-token>http://icloud/sync/1</d:sync-token></d:multistatus>`);
     return xml(`<d:multistatus xmlns:d="DAV:"></d:multistatus>`);
@@ -87,7 +98,8 @@ describe("Apple Calendar (CalDAV)", () => {
     expect(settings.cursors["/123/calendars/home/"]).toBe("http://icloud/sync/1");
     const ev = await prisma.externalEvent.findFirst({ where: { integrationId: row!.id } });
     expect(ev?.title).toBe("Dentist");
-    expect(ev?.startAt.toISOString()).toBe("2026-09-10T14:00:00.000Z"); // 09:00 Chicago (CDT)
+    expect(chicagoHour(ev!.startAt)).toBe("09"); // the TZID was honoured, whatever the date or DST
+    expect(ev!.endAt.getTime()).toBeGreaterThan(Date.now()); // still upcoming, so it blocks availability
   });
 
   it("selection works through the same action as Google, and state reads back", async () => {

@@ -1,4 +1,6 @@
 import { formatDistanceToNowStrict } from "date-fns";
+import { InstagramDeliveryCheck } from "./InstagramDeliveryCheck";
+import type { DeliveryCheck } from "@/server/instagramDelivery";
 
 /**
  * The Instagram connection in detail: which account, what Meta granted, whether the webhook
@@ -13,6 +15,8 @@ export type InstagramManageModel = {
   webhooksSubscribed: boolean;
   tokenExpiresAt: Date | null;
   lastSyncedAt: Date | null;
+  /** The last answer Meta gave about delivery, when one has been asked for. */
+  deliveryCheck: DeliveryCheck | null;
 };
 
 const SCOPE_LABEL: Record<string, string> = {
@@ -65,6 +69,8 @@ export function InstagramManage({ model }: { model: InstagramManageModel }) {
           </p>
         )}
       </div>
+
+      <InstagramDeliveryCheck initial={model.deliveryCheck} />
 
       <p className="text-[11px] text-ink/65 leading-relaxed">
         Disconnecting stops Meta delivering this account&rsquo;s events to Daythread and erases the stored credential. Instagram has no third-party revocation endpoint, so you can also remove Daythread under Instagram → Settings → Website permissions. Your conversations and customers stay either way.

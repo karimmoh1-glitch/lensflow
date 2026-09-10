@@ -1,4 +1,4 @@
-import { IG_GRAPH, graphFetch, MetaApiError } from "./common";
+import { IG_GRAPH, GRAPH, graphFetch, MetaApiError, scrubMetaMessage } from "./common";
 import { appBaseUrl, metaProductReady } from "./config";
 
 /**
@@ -122,6 +122,47 @@ export async function listInstagramSubscriptions(token: string, igUserId: string
   const r = await graphFetch<{ data?: Array<{ subscribed_fields?: string[] }> }>(`${IG_GRAPH}/${igUserId}/subscribed_apps?${new URLSearchParams({ access_token: token })}`);
   const fields = (r.data ?? []).flatMap((d) => d.subscribed_fields ?? []);
   return { subscribed: fields.includes("messages"), fields };
+}
+
+/**
+ * What the *app* is subscribed to, as Meta reports it — the configuration in the app
+ * dashboard, not the per-account subscription. An account can be subscribed while the app
+ * itself has no `messages` field configured, and then Meta delivers nothing; that gap is
+ * invisible from `subscribed_apps` alone, so it is asked for separately.
+ *
+ * Meta does not document this endpoint for the Instagram Login host, so it is attempted and
+ * whatever comes back — including a refusal — is reported rather than thrown. The app token
+ * is built from the app's own credentials and never leaves this function.
+ */
+export type AppSubscription = { object: string; callbackUrl: string | null; fields: string[]; active: boolean | null };
+export type AppSubscriptionCheck = { ok: true; subscriptions: AppSubscription[] } | { ok: false; error: string };
+
+export async function listAppWebhookSubscriptions(): Promise<AppSubscriptionCheck> {
+  const id = process.env.INSTAGRAM_APP_ID;
+  const secret = process.env.INSTAGRAM_APP_SECRET;
+  if (!id || !secret) return { ok: false, error: "Instagram app credentials are not configured on this deployment." };
+  const appToken = `${id}|${secret}`;
+  type Raw = { data?: Array<{ object?: string; callback_url?: string; fields?: Array<string | { name?: string }>; active?: boolean }> };
+  const read = (raw: Raw): AppSubscription[] =>
+    (raw.data ?? []).map((d) => ({
+      object: String(d.object ?? "unknown"),
+      callbackUrl: d.callback_url ?? null,
+      fields: (d.fields ?? []).map((f) => (typeof f === "string" ? f : f?.name ?? "")).filter(Boolean),
+      active: typeof d.active === "boolean" ? d.active : null,
+    }));
+  // The Graph host is where app-level subscriptions live; the Instagram host is tried first
+  // in case this app is registered only there.
+  const hosts = [`${IG_GRAPH}/${id}/subscriptions`, `${GRAPH}/${id}/subscriptions`];
+  let lastError = "Meta did not answer.";
+  for (const base of hosts) {
+    try {
+      const raw = await graphFetch<Raw>(`${base}?${new URLSearchParams({ access_token: appToken })}`);
+      return { ok: true, subscriptions: read(raw) };
+    } catch (err) {
+      lastError = err instanceof MetaApiError ? scrubMetaMessage(err.message) : "Meta could not be reached.";
+    }
+  }
+  return { ok: false, error: lastError };
 }
 
 /** Stops Meta delivering this account's events to Daythread. Called on disconnect so a

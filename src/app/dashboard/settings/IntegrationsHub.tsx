@@ -19,6 +19,7 @@ import { connectGoogle } from "@/app/actions/googleAuth";
 import { connectInstagram, connectWhatsApp, connectMicrosoft, connectSlack, connectDropbox, connectCalendly, connectStripe } from "@/app/actions/connect";
 import { accessRequestFor } from "@/server/accessRequests";
 import type { CalendlySettings } from "@/server/calendlySync";
+import type { DeliveryCheck } from "@/server/instagramDelivery";
 import type { SlackSettings } from "@/server/notify";
 import { CalendarDays, Apple, Mail, CalendarClock, CreditCard, HardDrive, Box, Hash } from "lucide-react";
 import type { Business, IntegrationProvider } from "@prisma/client";
@@ -185,7 +186,7 @@ export async function IntegrationsHub({ business, role, connected, connectError,
       : null;
 
   const igRow = byProvider.get("INSTAGRAM");
-  const igSettings = (igRow?.settings ?? null) as null | { username?: string; accountType?: string | null; webhooksSubscribed?: boolean; scopes?: string[] };
+  const igSettings = (igRow?.settings ?? null) as null | { username?: string; accountType?: string | null; webhooksSubscribed?: boolean; scopes?: string[]; deliveryCheck?: DeliveryCheck };
   const igManage: InstagramManageModel | null = igRow
     ? {
         username: igSettings?.username ?? igRow.externalAccount ?? null,
@@ -194,6 +195,7 @@ export async function IntegrationsHub({ business, role, connected, connectError,
         webhooksSubscribed: igSettings?.webhooksSubscribed !== false,
         tokenExpiresAt: igRow.tokenExpiresAt,
         lastSyncedAt: igRow.lastSyncedAt,
+        deliveryCheck: igSettings?.deliveryCheck ?? null,
       }
     : null;
 

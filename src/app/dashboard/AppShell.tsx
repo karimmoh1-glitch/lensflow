@@ -19,6 +19,7 @@ import {
   LayoutGrid,
   ChevronRight,
   ArrowUpRight,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
@@ -41,6 +42,7 @@ const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; r
   { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-success/70", group: "work" },
   { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-info/70", group: "work" },
   { href: "/dashboard/clients", label: "People", icon: Users, tone: "text-accent/70", group: "work" },
+  { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-success/70", group: "work" },
   { href: "/dashboard/agent", label: "Assistant", icon: Sparkles, tone: "text-signal-text/70", group: "automate" },
   { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-signal-text/70", group: "automate" },
   { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/70", group: "workspace", roles: ["OWNER", "ADMIN"], lower: true },

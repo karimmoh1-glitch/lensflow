@@ -2,7 +2,7 @@ import type { ChannelAdapter, ChannelCapabilities, OutboundMessage, SendResult }
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const fromNumber = process.env.TWILIO_FROM_NUMBER; // platform fallback; businesses normally send from their own number
+const fromNumber = process.env.TWILIO_FROM_NUMBER || process.env.TWILIO_PHONE_NUMBER; // platform fallback; businesses normally send from their own number
 const configured = Boolean(accountSid && authToken);
 
 /**

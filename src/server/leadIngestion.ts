@@ -9,6 +9,7 @@ import { isAcknowledgement, splitMessage } from "@/lib/cleanMessage";
 import { FREEMAIL, classifyMessage } from "@/lib/classifyMessage";
 import { findKnownClient } from "@/server/identity";
 import type { ChannelType } from "@prisma/client";
+import { notifyBusiness } from "@/server/notify";
 
 /**
  * The single ingestion path every inbound channel funnels through — website form,
@@ -193,10 +194,7 @@ async function ingestUnlocked(params: {
       });
     }
 
-    await prisma.notification.create({
-      data: { businessId, title: "New message", body: `${client.name} sent a new message on ${channel.toLowerCase()}.` },
-    });
-    void pushToBusiness(businessId, { title: `${client.name} wrote to you`, body: `New message on ${channel.toLowerCase()}.`, data: { path: `/conversation/${existingConversation.id}` } });
+    await notifyBusiness(businessId, { kind: "message", title: `${client.name} wrote to you`, body: `New message on ${channel.toLowerCase()}.`, path: `/conversation/${existingConversation.id}` });
 
     return { client, conversation: existingConversation, lead: existingConversation.lead, duplicate: false as const, category: "PRIORITY" as const };
   }
@@ -224,10 +222,7 @@ async function ingestUnlocked(params: {
     },
   });
 
-  await prisma.notification.create({
-    data: { businessId, title: "New lead", body: `${extracted.name ?? senderName} messaged you on ${channel.toLowerCase()}.` },
-  });
-  void pushToBusiness(businessId, { title: `${extracted.name ?? senderName} wrote to you`, body: `New inquiry on ${channel.toLowerCase()}.`, data: { path: `/conversation/${conversation.id}` } });
+  await notifyBusiness(businessId, { kind: "lead", title: `${extracted.name ?? senderName} wrote to you`, body: `New inquiry on ${channel.toLowerCase()}.`, path: `/conversation/${conversation.id}` });
 
   return { client, conversation, lead, duplicate: false as const, category: "PRIORITY" as const };
 }

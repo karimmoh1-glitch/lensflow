@@ -14,7 +14,7 @@ const ITEMS: Array<{ href: string; icon: keyof typeof Ionicons.glyphMap; title: 
   { href: "/settings/automations", icon: "flash-outline", title: "Automations", body: "Confirmations, reminders and follow-ups sent for you." },
   { href: "/settings/memory", icon: "book-outline", title: "Business memory", body: "What drafts are allowed to know." },
   { href: "/settings/business", icon: "storefront-outline", title: "Business", body: "Profile, services, hours, booking page." },
-  { href: "/settings/integrations", icon: "link-outline", title: "Channels", body: "Gmail, Instagram, WhatsApp, SMS, calendars." },
+  { href: "/settings/integrations", icon: "link-outline", title: "Integrations", body: "Email, texts, calendars, payments, files." },
   { href: "/settings/team", icon: "people-circle-outline", title: "Team", body: "Who works here, invitations, partners." },
   { href: "/settings/subscription", icon: "card-outline", title: "Subscription", body: "Your plan and what it includes." },
   { href: "/settings/profile", icon: "person-outline", title: "Profile", body: "Your name, password, referral link." },

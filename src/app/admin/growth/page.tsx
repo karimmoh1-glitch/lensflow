@@ -8,6 +8,9 @@ import { getGrowth, listBusinesses, getBusinessDetail } from "@/server/growth";
 import { getAiSpend } from "@/server/aiUsage";
 import { formatCostMicros, AI_RATE_LIMITS, DAILY_CALL_CEILING, ASSISTANT_HOURLY_LIMIT, AI_FEATURE_LABEL, type AiFeature } from "@/lib/aiPolicy";
 import { cn } from "@/lib/utils";
+import { listAccessRequests } from "@/server/accessRequests";
+import { deadLetterSummary } from "@/server/webhookInbox";
+import { AccessRequestsPanel } from "./AccessRequestsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +28,7 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const days = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
   const detail = sp.b ? await getBusinessDetail(sp.b.slice(0, 60)) : null;
-  const [g, businesses, ai] = await Promise.all([getGrowth(days), listBusinesses(), getAiSpend()]);
+  const [g, businesses, ai, accessRequests, deadLetters] = await Promise.all([getGrowth(days), listBusinesses(), getAiSpend(), listAccessRequests({ limit: 100 }), deadLetterSummary()]);
   const money = (c: number) => `$${(c / 100).toFixed(0)}`;
   const n = (v: number | null | undefined) => (v === null || v === undefined ? "—" : String(v));
   const p = (v: number | null) => (v === null ? "—" : `${v}%`);
@@ -61,6 +64,14 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
           <Block title={`Complimentary access (${g.comped.length}, not in MRR)`} rows={g.comped.length === 0 ? [["None granted", "0"]] : g.comped.map((c) => [`${c.name} /${c.handle}${c.owner ? ` · ${c.owner}` : ""}`, c.plan] as [string, string])} />
           <Block title="Recommended vs chosen" rows={[...g.personas.recommendedPlan.map(([k, v]) => [`Recommended · ${k}`, String(v)] as [string, string]), ...g.personas.selectedPlan.map(([k, v]) => [`Chose · ${k}`, String(v)] as [string, string]), ...g.personas.channels.map(([k, v]) => [`Channel · ${k}`, String(v)] as [string, string]), ...g.personas.painPoints.slice(0, 5).map(([k, v]) => [`Pain · ${k}`, String(v)] as [string, string])]} />
         </div>
+
+        <section aria-labelledby="access-title" className="mt-10">
+          <h2 id="access-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2.5">Integration access requests ({accessRequests.filter((r) => r.status === "PENDING").length} pending)</h2>
+          <AccessRequestsPanel rows={accessRequests.map((r) => ({ ...r, createdAt: r.createdAt.toISOString(), reviewedAt: r.reviewedAt?.toISOString() ?? null }))} />
+          <div className="mt-4">
+            <Block title="Webhook deliveries needing attention" rows={deadLetters.length === 0 ? [["None failed", "0"]] : deadLetters.map((d) => [`${d.provider}${d.latest ? ` · ${d.latest.slice(0, 120)}` : ""}`, String(d.n)] as [string, string])} />
+          </div>
+        </section>
 
         <section aria-labelledby="funnel-title" className="mt-10">
           <h2 id="funnel-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2.5">Activation funnel, last {days} days</h2>

@@ -115,10 +115,15 @@ async function processInstagram(env: MetaEnvelope, out: MetaResult): Promise<voi
  * in the payload can steer this: the token proves ownership. Bounded to a handful of rows.
  */
 async function repairLegacyInstagramRow(igAccountId: string) {
-  const candidates = await prisma.integration.findMany({ where: { provider: "INSTAGRAM", status: { in: [...OWNING_STATUS] }, accessToken: { not: null } }, orderBy: { updatedAt: "asc" }, take: 5 });
+  // Only rows a real connect wrote (they carry the Instagram user id or username Meta
+  // returned) and that were never resolved. Capped by Meta requests, not by rows, so a
+  // handful of half-made rows can never hide the one legacy row that needs the repair.
+  const all = await prisma.integration.findMany({ where: { provider: "INSTAGRAM", status: { in: [...OWNING_STATUS] }, accessToken: { not: null } }, orderBy: { updatedAt: "asc" } });
+  const candidates = all.filter((row) => {
+    const settings = (row.settings as { professionalAccountId?: string; instagramUserId?: string; username?: string } | null) ?? {};
+    return !settings.professionalAccountId && Boolean(settings.instagramUserId || settings.username);
+  }).slice(0, 10);
   for (const row of candidates) {
-    const settings = (row.settings as { professionalAccountId?: string } | null) ?? {};
-    if (settings.professionalAccountId) continue; // already resolved; a mismatch here is a genuine unknown account
     const r = await resolveInstagramIdentity(row);
     if (r.professionalId === igAccountId) return prisma.integration.findUnique({ where: { id: row.id } });
   }

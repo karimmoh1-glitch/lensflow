@@ -3,6 +3,8 @@ import { syncCalendarIn } from "@/server/calendarSync";
 import { refreshInstagramToken } from "@/lib/meta/instagram";
 import { checkInstagramSubscription, syncInstagramForBusiness } from "@/server/instagramSync";
 import { reportFailure } from "@/lib/observe";
+import { notifyBusiness, noticePath } from "@/server/notify";
+import { PROVIDERS, isRegisteredProvider } from "@/lib/integrations/registry";
 
 /**
  * The daily sweep for connected integrations: pull calendar changes, refresh Instagram's
@@ -21,10 +23,10 @@ export async function pruneOperationalRows(now = new Date()): Promise<{ opsEvent
   return { opsEvents: ops.count, aiCalls: ai.count };
 }
 
-export async function runIntegrationMaintenance(): Promise<{ calendars: number; calendarFailures: number; instagramRefreshed: number; flagged: number; pruned: { opsEvents: number; aiCalls: number } }> {
-  const out = { calendars: 0, calendarFailures: 0, instagramRefreshed: 0, flagged: 0, pruned: { opsEvents: 0, aiCalls: 0 } };
+export async function runIntegrationMaintenance(): Promise<{ calendars: number; calendarFailures: number; instagramRefreshed: number; flagged: number; notified: number; pruned: { opsEvents: number; aiCalls: number } }> {
+  const out = { calendars: 0, calendarFailures: 0, instagramRefreshed: 0, flagged: 0, notified: 0, pruned: { opsEvents: 0, aiCalls: 0 } };
   out.pruned = await pruneOperationalRows().catch((err) => { void reportFailure("job", "Retention prune failed", { error: err }); return { opsEvents: 0, aiCalls: 0 }; });
-  const calendars = await prisma.integration.findMany({ where: { provider: { in: ["GOOGLE_CALENDAR", "APPLE_CALENDAR"] }, status: { in: ["CONNECTED", "SYNC_ERROR"] } } });
+  const calendars = await prisma.integration.findMany({ where: { provider: { in: ["GOOGLE_CALENDAR", "APPLE_CALENDAR", "MICROSOFT_CALENDAR"] }, status: { in: ["CONNECTED", "SYNC_ERROR"] } } });
   for (const row of calendars) {
     const r = await syncCalendarIn(row);
     if (r.ok) out.calendars++;
@@ -51,5 +53,27 @@ export async function runIntegrationMaintenance(): Promise<{ calendars: number; 
   }
   const expired = await prisma.integration.updateMany({ where: { provider: "WHATSAPP", status: "CONNECTED", tokenExpiresAt: { lt: new Date() } }, data: { status: "NEEDS_ATTENTION", lastError: "WhatsApp access expired — reconnect", lastErrorAt: new Date() } });
   out.flagged += expired.count;
+  out.notified = await notifyNeedsAttention();
   return out;
+}
+
+/**
+ * A connection that stopped working is told to the business once — in the app, on the
+ * phone, in Slack — instead of waiting to be noticed on the settings page. "Once" is kept
+ * on the row (settings.attentionNotifiedAt for this lastErrorAt), so a daily run never nags.
+ */
+export async function notifyNeedsAttention(): Promise<number> {
+  const rows = await prisma.integration.findMany({ where: { status: "NEEDS_ATTENTION" } });
+  let n = 0;
+  for (const row of rows) {
+    const settings = (row.settings ?? {}) as { attentionNotifiedAt?: string };
+    const since = row.lastErrorAt?.toISOString() ?? "unknown";
+    if (settings.attentionNotifiedAt === since) continue;
+    if (!isRegisteredProvider(row.provider)) continue;
+    const name = PROVIDERS[row.provider].name;
+    await notifyBusiness(row.businessId, { kind: "integration", title: `${name} needs attention`, body: row.lastError ?? `Your ${name} connection stopped working. Reconnect it from Settings.`, path: noticePath.settings() });
+    await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, attentionNotifiedAt: since } } });
+    n++;
+  }
+  return n;
 }

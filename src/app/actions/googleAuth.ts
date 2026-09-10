@@ -11,16 +11,17 @@ import { syncGmailForBusiness } from "@/server/gmailSync";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { canActivate } from "@/server/integrationQuota";
+import { recordAudit } from "@/server/audit";
 
 /** Kicks off Google's real consent screen for Gmail (default) or Google Calendar. Never a
  * toggle. Only reachable when Daythread's Google OAuth client is configured, and only when
  * tokens can be stored encrypted. */
-export async function connectGoogle(purpose: "gmail" | "calendar" = "gmail", session?: SessionPayload | null) {
+export async function connectGoogle(purpose: "gmail" | "calendar" | "drive" = "gmail", session?: SessionPayload | null) {
   const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
   if (!googleOAuthConfigured()) throw new Error("Google sign-in isn't configured on this deployment.");
   if (process.env.NODE_ENV === "production" && !tokenCryptoConfigured()) throw new Error("Connections are paused until the deployment's encryption key is configured.");
-  const provider = purpose === "calendar" ? "GOOGLE_CALENDAR" : "EMAIL";
+  const provider = purpose === "calendar" ? "GOOGLE_CALENDAR" : purpose === "drive" ? "GOOGLE_DRIVE" : "EMAIL";
   // No free slot on the plan: say so now rather than after Google's consent screen. The
   // callback enforces the same limit atomically regardless.
   const slot = await canActivate(ctx.business.id, provider);
@@ -35,7 +36,7 @@ export async function connectGoogle(purpose: "gmail" | "calendar" = "gmail", ses
 
 /** Disconnect really stops access: the grant is revoked at Google, the tokens are erased,
  * the mirror events are forgotten, and no sync will run again for this row. */
-export async function disconnectGoogle(provider: "EMAIL" | "GOOGLE_CALENDAR" = "EMAIL", session?: SessionPayload | null) {
+export async function disconnectGoogle(provider: "EMAIL" | "GOOGLE_CALENDAR" | "GOOGLE_DRIVE" = "EMAIL", session?: SessionPayload | null) {
   const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
   const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider } } });
@@ -46,6 +47,7 @@ export async function disconnectGoogle(provider: "EMAIL" | "GOOGLE_CALENDAR" = "
     await prisma.integration.update({ where: { id: row.id }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null, tokenExpiresAt: null, externalAccount: null, externalId: null, scopes: null, syncCursor: null, settings: undefined, lastSyncStatus: null, lastError: null, lastErrorAt: null } });
     if (provider === "GOOGLE_CALENDAR") await prisma.booking.updateMany({ where: { businessId: ctx.business.id, externalCalendarProvider: "GOOGLE_CALENDAR" }, data: { externalEventId: null, externalCalendarProvider: null } });
   }
+  if (row) await recordAudit({ businessId: ctx.business.id, actorId: ctx.session.userId, action: "integration.disconnected", targetType: "integration", targetId: row.id, metadata: { provider } });
   await track("integration_disconnected", { businessId: ctx.business.id, properties: { provider } });
   revalidatePath("/dashboard/settings");
 }

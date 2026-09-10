@@ -10,6 +10,8 @@ import { syncCalendarIn, readCalendarSettings } from "@/server/calendarSync";
 import { listCalendars } from "@/lib/googleCalendar";
 import { activateIntegration } from "@/server/integrationQuota";
 import { completeGoogleSignIn } from "@/lib/googleSignIn";
+import { ensureDriveRoot } from "@/server/clientFiles";
+import { recordAudit } from "@/server/audit";
 
 /**
  * Where Google sends the owner back after the consent screen, for both Gmail and Google
@@ -45,8 +47,8 @@ export async function GET(req: Request) {
   if (error) return fail(error === "access_denied" ? "denied" : "provider");
   if (!verified.ok) return fail(verified.reason === "expired" ? "expired" : "state");
   if (!code) return fail("provider");
-  const purpose = verified.state.purpose === "calendar" ? "calendar" : "gmail";
-  const providerKey = purpose === "calendar" ? "GOOGLE_CALENDAR" : "EMAIL";
+  const purpose = verified.state.purpose === "calendar" ? "calendar" : verified.state.purpose === "drive" ? "drive" : "gmail";
+  const providerKey = purpose === "calendar" ? "GOOGLE_CALENDAR" : purpose === "drive" ? "GOOGLE_DRIVE" : "EMAIL";
 
   // Tenant binding: the browser finishing this flow must be signed in to the business that started it.
   const session = await getSession();
@@ -66,7 +68,7 @@ export async function GET(req: Request) {
       return fail("no_refresh_token", providerKey);
     }
     const granted = tokens.scope ?? "";
-    const needed = purpose === "calendar" ? /calendar/ : /gmail/;
+    const needed = purpose === "calendar" ? /calendar/ : purpose === "drive" ? /drive\.file/ : /gmail/;
     if (!needed.test(granted)) {
       await revokeGoogleToken(tokens.access_token);
       return fail("scopes", providerKey);
@@ -87,6 +89,16 @@ export async function GET(req: Request) {
       return fail("limit", providerKey);
     }
     const row = activation.row;
+    await recordAudit({ businessId: verified.state.businessId, actorId: session.userId, action: existing?.status === "CONNECTED" ? "integration.reconnected" : "integration.connected", targetType: "integration", targetId: row.id, metadata: { provider: providerKey } });
+
+    if (purpose === "drive") {
+      // The connection's own "Daythread" folder, so the first client folder has a home.
+      const fresh = await prisma.integration.findUnique({ where: { id: row.id } });
+      if (fresh) await ensureDriveRoot(fresh).catch((err) => reportFailure("oauth", "Drive root folder could not be created", { businessId: verified.state.businessId, provider: providerKey, error: err, level: "warn" }));
+      await track("integration_connected", { businessId: verified.state.businessId, properties: { provider: providerKey } });
+      back.searchParams.set("connected", providerKey);
+      return NextResponse.redirect(back);
+    }
 
     if (purpose === "calendar") {
       // Discover the account's calendars; the primary one is pre-selected so busy time

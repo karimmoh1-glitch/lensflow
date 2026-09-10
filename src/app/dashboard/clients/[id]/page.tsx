@@ -12,6 +12,7 @@ import { readRelationship, humanAgo } from "@/lib/relationshipState";
 import { RelationshipControls } from "./RelationshipControls";
 import { format, formatDistanceToNowStrict, isFuture } from "date-fns";
 import { NoteForm } from "./NoteForm";
+import { ClientFilesCard } from "./ClientFilesCard";
 
 type Event = { when: Date; kind: ThreadKind; title: string; meta?: string; href?: string };
 
@@ -208,6 +209,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         </section>
 
         <aside aria-label="About this person" className="space-y-4">
+          <ClientFilesCard businessId={client.businessId} clientId={client.id} />
           {client.subscriptions.length > 0 && (
             <Card>
               <CardBody>

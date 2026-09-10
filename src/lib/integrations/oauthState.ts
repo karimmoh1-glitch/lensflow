@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 
 /**
  * One OAuth `state` for every provider. The state round-trips through the provider and
@@ -11,10 +11,15 @@ import { randomBytes } from "crypto";
  * on first verification; (4) short-lived — ten minutes; (5) tied to a provider and a
  * purpose, so a Gmail state can never complete a Calendar callback.
  */
-export type OAuthProvider = "google" | "instagram" | "whatsapp";
-export type OAuthPurpose = "gmail" | "calendar" | "messaging" | "signin";
+export const OAUTH_PROVIDERS = ["google", "instagram", "whatsapp", "microsoft", "slack", "dropbox", "calendly", "stripe"] as const;
+export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
+/** What a grant is for. A provider can serve several (Google: Gmail, Calendar, Drive, sign-in). */
+export const OAUTH_PURPOSES = ["gmail", "calendar", "messaging", "signin", "drive", "mail", "files", "notifications", "scheduling", "payments"] as const;
+export type OAuthPurpose = (typeof OAUTH_PURPOSES)[number];
 
-const COOKIE: Record<OAuthProvider, string> = { google: "google_oauth_nonce", instagram: "instagram_oauth_nonce", whatsapp: "whatsapp_oauth_nonce" };
+const COOKIE = Object.fromEntries(OAUTH_PROVIDERS.map((p) => [p, `${p}_oauth_nonce`])) as Record<OAuthProvider, string>;
+const PKCE_COOKIE = Object.fromEntries(OAUTH_PROVIDERS.map((p) => [p, `${p}_oauth_pkce`])) as Record<OAuthProvider, string>;
+const isPurpose = (v: unknown): v is OAuthPurpose => typeof v === "string" && (OAUTH_PURPOSES as readonly string[]).includes(v);
 
 function secret(): Uint8Array {
   const s = process.env.JWT_SECRET;
@@ -53,8 +58,27 @@ export async function verifyOAuthState(provider: OAuthProvider, state: string | 
   store.delete(COOKIE[provider]);
   if (!cookieNonce || cookieNonce !== payload.nonce) return { ok: false, reason: "nonce_mismatch" };
   const purpose = payload.purpose;
-  if (purpose !== "gmail" && purpose !== "calendar" && purpose !== "messaging" && purpose !== "signin") return { ok: false, reason: "invalid" };
+  if (!isPurpose(purpose)) return { ok: false, reason: "invalid" };
   return { ok: true, state: { businessId: payload.businessId, userId: payload.userId, purpose } };
+}
+
+/**
+ * PKCE for providers that require it (Dropbox) or recommend it (Microsoft): the verifier
+ * lives only in an httpOnly cookie on the browser that started the flow, the challenge goes
+ * to the provider. Consumed once, in the callback, alongside the state.
+ */
+export async function beginPkce(provider: OAuthProvider): Promise<{ codeChallenge: string }> {
+  const verifier = randomBytes(48).toString("base64url");
+  const store = await cookies();
+  store.set(PKCE_COOKIE[provider], verifier, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 60 * 10 });
+  return { codeChallenge: createHash("sha256").update(verifier).digest("base64url") };
+}
+
+export async function consumePkce(provider: OAuthProvider): Promise<string | null> {
+  const store = await cookies();
+  const verifier = store.get(PKCE_COOKIE[provider])?.value ?? null;
+  store.delete(PKCE_COOKIE[provider]);
+  return verifier;
 }
 
 /** Pure verification for tests and non-request contexts: signature, expiry, provider, and
@@ -72,7 +96,7 @@ export async function verifyOAuthStateWithNonce(provider: OAuthProvider, state: 
   if (payload.provider !== provider) return { ok: false, reason: "wrong_provider" };
   if (!cookieNonce || cookieNonce !== payload.nonce) return { ok: false, reason: "nonce_mismatch" };
   const purpose = payload.purpose;
-  if (purpose !== "gmail" && purpose !== "calendar" && purpose !== "messaging" && purpose !== "signin") return { ok: false, reason: "invalid" };
+  if (!isPurpose(purpose)) return { ok: false, reason: "invalid" };
   return { ok: true, state: { businessId: payload.businessId, userId: payload.userId, purpose } };
 }
 

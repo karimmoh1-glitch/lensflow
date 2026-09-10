@@ -4,7 +4,18 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
-import { signOAuthState } from "@/lib/integrations/oauthState";
+import { signOAuthState, beginPkce, type OAuthProvider, type OAuthPurpose } from "@/lib/integrations/oauthState";
+import { microsoftConfigured, microsoftAuthUrl } from "@/lib/microsoft";
+import { slackConfigured, slackAuthUrl, revokeSlackToken, listSlackChannels, joinSlackChannel, type SlackChannel } from "@/lib/slack";
+import { dropboxConfigured, dropboxAuthUrl, revokeDropboxToken } from "@/lib/dropbox";
+import { calendlyConfigured, calendlyAuthUrl, revokeCalendlyToken, deleteCalendlyWebhook, calendlyToken } from "@/lib/calendly";
+import { stripeConnectConfigured, stripeConnectAuthUrl, deauthorizeStripeAccount } from "@/lib/stripeConnect";
+import { accessGranted } from "@/server/accessRequests";
+import { providerMaturity } from "@/lib/integrations/flags";
+import { recordAudit } from "@/server/audit";
+import { syncOutlookForBusiness } from "@/server/outlookSync";
+import { syncCalendlyForBusiness, type CalendlySettings } from "@/server/calendlySync";
+import { postToSlack, type SlackSettings } from "@/server/notify";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { instagramConfigured, instagramAuthUrl, unsubscribeInstagramWebhooks } from "@/lib/meta/instagram";
 import { whatsappConfigured, whatsappAuthUrl, unsubscribeWabaWebhooks, listPhoneNumbers, tokenOwnsWaba } from "@/lib/meta/whatsapp";
@@ -35,11 +46,14 @@ async function guardQuotaOrRedirect(businessId: string, provider: IntegrationPro
   redirect(`/dashboard/settings?tab=connections&connect_error=limit&provider=${provider}`);
 }
 
-/** Instagram: Meta's own authorization screen. Professional accounts only. */
+/** Instagram: Meta's own authorization screen. Professional accounts only. Invite-only while
+ * Meta's review is pending: a workspace without an approved access request is sent back
+ * with the reason instead of to Meta. */
 export async function connectInstagram(session?: SessionPayload | null) {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!instagramConfigured()) throw new Error("Instagram isn't configured on this deployment.");
+  if (!(await accessGranted(ctx.business.id, "INSTAGRAM"))) redirect(`/dashboard/settings?tab=connections&connect_error=access&provider=INSTAGRAM`);
   guardEncryption();
   await guardQuotaOrRedirect(ctx.business.id, "INSTAGRAM");
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "INSTAGRAM" } });
@@ -52,11 +66,94 @@ export async function connectWhatsApp(session?: SessionPayload | null) {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!whatsappConfigured()) throw new Error("WhatsApp isn't configured on this deployment.");
+  if (providerMaturity("WHATSAPP") !== "ga") redirect(`/dashboard/settings?tab=connections&connect_error=coming_soon&provider=WHATSAPP`);
   guardEncryption();
   await guardQuotaOrRedirect(ctx.business.id, "WHATSAPP");
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "WHATSAPP" } });
   const state = await signOAuthState({ provider: "whatsapp", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId });
   redirect(whatsappAuthUrl(state));
+}
+
+/**
+ * One start for every OAuth provider: role, deployment configuration, encryption, plan
+ * slot, a signed state (and a PKCE challenge when the provider uses one), then the
+ * provider's own authorization screen. Never a toggle.
+ */
+async function startOAuth(opts: { provider: IntegrationProvider; oauthProvider: OAuthProvider; purpose: OAuthPurpose; configured: boolean; name: string; pkce?: boolean; url: (state: string, codeChallenge: string | null) => string }, session?: SessionPayload | null): Promise<never> {
+  const ctx = await requireRole([...ADMIN], session);
+  if (!ctx) throw new Error("unauthorized");
+  if (!opts.configured) throw new Error(`${opts.name} isn't configured on this deployment.`);
+  guardEncryption();
+  await guardQuotaOrRedirect(ctx.business.id, opts.provider);
+  await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: opts.provider } });
+  const state = await signOAuthState({ provider: opts.oauthProvider, purpose: opts.purpose, businessId: ctx.business.id, userId: ctx.session.userId });
+  const challenge = opts.pkce ? (await beginPkce(opts.oauthProvider)).codeChallenge : null;
+  redirect(opts.url(state, challenge));
+}
+
+/** Microsoft: Outlook mail or Outlook calendar, one Entra app, the purpose picks the scopes. */
+export async function connectMicrosoft(purpose: "mail" | "calendar", session?: SessionPayload | null) {
+  const calendar = purpose === "calendar";
+  return startOAuth({ provider: calendar ? "MICROSOFT_CALENDAR" : "MICROSOFT_OUTLOOK", oauthProvider: "microsoft", purpose: calendar ? "calendar" : "mail", configured: microsoftConfigured(), name: calendar ? "Microsoft Calendar" : "Microsoft Outlook", pkce: true, url: (state, challenge) => microsoftAuthUrl(state, purpose, challenge!) }, session);
+}
+
+export async function connectSlack(session?: SessionPayload | null) {
+  return startOAuth({ provider: "SLACK", oauthProvider: "slack", purpose: "notifications", configured: slackConfigured(), name: "Slack", url: (state) => slackAuthUrl(state) }, session);
+}
+
+export async function connectDropbox(session?: SessionPayload | null) {
+  return startOAuth({ provider: "DROPBOX", oauthProvider: "dropbox", purpose: "files", configured: dropboxConfigured(), name: "Dropbox", pkce: true, url: (state, challenge) => dropboxAuthUrl(state, challenge!) }, session);
+}
+
+export async function connectCalendly(session?: SessionPayload | null) {
+  return startOAuth({ provider: "CALENDLY", oauthProvider: "calendly", purpose: "scheduling", configured: calendlyConfigured(), name: "Calendly", url: (state) => calendlyAuthUrl(state) }, session);
+}
+
+/** Stripe Connect (Standard): the business authorizes Daythread on its own Stripe account. */
+export async function connectStripe(session?: SessionPayload | null) {
+  const ctx = await requireRole([...ADMIN], session);
+  if (!ctx) throw new Error("unauthorized");
+  const owner = await prisma.user.findUnique({ where: { id: ctx.session.userId }, select: { email: true } });
+  return startOAuth({ provider: "STRIPE", oauthProvider: "stripe", purpose: "payments", configured: stripeConnectConfigured(), name: "Stripe", url: (state) => stripeConnectAuthUrl(state, { email: owner?.email ?? null, businessName: ctx.business.name, url: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/book/${ctx.business.handle}` : null }) }, session);
+}
+
+/** The channels the Slack bot can post to, for the picker in Manage. */
+export async function listSlackChannelsAction(session?: SessionPayload | null): Promise<{ channels: SlackChannel[]; current: string | null; error?: string }> {
+  const ctx = await requireRole([...ADMIN], session);
+  if (!ctx) return { channels: [], current: null, error: "unauthorized" };
+  const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "SLACK" } } });
+  if (!row?.accessToken || row.status === "NOT_CONNECTED") return { channels: [], current: null, error: "Slack isn't connected." };
+  try {
+    return { channels: await listSlackChannels(row.accessToken), current: ((row.settings ?? {}) as SlackSettings).channelId ?? null };
+  } catch (err) {
+    await reportFailure("sync", "Slack channel list failed", { businessId: ctx.business.id, provider: "SLACK", error: err, level: "warn" });
+    return { channels: [], current: null, error: "Couldn't list channels right now. Reconnect Slack if this keeps happening." };
+  }
+}
+
+/** Choose the channel. The bot joins it (public channels) and posts one line so the choice is verified, not assumed. */
+export async function selectSlackChannel(channelId: string, session?: SessionPayload | null): Promise<{ error?: string; channelName?: string }> {
+  const ctx = await requireRole([...ADMIN], session);
+  if (!ctx) return { error: "unauthorized" };
+  const id = channelId.trim().slice(0, 40);
+  const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider: "SLACK" } } });
+  if (!row?.accessToken || row.status === "NOT_CONNECTED") return { error: "Slack isn't connected." };
+  try {
+    const channels = await listSlackChannels(row.accessToken);
+    const chosen = channels.find((c) => c.id === id);
+    if (!chosen) return { error: "That channel isn't available to the Daythread app." };
+    if (!chosen.isMember) await joinSlackChannel(row.accessToken, chosen.id);
+    const settings = (row.settings ?? {}) as SlackSettings;
+    await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, channelId: chosen.id, channelName: chosen.name, lastPostError: null }, status: "CONNECTED", lastError: null, lastErrorAt: null, lastSyncStatus: null } });
+    const posted = await postToSlack(ctx.business.id, { kind: "integration", title: "Daythread connected", body: `New inquiries and bookings for ${ctx.business.name} will be posted here.` });
+    if (!posted) return { error: "The channel was saved but the first message didn't go through. Check the app's permissions in Slack." };
+    await recordAudit({ businessId: ctx.business.id, actorId: ctx.session.userId, action: "integration.slack_channel_set", targetType: "integration", targetId: row.id, metadata: { channel: chosen.name } });
+    revalidatePath("/dashboard/settings");
+    return { channelName: chosen.name };
+  } catch (err) {
+    await reportFailure("oauth", "Slack channel selection failed", { businessId: ctx.business.id, provider: "SLACK", error: err });
+    return { error: "Slack didn't accept that. Nothing was changed — try again in a minute." };
+  }
 }
 
 /**
@@ -127,12 +224,23 @@ export async function connectAppleCalendar(appleId: string, appSpecificPassword:
 export async function disconnectIntegration(provider: IntegrationProvider, session?: SessionPayload | null): Promise<{ error?: string }> {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
-  if (provider === "EMAIL" || provider === "GOOGLE_CALENDAR") {
+  if (provider === "EMAIL" || provider === "GOOGLE_CALENDAR" || provider === "GOOGLE_DRIVE") {
     await disconnectGoogle(provider, session);
     return {};
   }
   const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider } } });
   if (!row) return { error: "Nothing to disconnect." };
+  // Providers with a revocation endpoint are told first, while the credential still works.
+  // Best effort, like Meta below: a provider that refuses never blocks the local disconnect.
+  const warn = (err: unknown) => reportFailure("oauth", `${provider} revoke failed on disconnect`, { businessId: ctx.business.id, provider, error: err, level: "warn" });
+  if (provider === "SLACK" && row.accessToken) await revokeSlackToken(row.accessToken).catch(warn);
+  if (provider === "DROPBOX" && row.accessToken) await revokeDropboxToken(row.accessToken).catch(warn);
+  if (provider === "STRIPE" && row.externalId) await deauthorizeStripeAccount(row.externalId).catch(warn);
+  if (provider === "CALENDLY" && row.refreshToken) {
+    const hook = ((row.settings ?? {}) as CalendlySettings).webhookUri;
+    if (hook) await calendlyToken(row).then((t) => deleteCalendlyWebhook(t, hook)).catch(warn);
+    await revokeCalendlyToken(row.refreshToken).catch(warn);
+  }
   // Tell Meta to stop delivering first, while the credential still works. Best effort: a
   // provider that refuses must never leave the user unable to disconnect locally, and the
   // webhook ignores events for a row that is no longer connected either way.
@@ -143,14 +251,20 @@ export async function disconnectIntegration(provider: IntegrationProvider, sessi
   }
   await prisma.externalEvent.deleteMany({ where: { integrationId: row.id } });
   await prisma.integration.update({ where: { id: row.id }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null, tokenExpiresAt: null, externalAccount: null, externalId: null, scopes: null, syncCursor: null, settings: undefined, lastSyncStatus: null, lastError: null, lastErrorAt: null } });
-  if (provider === "APPLE_CALENDAR") await prisma.booking.updateMany({ where: { businessId: ctx.business.id, externalCalendarProvider: "APPLE_CALENDAR" }, data: { externalEventId: null, externalCalendarProvider: null } });
+  if (provider === "APPLE_CALENDAR" || provider === "MICROSOFT_CALENDAR") await prisma.booking.updateMany({ where: { businessId: ctx.business.id, externalCalendarProvider: provider }, data: { externalEventId: null, externalCalendarProvider: null } });
+  await recordAudit({ businessId: ctx.business.id, actorId: ctx.session.userId, action: "integration.disconnected", targetType: "integration", targetId: row.id, metadata: { provider } });
   await track("integration_disconnected", { businessId: ctx.business.id, properties: { provider } });
   revalidatePath("/dashboard/settings");
   return {};
 }
 
 export async function retrySync(provider: IntegrationProvider, session?: SessionPayload | null): Promise<{ ok: boolean; error?: string }> {
-  if (provider === "GOOGLE_CALENDAR" || provider === "APPLE_CALENDAR") return syncCalendarNow(provider);
+  if (provider === "GOOGLE_CALENDAR" || provider === "APPLE_CALENDAR" || provider === "MICROSOFT_CALENDAR") return syncCalendarNow(provider, session);
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
+  if (!ctx) return { ok: false, error: "unauthorized" };
+  if (provider === "MICROSOFT_OUTLOOK") { const r = await syncOutlookForBusiness(ctx.business.id); revalidatePath("/dashboard/settings"); return r.ok ? { ok: true } : { ok: false, error: r.error }; }
+  if (provider === "CALENDLY") { const r = await syncCalendlyForBusiness(ctx.business.id); revalidatePath("/dashboard/settings"); return r.ok ? { ok: true } : { ok: false, error: r.error }; }
+  if (provider === "SLACK") { const ok = await postToSlack(ctx.business.id, { kind: "integration", title: "Daythread check", body: "Slack notices are working again." }); revalidatePath("/dashboard/settings"); return ok ? { ok: true } : { ok: false, error: "Slack still refused the message." }; }
   return { ok: false, error: "This integration syncs by webhook; nothing to retry." };
 }
 

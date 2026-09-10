@@ -91,6 +91,7 @@ model Business {
   automations    Automation[]
   automationRuns AutomationExecution[]
   integrations   Integration[]
+  accessRequests IntegrationAccessRequest[]
   membershipPlans MembershipPlan[]
   auditLogs      AuditLog[]
   notifications  Notification[]
@@ -353,6 +354,10 @@ model Client {
   // People the owner said this record is NOT the same person as, so a dismissed merge
   // suggestion stays dismissed. Ids of other Client rows in the same business.
   notSameAs String[] @default([])
+
+  /// Folders created for this person in a connected file store, keyed by provider:
+  /// { GOOGLE_DRIVE: { id, url }, DROPBOX: { path, url } }. References only, never content.
+  externalFolders Json?
 
   // Set once the client accepts an invitation and creates a login — before that, this is
   // just a CRM record with no portal access.
@@ -640,6 +645,10 @@ model Booking {
   // Mirror of this booking on a connected external calendar (Google event id / CalDAV href).
   externalEventId       String?
   externalCalendarProvider IntegrationProvider?
+  /// Where this booking came from when another tool created it (Calendly): the provider
+  /// and its id for the event, so a re-import updates instead of duplicating.
+  sourceProvider IntegrationProvider?
+  sourceEventId  String?
 
   questionnaire         Questionnaire?
   createdAt DateTime @default(now())
@@ -652,6 +661,7 @@ model Booking {
   @@index([businessId, startAt])
   @@index([businessId, status])
   @@index([businessId, clientId])
+  @@unique([businessId, sourceProvider, sourceEventId])
 }
 
 model Questionnaire {
@@ -708,6 +718,7 @@ model Payment {
 
   @@index([businessId, status])
   @@index([businessId, clientId])
+  @@index([businessId, stripePaymentIntentId])
 }
 
 enum InvoiceStatus {
@@ -861,6 +872,22 @@ enum IntegrationProvider {
   GOOGLE_CALENDAR
   APPLE_CALENDAR
   STRIPE
+  MICROSOFT_OUTLOOK
+  MICROSOFT_CALENDAR
+  CALENDLY
+  SLACK
+  GOOGLE_DRIVE
+  DROPBOX
+}
+
+/// A request to use an integration that is invite-only (Instagram while Meta's review is
+/// pending). PENDING until a founder decides; APPROVED lets the workspace connect; REVOKED
+/// takes that back without deleting the history.
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
 }
 
 enum IntegrationStatus {
@@ -993,11 +1020,40 @@ model Notification {
 /// id is already present, the unique constraint fails and the handler no-ops.
 model WebhookEvent {
   id         String   @id @default(cuid())
-  provider   String // "stripe", etc.
+  provider   String // "stripe", "stripe_connect", "calendly", "meta", "twilio"
   eventId    String
   receivedAt DateTime @default(now())
+  /// received → processed, or failed (kept with its payload so the daily run can retry it;
+  /// after the retry cap it is a dead letter shown on the founder dashboard).
+  status      String    @default("processed")
+  attempts    Int       @default(0)
+  lastError   String?
+  /// The verified payload, only while a retry is still possible; cleared on success.
+  payload     Json?
+  businessId  String?
+  processedAt DateTime?
 
   @@unique([provider, eventId])
+  @@index([status, receivedAt])
+}
+
+/// Invite-only integrations: one request per workspace and provider.
+model IntegrationAccessRequest {
+  id            String              @id @default(cuid())
+  businessId    String
+  business      Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  provider      IntegrationProvider
+  status        AccessRequestStatus @default(PENDING)
+  requestedById String?
+  note          String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  decisionNote  String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([businessId, provider])
+  @@index([status, createdAt])
 }
 
 /// Own-database funnel analytics — no third-party analytics provider is configured in this

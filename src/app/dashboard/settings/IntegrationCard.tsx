@@ -14,7 +14,8 @@ import { disconnectIntegration, retrySync } from "@/app/actions/connect";
 import { CalendarSetup } from "./CalendarSetup";
 import { AppleConnectDialog } from "./AppleConnectDialog";
 import type { IntegrationProvider } from "@prisma/client";
-import type { DisplayStatus } from "@/lib/integrations/registry";
+import type { DisplayStatus, Maturity } from "@/lib/integrations/registry";
+import { RequestAccess, type AccessModel } from "./RequestAccess";
 import type { ConnectionState } from "@/lib/meta/config";
 export type { DisplayStatus };
 
@@ -30,6 +31,11 @@ export type CardModel = {
   name: string;
   description: string;
   status: DisplayStatus;
+  /** ga | beta (invite-only) | coming_soon — decided by the deployment, never by the row. */
+  maturity: Maturity;
+  /** Present only while the provider is invite-only and this workspace isn't approved yet. */
+  access: AccessModel | null;
+  canAsk: boolean;
   account: string | null;
   lastSyncedAt: string | null;
   /** When the provider last delivered a verified event here (webhook channels). */
@@ -57,8 +63,9 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
   const [connecting, setConnecting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const isCalendar = model.provider === "GOOGLE_CALENDAR" || model.provider === "APPLE_CALENDAR";
+  const isCalendar = model.provider === "GOOGLE_CALENDAR" || model.provider === "APPLE_CALENDAR" || model.provider === "MICROSOFT_CALENDAR";
   const hasManage = isCalendar || Boolean(manage);
+  const retryable = isCalendar || model.provider === "MICROSOFT_OUTLOOK" || model.provider === "CALENDLY" || model.provider === "SLACK";
   const connected = model.status === "connected" || model.status === "sync_issue" || model.status === "needs_attention";
 
   // Auto-open the setup sheet when the callback sent us back with ?setup=PROVIDER.
@@ -114,6 +121,8 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
 
   const primary = (() => {
     if (model.status === "always_on") return null;
+    if (model.maturity === "coming_soon") return null;
+    if (model.access) return <RequestAccess provider={model.provider} name={model.name} access={model.access} canAsk={model.canAsk} />;
     if (model.status === "unavailable") return null;
     if (!model.entitled) {
       if (model.limit) {
@@ -132,7 +141,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
       if (connect) return <form action={connect} onSubmit={() => setConnecting(true)}><Button type="submit" size="sm" loading={connecting} loadingLabel="Connecting">Connect <ArrowRight className="w-3.5 h-3.5 ml-1" strokeWidth={2.5} aria-hidden /></Button></form>;
       return null;
     }
-    if (model.status === "sync_issue" && isCalendar) return <Button size="sm" variant="outline" onClick={retry} loading={pending} loadingLabel="Syncing"><RefreshCw className="w-3.5 h-3.5 mr-1" strokeWidth={2} aria-hidden />Retry</Button>;
+    if (model.status === "sync_issue" && retryable) return <Button size="sm" variant="outline" onClick={retry} loading={pending} loadingLabel="Syncing"><RefreshCw className="w-3.5 h-3.5 mr-1" strokeWidth={2} aria-hidden />Retry</Button>;
     return null;
   })();
 
@@ -200,13 +209,14 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
             )}
             {model.status === "needs_attention" && <p className="mt-2 text-[11px] text-accent-text">Your {model.name} connection needs to be renewed.</p>}
             {model.status === "unavailable" && <p className="mt-2 text-[11px] text-ink/65">{model.detail}</p>}
+            {model.status !== "unavailable" && (model.maturity === "coming_soon" || model.access) && model.detail && <p className="mt-2 text-[11px] text-ink/65">{model.detail}</p>}
             {model.limit && (model.status === "disconnected" || model.status === "needs_attention") && (
               <div className="mt-2.5 rounded-xl border border-signal/20 bg-signal-soft/40 px-3 py-2">
                 <p className="text-xs font-semibold text-ink">{/limit reached/i.test(model.limit.message) ? "Integration limit reached" : "Upgrade required"}</p>
                 <p className="mt-0.5 text-[11px] text-ink/70 leading-relaxed">{model.limit.message.replace(/^Integration limit reached\.\s*/i, "")}</p>
               </div>
             )}
-            {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && <p className="mt-2 text-[11px] text-ink/65">{model.detail}</p>}
+            {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && model.maturity === "ga" && !model.access && <p className="mt-2 text-[11px] text-ink/65">{model.detail}</p>}
             {model.lastError && model.status !== "unavailable" && <p className="mt-2 text-[11px] text-warning-text leading-snug">{model.lastError}</p>}
             {model.adminNote && <p className="mt-2 text-[11px] text-warning-text">{model.adminNote}</p>}
           </div>
@@ -217,7 +227,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
           <div className="sm:hidden mt-3.5 flex flex-wrap items-center gap-2">{actions}</div>
         </div>
         {Children.toArray(children).some(Boolean) && <div className="border-t border-border bg-paper/60 px-4 sm:px-5 py-3 rounded-b-[22px]">{children}</div>}
-        {model.approval && model.status !== "always_on" && (
+        {model.approval && model.status !== "always_on" && model.maturity !== "coming_soon" && (
           <details className="border-t border-border px-4 sm:px-5 py-2.5 text-[11px] text-ink/65">
             <summary className="cursor-pointer select-none hover:text-ink/70">What {model.name} requires</summary>
             <p className="mt-1 leading-relaxed">{model.approval}</p>
@@ -244,7 +254,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
               {open === "apple" && <AppleConnectDialog onClose={closeSheet} />}
               {open === "manage" && !isCalendar && manage}
               {(open === "manage" || open === "setup") && isCalendar && (
-                <CalendarSetup provider={model.provider as "GOOGLE_CALENDAR" | "APPLE_CALENDAR"} mode={open} onDone={closeSheet} reconnect={model.provider === "APPLE_CALENDAR" ? <Button size="sm" onClick={() => setOpen("apple")}>Reconnect</Button> : connect ? <form action={connect}><Button type="submit" size="sm">Reconnect</Button></form> : null} />
+                <CalendarSetup provider={model.provider as "GOOGLE_CALENDAR" | "APPLE_CALENDAR" | "MICROSOFT_CALENDAR"} mode={open} onDone={closeSheet} reconnect={model.provider === "APPLE_CALENDAR" ? <Button size="sm" onClick={() => setOpen("apple")}>Reconnect</Button> : connect ? <form action={connect}><Button type="submit" size="sm">Reconnect</Button></form> : null} />
               )}
             </div>
           </div>

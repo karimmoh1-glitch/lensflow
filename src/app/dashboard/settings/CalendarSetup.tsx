@@ -14,7 +14,7 @@ import { disconnectIntegration } from "@/app/actions/connect";
  * availability, which one receives bookings, sync now, reconnect, disconnect. Every
  * fact on screen comes from the server; nothing here is local make-believe.
  */
-export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider: "GOOGLE_CALENDAR" | "APPLE_CALENDAR"; mode: "setup" | "manage"; onDone?: () => void; reconnect?: React.ReactNode }) {
+export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider: "GOOGLE_CALENDAR" | "APPLE_CALENDAR" | "MICROSOFT_CALENDAR"; mode: "setup" | "manage"; onDone?: () => void; reconnect?: React.ReactNode }) {
   const [state, setState] = useState<CalendarState | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [bookingCalendar, setBookingCalendar] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
   const [confirm, setConfirm] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const name = provider === "GOOGLE_CALENDAR" ? "Google Calendar" : "Apple Calendar";
+  const name = provider === "GOOGLE_CALENDAR" ? "Google Calendar" : provider === "MICROSOFT_CALENDAR" ? "Microsoft Calendar" : "Apple Calendar";
 
   const load = (refresh = false) => {
     setBusy(refresh ? "refresh" : null);
@@ -167,7 +167,7 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
             <ul className="mt-2 space-y-1 list-disc pl-4">
               <li>A booking isn&rsquo;t on the calendar: it goes to the calendar marked &ldquo;Bookings go here&rdquo; — check that one is selected, then Sync now.</li>
               <li>A slot is blocked you didn&rsquo;t expect: an event on a selected calendar overlaps it. Untick that calendar or mark the event as &ldquo;free&rdquo; in your calendar.</li>
-              <li>{provider === "GOOGLE_CALENDAR" ? "Google shows a permissions error: reconnect and approve calendar access." : "Apple rejected the sign-in: create a fresh app-specific password at appleid.apple.com and reconnect."}</li>
+              <li>{provider === "GOOGLE_CALENDAR" ? "Google shows a permissions error: reconnect and approve calendar access." : provider === "MICROSOFT_CALENDAR" ? "Microsoft shows a permissions error: reconnect and approve calendar access." : "Apple rejected the sign-in: create a fresh app-specific password at appleid.apple.com and reconnect."}</li>
             </ul>
           </details>
           <div className="mt-4">

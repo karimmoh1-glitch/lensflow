@@ -9,7 +9,7 @@ import { track } from "@/lib/analytics";
 import type { IntegrationProvider } from "@prisma/client";
 
 const ADMIN = ["OWNER", "ADMIN"] as const;
-const ProviderSchema = z.enum(["GOOGLE_CALENDAR", "APPLE_CALENDAR"]);
+const ProviderSchema = z.enum(["GOOGLE_CALENDAR", "APPLE_CALENDAR", "MICROSOFT_CALENDAR"]);
 const SelectionSchema = z.object({
   provider: ProviderSchema,
   selected: z.array(z.string().min(1).max(500)).max(50),
@@ -31,7 +31,7 @@ export type CalendarState = {
 };
 
 /** Everything the manage panel needs for one calendar integration, tenant-scoped. */
-export async function getCalendarState(provider: "GOOGLE_CALENDAR" | "APPLE_CALENDAR", opts: { refresh?: boolean } = {}, session?: SessionPayload | null): Promise<CalendarState> {
+export async function getCalendarState(provider: "GOOGLE_CALENDAR" | "APPLE_CALENDAR" | "MICROSOFT_CALENDAR", opts: { refresh?: boolean } = {}, session?: SessionPayload | null): Promise<CalendarState> {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider } } });

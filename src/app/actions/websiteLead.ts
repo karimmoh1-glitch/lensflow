@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { findKnownClient } from "@/server/identity";
 import { sendOnChannel } from "@/lib/messaging";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { notifyBusiness } from "@/server/notify";
 
 const leadFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -77,13 +78,7 @@ export async function submitWebsiteLead(
     },
   });
 
-  await prisma.notification.create({
-    data: {
-      businessId: business.id,
-      title: "New website inquiry",
-      body: `${name} submitted your website contact form${service ? ` about ${service.name}` : ""}.`,
-    },
-  });
+  await notifyBusiness(business.id, { kind: "lead", title: "New website inquiry", body: `${name} submitted your website contact form${service ? ` about ${service.name}` : ""}.`, path: `/conversation/${conversation.id}` });
 
   const owner = await prisma.orgMembership.findFirst({ where: { businessId: business.id, role: "OWNER" }, include: { user: true } });
   if (owner) {

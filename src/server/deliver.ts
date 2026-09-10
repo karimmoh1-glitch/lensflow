@@ -1,11 +1,14 @@
 import { prisma } from "@/lib/db";
 import { sendOnChannel } from "@/lib/messaging";
 import { getValidAccessToken, sendGmailMessage } from "@/lib/google";
+import { microsoftToken, findMessageByInternetId, replyToGraphMessage, sendGraphMail } from "@/lib/microsoft";
+import { OAuthError } from "@/lib/integrations/oauth";
 import { sendInstagramMessage } from "@/lib/meta/instagram";
 import { sendWhatsAppText, withinServiceWindow, WA_WINDOW_CLOSED_MESSAGE, templatesEnabled } from "@/lib/meta/whatsapp";
 import { isTokenInvalid, isPermissionError, isOutsideServiceWindow, userFacingMetaError, scrubMetaMessage } from "@/lib/meta/common";
 import { reportFailure } from "@/lib/observe";
 import type { ChannelType, MessageStatus } from "@prisma/client";
+import { platformFromNumber } from "@/lib/twilio";
 
 /**
  * The one way a message leaves Daythread for a customer. Used by the composer, the
@@ -32,7 +35,7 @@ export type Delivery = {
   error?: string;
   /** Short machine-readable reason stored on the message row ("window_closed", "not_connected"…). */
   statusDetail?: string;
-  via: "gmail" | "provider" | "instagram" | "whatsapp" | "sms" | "none";
+  via: "gmail" | "outlook" | "provider" | "instagram" | "whatsapp" | "sms" | "none";
 };
 
 export async function deliverToCustomer(params: {
@@ -63,6 +66,26 @@ export async function deliverToCustomer(params: {
         if (/invalid_grant|No refresh token/i.test(msg)) await prisma.integration.update({ where: { id: gmail.id }, data: { status: "NEEDS_ATTENTION", lastError: "Google revoked access — reconnect", lastErrorAt: new Date() } });
         await reportFailure("delivery", "Gmail send failed", { businessId, provider: "EMAIL", error: err });
         return { status: "FAILED", error: "Gmail rejected the send. Reconnect Gmail if this keeps happening.", statusDetail: "provider_rejected", via: "gmail" };
+      }
+    }
+    // Outlook, the same way: a threaded reply when the customer's message is in the mailbox,
+    // a fresh mail from the connected address otherwise.
+    const outlook = await prisma.integration.findUnique({ where: { businessId_provider: { businessId, provider: "MICROSOFT_OUTLOOK" } } });
+    if (outlook?.status !== "NOT_CONNECTED" && outlook?.refreshToken && outlook.externalAccount) {
+      try {
+        const accessToken = await microsoftToken(outlook);
+        const original = inReplyTo ? await findMessageByInternetId(accessToken, inReplyTo).catch(() => null) : null;
+        if (original) {
+          const id = await replyToGraphMessage(accessToken, original, body);
+          return { status: "SENT", providerMessageId: id, statusDetail: "accepted", via: "outlook" };
+        }
+        await sendGraphMail(accessToken, { to, subject: subject ?? "Re: your inquiry", body, fromName: businessName });
+        return { status: "SENT", statusDetail: "accepted", via: "outlook" };
+      } catch (err) {
+        const revoked = err instanceof OAuthError ? err.revoked : /invalid_grant|No refresh token/i.test(err instanceof Error ? err.message : "");
+        if (revoked) await prisma.integration.update({ where: { id: outlook.id }, data: { status: "NEEDS_ATTENTION", lastError: "Microsoft revoked access — reconnect", lastErrorAt: new Date() } });
+        await reportFailure("delivery", "Outlook send failed", { businessId, provider: "MICROSOFT_OUTLOOK", error: err });
+        return { status: "FAILED", error: "Outlook rejected the send. Reconnect Outlook if this keeps happening.", statusDetail: "provider_rejected", via: "outlook" };
       }
     }
   }
@@ -119,7 +142,7 @@ export async function deliverToCustomer(params: {
   if (channel === "SMS") {
     const business = await prisma.business.findUnique({ where: { id: businessId }, select: { twilioPhoneNumber: true } });
     from = business?.twilioPhoneNumber;
-    if (!from && !process.env.TWILIO_FROM_NUMBER) return { status: "NOT_DELIVERED", error: "This business doesn't have a text number yet. Get one in Settings → Channels.", statusDetail: "not_connected", via: "none" };
+    if (!from && !platformFromNumber()) return { status: "NOT_DELIVERED", error: "This business doesn't have a text number yet. Get one in Settings → Channels.", statusDetail: "not_connected", via: "none" };
   }
 
   const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;

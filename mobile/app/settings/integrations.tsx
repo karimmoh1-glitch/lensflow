@@ -10,7 +10,7 @@ import { ago } from "../../lib/format";
 type Row = { provider: string; name: string; kind: string; status: string; display: { label: string } | string; account: string | null; lastSyncedAt: string | null; configured: boolean };
 type Data = { planName: string; quota: { active: number; limit: number | null; atLimit: boolean; overQuota: boolean }; integrations: Row[] };
 const WEB = process.env.EXPO_PUBLIC_API_URL ?? "https://daythread.org";
-const OAUTH = new Set(["EMAIL", "GOOGLE_CALENDAR", "INSTAGRAM", "WHATSAPP"]);
+const OAUTH = new Set(["EMAIL", "GOOGLE_CALENDAR", "GOOGLE_DRIVE", "INSTAGRAM", "WHATSAPP", "MICROSOFT_OUTLOOK", "MICROSOFT_CALENDAR", "CALENDLY", "STRIPE", "DROPBOX", "SLACK"]);
 
 /** Every channel and calendar with its real state. Disconnect, retry, sync now, connect Apple Calendar and pick a text number here; Google and Meta connections need a browser sign-in, which opens the web. */
 export default function IntegrationsScreen() {
@@ -33,7 +33,7 @@ export default function IntegrationsScreen() {
   const tone = (s: string) => (s === "CONNECTED" ? "success" : s === "NEEDS_ATTENTION" || s === "SYNC_ERROR" ? "warning" : "neutral");
   return (
     <Screen>
-      <Header back title="Channels" subtitle={d ? `${d.quota.active} connected${d.quota.limit ? ` of ${d.quota.limit} on ${d.planName}` : ""}` : undefined} />
+      <Header back title="Integrations" subtitle={d ? `${d.quota.active} connected${d.quota.limit ? ` of ${d.quota.limit} on ${d.planName}` : ""}` : undefined} />
       {r.loading && !d ? <Skeleton lines={4} /> : !d ? <ErrorState message={r.error ?? "Couldn't load channels."} onRetry={r.reload} /> : (
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm, paddingBottom: spacing.xxl }} refreshControl={<RefreshControl refreshing={r.refreshing} onRefresh={r.refresh} tintColor={c.ink} />} keyboardShouldPersistTaps="handled">
           {d.integrations.map((x) => {
@@ -52,7 +52,7 @@ export default function IntegrationsScreen() {
                     {!connected && OAUTH.has(x.provider) && x.configured && <Button small variant="secondary" icon="open-outline" title="Connect on the web" onPress={() => Linking.openURL(`${WEB}/dashboard/settings?tab=connections`)} />}
                     {!connected && x.provider === "APPLE_CALENDAR" && x.configured && <Button small variant="secondary" title="Connect Apple Calendar" onPress={() => setApple({ appleId: "", password: "" })} />}
                     {!connected && x.provider === "SMS" && x.configured && <Button small variant="secondary" title="Choose a text number" onPress={() => setSms({ areaCode: "", numbers: null })} />}
-                    {connected && (x.provider === "EMAIL" || x.kind === "calendar") && <Button small variant="secondary" title="Sync now" loading={busy === `sync:${x.provider}`} onPress={() => act(x.provider, { action: "sync" }, `sync:${x.provider}`, "Synced")} />}
+                    {connected && (x.provider === "EMAIL" || x.provider === "MICROSOFT_OUTLOOK" || x.provider === "CALENDLY" || x.kind === "calendar") && <Button small variant="secondary" title="Sync now" loading={busy === `sync:${x.provider}`} onPress={() => act(x.provider, { action: "sync" }, `sync:${x.provider}`, "Synced")} />}
                     {(x.status === "SYNC_ERROR" || x.status === "NEEDS_ATTENTION") && <Button small variant="secondary" title={OAUTH.has(x.provider) && x.status === "NEEDS_ATTENTION" ? "Reconnect on the web" : "Retry"} loading={busy === `retry:${x.provider}`} onPress={() => (OAUTH.has(x.provider) && x.status === "NEEDS_ATTENTION" ? Linking.openURL(`${WEB}/dashboard/settings?tab=connections`) : act(x.provider, { action: "retry" }, `retry:${x.provider}`, "Retried"))} />}
                     {connected && <Button small variant="ghost" title="Disconnect" loading={busy === `dc:${x.provider}`} onPress={() => Alert.alert(`Disconnect ${x.name}?`, x.provider === "SMS" ? "The number is released; texts to it stop arriving." : "Messages already in Daythread stay. Nothing new arrives until it's reconnected.", [{ text: "Cancel", style: "cancel" }, { text: "Disconnect", style: "destructive", onPress: () => (x.provider === "SMS" ? api("/api/mobile/sms", { method: "DELETE", token: session!.token }).then(() => r.reload()).catch((e) => Alert.alert("Couldn't release it", describeError(e))) : act(x.provider, { action: "disconnect" }, `dc:${x.provider}`)) }])} />}
                   </View>

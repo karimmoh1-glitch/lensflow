@@ -20,7 +20,7 @@ import type { Integration, IntegrationProvider, IntegrationStatus, Prisma } from
  * ERROR and legacy DEMO rows hold no slot, so a failed or abandoned connection never uses
  * up the allowance. Reconnecting an already-active provider re-uses its own slot.
  */
-export const QUOTA_PROVIDERS: IntegrationProvider[] = ["EMAIL", "GOOGLE_CALENDAR", "APPLE_CALENDAR", "INSTAGRAM", "WHATSAPP", "SMS"];
+export const QUOTA_PROVIDERS: IntegrationProvider[] = ["EMAIL", "MICROSOFT_OUTLOOK", "GOOGLE_CALENDAR", "MICROSOFT_CALENDAR", "APPLE_CALENDAR", "CALENDLY", "INSTAGRAM", "WHATSAPP", "SMS", "STRIPE", "GOOGLE_DRIVE", "DROPBOX", "SLACK"];
 export const ACTIVE_STATUSES: IntegrationStatus[] = ["CONNECTED", "SYNC_ERROR"];
 
 export function countsTowardQuota(row: { provider: IntegrationProvider; status: IntegrationStatus }): boolean {

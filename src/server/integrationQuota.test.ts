@@ -43,7 +43,7 @@ describe("integration quota", () => {
     const id = await business("PRO");
     for (const p of QUOTA_PROVIDERS) expect((await connect(id, p)).ok).toBe(true);
     const usage = await integrationUsage(id);
-    expect(usage).toMatchObject({ plan: "PRO", active: 6, limit: Infinity, atLimit: false, overQuota: false, nextPlan: null });
+    expect(usage).toMatchObject({ plan: "PRO", active: QUOTA_PROVIDERS.length, limit: Infinity, atLimit: false, overQuota: false, nextPlan: null });
     expect(usageFor({ planTier: "PRO", billingStatus: "ACTIVE" }, ([...QUOTA_PROVIDERS, "EMAIL"] as IntegrationProvider[]).map((provider) => ({ provider, status: "CONNECTED" as const }))).atLimit).toBe(false);
   });
 
@@ -51,7 +51,7 @@ describe("integration quota", () => {
     const id = await business("BUSINESS");
     for (const p of QUOTA_PROVIDERS) expect((await connect(id, p)).ok).toBe(true);
     const usage = await integrationUsage(id);
-    expect(usage).toMatchObject({ plan: "BUSINESS", active: 6, limit: Infinity, atLimit: false, overQuota: false, nextPlan: null });
+    expect(usage).toMatchObject({ plan: "BUSINESS", active: QUOTA_PROVIDERS.length, limit: Infinity, atLimit: false, overQuota: false, nextPlan: null });
   });
 
   it("the plan is read from the database, never from the request: a Business tier whose subscription lapsed is held to Free's 2", async () => {
@@ -63,21 +63,21 @@ describe("integration quota", () => {
     if (!third.ok) expect(third.usage.plan).toBe("FREE");
   });
 
-  it("concurrent attempts cannot exceed the allowance (Free, 6 providers at once → exactly 2 succeed)", async () => {
+  it("concurrent attempts cannot exceed the allowance (Free, every provider at once → exactly 2 succeed)", async () => {
     const id = await business("FREE");
     const results = await Promise.all(QUOTA_PROVIDERS.map((p) => connect(id, p)));
     expect(results.filter((r) => r.ok)).toHaveLength(2);
-    expect(results.filter((r) => !r.ok)).toHaveLength(4);
+    expect(results.filter((r) => !r.ok)).toHaveLength(QUOTA_PROVIDERS.length - 2);
     expect(await prisma.integration.count({ where: { businessId: id, status: "CONNECTED" } })).toBe(2);
   });
 
-  it("concurrent attempts on Pro: exactly 6 of 6 succeed, and a repeated burst adds nothing", async () => {
+  it("concurrent attempts on Pro: every provider succeeds, and a repeated burst adds nothing", async () => {
     const id = await business("PRO");
     const first = await Promise.all(QUOTA_PROVIDERS.map((p) => connect(id, p)));
     expect(first.every((r) => r.ok)).toBe(true);
     const again = await Promise.all(QUOTA_PROVIDERS.map((p) => connect(id, p)));
     expect(again.every((r) => r.ok)).toBe(true); // reconnects re-use their own slot
-    expect(await prisma.integration.count({ where: { businessId: id, status: "CONNECTED" } })).toBe(6);
+    expect(await prisma.integration.count({ where: { businessId: id, status: "CONNECTED" } })).toBe(QUOTA_PROVIDERS.length);
   });
 
   it("reconnecting an active provider does not consume a second slot; disconnected and failed rows hold none", async () => {
@@ -122,8 +122,9 @@ describe("integration quota", () => {
     expect((await connect(id, "SMS")).ok).toBe(true);
   });
 
-  it("the booking page and Stripe never count", () => {
-    const rows = [{ provider: "WEBSITE" as const, status: "CONNECTED" as const }, { provider: "STRIPE" as const, status: "CONNECTED" as const }, { provider: "EMAIL" as const, status: "DEMO" as const }];
+  it("the booking page never counts, nor does a legacy DEMO row; a business's own Stripe account is a connection and does", () => {
+    const rows = [{ provider: "WEBSITE" as const, status: "CONNECTED" as const }, { provider: "EMAIL" as const, status: "DEMO" as const }];
     expect(usageFor({ planTier: "FREE", billingStatus: null }, rows).active).toBe(0);
+    expect(usageFor({ planTier: "FREE", billingStatus: null }, [...rows, { provider: "STRIPE" as const, status: "CONNECTED" as const }]).active).toBe(1);
   });
 });

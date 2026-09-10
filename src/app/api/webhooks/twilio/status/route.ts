@@ -4,6 +4,7 @@ import { validateRequest } from "twilio";
 import { prisma } from "@/lib/db";
 import { reportFailure } from "@/lib/observe";
 import { markWebhookSeen } from "@/server/inboxSignal";
+import { platformFromNumber } from "@/lib/twilio";
 
 /**
  * Twilio's message status callback (queued → sent → delivered / undelivered / failed).
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
   if (!sid || !status) return new NextResponse(null, { status: 204 });
   // Scoped to SMS threads, and to the workspace whose number the callback names.
   const from = form.get("From");
-  const shared = Boolean(from && process.env.TWILIO_FROM_NUMBER && from === process.env.TWILIO_FROM_NUMBER);
+  const shared = Boolean(from && platformFromNumber() && from === platformFromNumber());
   const business = from && !shared ? await prisma.business.findUnique({ where: { twilioPhoneNumber: from }, select: { id: true } }) : null;
   // A callback for a number no workspace owns (and that isn't the shared fallback sender) moves nothing.
   if (from && !shared && !business) return new NextResponse(null, { status: 204 });

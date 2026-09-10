@@ -7,6 +7,8 @@ import { syncCalendarNow } from "@/app/actions/calendars";
 import { disconnectGoogle } from "@/app/actions/googleAuth";
 import { syncGmailForBusiness } from "@/server/gmailSync";
 import type { IntegrationProvider } from "@prisma/client";
+import { syncOutlookForBusiness } from "@/server/outlookSync";
+import { syncCalendlyForBusiness } from "@/server/calendlySync";
 
 const PROVIDERS = ["EMAIL", "GOOGLE_CALENDAR", "APPLE_CALENDAR", "INSTAGRAM", "WHATSAPP", "SMS"] as const;
 /** What the app can do to a connection without a browser: disconnect, retry a failed sync, sync now, and connect Apple Calendar (an app-specific password, no OAuth). OAuth providers connect on the web. */
@@ -28,13 +30,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ provide
   const a = parsed.data;
   try {
     if (a.action === "disconnect") {
-      if (p === "EMAIL" || p === "GOOGLE_CALENDAR") { await disconnectGoogle(p, session); return NextResponse.json({ ok: true }); }
+      if (p === "EMAIL" || p === "GOOGLE_CALENDAR" || p === "GOOGLE_DRIVE") { await disconnectGoogle(p, session); return NextResponse.json({ ok: true }); }
       const r = await disconnectIntegration(p, session); return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true });
     }
     if (a.action === "retry") { const r = await retrySync(p, session); return r.ok ? NextResponse.json({ ok: true }) : jsonError(r.error ?? "Still failing", 400); }
     if (a.action === "sync") {
       if (p === "EMAIL") { const r = await syncGmailForBusiness(ctx.business.id); return r.ok ? NextResponse.json({ ok: true, found: r.found, ingested: r.ingested }) : jsonError(r.error, 400); }
-      if (p === "GOOGLE_CALENDAR" || p === "APPLE_CALENDAR") { const r = await syncCalendarNow(p, session); return r.ok ? NextResponse.json({ ok: true, upserted: r.upserted ?? 0 }) : jsonError(r.error ?? "Sync failed", 400); }
+      if (p === "GOOGLE_CALENDAR" || p === "APPLE_CALENDAR" || p === "MICROSOFT_CALENDAR") { const r = await syncCalendarNow(p, session); return r.ok ? NextResponse.json({ ok: true, upserted: r.upserted ?? 0 }) : jsonError(r.error ?? "Sync failed", 400); }
+      if (p === "MICROSOFT_OUTLOOK") { const r = await syncOutlookForBusiness(ctx.business.id); return r.ok ? NextResponse.json({ ok: true, found: r.found, ingested: r.ingested }) : jsonError(r.error, 400); }
+      if (p === "CALENDLY") { const r = await syncCalendlyForBusiness(ctx.business.id); return r.ok ? NextResponse.json({ ok: true, found: r.found, ingested: r.created }) : jsonError(r.error, 400); }
       return jsonError("This channel delivers on its own; nothing to sync.", 400);
     }
     if (p !== "APPLE_CALENDAR") return jsonError("Only Apple Calendar connects this way.", 400);

@@ -155,6 +155,14 @@ Every value is server-only unless its name starts with `NEXT_PUBLIC_`; the only 
 | `META_APP_ID` / `META_APP_SECRET` / `WHATSAPP_CONFIG_ID` | WhatsApp Embedded Signup + signatures | WhatsApp | Meta app → Settings → Basic; WhatsApp → Embedded Signup | prod | secret |
 | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | SMS numbers, sends, webhook signatures | SMS | Twilio Console → Account Info | prod | yes |
 | `TWILIO_FROM_NUMBER` | Shared fallback sender | No | Twilio | prod | no |
+| `TWILIO_PHONE_NUMBER` | Alias of `TWILIO_FROM_NUMBER` | No | Twilio | prod | no |
+| `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` | Outlook mail + calendar | Microsoft | Entra app registration → docs/integrations/microsoft.md | prod | secret |
+| `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` | Slack notices | Slack | Slack app → docs/integrations/slack.md | prod | secret |
+| `DROPBOX_APP_KEY` / `DROPBOX_APP_SECRET` | Dropbox folders | Dropbox | Dropbox app → docs/integrations/files.md | prod | secret |
+| `CALENDLY_CLIENT_ID` / `CALENDLY_CLIENT_SECRET` | Calendly import + webhooks | Calendly | developer.calendly.com → docs/integrations/calendly.md | prod | secret |
+| `STRIPE_CONNECT_CLIENT_ID` / `STRIPE_CONNECT_WEBHOOK_SECRET` | Businesses' own Stripe accounts | Stripe (business) | Stripe Connect → docs/integrations/stripe.md | prod | secret |
+| `INTEGRATION_INSTAGRAM_MODE` | `invite` (default) · `open` · `off` | No | you | prod | no |
+| `INTEGRATION_WHATSAPP_MODE` | `coming_soon` (default) · `open` · `off` | No | you | prod | no |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Gmail, Google Calendar, Google sign-in | Gmail | Google Cloud → OAuth client | prod | secret |
 | `RESEND_API_KEY` | Password reset, notifications, outbound email | Now | Resend | prod | yes |
 | `RESEND_WEBHOOK_SECRET` / `RESEND_INBOUND_DOMAIN` | Inbound email | Inbound email | Resend | prod | secret / no |

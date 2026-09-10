@@ -14,7 +14,10 @@ const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/userinfo.email"];
 const CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.readonly", "https://www.googleapis.com/auth/userinfo.email"];
 const SIGNIN_SCOPES = ["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"];
-export const SCOPES_BY_PURPOSE = { gmail: GMAIL_SCOPES.join(" "), calendar: CALENDAR_SCOPES.join(" "), signin: SIGNIN_SCOPES.join(" ") } as const;
+// drive.file is non-sensitive: only what Daythread itself creates is visible to it.
+const DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/userinfo.email"];
+export const SCOPES_BY_PURPOSE = { gmail: GMAIL_SCOPES.join(" "), calendar: CALENDAR_SCOPES.join(" "), signin: SIGNIN_SCOPES.join(" "), drive: DRIVE_SCOPES.join(" ") } as const;
+export type GooglePurpose = keyof typeof SCOPES_BY_PURPOSE;
 const SCOPES = SCOPES_BY_PURPOSE.gmail;
 const REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 
@@ -79,13 +82,13 @@ export async function verifyGoogleState(state: string): Promise<{ businessId: st
   }
 }
 
-export async function getGoogleAuthUrl(state: string, purpose: "gmail" | "calendar" | "signin" = "gmail") {
+export async function getGoogleAuthUrl(state: string, purpose: GooglePurpose = "gmail") {
   // Sign-in asks for identity only, needs no refresh token, and shows the account chooser
   // rather than a consent screen; channel connections ask for their scopes with offline access.
   const params = new URLSearchParams(
     purpose === "signin"
       ? { client_id: clientId()!, redirect_uri: redirectUri(), response_type: "code", scope: SCOPES_BY_PURPOSE.signin, prompt: "select_account", state }
-      : { client_id: clientId()!, redirect_uri: redirectUri(), response_type: "code", scope: purpose === "calendar" ? SCOPES_BY_PURPOSE.calendar : SCOPES, include_granted_scopes: "true", access_type: "offline", prompt: "consent", state }
+      : { client_id: clientId()!, redirect_uri: redirectUri(), response_type: "code", scope: SCOPES_BY_PURPOSE[purpose] ?? SCOPES, include_granted_scopes: "true", access_type: "offline", prompt: "consent", state }
   );
   return `${AUTH_URL}?${params.toString()}`;
 }

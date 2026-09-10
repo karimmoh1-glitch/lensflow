@@ -3,6 +3,7 @@ import { reportFailure } from "@/lib/observe";
 import { listCalendars, listEvents, createEvent, updateEvent, deleteEvent, calendarToken, eventInstant, GoogleApiError } from "@/lib/googleCalendar";
 import { caldavClientFor, listCalendarEvents as caldavList, putEvent as caldavPut, deleteEvent as caldavDelete, syncCollection } from "@/lib/caldav";
 import { buildVEvent } from "@/lib/ics";
+import { microsoftToken, listGraphCalendars, listGraphEventsDelta, graphInstant, createGraphEvent, updateGraphEvent, deleteGraphEvent, isStaleDelta as graphStale } from "@/lib/microsoft";
 import type { Integration, Booking } from "@prisma/client";
 import { addDays } from "date-fns";
 
@@ -53,6 +54,7 @@ export async function syncCalendarIn(integration: Integration): Promise<SyncSumm
     let summary: SyncSummary;
     if (integration.provider === "GOOGLE_CALENDAR") summary = await syncGoogleIn(integration, settings);
     else if (integration.provider === "APPLE_CALENDAR") summary = await syncAppleIn(integration, settings);
+    else if (integration.provider === "MICROSOFT_CALENDAR") summary = await syncMicrosoftIn(integration, settings);
     else return { ok: false, upserted: 0, removed: 0, error: "Not a calendar integration" };
     await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, status: integration.status === "SYNC_ERROR" ? "CONNECTED" : integration.status } });
     return summary;
@@ -145,11 +147,60 @@ async function syncAppleIn(integration: Integration, settings: CalendarSettings)
   return { ok: true, upserted, removed };
 }
 
+/**
+ * Outlook calendar: Graph's delta chain per calendar (the link is the cursor). A mirror is
+ * recognised by the booking that owns it — Daythread stored the event id on the booking
+ * when it pushed it — so a booking never blocks itself. Cancelled and "free" events don't
+ * block; removals are deleted.
+ */
+async function syncMicrosoftIn(integration: Integration, settings: CalendarSettings): Promise<SyncSummary> {
+  const token = await microsoftToken(integration);
+  let upserted = 0;
+  let removed = 0;
+  let fullResync = false;
+  const mirrors = new Map((await prisma.booking.findMany({ where: { businessId: integration.businessId, externalCalendarProvider: "MICROSOFT_CALENDAR", externalEventId: { not: null } }, select: { id: true, externalEventId: true } })).map((b) => [b.externalEventId!, b.id]));
+  for (const calendarId of settings.selected) {
+    const cursor = settings.cursors[calendarId] ?? null;
+    let result;
+    try {
+      result = await listGraphEventsDelta(token, calendarId, cursor);
+    } catch (err) {
+      if (cursor && graphStale(err)) {
+        fullResync = true;
+        await prisma.externalEvent.deleteMany({ where: { integrationId: integration.id, calendarId, bookingId: null } });
+        result = await listGraphEventsDelta(token, calendarId, null);
+      } else throw err;
+    }
+    for (const e of result.events) {
+      if (e["@removed"] || e.isCancelled) {
+        const r = await prisma.externalEvent.deleteMany({ where: { integrationId: integration.id, externalId: e.id } });
+        removed += r.count;
+        continue;
+      }
+      const start = graphInstant(e.start);
+      const end = graphInstant(e.end);
+      if (!start || !end) continue;
+      const bookingId = mirrors.get(e.id) ?? null;
+      const transparent = e.showAs === "free" || e.showAs === "workingElsewhere";
+      const status = e.showAs === "tentative" ? "tentative" : "confirmed";
+      await prisma.externalEvent.upsert({
+        where: { integrationId_externalId: { integrationId: integration.id, externalId: e.id } },
+        create: { businessId: integration.businessId, integrationId: integration.id, externalId: e.id, calendarId, title: e.subject ?? null, startAt: start, endAt: end, allDay: Boolean(e.isAllDay), status, transparent, etag: e["@odata.etag"] ?? null, bookingId },
+        update: { calendarId, title: e.subject ?? null, startAt: start, endAt: end, allDay: Boolean(e.isAllDay), status, transparent, etag: e["@odata.etag"] ?? null, bookingId },
+      });
+      upserted++;
+    }
+    await saveCursor(integration.id, calendarId, result.deltaLink);
+  }
+  await prisma.externalEvent.deleteMany({ where: { integrationId: integration.id, bookingId: null, calendarId: { notIn: settings.selected } } });
+  return { ok: true, upserted, removed, fullResync };
+}
+
 /** Push one booking OUT to every connected calendar's booking calendar (create or update the mirror). */
 export async function pushBookingToCalendars(bookingId: string): Promise<void> {
   const booking = await prisma.booking.findUnique({ where: { id: bookingId }, include: { client: true, service: true, business: true } });
   if (!booking) return;
-  const integrations = await prisma.integration.findMany({ where: { businessId: booking.businessId, provider: { in: ["GOOGLE_CALENDAR", "APPLE_CALENDAR"] }, status: { in: ["CONNECTED", "SYNC_ERROR"] } } });
+  const integrations = await prisma.integration.findMany({ where: { businessId: booking.businessId, provider: { in: ["GOOGLE_CALENDAR", "APPLE_CALENDAR", "MICROSOFT_CALENDAR"] }, status: { in: ["CONNECTED", "SYNC_ERROR"] } } });
   for (const integration of integrations) {
     try {
       if (booking.status === "CANCELED") await removeMirror(integration, booking);
@@ -188,6 +239,25 @@ async function upsertMirror(integration: Integration, booking: FullBooking) {
       create: { businessId: booking.businessId, integrationId: integration.id, externalId: event.id, calendarId: target, title: summary, startAt: booking.startAt, endAt: booking.endAt, status: "confirmed", bookingId: booking.id, etag: event.etag ?? null },
       update: { title: summary, startAt: booking.startAt, endAt: booking.endAt, status: "confirmed", bookingId: booking.id, etag: event.etag ?? null },
     });
+  } else if (integration.provider === "MICROSOFT_CALENDAR") {
+    const token = await microsoftToken(integration);
+    const input = { summary, description, location: booking.location, start: booking.startAt, end: booking.endAt, bookingId: booking.id };
+    const existingId = booking.externalCalendarProvider === "MICROSOFT_CALENDAR" ? booking.externalEventId : null;
+    let event;
+    if (existingId) {
+      try {
+        event = await updateGraphEvent(token, existingId, input);
+      } catch (err) {
+        if (err instanceof GoogleApiError || (err as { status?: number })?.status === 404 || (err as { status?: number })?.status === 410) event = await createGraphEvent(token, target, input);
+        else throw err;
+      }
+    } else event = await createGraphEvent(token, target, input);
+    await prisma.booking.update({ where: { id: booking.id }, data: { externalEventId: event.id, externalCalendarProvider: "MICROSOFT_CALENDAR" } });
+    await prisma.externalEvent.upsert({
+      where: { integrationId_externalId: { integrationId: integration.id, externalId: event.id } },
+      create: { businessId: booking.businessId, integrationId: integration.id, externalId: event.id, calendarId: target, title: summary, startAt: booking.startAt, endAt: booking.endAt, status: "confirmed", bookingId: booking.id, etag: event.etag ?? null },
+      update: { title: summary, startAt: booking.startAt, endAt: booking.endAt, status: "confirmed", bookingId: booking.id, etag: event.etag ?? null },
+    });
   } else if (integration.provider === "APPLE_CALENDAR") {
     const client = await caldavClientFor(integration);
     const uid = `daythread-${booking.id}@daythread.org`;
@@ -208,6 +278,7 @@ async function removeMirror(integration: Integration, booking: FullBooking) {
   const target = settings.bookingCalendar ?? settings.selected[0] ?? "primary";
   if (integration.provider === "GOOGLE_CALENDAR") await deleteEvent(await calendarToken(integration), target, booking.externalEventId);
   else if (integration.provider === "APPLE_CALENDAR") await caldavDelete(await caldavClientFor(integration), booking.externalEventId);
+  else if (integration.provider === "MICROSOFT_CALENDAR") await deleteGraphEvent(await microsoftToken(integration), booking.externalEventId);
   await prisma.externalEvent.deleteMany({ where: { integrationId: integration.id, externalId: booking.externalEventId } });
   await prisma.booking.update({ where: { id: booking.id }, data: { externalEventId: null, externalCalendarProvider: null } });
 }
@@ -218,6 +289,11 @@ export async function discoverCalendars(integration: Integration): Promise<Calen
     const token = await calendarToken(integration);
     const cals = await listCalendars(token);
     return cals.map((c) => ({ id: c.id, name: c.summary, primary: Boolean(c.primary), timeZone: c.timeZone ?? null, readOnly: !/owner|writer/.test(c.accessRole) }));
+  }
+  if (integration.provider === "MICROSOFT_CALENDAR") {
+    const token = await microsoftToken(integration);
+    const cals = await listGraphCalendars(token);
+    return cals.map((c) => ({ id: c.id, name: c.name, primary: Boolean(c.isDefaultCalendar), timeZone: null, readOnly: c.canEdit === false }));
   }
   if (integration.provider === "APPLE_CALENDAR") {
     const { listCalendars: caldavCalendars } = await import("@/lib/caldav");

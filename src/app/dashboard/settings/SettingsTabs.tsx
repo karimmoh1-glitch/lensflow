@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export type SettingsTab = "channels" | "business" | "profile" | "notifications" | "security" | "subscription" | "team";
 const TABS: Array<{ key: SettingsTab; label: string; blurb: string; icon: typeof Plug }> = [
-  { key: "channels", label: "Channels", blurb: "Gmail, Instagram, WhatsApp, SMS, calendars", icon: Plug },
+  { key: "channels", label: "Integrations", blurb: "Email, texts, calendars, payments, files", icon: Plug },
   { key: "business", label: "Business", blurb: "Name, services, hours, timezone", icon: Building2 },
   { key: "profile", label: "Profile", blurb: "Your name and email", icon: UserRound },
   { key: "notifications", label: "Notifications", blurb: "What Daythread tells you about", icon: Bell },

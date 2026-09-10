@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { runIntegrationMaintenance } from "@/server/integrationMaintenance";
 import { syncAllGmail } from "@/server/gmailSync";
+import { syncAllOutlook } from "@/server/outlookSync";
+import { syncAllCalendly } from "@/server/calendlySync";
+import { retryFailedWebhooks } from "@/server/webhookInbox";
+import { webhookRetryHandlers } from "@/server/webhookHandlers";
 import { runScheduledAutomations } from "@/server/automationRunner";
 
 /**
@@ -25,10 +29,13 @@ export async function GET(req: Request) {
   if (a.length !== b.length || !timingSafeEqual(a, b)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const gmail = await syncAllGmail({ budgetMs: 25_000 });
+    const gmail = await syncAllGmail({ budgetMs: 15_000 });
+    const outlook = await syncAllOutlook({ budgetMs: 8_000 });
+    const calendly = await syncAllCalendly({ budgetMs: 6_000 });
+    const webhooks = await retryFailedWebhooks(webhookRetryHandlers(), { budgetMs: 5_000 });
     const automations = await runScheduledAutomations();
     const maintenance = await runIntegrationMaintenance();
-    return NextResponse.json({ ok: true, gmail, automations, maintenance });
+    return NextResponse.json({ ok: true, gmail, outlook, calendly, webhooks, automations, maintenance });
   } catch (err) {
     console.error("[cron/automations] failed", err);
     return NextResponse.json({ error: "Run failed" }, { status: 500 });

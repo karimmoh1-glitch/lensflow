@@ -46,3 +46,8 @@ export async function sendSms(from: string, to: string, body: string): Promise<{
   const m = await c.messages.create({ to, from, body, statusCallback: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/status` });
   return { sid: m.sid, status: m.status };
 }
+
+/** The shared sender, when the operator set one. TWILIO_PHONE_NUMBER is accepted as an alias of TWILIO_FROM_NUMBER. */
+export function platformFromNumber(): string | null {
+  return process.env.TWILIO_FROM_NUMBER || process.env.TWILIO_PHONE_NUMBER || null;
+}

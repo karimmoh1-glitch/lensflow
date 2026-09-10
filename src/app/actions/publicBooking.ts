@@ -8,6 +8,7 @@ import { pushBookingToCalendars } from "@/server/calendarSync";
 import { getAvailableSlots, isSlotStillAvailable } from "@/lib/availability";
 import { addMinutes } from "date-fns";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { notifyBusiness } from "@/server/notify";
 
 export async function getSlotsForDate(handle: string, dateISO: string, serviceId: string) {
   const business = await prisma.business.findUnique({ where: { handle } });
@@ -82,6 +83,7 @@ export async function createPublicBooking(params: {
   });
   await fireAutomationEvent({ businessId: business.id, trigger: "BOOKING_CREATED", targetType: "booking", targetId: booking.id });
   await pushBookingToCalendars(booking.id).catch(() => {});
+  await notifyBusiness(business.id, { kind: "booking", title: "New booking", body: `${params.name.trim()} booked ${service.name} for ${start.toLocaleString("en-US", { timeZone: business.timezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.`, path: `/bookings/${booking.id}` }).catch(() => {});
   if ((await prisma.booking.count({ where: { businessId: business.id } })) === 1) await track("first_booking_created", { businessId: business.id, properties: { via: "booking_page" } });
 
   return { bookingId: booking.id, totalCents: service.priceCents };

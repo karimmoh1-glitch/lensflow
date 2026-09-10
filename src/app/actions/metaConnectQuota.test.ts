@@ -20,6 +20,10 @@ const network = vi.fn(async () => {
 const SECRET = "0123456789abcdef0123456789abcdef";
 function configureMeta() {
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://daythread.org");
+  // These tests are about the plan gate; the release-stage gate (invite-only Instagram,
+  // coming-soon WhatsApp) is covered in integrationsSystem.test.ts and is opened here.
+  vi.stubEnv("INTEGRATION_INSTAGRAM_MODE", "open");
+  vi.stubEnv("INTEGRATION_WHATSAPP_MODE", "open");
   vi.stubEnv("INSTAGRAM_APP_ID", "1111111111111111");
   vi.stubEnv("INSTAGRAM_APP_SECRET", SECRET);
   vi.stubEnv("META_APP_ID", "2222222222222222");

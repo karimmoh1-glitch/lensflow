@@ -124,4 +124,55 @@ describe("Instagram identity", () => {
     await processMetaEnvelope(dm(OTHER_PRO, "igsid_custB", midB));
     expect((await prisma.message.findFirst({ where: { providerMessageId: midB }, include: { conversation: true } }))?.conversation.businessId).toBe(b);
   });
+
+  /**
+   * The production failure this pins: a DM arrived, the workspace was matched, and the
+   * message was still discarded because the recipient was compared against one id only.
+   * Meta names the connected account with whichever id it uses — the professional id that
+   * addresses the entry, or the app-scoped id — and both mean the same account.
+   */
+  it("the recipient may be any id Meta uses for this account; an unrelated recipient is recipient_mismatch and our own sends stay out", async () => {
+    const PRO_C = "17841400009990003";
+    const APP_C = "26270000009990003";
+    const c = (await prisma.business.create({ data: { name: "IG Identity C", handle: `igid-c-${stamp()}` } })).id;
+    ids.push(c);
+    await prisma.integration.create({ data: { businessId: c, provider: "INSTAGRAM", status: "CONNECTED", externalId: PRO_C, externalAccount: "@studio_c", accessToken: "IGAAtokenC", settings: { professionalAccountId: PRO_C, appScopedUserId: APP_C, instagramUserId: PRO_C, username: "studio_c", webhooksSubscribed: true } } });
+    const to = (sender: string, recipient: string, mid: string, extra: Record<string, unknown> = {}) => ({
+      object: "instagram",
+      entry: [{ id: PRO_C, time: Date.now(), messaging: [{ sender: { id: sender }, recipient: { id: recipient }, timestamp: Date.now(), message: { mid, text: "Do you have Saturday open?", ...extra } }] }],
+    });
+
+    // 1. The recipient is the professional account id — the ordinary delivery.
+    const midPro = `mid_pro_${stamp()}`;
+    expect(await processMetaEnvelope(to("igsid_cust_c1", PRO_C, midPro))).toMatchObject({ handled: 1, ignored: 0, reasons: [] });
+    // 2. The recipient is the app-scoped id — the same account under Meta's other id.
+    const midApp = `mid_app_${stamp()}`;
+    expect(await processMetaEnvelope(to("igsid_cust_c2", APP_C, midApp))).toMatchObject({ handled: 1, ignored: 0, reasons: [] });
+    // 3. An account this workspace has never held.
+    expect(await processMetaEnvelope(to("igsid_cust_c3", "17841400000000999", `mid_${stamp()}`))).toMatchObject({ handled: 0, ignored: 1, reasons: ["recipient_mismatch"] });
+    // 4. Our own sends, under either id, and an echo of one.
+    expect(await processMetaEnvelope(to(PRO_C, PRO_C, `mid_${stamp()}`))).toMatchObject({ handled: 0, ignored: 1, reasons: ["self_sender"] });
+    expect(await processMetaEnvelope(to(APP_C, PRO_C, `mid_${stamp()}`))).toMatchObject({ handled: 0, ignored: 1, reasons: ["self_sender"] });
+    expect(await processMetaEnvelope(to("igsid_cust_c4", PRO_C, `mid_${stamp()}`, { is_echo: true }))).toMatchObject({ handled: 0, ignored: 1, reasons: ["echo"] });
+
+    // Exactly the two real customer messages were stored, each once, in this workspace.
+    const stored = await prisma.message.findMany({ where: { conversation: { businessId: c }, direction: "INBOUND" }, select: { providerMessageId: true } });
+    expect(stored.map((m) => m.providerMessageId).sort()).toEqual([midApp, midPro].sort());
+    expect(await processMetaEnvelope(to("igsid_cust_c1", PRO_C, midPro))).toMatchObject({ handled: 1 });
+    expect(await prisma.message.count({ where: { conversation: { businessId: c }, direction: "INBOUND" } })).toBe(2);
+  });
+
+  it("names the other reasons an event produced no message", async () => {
+    const PRO_D = "17841400009990004";
+    const d = (await prisma.business.create({ data: { name: "IG Identity D", handle: `igid-d-${stamp()}` } })).id;
+    ids.push(d);
+    await prisma.integration.create({ data: { businessId: d, provider: "INSTAGRAM", status: "CONNECTED", externalId: PRO_D, externalAccount: "@studio_d", settings: { professionalAccountId: PRO_D, username: "studio_d" } } });
+    const entry = (messaging: unknown[]) => ({ object: "instagram", entry: [{ id: PRO_D, time: Date.now(), messaging }] });
+    expect(await processMetaEnvelope(entry([{ sender: { id: "igsid_x" }, recipient: { id: PRO_D }, message: { mid: `mid_${stamp()}` } }]))).toMatchObject({ ignored: 1, reasons: ["no_text"] });
+    expect(await processMetaEnvelope(entry([{ sender: { id: "igsid_x" }, recipient: { id: PRO_D }, message: { text: "no id" } }]))).toMatchObject({ ignored: 1, reasons: ["no_mid"] });
+    expect(await processMetaEnvelope(entry([{ sender: { id: "igsid_x" }, recipient: { id: PRO_D }, reaction: { emoji: "❤️" } }]))).toMatchObject({ ignored: 1, reasons: ["unsupported_event"] });
+    expect(await processMetaEnvelope(entry([{ sender: { id: "igsid_x" }, recipient: { id: PRO_D }, read: { mid: "mid_nothing_of_ours" } }]))).toMatchObject({ ignored: 0, statuses: 0, reasons: ["read_receipt"] });
+    expect(await processMetaEnvelope({ object: "something_else", entry: [{ id: PRO_D }] })).toMatchObject({ ignored: 1, reasons: ["unsupported_event"] });
+    expect(await prisma.message.count({ where: { conversation: { businessId: d } } })).toBe(0);
+  });
 });

@@ -223,6 +223,25 @@ describe("Meta webhook", () => {
     expect(message?.body).toBe("Do you shoot weddings?");
   });
 
+  it("records on the webhook row why a delivery produced no message, and never its content", async () => {
+    const mid = `mid_reason_${Date.now()}`;
+    const r = await post({ object: "instagram", entry: [{ id: igA, time: 9, messaging: [{ sender: { id: "igsid_555" }, recipient: { id: "17841400000000999" }, message: { mid, text: "confidential customer text" } }] }] });
+    expect(r.status).toBe(200);
+    // Meta is told the counts only; the reason stays on the row.
+    const body = await r.json();
+    expect(body).toMatchObject({ ok: true, handled: 0, ignored: 1 });
+    expect(body).not.toHaveProperty("reasons");
+    expect(body).not.toHaveProperty("businessId");
+    const row = await prisma.webhookEvent.findFirst({ where: { provider: "meta" }, orderBy: { receivedAt: "desc" } });
+    expect(row?.status).toBe("processed");
+    expect(row?.businessId).toBe(aId);
+    expect(row?.payload).toMatchObject({ object: "instagram", handled: 0, ignored: 1, reasons: ["recipient_mismatch"] });
+    const written = JSON.stringify(row?.payload);
+    expect(written).not.toContain("confidential customer text");
+    expect(written).not.toContain("igsid_555");
+    expect(written).not.toContain(mid);
+  });
+
   it("answers the handshake only for a subscribe with a challenge", async () => {
     expect((await GET(new Request("http://localhost/api/webhooks/meta?hub.mode=unsubscribe&hub.verify_token=verify-me&hub.challenge=1"))).status).toBe(403);
     expect((await GET(new Request("http://localhost/api/webhooks/meta?hub.mode=subscribe&hub.verify_token=verify-me"))).status).toBe(403);

@@ -87,15 +87,25 @@ export async function POST(req: Request) {
 
   const eventId = createHash("sha256").update(raw).digest("hex");
   try {
-    await prisma.webhookEvent.create({ data: { provider: "meta", eventId } });
+    await prisma.webhookEvent.create({ data: { provider: "meta", eventId, status: "received" } });
   } catch {
     return NextResponse.json({ ok: true, duplicate: true });
   }
 
   try {
     const result = await processMetaEnvelope(env);
+    // What this delivery did, kept on the row that already deduplicates it: the counts, the
+    // workspace it reached, and why anything was discarded. No message text, no sender, no
+    // account id — enough to tell "Meta never sent it" from "we chose not to store it".
+    await prisma.webhookEvent
+      .update({
+        where: { provider_eventId: { provider: "meta", eventId } },
+        data: { status: "processed", processedAt: new Date(), businessId: result.businessId ?? null, payload: { object: env.object, handled: result.handled, ignored: result.ignored, statuses: result.statuses, reasons: result.reasons } },
+      })
+      .catch(() => {});
     void pruneOldEvents();
-    return NextResponse.json({ ok: true, ...result });
+    // Meta is told what happened in counts only; the reasons stay on the row.
+    return NextResponse.json({ ok: true, handled: result.handled, ignored: result.ignored, statuses: result.statuses });
   } catch (err) {
     await reportFailure("webhook", `Meta ${env.object} processing failed`, { provider: env.object, error: err });
     // Release the idempotency claim so Meta's retry is processed rather than deduped away.

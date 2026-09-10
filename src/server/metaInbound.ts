@@ -18,7 +18,33 @@ import type { Integration } from "@prisma/client";
  * redelivery that slips past the envelope-level dedupe still can't duplicate a message.
  */
 export type MetaEnvelope = { object: string; entry: Array<Record<string, unknown>> };
-export type MetaResult = { handled: number; ignored: number; statuses: number };
+
+/**
+ * Why an event did not become a message. Recorded so a missing DM can be told apart from a
+ * DM that was never delivered — the distinction the database could not make before. A code
+ * only: never the message, the sender, or the account id.
+ */
+export type MetaIgnoreReason =
+  | "recipient_mismatch"
+  | "self_sender"
+  | "echo"
+  | "no_text"
+  | "no_mid"
+  | "read_receipt"
+  | "unsupported_event"
+  | "unknown_account";
+
+export type MetaResult = { handled: number; ignored: number; statuses: number; reasons: MetaIgnoreReason[]; businessId?: string | null };
+
+/** Deduped and capped: a summary an operator can read, not a log of every item. */
+const REASON_CAP = 10;
+function note(out: MetaResult, reason: MetaIgnoreReason): void {
+  if (!out.reasons.includes(reason) && out.reasons.length < REASON_CAP) out.reasons.push(reason);
+}
+function drop(out: MetaResult, reason: MetaIgnoreReason): void {
+  out.ignored++;
+  note(out, reason);
+}
 
 type Messaging = {
   sender?: { id?: string };
@@ -37,10 +63,13 @@ type Messaging = {
 const OWNING_STATUS = ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] as const;
 
 export async function processMetaEnvelope(env: MetaEnvelope): Promise<MetaResult> {
-  const out: MetaResult = { handled: 0, ignored: 0, statuses: 0 };
+  const out: MetaResult = { handled: 0, ignored: 0, statuses: 0, reasons: [] };
   if (env.object === "instagram") await processInstagram(env, out);
   else if (env.object === "whatsapp_business_account") await processWhatsApp(env, out);
-  else out.ignored += env.entry?.length ?? 0;
+  else {
+    out.ignored += env.entry?.length ?? 0;
+    note(out, "unsupported_event");
+  }
   return out;
 }
 
@@ -50,18 +79,19 @@ async function processInstagram(env: MetaEnvelope, out: MetaResult): Promise<voi
   for (const entry of env.entry ?? []) {
     const igAccountId = String(entry.id ?? "");
     if (!igAccountId) {
-      out.ignored++;
+      drop(out, "unsupported_event");
       continue;
     }
     // Meta addresses the event by the professional account id; the row holding that id owns it.
     let integration = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: igAccountId, status: { in: [...OWNING_STATUS] } } });
     if (!integration) integration = await repairLegacyInstagramRow(igAccountId);
     if (!integration) {
-      out.ignored++;
+      drop(out, "unknown_account");
       await noteUnknownAccount("INSTAGRAM", igAccountId);
       continue;
     }
     const selfIds = instagramSelfIds(integration);
+    out.businessId ??= integration.businessId;
     await markWebhookSeen(integration.businessId, "INSTAGRAM");
     // Instagram Login delivers `entry[].messaging[]`; some app configurations deliver the
     // same events under `entry[].changes[].value.messaging[]`. Both are read.
@@ -71,25 +101,42 @@ async function processInstagram(env: MetaEnvelope, out: MetaResult): Promise<voi
     ];
     for (const m of messaging) {
       if (m.read?.mid || m.read?.watermark) {
+        note(out, "read_receipt");
         out.statuses += await markInstagramRead(integration, m);
         continue;
       }
       const sender = m.sender?.id;
       const recipient = m.recipient?.id;
       const message = m.message;
-      if (!sender || !message?.mid) {
-        out.ignored++;
+      // Reactions, postbacks and anything else carrying no message are acknowledged, not processed.
+      if (!message) {
+        drop(out, "unsupported_event");
         continue;
       }
-      // An echo is our own send coming back, and a message whose recipient isn't the
-      // connected account isn't this workspace's conversation.
-      if (message.is_echo || recipient !== igAccountId || selfIds.has(sender)) {
-        out.ignored++;
+      if (!sender || !message.mid) {
+        drop(out, "no_mid");
+        continue;
+      }
+      // An echo is our own send coming back.
+      if (message.is_echo) {
+        drop(out, "echo");
+        continue;
+      }
+      // A message this account sent is not an inbound inquiry, under either of its ids.
+      if (selfIds.has(sender)) {
+        drop(out, "self_sender");
+        continue;
+      }
+      // The recipient must be this connected account. Meta names it with whichever id it
+      // uses for the account — the professional id that addresses the entry, or the
+      // app-scoped id — so every id we already know for it is accepted, and nothing else.
+      if (!recipient || !selfIds.has(recipient)) {
+        drop(out, "recipient_mismatch");
         continue;
       }
       const text = messageText(message);
       if (!text) {
-        out.ignored++;
+        drop(out, "no_text");
         continue;
       }
       const profile = integration.accessToken ? await instagramUserProfile(integration.accessToken, sender) : {};

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireMobileBusiness, isErrorResponse } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse } from "@/lib/mobileApi";
 import { getTodayBrief } from "@/server/dashboardData";
+import { STAFF_ROLES } from "@/lib/auth";
 
 export async function GET(req: Request) {
-  const ctx = await requireMobileBusiness(req);
+  const ctx = await requireMobileRole(req, [...STAFF_ROLES]);
   if (isErrorResponse(ctx)) return ctx;
   const { business } = ctx;
 

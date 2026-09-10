@@ -1,15 +1,29 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireMobileBusiness, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import type { Prisma } from "@prisma/client";
 
-/** Booking detail — the real lifecycle status and delivery state on one row, same as
- * src/app/dashboard/bookings/[id]/page.tsx on the web. */
+/**
+ * Booking detail — the real lifecycle status and delivery state on one row, same as
+ * src/app/dashboard/bookings/[id]/page.tsx on the web, and under the same role scoping as
+ * the booking list beside it: a PARTNER sees only what is assigned to them, a CLIENT only
+ * their own. Without that, either could walk booking ids and read other people's contact
+ * details. An id outside the caller's scope answers 404, never a hint that it exists.
+ */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireMobileBusiness(req);
   if (isErrorResponse(ctx)) return ctx;
   const { id } = await params;
 
-  const booking = await prisma.booking.findFirst({ where: { id, businessId: ctx.business.id }, include: { client: true, service: true } });
+  const scope: Prisma.BookingWhereInput = { id, businessId: ctx.business.id };
+  if (ctx.role === "PARTNER") {
+    scope.assignedMembershipId = ctx.membership.id;
+  } else if (ctx.role === "CLIENT") {
+    const self = await prisma.client.findFirst({ where: { businessId: ctx.business.id, userId: ctx.user.id }, select: { id: true } });
+    scope.clientId = self?.id ?? "__none__";
+  }
+
+  const booking = await prisma.booking.findFirst({ where: scope, include: { client: true, service: true } });
   if (!booking) return jsonError("Not found", 404);
 
   return NextResponse.json({

@@ -7,7 +7,7 @@ import { pushBookingToCalendars } from "@/server/calendarSync";
 import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
 import { isSlotStillAvailable } from "@/lib/availability";
 
-const bookSchema = z.object({ startISO: z.string() });
+const bookSchema = z.object({ startISO: z.string().datetime() });
 
 /**
  * Converts a lead into a real Booking — the mobile equivalent of

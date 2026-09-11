@@ -59,6 +59,7 @@ export const PAIN_POINTS = [
   ["customer_info", "Organizing customer information"],
   ["team", "Managing my team"],
   ["one_place", "Keeping everything in one place"],
+  ["delivery", "Getting finished work to customers"],
   ["other", "Other"],
 ] as const;
 export const FEATURES = [
@@ -69,6 +70,7 @@ export const FEATURES = [
   ["agent", "AI Business Agent"],
   ["team", "Team"],
   ["people", "Customer / people management"],
+  ["files", "Files and delivery"],
 ] as const;
 export const TOOLS = [
   ["gmail", "Gmail"],
@@ -77,6 +79,8 @@ export const TOOLS = [
   ["google_calendar", "Google Calendar"],
   ["spreadsheets", "Spreadsheets"],
   ["crm", "Another CRM"],
+  ["google_drive", "Google Drive"],
+  ["dropbox", "Dropbox"],
   ["nothing", "Nothing"],
   ["multiple", "Multiple tools"],
 ] as const;
@@ -133,8 +137,8 @@ export function asksTeamSize(a: Pick<AnswersDraft, "businessStatus" | "teamUsage
   return a.businessStatus === "business" || a.businessStatus === "team";
 }
 
-export type Provider = "EMAIL" | "INSTAGRAM" | "WHATSAPP" | "SMS" | "GOOGLE_CALENDAR";
-export const PROVIDER_LABEL: Record<Provider, string> = { EMAIL: "Gmail", INSTAGRAM: "Instagram", WHATSAPP: "WhatsApp", SMS: "SMS", GOOGLE_CALENDAR: "Google Calendar" };
+export type Provider = "EMAIL" | "INSTAGRAM" | "WHATSAPP" | "SMS" | "GOOGLE_CALENDAR" | "GOOGLE_DRIVE" | "DROPBOX";
+export const PROVIDER_LABEL: Record<Provider, string> = { EMAIL: "Gmail", INSTAGRAM: "Instagram", WHATSAPP: "WhatsApp", SMS: "SMS", GOOGLE_CALENDAR: "Google Calendar", GOOGLE_DRIVE: "Google Drive", DROPBOX: "Dropbox" };
 
 export type Personalization = {
   answers: OnboardingAnswers;
@@ -160,7 +164,7 @@ export type Personalization = {
 };
 
 const CHANNEL_PROVIDER: Partial<Record<Channel, Provider>> = { email: "EMAIL", instagram: "INSTAGRAM", whatsapp: "WHATSAPP", sms: "SMS" };
-const TOOL_PROVIDER: Partial<Record<Tool, Provider>> = { gmail: "EMAIL", instagram: "INSTAGRAM", whatsapp: "WHATSAPP", google_calendar: "GOOGLE_CALENDAR" };
+const TOOL_PROVIDER: Partial<Record<Tool, Provider>> = { gmail: "EMAIL", instagram: "INSTAGRAM", whatsapp: "WHATSAPP", google_calendar: "GOOGLE_CALENDAR", google_drive: "GOOGLE_DRIVE", dropbox: "DROPBOX" };
 
 export function list(items: string[]): string {
   if (items.length <= 1) return items[0] ?? "";
@@ -210,7 +214,7 @@ export function derivePersonalization(answers: OnboardingAnswers): Personalizati
   }
 
   // Priorities. Scores from the answers; the inbox is the product, so it always places.
-  const score: Record<Feature, number> = { inbox: 6, calendar: 0, bookings: 0, automations: 0, agent: 0, team: 0, people: 0 };
+  const score: Record<Feature, number> = { inbox: 6, calendar: 0, bookings: 0, automations: 0, agent: 0, team: 0, people: 0, files: 0 };
   score.inbox += Math.min(channelCount, 4) * 2 + (has(a.painPoints, "messages") ? 3 : 0) + (has(a.painPoints, "one_place") ? 3 : 0) + (has(a.desiredFeatures, "inbox") ? 3 : 0);
   score.bookings += (a.bookings === "yes" ? 7 : a.bookings === "sometimes" ? 4 : 0) + (has(a.desiredFeatures, "bookings") ? 3 : 0) + (has(a.painPoints, "bookings") ? 3 : 0);
   score.calendar += (has(a.painPoints, "scheduling") ? 4 : 0) + (has(a.desiredFeatures, "calendar") ? 3 : 0) + (a.bookings === "yes" ? 2 : 0) + (has(a.currentTools, "google_calendar") ? 2 : 0);
@@ -218,6 +222,9 @@ export function derivePersonalization(answers: OnboardingAnswers): Personalizati
   score.agent += (wantsAI ? 5 : 0) + (has(a.painPoints, "messages") ? 1 : 0) + (has(a.painPoints, "follow_ups") ? 1 : 0);
   score.team += (a.teamUsage === "regularly" ? 5 : a.teamUsage === "occasionally" ? 3 : 0) + (has(a.desiredFeatures, "team") ? 3 : 0) + (has(a.painPoints, "team") ? 3 : 0);
   score.people += (has(a.desiredFeatures, "people") ? 4 : 0) + (has(a.painPoints, "customer_info") ? 4 : 0) + (has(a.currentTools, "spreadsheets") || has(a.currentTools, "crm") ? 2 : 0);
+  // Sending finished work is the end of most of these businesses' jobs — photos, a report,
+  // a design, a set of documents — so it ranks on what they said they do, not on a vertical.
+  score.files += (has(a.desiredFeatures, "files") ? 4 : 0) + (has(a.painPoints, "delivery") ? 4 : 0) + (has(a.currentTools, "google_drive") || has(a.currentTools, "dropbox") ? 3 : 0);
   const order = FEATURES.map((f) => f[0]);
   const ranked = order.filter((f) => score[f] > 0).sort((x, y) => score[y] - score[x] || order.indexOf(x) - order.indexOf(y));
   const priorities = ranked.slice(0, 4);
@@ -234,6 +241,7 @@ export const PRIORITY_COPY: Record<Feature, { title: string; blurb: string; href
   agent: { title: "Business Agent", blurb: "Get help handling business work.", href: "/dashboard/agent" },
   team: { title: "Team", blurb: "Share the inbox with the people you work with.", href: "/dashboard/settings?tab=team" },
   people: { title: "People", blurb: "Everyone's details and history in one place.", href: "/dashboard/clients" },
+  files: { title: "Files", blurb: "Send finished work from the folder it already lives in.", href: "/dashboard/clients" },
 };
 
 /**

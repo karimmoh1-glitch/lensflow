@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { derivePersonalization, answersSchema, asksTeamSize, personalPaywallCopy, buildSteps, type OnboardingAnswers } from "./personalization";
+import { derivePersonalization, answersSchema, asksTeamSize, personalPaywallCopy, buildSteps, PRIORITY_COPY, type OnboardingAnswers } from "./personalization";
 
 const base: OnboardingAnswers = {
   userType: "freelancer", workCategory: "design", businessStatus: "solo", channels: ["email"], painPoints: ["customer_info"],
@@ -123,5 +123,45 @@ describe("personalization engine", () => {
     expect(answersSchema.safeParse({ ...base, workDetail: "x".repeat(81) }).success).toBe(false);
     expect(answersSchema.safeParse({ ...base, workCategory: "other", workDetail: "Dog grooming" }).success).toBe(true);
     expect(answersSchema.safeParse({ ...base, extra: "ignored" }).success).toBe(true);
+  });
+
+  it("files rank for the businesses that finish a job by handing something over", () => {
+    // A consultant delivering reports and a photographer delivering galleries are the same
+    // shape of business here: the answers decide, not the trade.
+    const consultant = derivePersonalization({
+      ...base, userType: "business_owner", workCategory: "consulting",
+      painPoints: ["delivery", "customer_info"], desiredFeatures: ["inbox", "files"], currentTools: ["google_drive"],
+    });
+    expect(consultant.priorities).toContain("files");
+    expect(consultant.connectProviders).toContain("GOOGLE_DRIVE");
+
+    const photographer = derivePersonalization({
+      ...base, workCategory: "photography", painPoints: ["delivery"], desiredFeatures: ["files"], currentTools: ["dropbox"],
+    });
+    expect(photographer.priorities).toContain("files");
+    expect(photographer.connectProviders).toContain("DROPBOX");
+  });
+
+  it("files stay out of the way for a business that never hands work over", () => {
+    const p = derivePersonalization({ ...base, painPoints: ["messages"], desiredFeatures: ["inbox"], currentTools: ["gmail"] });
+    expect(p.priorities).not.toContain("files");
+    expect(p.connectProviders).not.toContain("GOOGLE_DRIVE");
+    expect(p.connectProviders).not.toContain("DROPBOX");
+  });
+
+  it("keeps every priority nameable on the Today card", () => {
+    // A feature added without copy would render a blank card, which is how the last one
+    // would have shipped broken.
+    const everything = derivePersonalization({
+      ...base, channels: ["email", "instagram", "whatsapp", "sms"],
+      painPoints: ["messages", "follow_ups", "delivery", "team", "customer_info"],
+      desiredFeatures: ["inbox", "bookings", "automations", "agent", "team", "people", "files"],
+      currentTools: ["gmail", "google_drive"], bookings: "yes", teamUsage: "regularly",
+    });
+    for (const f of everything.priorities) {
+      expect(PRIORITY_COPY[f]?.title, f).toBeTruthy();
+      expect(PRIORITY_COPY[f]?.href.startsWith("/dashboard"), f).toBe(true);
+    }
+    expect(buildSteps(everything).join(" ")).not.toContain("undefined");
   });
 });

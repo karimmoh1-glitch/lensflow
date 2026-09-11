@@ -20,7 +20,7 @@ import { runInstagramDeliveryCheck, type DeliveryCheck } from "@/server/instagra
 import { checkFileProvider, type FileProviderCheck } from "@/server/fileProviderCheck";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
-import { instagramConfigured, instagramAuthUrl, unsubscribeInstagramWebhooks } from "@/lib/meta/instagram";
+import { instagramConfigured, instagramAuthUrl, unsubscribeInstagramWebhooks, revokeInstagramPermissions } from "@/lib/meta/instagram";
 import { whatsappConfigured, whatsappAuthUrl, unsubscribeWabaWebhooks, listPhoneNumbers, tokenOwnsWaba } from "@/lib/meta/whatsapp";
 import { makeClient, discover, listCalendars as caldavCalendars } from "@/lib/caldav";
 import { syncCalendarIn, readCalendarSettings, type CalendarChoice } from "@/server/calendarSync";
@@ -381,6 +381,9 @@ async function revokeMetaSubscription(provider: IntegrationProvider, row: { acce
   if (!row.accessToken) return;
   if (provider === "INSTAGRAM" && row.externalId) {
     await unsubscribeInstagramWebhooks(row.accessToken, row.externalId);
+    // And hand the grant back, so disconnecting actually ends Daythread's access rather
+    // than only stopping delivery. Every other provider already revokes.
+    await revokeInstagramPermissions(row.accessToken, row.externalId).catch(() => {});
     return;
   }
   if (provider === "WHATSAPP") {

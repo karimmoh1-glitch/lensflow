@@ -9,6 +9,7 @@ import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
 import { revalidatePath } from "next/cache";
 import { sendOnChannel } from "@/lib/messaging";
 import { canAddTeamSeat, planLimits, teamEntitled } from "@/lib/billing";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 const inviteSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -187,12 +188,16 @@ export async function revokeInvitation(id: string, actingSession?: SessionPayloa
 export async function resendInvitation(id: string, actingSession?: SessionPayload | null): Promise<{ link?: string; error?: string }> {
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
-  const invitation = await prisma.invitation.findFirst({ where: { id, businessId: ctx.business.id } });
-  if (!invitation) return { error: "not found" };
+  // Only an invitation that is still outstanding may be resent. Reviving an ACCEPTED or
+  // REVOKED one brought its original token back to life, so any copy of that old link —
+  // forwarded, archived, sitting in a support ticket — would grant membership again.
+  const invitation = await prisma.invitation.findFirst({ where: { id, businessId: ctx.business.id, status: { in: ["PENDING", "EXPIRED"] } } });
+  if (!invitation) return { error: "That invitation can no longer be resent. Send a new one instead." };
 
+  // A fresh token as well: resending replaces the old link rather than extending it.
   const updated = await prisma.invitation.update({
     where: { id },
-    data: { expiresAt: invitationExpiry(), status: "PENDING" },
+    data: { token: generateInvitationToken(), expiresAt: invitationExpiry(), status: "PENDING" },
   });
 
   const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${updated.token}`;
@@ -213,6 +218,9 @@ export type InvitationPreview = {
 };
 
 export async function previewInvitation(token: string): Promise<InvitationPreview | null> {
+  // Whether an account already exists is the one fact this returns that is worth harvesting,
+  // so it is throttled the way every other unauthenticated lookup is.
+  if (!rateLimit(`invite-preview:${await getClientIp()}`, { limit: 30, windowMs: 10 * 60 * 1000 }).ok) return null;
   const invitation = await prisma.invitation.findUnique({ where: { token }, include: { business: true } });
   if (!invitation) return null;
 
@@ -234,6 +242,16 @@ const acceptNewSchema = z.object({
 const acceptExistingSchema = z.object({ password: z.string().min(1, "Password is required") });
 
 export async function acceptInvitation(token: string, formData: FormData): Promise<{ error?: string } | undefined> {
+  // This path verifies a password, so it is a login and has to be rate limited like one.
+  // Without it, anyone who can mint an invitation — and any signed-up owner can mint one for
+  // any address — could guess that person's password without limit and take a session as
+  // them. Two buckets, matching login: per-IP against one attacker trying many accounts,
+  // per-token against one account attacked from rotating addresses.
+  const ip = await getClientIp();
+  const ipOk = rateLimit(`invite-accept:ip:${ip}`, { limit: 20, windowMs: 10 * 60 * 1000 }).ok;
+  const tokenOk = rateLimit(`invite-accept:token:${token}`, { limit: 8, windowMs: 10 * 60 * 1000 }).ok;
+  if (!ipOk || !tokenOk) return { error: "Too many attempts. Wait a few minutes and try again." };
+
   const invitation = await prisma.invitation.findUnique({ where: { token } });
   if (!invitation) return { error: "This invitation link is invalid." };
   if (invitation.status === "REVOKED") return { error: "This invitation has been revoked." };

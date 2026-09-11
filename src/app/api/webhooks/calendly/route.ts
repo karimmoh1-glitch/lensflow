@@ -33,7 +33,10 @@ export async function POST(req: Request) {
   if (!row) return NextResponse.json({ error: "Unknown subscription" }, { status: 401 });
   if (!verifyCalendlySignature(raw, req.headers.get("calendly-webhook-signature"), calendlySigningKey(row.id))) return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   if (row.status === "NOT_CONNECTED") return NextResponse.json({ ok: true, ignored: "disconnected" });
-  const eventId = payload.payload?.uri && payload.event ? `${payload.event}:${payload.payload.uri}:${payload.created_at ?? ""}` : `${payload.event}:${raw.length}:${payload.created_at ?? ""}`;
+  // The connection is always part of the key. Without it the fallback was event name, body
+  // length and a second-resolution timestamp, so two workspaces receiving the same kind of
+  // event in the same second collided and the second booking was dropped as a duplicate.
+  const eventId = `${row.id}:${payload.event}:${payload.payload?.uri ?? `len${raw.length}`}:${payload.created_at ?? ""}`;
   const run = await runWebhook("calendly", eventId, { ...payload, __integrationId: row.id }, async (p) => { await processCalendlyWebhook(p, row); }, { businessId: row.businessId });
   if (run.status === "duplicate") return NextResponse.json({ ok: true, duplicate: true });
   if (run.status === "processed") return NextResponse.json({ ok: true });

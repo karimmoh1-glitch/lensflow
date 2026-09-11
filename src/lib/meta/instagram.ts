@@ -165,6 +165,16 @@ export async function listAppWebhookSubscriptions(): Promise<AppSubscriptionChec
   return { ok: false, error: lastError };
 }
 
+/**
+ * Gives the grant back. Unsubscribing stops Meta delivering, but the long-lived token
+ * Daythread was issued stays valid on the person's account until it expires, which is not
+ * what "Disconnect" means to anyone. Best effort: Meta may refuse, and a provider that
+ * refuses must never leave someone unable to disconnect locally.
+ */
+export async function revokeInstagramPermissions(token: string, igUserId: string): Promise<void> {
+  await graphFetch(`${IG_GRAPH}/${igUserId}/permissions?${new URLSearchParams({ access_token: token })}`, { method: "DELETE" });
+}
+
 /** Stops Meta delivering this account's events to Daythread. Called on disconnect so a
  * disconnected account genuinely stops sending, rather than only being ignored here. */
 export async function unsubscribeInstagramWebhooks(token: string, igUserId: string): Promise<void> {

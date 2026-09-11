@@ -194,7 +194,7 @@ async function ingestUnlocked(params: {
       });
     }
 
-    await notifyBusiness(businessId, { kind: "message", title: `${client.name} wrote to you`, body: `New message on ${channel.toLowerCase()}.`, path: `/conversation/${existingConversation.id}` });
+    await notifyBusiness(businessId, { kind: "message", title: `${client.name} wrote to you`, body: `New message on ${channel.toLowerCase()}.`, target: { kind: "conversation", id: existingConversation.id } });
 
     return { client, conversation: existingConversation, lead: existingConversation.lead, duplicate: false as const, category: "PRIORITY" as const };
   }
@@ -222,7 +222,7 @@ async function ingestUnlocked(params: {
     },
   });
 
-  await notifyBusiness(businessId, { kind: "lead", title: `${extracted.name ?? senderName} wrote to you`, body: `New inquiry on ${channel.toLowerCase()}.`, path: `/conversation/${conversation.id}` });
+  await notifyBusiness(businessId, { kind: "lead", title: `${extracted.name ?? senderName} wrote to you`, body: `New inquiry on ${channel.toLowerCase()}.`, target: { kind: "conversation", id: conversation.id } });
 
   return { client, conversation, lead, duplicate: false as const, category: "PRIORITY" as const };
 }

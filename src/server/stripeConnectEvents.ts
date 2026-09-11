@@ -2,8 +2,9 @@ import type Stripe from "stripe";
 import { prisma } from "@/lib/db";
 import { connectedChargeDetails } from "@/lib/stripeConnect";
 import { findKnownClient } from "@/server/identity";
-import { notifyBusiness, noticePath } from "@/server/notify";
+import { notifyBusiness } from "@/server/notify";
 import { recordAudit } from "@/server/audit";
+import { formatMoneyExact } from "@/lib/utils";
 
 /**
  * Events from the businesses' own Stripe accounts (Connect webhooks). A successful
@@ -24,7 +25,7 @@ export async function handleStripeConnectEvent(event: Stripe.Event): Promise<Con
   if (event.type === "account.application.deauthorized") {
     await prisma.integration.update({ where: { id: row.id }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null, tokenExpiresAt: null, lastError: null, lastErrorAt: null, lastSyncStatus: null } });
     await recordAudit({ businessId, action: "integration.disconnected", targetType: "integration", targetId: row.id, metadata: { provider: "STRIPE", by: "provider" } });
-    await notifyBusiness(businessId, { kind: "integration", title: "Stripe disconnected", body: "Daythread's access was removed from your Stripe account. Reconnect from Settings if that wasn't you.", path: noticePath.settings() });
+    await notifyBusiness(businessId, { kind: "integration", title: "Stripe disconnected", body: "Daythread's access was removed from your Stripe account. Reconnect from Settings if that wasn't you.", target: { kind: "integrations" } });
     return { handled: "deauthorized", businessId };
   }
 
@@ -59,9 +60,10 @@ async function recordPayment(businessId: string, accountId: string, pi: Stripe.P
     ? await prisma.client.update({ where: { id: known.client.id }, data: { relationship: "CUSTOMER" } })
     : await prisma.client.create({ data: { businessId, name, email: known?.email ?? email, phone: known?.phone ?? phone, relationship: "CUSTOMER" } });
   const amountCents = pi.amount_received ?? pi.amount;
-  const payment = await prisma.payment.create({ data: { businessId, clientId: client.id, method: "CARD", purpose: "FULL", amountCents, status: "PAID", stripePaymentIntentId: pi.id, confirmedAt: new Date((pi.created ?? Math.floor(Date.now() / 1000)) * 1000), reference: pi.description?.slice(0, 120) ?? null } });
+  const currency = (pi.currency ?? "usd").toLowerCase();
+  const payment = await prisma.payment.create({ data: { businessId, clientId: client.id, method: "CARD", purpose: "FULL", amountCents, currency, status: "PAID", stripePaymentIntentId: pi.id, confirmedAt: new Date((pi.created ?? Math.floor(Date.now() / 1000)) * 1000), reference: pi.description?.slice(0, 120) ?? null } });
   await recordAudit({ businessId, action: "payment.recorded", targetType: "payment", targetId: payment.id, metadata: { provider: "STRIPE", amountCents, currency: pi.currency } });
-  const money = new Intl.NumberFormat("en-US", { style: "currency", currency: (pi.currency ?? "usd").toUpperCase() }).format(amountCents / 100);
-  await notifyBusiness(businessId, { kind: "payment", title: "Payment received", body: `${money} from ${client.name} via Stripe.`, path: noticePath.client(client.id) });
+  const money = formatMoneyExact(amountCents, currency);
+  await notifyBusiness(businessId, { kind: "payment", title: "Payment received", body: `${money} from ${client.name} via Stripe.`, target: { kind: "payments" } });
   return "recorded";
 }

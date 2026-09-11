@@ -9,13 +9,49 @@ import { appUrl } from "@/lib/integrations/oauth";
  * Slack when a channel is connected. Titles and short bodies only — "Jane wrote to you",
  * "New booking · Saturday 2pm" — never the text of a customer's message.
  */
-export type Notice = { title: string; body: string; path?: string | null; kind?: "message" | "lead" | "booking" | "payment" | "integration" | "agent" };
+/**
+ * Where a notice points. A structured target rather than a path, because the web app and
+ * the phone app have different routes for the same record — and when both were handed one
+ * hand-written path string, whichever app it was not written for silently sent people to a
+ * page that does not exist. Naming the record instead makes that impossible.
+ */
+export type NoticeTarget =
+  | { kind: "conversation"; id: string }
+  | { kind: "booking"; id: string }
+  | { kind: "client"; id: string }
+  | { kind: "payments" }
+  | { kind: "integrations" };
+
+/** Inside the web dashboard, relative to /dashboard. */
+export function webPath(t: NoticeTarget): string {
+  switch (t.kind) {
+    case "conversation": return `/inbox?c=${t.id}`;
+    case "booking": return `/bookings/${t.id}`;
+    case "client": return `/clients/${t.id}`;
+    case "payments": return "/payments";
+    case "integrations": return "/settings?tab=channels";
+  }
+}
+
+/** Inside the phone app, as expo-router knows them. */
+export function mobilePath(t: NoticeTarget): string {
+  switch (t.kind) {
+    case "conversation": return `/conversation/${t.id}`;
+    case "booking": return `/booking/${t.id}`;
+    case "client": return `/person/${t.id}`;
+    case "payments": return "/(tabs)/today";
+    case "integrations": return "/settings/integrations";
+  }
+}
+
+export type Notice = { title: string; body: string; target?: NoticeTarget | null; kind?: "message" | "lead" | "booking" | "payment" | "integration" | "agent" };
 
 export type SlackSettings = { teamId?: string; teamName?: string; botUserId?: string; channelId?: string | null; channelName?: string | null; lastPostAt?: string | null; lastPostError?: string | null };
 
 export async function notifyBusiness(businessId: string, notice: Notice): Promise<void> {
-  await prisma.notification.create({ data: { businessId, title: notice.title, body: notice.body } });
-  void pushToBusiness(businessId, { title: notice.title, body: notice.body, data: notice.path ? { path: notice.path } : undefined });
+  const target = notice.target ?? null;
+  await prisma.notification.create({ data: { businessId, title: notice.title, body: notice.body, path: target ? webPath(target) : null } });
+  void pushToBusiness(businessId, { title: notice.title, body: notice.body, data: target ? { path: mobilePath(target) } : undefined });
   void postToSlack(businessId, notice);
 }
 
@@ -25,7 +61,7 @@ export async function postToSlack(businessId: string, notice: Notice): Promise<b
   if (!row || row.status === "NOT_CONNECTED" || !row.accessToken) return false;
   const settings = (row.settings ?? {}) as SlackSettings;
   if (!settings.channelId) return false;
-  const link = notice.path ? `${appUrl()}/dashboard${notice.path.startsWith("/") ? notice.path : `/${notice.path}`}` : null;
+  const link = notice.target ? `${appUrl()}/dashboard${webPath(notice.target)}` : null;
   try {
     await postSlackMessage(row.accessToken, settings.channelId, `*${notice.title}* — ${notice.body}`, link);
     await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, lastPostAt: new Date().toISOString(), lastPostError: null }, lastSyncStatus: "ok", lastSyncedAt: new Date(), lastError: null, lastErrorAt: null, status: row.status === "SYNC_ERROR" ? "CONNECTED" : row.status } });
@@ -39,11 +75,3 @@ export async function postToSlack(businessId: string, notice: Notice): Promise<b
     return false;
   }
 }
-
-/** Web paths for the notices that name a record. */
-export const noticePath = {
-  conversation: (id: string) => `/inbox?c=${id}`,
-  booking: (id: string) => `/bookings/${id}`,
-  client: (id: string) => `/clients/${id}`,
-  settings: () => `/settings?tab=connections`,
-};

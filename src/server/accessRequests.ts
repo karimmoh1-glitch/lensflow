@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { providerMaturity } from "@/lib/integrations/flags";
 import { recordAudit } from "@/server/audit";
-import { notifyBusiness, noticePath } from "@/server/notify";
+import { notifyBusiness } from "@/server/notify";
 import { track } from "@/lib/analytics";
 import type { AccessRequestStatus, IntegrationProvider } from "@prisma/client";
 
@@ -58,8 +58,8 @@ export async function decideAccess(id: string, decision: "APPROVED" | "REJECTED"
   await recordAudit({ businessId: row.businessId, actorId: reviewerId, action: `integration.access_${decision.toLowerCase()}`, targetType: "access_request", targetId: id, metadata: { provider: row.provider } });
   await track("integration_access_decided", { businessId: row.businessId, properties: { provider: row.provider, decision } });
   const name = row.provider === "INSTAGRAM" ? "Instagram" : row.provider;
-  if (decision === "APPROVED") await notifyBusiness(row.businessId, { kind: "integration", title: `${name} access approved`, body: `You can connect ${name} from Settings now.`, path: noticePath.settings() });
-  else if (decision === "REJECTED") await notifyBusiness(row.businessId, { kind: "integration", title: `${name} access not granted yet`, body: decisionNote ? decisionNote.slice(0, 200) : `Daythread couldn't open ${name} for this workspace yet.`, path: noticePath.settings() });
-  else await notifyBusiness(row.businessId, { kind: "integration", title: `${name} access paused`, body: decisionNote ? decisionNote.slice(0, 200) : `Your ${name} access on Daythread was paused.`, path: noticePath.settings() });
+  if (decision === "APPROVED") await notifyBusiness(row.businessId, { kind: "integration", title: `${name} access approved`, body: `You can connect ${name} from Settings now.`, target: { kind: "integrations" } });
+  else if (decision === "REJECTED") await notifyBusiness(row.businessId, { kind: "integration", title: `${name} access not granted yet`, body: decisionNote ? decisionNote.slice(0, 200) : `Daythread couldn't open ${name} for this workspace yet.`, target: { kind: "integrations" } });
+  else await notifyBusiness(row.businessId, { kind: "integration", title: `${name} access paused`, body: decisionNote ? decisionNote.slice(0, 200) : `Your ${name} access on Daythread was paused.`, target: { kind: "integrations" } });
   return { ok: true };
 }

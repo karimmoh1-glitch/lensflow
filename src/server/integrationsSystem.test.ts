@@ -249,7 +249,7 @@ describe("Slack notices", () => {
   afterAll(async () => { await prisma.business.deleteMany({ where: { id: { in: ids } } }); vi.unstubAllGlobals(); });
 
   it("posts the title and the short body with a link back — never a customer's message", async () => {
-    await notifyBusiness(w.businessId, { kind: "lead", title: "Jane Doe wrote to you", body: "New inquiry on email.", path: "/inbox?c=abc" });
+    await notifyBusiness(w.businessId, { kind: "lead", title: "Jane Doe wrote to you", body: "New inquiry on email.", target: { kind: "conversation", id: "abc" } });
     await new Promise((r) => setTimeout(r, 50));
     const post = posts.find((p) => p.url.includes("chat.postMessage"));
     expect(post?.body.channel).toBe("C1");

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { addHours } from "date-fns";
+import { formatMoneyExact } from "@/lib/utils";
 
 export type FixMyDayItem = {
   id: string;
@@ -57,8 +58,8 @@ export async function runFixMyDay(): Promise<FixMyDayItem[]> {
   for (const p of unpaidBalances) {
     items.push({
       id: `payment-${p.id}`,
-      title: `${p.client.name} has a payment awaiting confirmation — $${(p.amountCents / 100).toFixed(0)}`,
-      href: `/dashboard/clients/${p.clientId}`,
+      title: `${p.client.name} has a payment awaiting confirmation — ${formatMoneyExact(p.amountCents, p.currency)}`,
+      href: "/dashboard/payments",
       actionLabel: "Confirm payment",
     });
   }

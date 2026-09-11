@@ -3,7 +3,7 @@ import { syncCalendarIn } from "@/server/calendarSync";
 import { refreshInstagramToken } from "@/lib/meta/instagram";
 import { checkInstagramSubscription, syncInstagramForBusiness } from "@/server/instagramSync";
 import { reportFailure } from "@/lib/observe";
-import { notifyBusiness, noticePath } from "@/server/notify";
+import { notifyBusiness } from "@/server/notify";
 import { PROVIDERS, isRegisteredProvider } from "@/lib/integrations/registry";
 
 /**
@@ -71,7 +71,7 @@ export async function notifyNeedsAttention(): Promise<number> {
     if (settings.attentionNotifiedAt === since) continue;
     if (!isRegisteredProvider(row.provider)) continue;
     const name = PROVIDERS[row.provider].name;
-    await notifyBusiness(row.businessId, { kind: "integration", title: `${name} needs attention`, body: row.lastError ?? `Your ${name} connection stopped working. Reconnect it from Settings.`, path: noticePath.settings() });
+    await notifyBusiness(row.businessId, { kind: "integration", title: `${name} needs attention`, body: row.lastError ?? `Your ${name} connection stopped working. Reconnect it from Settings.`, target: { kind: "integrations" } });
     await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, attentionNotifiedAt: since } } });
     n++;
   }

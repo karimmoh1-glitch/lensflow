@@ -4,7 +4,7 @@ import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { listPayments } from "@/server/payments";
 import { PageHeader, Badge, EmptyState } from "@/components/ui";
-import { formatMoney, cn } from "@/lib/utils";
+import { formatMoneyExact, cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ChevronRight, CreditCard } from "lucide-react";
 import type { PaymentStatus } from "@prisma/client";
@@ -23,13 +23,14 @@ const STATUS: Record<PaymentStatus, { tone: "neutral" | "success" | "warning" | 
   REFUNDED: { tone: "neutral", label: "Refunded" },
 };
 
-const FILTERS: Array<{ key: "all" | PaymentStatus; label: string }> = [
-  { key: "all", label: "All" },
-  { key: "PAID", label: "Paid" },
-  { key: "AWAITING_CONFIRMATION", label: "Pending" },
-  { key: "REFUNDED", label: "Refunded" },
-  { key: "FAILED", label: "Failed" },
-];
+const LABEL: Record<PaymentStatus, string> = { PAID: "Paid", AWAITING_CONFIRMATION: "Pending", REFUNDED: "Refunded", FAILED: "Failed" };
+
+/** How a payment reads when no booking is attached to it. Never a raw enum. */
+function describe(purpose: string, method: string): string {
+  const kind = purpose === "DEPOSIT" ? "Deposit" : purpose === "BALANCE" ? "Balance" : purpose === "SUBSCRIPTION" ? "Subscription" : "Payment";
+  const how = method === "CARD" ? "card" : method === "APPLE_PAY" ? "Apple Pay" : method === "BANK_TRANSFER" ? "bank transfer" : method === "ZELLE" ? "Zelle" : method.toLowerCase().replace(/_/g, " ");
+  return `${kind} by ${how}`;
+}
 
 export default async function PaymentsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const ctx = await requireBusiness();
@@ -37,38 +38,52 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
   const sp = await searchParams;
-  const status = (FILTERS.find((f) => f.key === sp.status)?.key ?? "all") as "all" | PaymentStatus;
+  const requested = sp.status as PaymentStatus | undefined;
+  const status: "all" | PaymentStatus = requested && requested in LABEL ? requested : "all";
 
   const [view, stripe] = await Promise.all([
     listPayments(business.id, { status }),
     prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "STRIPE" } }, select: { status: true, externalAccount: true } }),
   ]);
   const connected = Boolean(stripe && stripe.status !== "NOT_CONNECTED");
-  const { rows, totals } = view;
+  const { rows, totals, count } = view;
+  // Only the statuses this workspace actually has: a filter that can only ever be empty is
+  // not a filter, it is a dead end.
+  const chips: Array<"all" | PaymentStatus> = count > 0 ? ["all", ...view.statuses] : [];
+  const lead = totals[0] ?? null;
+  const others = totals.slice(1);
 
   return (
     <div className="px-4 md:px-8 py-6 md:py-8 max-w-5xl">
       <PageHeader title="Payments" description={connected ? `Recorded from your Stripe account${stripe?.externalAccount ? ` · ${stripe.externalAccount}` : ""}.` : "What your clients have paid you."} />
 
-      {totals.count > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <Tile label="Collected" value={formatMoney(totals.collectedCents)} tone="text-success-text" />
-          <Tile label="Pending" value={formatMoney(totals.pendingCents)} tone="text-warning-text" />
-          <Tile label="Refunded" value={formatMoney(totals.refundedCents)} tone="text-ink/70" />
-          <Tile label="Payments" value={String(totals.count)} tone="text-ink" />
-        </div>
+      {lead && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <Tile label="Collected" value={formatMoneyExact(lead.collectedCents, lead.currency)} tone="text-success-text" />
+            {lead.pendingCents > 0 && <Tile label="Pending" value={formatMoneyExact(lead.pendingCents, lead.currency)} tone="text-warning-text" />}
+            {lead.refundedCents > 0 && <Tile label="Refunded" value={formatMoneyExact(lead.refundedCents, lead.currency)} tone="text-ink/70" />}
+            <Tile label="Payments" value={String(count)} tone="text-ink" />
+          </div>
+          {others.length > 0 && (
+            <p className="mb-6 text-[12px] text-ink/65">
+              Also collected {others.map((t) => formatMoneyExact(t.collectedCents, t.currency)).join(", ")}. Totals are kept per currency rather than added together.
+            </p>
+          )}
+          {others.length === 0 && <div className="mb-6" />}
+        </>
       )}
 
-      {totals.count > 0 && (
+      {chips.length > 1 && (
         <div className="flex items-center gap-1 mb-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filter by status">
-          {FILTERS.map((f) => (
+          {chips.map((key) => (
             <Link
-              key={f.key}
-              href={f.key === "all" ? "/dashboard/payments" : `/dashboard/payments?status=${f.key}`}
-              aria-current={status === f.key ? "page" : undefined}
-              className={cn("h-8 px-3.5 rounded-full text-[13px] font-semibold inline-flex items-center whitespace-nowrap transition-colors", status === f.key ? "bg-ink text-white" : "text-ink/70 hover:text-ink hover:bg-black/[0.04]")}
+              key={key}
+              href={key === "all" ? "/dashboard/payments" : `/dashboard/payments?status=${key}`}
+              aria-current={status === key ? "page" : undefined}
+              className={cn("h-8 px-3.5 rounded-full text-[13px] font-semibold inline-flex items-center whitespace-nowrap transition-colors", status === key ? "bg-ink text-white" : "text-ink/70 hover:text-ink hover:bg-black/[0.04]")}
             >
-              {f.label}
+              {key === "all" ? "All" : LABEL[key]}
             </Link>
           ))}
         </div>
@@ -76,16 +91,16 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
 
       {rows.length === 0 ? (
         <EmptyState
-          title={totals.count === 0 ? "No payments yet." : "Nothing with that status."}
+          title={count === 0 ? "No payments yet." : "Nothing with that status."}
           description={
-            totals.count > 0
+            count > 0
               ? "Try another filter."
               : connected
                 ? "When someone pays you through Stripe, the payment appears here against the person who paid, with what it was for."
                 : "Connect Stripe and every payment your clients make is recorded here against the right person, with what it was for. Your money goes to your own Stripe account — Daythread only reads what happened."
           }
           action={
-            totals.count === 0 && !connected ? (
+            count === 0 && !connected ? (
               <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-4 rounded-full bg-ink text-white text-sm font-semibold">
                 Connect Stripe
               </Link>
@@ -105,13 +120,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {p.client ? (
-                        <Link href={`/dashboard/clients/${p.client.id}`} className="text-[15px] font-semibold text-ink hover:underline truncate">
-                          {p.client.name}
-                        </Link>
-                      ) : (
-                        <span className="text-[15px] font-semibold text-ink">Someone</span>
-                      )}
+                      <Link href={`/dashboard/clients/${p.client!.id}`} className="text-[15px] font-semibold text-ink hover:underline truncate">
+                        {p.client!.name}
+                      </Link>
                       <Badge tone={s.tone}>{s.label}</Badge>
                     </div>
                     <p className="mt-0.5 text-[13px] text-ink/65 truncate">
@@ -120,13 +131,13 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                           {p.booking.service} · {format(p.booking.startAt, "MMM d, yyyy")}
                         </>
                       ) : (
-                        <>{p.purpose.toLowerCase().replace(/_/g, " ")} · {p.method.toLowerCase().replace(/_/g, " ")}</>
+                        describe(p.purpose, p.method)
                       )}
                       {p.reference ? ` · ${p.reference}` : ""}
                     </p>
                   </div>
                   <div className="sm:text-right shrink-0">
-                    <div className={cn("text-[15px] font-semibold tabular-nums", p.status === "REFUNDED" ? "text-ink/50 line-through" : "text-ink")}>{formatMoney(p.amountCents)}</div>
+                    <div className={cn("text-[15px] font-semibold tabular-nums", p.status === "REFUNDED" ? "text-ink/50 line-through" : "text-ink")}>{formatMoneyExact(p.amountCents, p.currency)}</div>
                     <div className="text-[11px] text-ink/60">{format(when, "MMM d, yyyy")}</div>
                   </div>
                   {p.booking && (

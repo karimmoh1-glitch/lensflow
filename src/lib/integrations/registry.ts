@@ -27,7 +27,7 @@ export type Capability =
 
 export type AuthKind = "oauth" | "app_password" | "platform" | "none";
 export type ProviderKind = "channel" | "calendar" | "site" | "payments" | "files" | "notifications" | "scheduling";
-export type Group = "communication" | "scheduling" | "payments" | "files" | "business";
+export type Group = "communication" | "scheduling" | "payments" | "files" | "meetings" | "business";
 
 export type ProviderSpec = {
   key: IntegrationProvider;
@@ -215,13 +215,34 @@ export const CHANNEL_PROVIDERS: IntegrationProvider[] = ["EMAIL", "MICROSOFT_OUT
 export const CALENDAR_PROVIDERS: IntegrationProvider[] = ["GOOGLE_CALENDAR", "MICROSOFT_CALENDAR", "APPLE_CALENDAR"];
 
 /** The hub, in order. Every registered provider appears in exactly one group. */
+/**
+ * Integrations Daythread does not have yet. They are listed so the hub is an honest map of
+ * what exists rather than a shorter list that implies nothing else is coming — and they can
+ * never be connected, because there is nothing behind them. A provider only earns an entry
+ * in PROVIDERS, and a row in the database, once it actually works.
+ */
+export type ComingSoonSpec = { key: string; name: string; group: Group; summary: string };
+
+export const COMING_SOON: ComingSoonSpec[] = [
+  { key: "ZOOM", name: "Zoom", group: "meetings", summary: "Put a Zoom link on every booking, and keep the recording with the client." },
+  { key: "GOOGLE_MEET", name: "Google Meet", group: "meetings", summary: "A Meet link created with the booking, on the calendar you already use." },
+  { key: "MICROSOFT_TEAMS", name: "Microsoft Teams", group: "meetings", summary: "A Teams link on every booking for businesses that run on Microsoft." },
+  { key: "QUICKBOOKS", name: "QuickBooks", group: "payments", summary: "Send what you were paid to your books without typing it twice." },
+];
+
 export const GROUPS: Array<{ key: Group; title: string; hint: string; providers: RegisteredProvider[] }> = [
   { key: "communication", title: "Communication", hint: "Where conversations come from", providers: ["EMAIL", "MICROSOFT_OUTLOOK", "SMS", "INSTAGRAM", "WHATSAPP"] },
   { key: "scheduling", title: "Scheduling", hint: "Bookings go out; busy time comes in", providers: ["GOOGLE_CALENDAR", "MICROSOFT_CALENDAR", "APPLE_CALENDAR", "CALENDLY"] },
   { key: "payments", title: "Payments", hint: "Money in, matched to the person who paid", providers: ["STRIPE"] },
   { key: "files", title: "Files", hint: "A folder per client, where your files already live", providers: ["GOOGLE_DRIVE", "DROPBOX"] },
+  { key: "meetings", title: "Meetings", hint: "Where the call happens", providers: [] },
   { key: "business", title: "Business", hint: "Forms and alerts", providers: ["WEBSITE", "SLACK"] },
 ];
+
+/** The not-yet-built entries that belong under a group heading. */
+export function comingSoonFor(group: Group): ComingSoonSpec[] {
+  return COMING_SOON.filter((c) => c.group === group);
+}
 
 export function isRegisteredProvider(p: string): p is RegisteredProvider {
   return Object.prototype.hasOwnProperty.call(PROVIDERS, p);

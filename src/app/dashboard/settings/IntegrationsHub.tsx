@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { formatDistanceToNowStrict } from "date-fns";
-import { PROVIDERS, GROUPS, providerConfigured, providerMaturity, displayStatus, type ProviderSpec, type RegisteredProvider } from "@/lib/integrations/registry";
+import { PROVIDERS, GROUPS, comingSoonFor, providerConfigured, providerMaturity, displayStatus, type ProviderSpec, type RegisteredProvider } from "@/lib/integrations/registry";
 import { accessGated } from "@/lib/integrations/flags";
 import { smsEntitled, PLANS, limitLabel } from "@/lib/billing";
 import { usageFor, countsTowardQuota, limitMessage } from "@/server/integrationQuota";
@@ -321,6 +321,9 @@ export async function IntegrationsHub({ business, role, connected, connectError,
               </IntegrationCard>
             );
           })}
+          {comingSoonFor(group.key).map((c) => (
+            <NotYet key={c.key} name={c.name} summary={c.summary} />
+          ))}
           {group.key === "scheduling" && <p className="text-[11px] text-ink/65 px-1">Daythread bookings are the source of truth and are mirrored to the calendar you choose. Events on selected calendars only block availability; they never create or change a booking. Calendly is the exception by design: its meetings become bookings here.</p>}
         </Group>
       ))}
@@ -335,6 +338,23 @@ export async function IntegrationsHub({ business, role, connected, connectError,
         </section>
       )}
     </div>
+  );
+}
+
+/**
+ * An integration Daythread does not have yet. Deliberately not an IntegrationCard: there is
+ * no row, no status to derive and nothing to connect, and a card that looked the same would
+ * invite a click that goes nowhere.
+ */
+function NotYet({ name, summary }: { name: string; summary: string }) {
+  return (
+    <article aria-label={name} data-coming-soon="true" className="rounded-[22px] border border-dashed border-border bg-paper/40 px-4 sm:px-5 py-4">
+      <div className="flex items-center gap-2 flex-wrap">
+        <h3 className="text-[15px] font-semibold text-ink/70">{name}</h3>
+        <span className="inline-flex items-center text-[11px] font-bold rounded-full px-2 py-0.5 bg-black/[0.05] text-ink/60">Coming soon</span>
+      </div>
+      <p className="mt-1 text-sm text-ink/55 leading-snug">{summary}</p>
+    </article>
   );
 }
 

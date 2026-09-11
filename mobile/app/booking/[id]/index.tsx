@@ -111,15 +111,15 @@ export default function BookingScreen() {
             {b.deliveryUrl ? (
               <>
                 <Text style={{ ...type.body, color: c.ink }}>Delivered {b.deliveredAt ? format(new Date(b.deliveredAt), "MMM d") : ""}{b.deliveryNote ? ` · ${b.deliveryNote}` : ""}</Text>
-                <Button small variant="secondary" icon="open-outline" title="Open gallery link" style={{ marginTop: 8, alignSelf: "flex-start" }} onPress={() => Linking.openURL(b.deliveryUrl!)} />
+                <Button small variant="secondary" icon="open-outline" title="Open delivery" style={{ marginTop: 8, alignSelf: "flex-start" }} onPress={() => Linking.openURL(b.deliveryUrl!)} />
               </>
             ) : b.status === "COMPLETED" || b.status === "FOLLOWED_UP" || b.status === "BALANCE_PAID" ? (
               <>
-                <Field label="Gallery link" value={url} onChangeText={setUrl} placeholder="https://…" autoCapitalize="none" keyboardType="url" />
-                <Field label="Note (optional)" value={note} onChangeText={setNote} placeholder="Password, what's included…" />
+                <Field label="Delivery link" value={url} onChangeText={setUrl} placeholder="https://…" autoCapitalize="none" keyboardType="url" />
+                <Field label="Note (optional)" value={note} onChangeText={setNote} placeholder="Password, what is included…" />
                 <Button title="Mark delivered" onPress={deliver} loading={busy} disabled={!url.trim()} />
               </>
-            ) : <Text style={{ ...type.small, color: c.inkSoft }}>Add the gallery link here once the session is completed.</Text>}
+            ) : <Text style={{ ...type.small, color: c.inkSoft }}>Add the delivery link here once the work is complete.</Text>}
           </Card>
         </ScrollView>
       )}

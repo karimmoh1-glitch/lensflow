@@ -9,10 +9,18 @@ vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 const SECRET = "meta_app_secret_test";
 let GET: (req: Request) => Promise<Response>;
 let POST: (req: Request) => Promise<Response>;
-const sign = (body: string) => "sha256=" + createHmac("sha256", SECRET).update(body).digest("hex");
+const IG_SECRET = "instagram_app_secret_test";
+const sign = (body: string, secret = SECRET) => "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
+/**
+ * Each product is signed by its own app, the way Meta actually signs them: Instagram Login
+ * events with the Instagram app secret, WhatsApp with the Meta app's. The route enforces
+ * that binding, so a test that signed everything with one secret would be testing a shape
+ * production never sends.
+ */
+const secretFor = (body: object) => ((body as { object?: string }).object === "instagram" ? IG_SECRET : SECRET);
 const post = (body: object, sig?: string) => {
   const raw = JSON.stringify(body);
-  return POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sig ?? sign(raw), "content-type": "application/json" } }));
+  return POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sig ?? sign(raw, secretFor(body)), "content-type": "application/json" } }));
 };
 
 describe("Meta webhook", () => {
@@ -23,6 +31,7 @@ describe("Meta webhook", () => {
 
   beforeAll(async () => {
     vi.stubEnv("META_APP_SECRET", SECRET);
+    vi.stubEnv("INSTAGRAM_APP_SECRET", IG_SECRET);
     vi.stubEnv("META_WEBHOOK_VERIFY_TOKEN", "verify-me");
     ({ GET, POST } = await import("./route"));
     await prisma.webhookEvent.deleteMany({ where: { provider: "meta" } });
@@ -137,18 +146,17 @@ describe("Meta webhook", () => {
   it("refuses a WhatsApp event that only the Instagram secret signed", async () => {
     // WhatsApp Business Account events are signed by the Meta app that owns the
     // subscription. One product's secret must never be able to inject into the other.
-    vi.stubEnv("INSTAGRAM_APP_SECRET", "instagram_app_secret_test");
+    vi.stubEnv("INSTAGRAM_APP_SECRET", IG_SECRET);
     const raw = JSON.stringify({ object: "whatsapp_business_account", entry: [{ id: "waba", changes: [{ field: "messages", value: { metadata: { phone_number_id: waB }, messages: [{ from: "15550009999", id: `wamid.forged_${Date.now()}`, type: "text", text: { body: "injected" } }] } }] }] });
-    const igSigned = "sha256=" + createHmac("sha256", "instagram_app_secret_test").update(raw).digest("hex");
+    const igSigned = "sha256=" + createHmac("sha256", IG_SECRET).update(raw).digest("hex");
     const r = await POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": igSigned, "x-forwarded-for": "203.0.113.10" } }));
     expect(r.status).toBe(401);
     expect(await prisma.conversation.count({ where: { businessId: bId, externalHandle: "+15550009999" } })).toBe(0);
-    vi.stubEnv("INSTAGRAM_APP_SECRET", "");
   });
 
   it("refuses a payload far larger than Meta ever sends", async () => {
     const raw = JSON.stringify({ object: "instagram", entry: [], pad: "x".repeat(1_100_000) });
-    const r = await POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sign(raw) } }));
+    const r = await POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sign(raw, IG_SECRET) } }));
     expect(r.status).toBe(413);
   });
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recipientHandle } from "@/lib/inboundEmail";
 import { readBoundedText } from "@/lib/http";
 import { Resend } from "resend";
 import { prisma } from "@/lib/db";
@@ -56,9 +57,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const toAddress = event.data.to[0] ?? "";
-    const handle = toAddress.split("@")[0];
-    if (!handle) return NextResponse.json({ ok: true }); // malformed recipient — nothing to route
+    const handle = recipientHandle(event.data.to, process.env.RESEND_INBOUND_DOMAIN);
+    if (!handle) return NextResponse.json({ ok: true }); // not addressed to us — nothing to route
 
     const business = await prisma.business.findUnique({ where: { handle } });
     if (!business) {

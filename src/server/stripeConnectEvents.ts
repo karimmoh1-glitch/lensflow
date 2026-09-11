@@ -18,12 +18,18 @@ export type ConnectOutcome = { handled: string; businessId?: string | null };
 export async function handleStripeConnectEvent(event: Stripe.Event): Promise<ConnectOutcome> {
   const accountId = event.account;
   if (!accountId) return { handled: "no_account" };
-  const row = await prisma.integration.findFirst({ where: { provider: "STRIPE", externalId: accountId } });
+  // Only a row that still holds this account. A deauthorized row keeps its history but
+  // releases the account id, so a business that later connects the same Stripe account to
+  // another workspace receives its own events instead of them landing on the stale row and
+  // being discarded as "inactive".
+  const row =
+    (await prisma.integration.findFirst({ where: { provider: "STRIPE", externalId: accountId, status: { not: "NOT_CONNECTED" } }, orderBy: { updatedAt: "desc" } })) ??
+    (await prisma.integration.findFirst({ where: { provider: "STRIPE", externalId: accountId }, orderBy: { updatedAt: "desc" } }));
   if (!row) return { handled: "unknown_account" };
   const businessId = row.businessId;
 
   if (event.type === "account.application.deauthorized") {
-    await prisma.integration.update({ where: { id: row.id }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null, tokenExpiresAt: null, lastError: null, lastErrorAt: null, lastSyncStatus: null } });
+    await prisma.integration.update({ where: { id: row.id }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null, tokenExpiresAt: null, externalId: null, lastError: null, lastErrorAt: null, lastSyncStatus: null } });
     await recordAudit({ businessId, action: "integration.disconnected", targetType: "integration", targetId: row.id, metadata: { provider: "STRIPE", by: "provider" } });
     await notifyBusiness(businessId, { kind: "integration", title: "Stripe disconnected", body: "Daythread's access was removed from your Stripe account. Reconnect from Settings if that wasn't you.", target: { kind: "integrations" } });
     return { handled: "deauthorized", businessId };

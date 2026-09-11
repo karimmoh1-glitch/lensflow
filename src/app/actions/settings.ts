@@ -132,7 +132,11 @@ const PasswordChangeSchema = z.object({
  * version, and re-issues this one so the person stays signed in.
  */
 export async function changePassword(input: { current: string; next: string }, actingSession?: SessionPayload | null): Promise<{ error?: string; ok?: true }> {
-  const session = await getSession();
+  // The caller's session, not whichever cookie happens to be on the origin. The mobile route
+  // authorizes with a bearer token and passes it here; reading the cookie instead meant the
+  // change applied to a different person on any client holding both, and did not work at all
+  // on a native client, which has no cookie.
+  const session = actingSession ?? (await getSession());
   if (!session) throw new Error("unauthorized");
   const parsed = PasswordChangeSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the details." };
@@ -141,7 +145,9 @@ export async function changePassword(input: { current: string; next: string }, a
   if (!user || !(await verifyPassword(parsed.data.current, user.passwordHash))) return { error: "That current password isn't right." };
   const updated = await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(parsed.data.next), sessionVersion: { increment: 1 } }, select: { sessionVersion: true } });
   await prisma.passwordResetToken.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
-  await setSessionCookie({ userId: user.id, activeBusinessId: session.activeBusinessId, sv: updated.sessionVersion });
+  // Bumping sessionVersion signs every other device out; this one is re-issued so the person
+  // stays signed in. A bearer caller has no cookie to re-issue and re-authenticates instead.
+  if (!actingSession) await setSessionCookie({ userId: user.id, activeBusinessId: session.activeBusinessId, sv: updated.sessionVersion });
   return { ok: true };
 }
 

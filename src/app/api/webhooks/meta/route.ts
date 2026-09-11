@@ -5,6 +5,7 @@ import { verifyMetaSignature, safeEqual } from "@/lib/meta/common";
 import { processMetaEnvelope, type MetaEnvelope } from "@/server/metaInbound";
 import { reportFailure } from "@/lib/observe";
 import { rateLimit } from "@/lib/rateLimit";
+import { STALE_CLAIM_MS } from "@/server/webhookInbox";
 
 /**
  * Meta's webhook for Instagram messaging and the WhatsApp Cloud API. One URL for both:
@@ -84,12 +85,23 @@ export async function POST(req: Request) {
   if (env.object === "whatsapp_business_account" && metaSecret && !matched.meta) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
+  // And the same in the other direction, which was documented above but never enforced: an
+  // Instagram envelope signed only by the WhatsApp app's secret is not an Instagram event.
+  if (env.object === "instagram" && igSecret && !matched.instagram) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
 
   const eventId = createHash("sha256").update(raw).digest("hex");
   try {
     await prisma.webhookEvent.create({ data: { provider: "meta", eventId, status: "received" } });
   } catch {
-    return NextResponse.json({ ok: true, duplicate: true });
+    // The claim exists. If a previous attempt was killed before it could finish or release
+    // it, Meta's retry is the only chance this message has — answering "duplicate" would
+    // lose a customer's DM permanently, since Meta does not replay past its retry window.
+    const existing = await prisma.webhookEvent.findUnique({ where: { provider_eventId: { provider: "meta", eventId } } });
+    const stale = existing?.status === "received" && Date.now() - existing.receivedAt.getTime() > STALE_CLAIM_MS;
+    if (!stale) return NextResponse.json({ ok: true, duplicate: true });
+    await prisma.webhookEvent.update({ where: { id: existing!.id }, data: { receivedAt: new Date(), attempts: { increment: 1 } } }).catch(() => {});
   }
 
   try {

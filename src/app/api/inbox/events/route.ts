@@ -1,4 +1,4 @@
-import { requireBusiness } from "@/lib/auth";
+import { requireRole, STAFF_ROLES } from "@/lib/auth";
 import { getInboxVersion, watchInboxVersion } from "@/server/inboxSignal";
 
 /**
@@ -15,7 +15,9 @@ const STREAM_MS = 45_000;
 const CHECK_MS = 2_500;
 
 export async function GET(req: Request) {
-  const ctx = await requireBusiness();
+  // Membership is not permission: a CLIENT portal login has a session for this workspace,
+  // and this stream reports how busy the workspace's inbox is.
+  const ctx = await requireRole(STAFF_ROLES);
   if (!ctx) return new Response("Unauthorized", { status: 401 });
   const businessId = ctx.business.id;
   const url = new URL(req.url);

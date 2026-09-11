@@ -36,12 +36,23 @@ export function rateLimit(key: string, opts: { limit: number; windowMs: number }
   return { ok: true, retryAfterSeconds: 0 };
 }
 
-/** Best-effort caller IP from standard proxy headers (Vercel sets x-forwarded-for). */
+/**
+ * Best-effort caller IP. Our own edge sets `x-vercel-forwarded-for` and `x-real-ip`, and a
+ * caller cannot forge them. `x-forwarded-for` is a list a caller may prepend to, so its
+ * LEFTMOST entry is an attacker-chosen string: keying a rate limit on it hands every caller
+ * a free reset on each request. The rightmost entry is the hop the nearest proxy appended,
+ * which is the one we can believe.
+ */
+export function clientIpFrom(h: Headers): string {
+  const trusted = h.get("x-vercel-forwarded-for") ?? h.get("x-real-ip");
+  if (trusted) return trusted.split(",")[0].trim() || "unknown";
+  const hops = (h.get("x-forwarded-for") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return hops.length > 0 ? hops[hops.length - 1] : "unknown";
+}
+
+/** The same, for a server action or page, where the request headers come from the framework. */
 export async function getClientIp(): Promise<string> {
-  const h = await headers();
-  const fwd = h.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return h.get("x-real-ip") ?? "unknown";
+  return clientIpFrom(await headers());
 }
 
 export class RateLimitError extends Error {

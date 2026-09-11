@@ -10,12 +10,33 @@ import { addMinutes } from "date-fns";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { notifyBusiness } from "@/server/notify";
 
+/** How far ahead the public page will quote times. Beyond this is not a booking request. */
+const MAX_LOOKAHEAD_DAYS = 400;
+
+/**
+ * The open times on a business's public booking page. Unauthenticated by design — this is
+ * what a customer sees before they book — but it answers from the owner's real calendar,
+ * including busy blocks pulled from whichever calendar they connected. So it is rate limited
+ * like every other public entry point: without that it was an unmetered way to read a
+ * business's whole calendar shape day by day, and every call also spends a request against
+ * their Google or Microsoft quota.
+ *
+ * The date is validated rather than trusted: an unparseable one used to reach the database
+ * as NaN and come back as a server error.
+ */
 export async function getSlotsForDate(handle: string, dateISO: string, serviceId: string) {
+  if (!rateLimit(`public-slots:${await getClientIp()}`, { limit: 120, windowMs: 60 * 60 * 1000 }).ok) return [];
+
+  const date = new Date(dateISO);
+  if (Number.isNaN(date.getTime())) return [];
+  const daysAhead = (date.getTime() - Date.now()) / 86_400_000;
+  if (daysAhead > MAX_LOOKAHEAD_DAYS || daysAhead < -1) return [];
+
   const business = await prisma.business.findUnique({ where: { handle } });
   if (!business) return [];
   const service = await prisma.service.findFirst({ where: { id: serviceId, businessId: business.id } });
   if (!service) return [];
-  const slots = await getAvailableSlots(business.id, new Date(dateISO), service.durationMins);
+  const slots = await getAvailableSlots(business.id, date, service.durationMins);
   return slots.map((s) => ({ start: s.start.toISOString(), end: s.end.toISOString() }));
 }
 

@@ -4,6 +4,10 @@ import { prisma } from "@/lib/db";
 import { calendlyConfigured, calendlySigningKey, verifyCalendlySignature, type CalendlyWebhookPayload } from "@/lib/calendly";
 import { processCalendlyWebhook } from "@/server/calendlySync";
 import { runWebhook } from "@/server/webhookInbox";
+import { rateLimit, clientIpFrom } from "@/lib/rateLimit";
+
+/** A body can only be read once, so each rejection needs its own response object. */
+const rejected = () => NextResponse.json({ error: "Invalid signature" }, { status: 401 });
 
 /**
  * Calendly → Daythread. Every subscription Daythread creates carries its own signing key
@@ -15,6 +19,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   if (!calendlyConfigured()) return NextResponse.json({ error: "Calendly isn't configured on this deployment." }, { status: 501 });
+  // Routing costs a database read before anything is verified, because the signing key is
+  // per-connection. Meter it so that read cannot be driven by a stranger.
+  if (!rateLimit(`calendly-hook:${clientIpFrom(req.headers)}`, { limit: 600, windowMs: 60 * 60 * 1000 }).ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   let raw: string;
   try {
     raw = await readBoundedText(req, 256 * 1024);
@@ -30,8 +39,10 @@ export async function POST(req: Request) {
   const userUri = typeof payload.created_by === "string" ? payload.created_by : null;
   if (!userUri) return NextResponse.json({ error: "Unroutable" }, { status: 400 });
   const row = await prisma.integration.findFirst({ where: { provider: "CALENDLY", externalId: userUri } });
-  if (!row) return NextResponse.json({ error: "Unknown subscription" }, { status: 401 });
-  if (!verifyCalendlySignature(raw, req.headers.get("calendly-webhook-signature"), calendlySigningKey(row.id))) return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  // Same answer whether the Calendly user is unknown here or the signature is wrong —
+  // otherwise this route tells a stranger which Calendly accounts use Daythread.
+  if (!row) return rejected();
+  if (!verifyCalendlySignature(raw, req.headers.get("calendly-webhook-signature"), calendlySigningKey(row.id))) return rejected();
   if (row.status === "NOT_CONNECTED") return NextResponse.json({ ok: true, ignored: "disconnected" });
   // The connection is always part of the key. Without it the fallback was event name, body
   // length and a second-resolution timestamp, so two workspaces receiving the same kind of

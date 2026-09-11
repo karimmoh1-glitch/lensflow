@@ -241,7 +241,13 @@ describe("Calendly", () => {
     expect(await prisma.booking.count({ where: { businessId: b, sourceProvider: "CALENDLY" } })).toBe(1);
     // Signed with A's key for B's user: refused.
     expect((await POST(signedRequest({ ...payload, created_at: new Date(Date.now() + 1000).toISOString() }, calendlySigningKey(rowA.id)))).status).toBe(401);
-    expect((await POST(signedRequest({ ...payload, created_by: "https://api.calendly.com/users/NOBODY" }, calendlySigningKey(rowB.id)))).status).toBe(401);
+    // An unknown Calendly user and a bad signature answer identically, so the route cannot
+    // be asked which Calendly accounts use Daythread.
+    const unknownUser = await POST(signedRequest({ ...payload, created_by: "https://api.calendly.com/users/NOBODY" }, calendlySigningKey(rowB.id)));
+    const badSignature = await POST(signedRequest({ ...payload, created_at: new Date(Date.now() + 2000).toISOString() }, calendlySigningKey(rowA.id)));
+    expect(unknownUser.status).toBe(401);
+    expect(badSignature.status).toBe(401);
+    expect(await unknownUser.json()).toEqual(await badSignature.json());
     expect((await prisma.integration.findUniqueOrThrow({ where: { id: rowB.id } })).lastWebhookAt).toBeTruthy();
   });
 });

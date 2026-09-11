@@ -9,6 +9,7 @@ import { isTokenInvalid, isPermissionError, isOutsideServiceWindow, userFacingMe
 import { reportFailure } from "@/lib/observe";
 import type { ChannelType, MessageStatus } from "@prisma/client";
 import { platformFromNumber } from "@/lib/twilio";
+import { smsConsent, OPTED_OUT_MESSAGE } from "@/lib/smsConsent";
 
 /**
  * The one way a message leaves Daythread for a customer. Used by the composer, the
@@ -49,8 +50,11 @@ export async function deliverToCustomer(params: {
   inReplyTo?: string | null;
   /** For WhatsApp's service window: when the customer last wrote. */
   lastInboundAt?: Date | null;
+  /** An HTML part for email. The business's own Gmail sends the text part either way, so
+   * the two always carry the same words. */
+  html?: string;
 }): Promise<Delivery> {
-  const { businessId, businessName, businessHandle, channel, to, body, subject, inReplyTo } = params;
+  const { businessId, businessName, businessHandle, channel, to, body, subject, inReplyTo, html } = params;
   if (!to) return { status: "NOT_DELIVERED", error: "No address to send to.", statusDetail: "no_recipient", via: "none" };
   if (!body.trim()) return { status: "NOT_DELIVERED", error: "Nothing to send.", statusDetail: "empty", via: "none" };
 
@@ -140,6 +144,12 @@ export async function deliverToCustomer(params: {
 
   let from: string | null | undefined;
   if (channel === "SMS") {
+    // Someone who replied STOP has withdrawn consent. Texting them anyway is unlawful in
+    // most of the places Daythread's customers operate, and the carrier rejects it — which
+    // until now looked like a mysterious delivery failure rather than a decision.
+    if ((await smsConsent(businessId, to)) === "opted_out") {
+      return { status: "NOT_DELIVERED", error: OPTED_OUT_MESSAGE, statusDetail: "opted_out", via: "none" };
+    }
     const business = await prisma.business.findUnique({ where: { id: businessId }, select: { twilioPhoneNumber: true } });
     from = business?.twilioPhoneNumber;
     if (!from && !platformFromNumber()) return { status: "NOT_DELIVERED", error: "This business doesn't have a text number yet. Get one in Settings → Channels.", statusDetail: "not_connected", via: "none" };
@@ -148,7 +158,7 @@ export async function deliverToCustomer(params: {
   const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;
   const replyTo = channel === "EMAIL" && inboundDomain ? `${businessHandle}@${inboundDomain}` : undefined;
   const headers = channel === "EMAIL" && inReplyTo ? { "In-Reply-To": inReplyTo, References: inReplyTo } : undefined;
-  const result = await sendOnChannel({ channel, to, body, subject, fromName: businessName, replyTo, headers, from });
+  const result = await sendOnChannel({ channel, to, body, subject, fromName: businessName, replyTo, headers, from, html: channel === "EMAIL" ? html : undefined });
   if (!result.ok) {
     await reportFailure("delivery", `${channel} send failed`, { businessId, provider: channel, error: result.error });
     return { status: "FAILED", error: scrubMetaMessage(result.error), statusDetail: "provider_rejected", via: "provider" };

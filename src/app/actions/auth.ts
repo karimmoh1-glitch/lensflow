@@ -12,6 +12,7 @@ import { parseAnswers, savePersonalization } from "@/server/personalization";
 import { planSchema } from "@/lib/personalization";
 import { attributeReferral } from "@/server/referral";
 import { applyCompedAccess } from "@/server/compedAccess";
+import { passwordResetEmail, linkTo } from "@/lib/emails";
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
 
@@ -188,13 +189,9 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
     await prisma.passwordResetToken.create({
       data: { userId: user.id, token, expiresAt: passwordResetExpiry() },
     });
-    const link = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password/${token}`;
-    await sendOnChannel({
-      channel: "EMAIL",
-      to: user.email,
-      subject: "Reset your Daythread password",
-      body: `Hi ${user.name}, reset your password here (this link expires in 1 hour): ${link}`,
-    });
+    const mail = passwordResetEmail({ name: user.name, token });
+    const link = linkTo(`/reset-password/${token}`);
+    await sendOnChannel({ channel: "EMAIL", to: user.email, subject: mail.subject, body: mail.text, html: mail.html });
     if (!messagingIsLive("EMAIL")) devLink = link;
   }
 

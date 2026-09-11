@@ -47,6 +47,7 @@ export class EmailAdapter implements ChannelAdapter {
           to: message.to,
           subject: message.subject || "Re: your inquiry",
           text: message.body,
+          ...(message.html ? { html: message.html } : {}),
           replyTo: message.replyTo,
           headers: message.headers,
         });

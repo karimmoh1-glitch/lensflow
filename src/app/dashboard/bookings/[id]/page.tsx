@@ -43,10 +43,17 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   // partner could otherwise reach any booking by guessing its URL.
   if (role === "PARTNER" && booking.assignedMembershipId !== membership.id) notFound();
 
-  const partners = await prisma.orgMembership.findMany({
-    where: { businessId: business.id, role: "PARTNER" },
-    include: { user: true },
-  });
+  const [partners, fileStores] = await Promise.all([
+    prisma.orgMembership.findMany({ where: { businessId: business.id, role: "PARTNER" }, include: { user: true } }),
+    // Daythread already knows how to make this person's folder, let them into it and send
+    // it. Until now the booking asked the owner to paste a link by hand instead, so the
+    // flagship workflow was unreachable from the place the work actually finishes.
+    prisma.integration.findMany({
+      where: { businessId: business.id, provider: { in: ["GOOGLE_DRIVE", "DROPBOX"] }, status: { in: ["CONNECTED", "SYNC_ERROR"] } },
+      select: { provider: true },
+    }),
+  ]);
+  const fileStore = fileStores.find((r) => r.provider === "GOOGLE_DRIVE") ?? fileStores[0] ?? null;
 
   const currentIndex = LIFECYCLE.findIndex((s) => s.status === booking.status);
 
@@ -104,7 +111,16 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           </Card>
 
           {(["COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"].includes(booking.status) || booking.deliveryUrl) && (
-            <DeliveryPanel bookingId={booking.id} deliveryUrl={booking.deliveryUrl} deliveryNote={booking.deliveryNote} deliveredAt={booking.deliveredAt} />
+            <DeliveryPanel
+              bookingId={booking.id}
+              clientId={booking.client.id}
+              clientName={booking.client.name}
+              clientHasContact={Boolean(booking.client.email || booking.client.phone)}
+              fileStore={fileStore ? { provider: fileStore.provider as "GOOGLE_DRIVE" | "DROPBOX", name: fileStore.provider === "DROPBOX" ? "Dropbox" : "Google Drive" } : null}
+              deliveryUrl={booking.deliveryUrl}
+              deliveryNote={booking.deliveryNote}
+              deliveredAt={booking.deliveredAt}
+            />
           )}
         </div>
 

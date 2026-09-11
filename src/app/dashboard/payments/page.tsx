@@ -45,7 +45,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
     listPayments(business.id, { status }),
     prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "STRIPE" } }, select: { status: true, externalAccount: true } }),
   ]);
-  const connected = Boolean(stripe && stripe.status !== "NOT_CONNECTED");
+  // DEMO is a legacy status no longer written by any connect path. Treating it as connected
+  // would tell a workspace its money is being recorded from Stripe when nothing is.
+  const connected = Boolean(stripe && stripe.status !== "NOT_CONNECTED" && stripe.status !== "DEMO");
   const { rows, totals, count } = view;
   // Only the statuses this workspace actually has: a filter that can only ever be empty is
   // not a filter, it is a dead end.

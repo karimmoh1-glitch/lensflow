@@ -97,10 +97,14 @@ export async function getSessionFromRequest(req: Request): Promise<SessionPayloa
 export async function setActiveBusiness(businessId: string) {
   const session = await getSession();
   if (!session) throw new Error("unauthorized");
+  // Active membership, not merely membership: somebody the owner has suspended still has a
+  // row, and without this they could point their session at a workspace they were removed
+  // from. Every read behind that cookie refuses them anyway, so the only thing it bought was
+  // a confusing dead end — but the cookie should not have been set in the first place.
   const membership = await prisma.orgMembership.findUnique({
     where: { userId_businessId: { userId: session.userId, businessId } },
   });
-  if (!membership) throw new Error("not a member of this organization");
+  if (!membership || membership.status !== "ACTIVE") throw new Error("not a member of this organization");
   await setSessionCookie({ userId: session.userId, activeBusinessId: businessId });
 }
 

@@ -20,6 +20,8 @@ import { connectInstagram, connectWhatsApp, connectMicrosoft, connectSlack, conn
 import { accessRequestFor } from "@/server/accessRequests";
 import type { CalendlySettings } from "@/server/calendlySync";
 import type { DeliveryCheck } from "@/server/instagramDelivery";
+import type { FileProviderCheck } from "@/server/fileProviderCheck";
+import { FileConnectionCheck } from "./FileConnectionCheck";
 import type { SlackSettings } from "@/server/notify";
 import { CalendarDays, Apple, Mail, CalendarClock, CreditCard, HardDrive, Box, Hash } from "lucide-react";
 import type { Business, IntegrationProvider } from "@prisma/client";
@@ -228,7 +230,16 @@ export async function IntegrationsHub({ business, role, connected, connectError,
         ["Last event", stripeRow.lastWebhookAt ? `${formatDistanceToNowStrict(stripeRow.lastWebhookAt)} ago` : "None yet"],
       ]} note="Successful payments and refunds on your account are recorded against the person who paid. Daythread never creates charges, refunds or payouts." />
     );
-    if ((provider === "GOOGLE_DRIVE" || provider === "DROPBOX") && byProvider.get(provider)) return <Details rows={[["Account", byProvider.get(provider)?.externalAccount ?? "—"], ["Folders", "Created per client from a client's page"]]} note="Daythread only sees the folders it created. Files stay where they are; the client page lists their names and links." />;
+    if ((provider === "GOOGLE_DRIVE" || provider === "DROPBOX") && byProvider.get(provider)) {
+      const row = byProvider.get(provider)!;
+      const last = ((row.settings ?? {}) as { lastCheck?: FileProviderCheck }).lastCheck ?? null;
+      return (
+        <div className="space-y-3">
+          <Details rows={[["Account", row.externalAccount ?? "—"], ["Folders", "Created per client from a client's page"]]} note="Daythread only sees the folders it created. Files stay where they are; the client page lists their names and links, and sending a client their files shares the folder with them by name." />
+          <FileConnectionCheck provider={provider} initial={last} />
+        </div>
+      );
+    }
     if (provider === "MICROSOFT_OUTLOOK" && byProvider.get(provider)) return <Details rows={[["Mailbox", byProvider.get(provider)?.externalAccount ?? "—"], ["Last sync", byProvider.get(provider)?.lastSyncedAt ? `${formatDistanceToNowStrict(byProvider.get(provider)!.lastSyncedAt!)} ago` : "—"]]} note="New mail is pulled while Daythread is open and once a day. Replies send from this mailbox, inside the customer's thread." />;
     return undefined;
   };

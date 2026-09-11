@@ -17,6 +17,7 @@ import { syncOutlookForBusiness } from "@/server/outlookSync";
 import { syncCalendlyForBusiness, type CalendlySettings } from "@/server/calendlySync";
 import { postToSlack, type SlackSettings } from "@/server/notify";
 import { runInstagramDeliveryCheck, type DeliveryCheck } from "@/server/instagramDelivery";
+import { checkFileProvider, type FileProviderCheck } from "@/server/fileProviderCheck";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { instagramConfigured, instagramAuthUrl, unsubscribeInstagramWebhooks } from "@/lib/meta/instagram";
@@ -133,6 +134,24 @@ export async function checkInstagramDelivery(session?: SessionPayload | null): P
     return { ok: false, error: "Checked too many times just now. Try again in a few minutes." };
   }
   const r = await runInstagramDeliveryCheck(ctx.business.id);
+  revalidatePath("/dashboard/settings");
+  return r;
+}
+
+/**
+ * "Is my file connection actually working?" — asks the provider rather than reading a stored
+ * flag. Owner or admin, tenant-scoped, rate limited because it makes real provider calls.
+ */
+export async function checkFileConnection(provider: "GOOGLE_DRIVE" | "DROPBOX", session?: SessionPayload | null): Promise<{ ok: true; check: FileProviderCheck } | { ok: false; error: string }> {
+  const ctx = await requireRole([...ADMIN], session);
+  if (!ctx) return { ok: false, error: "unauthorized" };
+  if (provider !== "GOOGLE_DRIVE" && provider !== "DROPBOX") return { ok: false, error: "Unknown file store." };
+  try {
+    await enforceRateLimit(`file-check:${ctx.business.id}`, { limit: 12, windowMs: 10 * 60 * 1000 });
+  } catch {
+    return { ok: false, error: "Checked too many times just now. Try again in a few minutes." };
+  }
+  const r = await checkFileProvider(ctx.business.id, provider);
   revalidatePath("/dashboard/settings");
   return r;
 }

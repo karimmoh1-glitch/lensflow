@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { addMinutes, isSameDay } from "date-fns";
 import { externalBusyBlocks } from "@/server/calendarSync";
+import { zonedMinutesToUtc } from "@/lib/timezone";
 
 export type Slot = { start: Date; end: Date };
 
@@ -11,15 +12,7 @@ export type Slot = { start: Date; end: Date };
  * same: naive date math that ignores this silently computes "9am" in the server's zone
  * instead of the business's, which is wrong by however many hours separate them.
  */
-function zonedTimeToUtc(year: number, month: number, date: number, minutesFromMidnight: number, timeZone: string): Date {
-  const hours = Math.floor(minutesFromMidnight / 60);
-  const minutes = minutesFromMidnight % 60;
-  const utcGuess = new Date(Date.UTC(year, month, date, hours, minutes));
-  const asIfUtc = new Date(utcGuess.toLocaleString("en-US", { timeZone: "UTC" }));
-  const asIfZoned = new Date(utcGuess.toLocaleString("en-US", { timeZone }));
-  const offsetMs = asIfUtc.getTime() - asIfZoned.getTime();
-  return new Date(utcGuess.getTime() + offsetMs);
-}
+const zonedTimeToUtc = zonedMinutesToUtc;
 
 /**
  * Computes real bookable slots for a given day: intersects the business's weekly

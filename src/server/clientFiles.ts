@@ -37,13 +37,27 @@ async function markFailure(row: Integration, err: unknown) {
   await reportFailure("sync", `${row.provider} request failed`, { businessId: row.businessId, provider: row.provider, error: err });
 }
 
+/**
+ * Recording a healthy call. The client page calls this on every render, so it writes only
+ * when something would actually change: otherwise every page view cost two writes to the
+ * Integration row and the connection looked busier than it was.
+ */
 async function markOk(row: Integration) {
+  const recovering = row.status === "SYNC_ERROR" || row.lastSyncStatus !== "ok" || row.lastError !== null;
+  const stale = !row.lastSyncedAt || Date.now() - row.lastSyncedAt.getTime() > 60_000;
+  if (!recovering && !stale) return;
   await prisma.integration.update({ where: { id: row.id }, data: { lastSyncStatus: "ok", lastSyncedAt: new Date(), lastError: null, lastErrorAt: null, status: row.status === "SYNC_ERROR" ? "CONNECTED" : row.status } });
 }
 
 /** The connection's own root folder in Drive ("Daythread"), created once and re-created if the person removed it. */
 export async function ensureDriveRoot(row: Integration): Promise<string> {
-  const settings = (row.settings ?? {}) as { rootFolderId?: string; clientsFolderId?: string };
+  // Re-read the row under a lock: two people opening two client pages at once both used to
+  // find no root, and both created a "Daythread" folder in the same Drive.
+  const settings = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "Integration" WHERE "id" = ${row.id} FOR UPDATE`;
+    const fresh = await tx.integration.findUniqueOrThrow({ where: { id: row.id }, select: { settings: true } });
+    return (fresh.settings ?? {}) as { rootFolderId?: string; clientsFolderId?: string };
+  });
   const token = await driveToken(row);
   let rootId = settings.rootFolderId && (await driveFolderAlive(token, settings.rootFolderId)) ? settings.rootFolderId : null;
   if (!rootId) rootId = (await createDriveFolder(token, ROOT_NAME)).id;
@@ -76,9 +90,21 @@ export async function ensureClientFolder(businessId: string, clientId: string, p
       const url = folders.DROPBOX?.url ?? (await dropboxFolderLink(token, f.path));
       folder = { id: f.id, path: f.path, url, createdAt: folders.DROPBOX?.createdAt ?? new Date().toISOString() };
     }
-    await prisma.client.update({ where: { id: client.id }, data: { externalFolders: { ...folders, [provider]: folder } } });
+    // Commit under a row lock, merging into whatever is there now rather than the copy read
+    // at the top. Two providers being set up at once used to clobber each other's entry in
+    // this JSON column, and two clicks on the same button adopted the second folder and
+    // orphaned the first. The first writer wins; a later one keeps their answer.
+    const committed = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Client" WHERE "id" = ${client.id} FOR UPDATE`;
+      const fresh = await tx.client.findUniqueOrThrow({ where: { id: client.id }, select: { externalFolders: true } });
+      const current = ((fresh.externalFolders ?? {}) as ExternalFolders) ?? {};
+      const existing = current[provider];
+      if (existing?.id) return existing;
+      await tx.client.update({ where: { id: client.id }, data: { externalFolders: { ...current, [provider]: folder } } });
+      return folder;
+    });
     await markOk(row);
-    return { ok: true, folder };
+    return { ok: true, folder: committed };
   } catch (err) {
     await markFailure(row, err);
     return { ok: false, error: err instanceof OAuthError && err.revoked ? "Access was revoked — reconnect from Settings." : "Couldn't reach the file store just now. Nothing was changed." };

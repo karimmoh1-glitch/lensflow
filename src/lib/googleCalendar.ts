@@ -1,6 +1,7 @@
 import type { Integration } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getValidAccessToken } from "@/lib/google";
+import { zonedMinutesToUtc } from "@/lib/timezone";
 
 /**
  * Google Calendar API v3, the parts Daythread uses. Every call carries the connected

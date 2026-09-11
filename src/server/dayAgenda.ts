@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { externalBusyBlocks } from "@/server/calendarSync";
 import { addMinutes } from "date-fns";
+import { zonedMinutesToUtc } from "@/lib/timezone";
 
 /**
  * One day, answered: what's on, what's busy elsewhere, and when you're free. Free windows
@@ -20,12 +21,7 @@ export type DayAgenda = {
   calendars: Array<{ provider: "GOOGLE_CALENDAR" | "APPLE_CALENDAR"; status: string; lastSyncedAt: Date | null }>;
 };
 
-function zonedTimeToUtc(year: number, month: number, date: number, minutesFromMidnight: number, timeZone: string): Date {
-  const utcGuess = new Date(Date.UTC(year, month, date, Math.floor(minutesFromMidnight / 60), minutesFromMidnight % 60));
-  const asIfUtc = new Date(utcGuess.toLocaleString("en-US", { timeZone: "UTC" }));
-  const asIfZoned = new Date(utcGuess.toLocaleString("en-US", { timeZone }));
-  return new Date(utcGuess.getTime() + (asIfUtc.getTime() - asIfZoned.getTime()));
-}
+const zonedTimeToUtc = zonedMinutesToUtc;
 
 /** `day` is a calendar date in the business's zone: year/month/date only. */
 export async function getDayAgenda(businessId: string, day: { year: number; month: number; date: number }): Promise<DayAgenda> {

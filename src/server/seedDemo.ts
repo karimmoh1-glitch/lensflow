@@ -13,6 +13,7 @@ function demoAt(dayOffset: number, hour: number, minute = 0): Date {
 }
 import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
 import type { Db } from "@/lib/db";
+import { zonedTimeToUtc, zonedDateParts } from "@/lib/timezone";
 
 const PASSWORD = "demo1234";
 

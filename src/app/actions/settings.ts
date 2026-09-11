@@ -61,16 +61,28 @@ export async function saveServices(services: { id?: string; name: string; priceC
   revalidatePath("/dashboard/settings");
 }
 
-export async function saveAvailability(windows: { weekday: number; startMin: number; endMin: number }[], session?: SessionPayload | null) {
+/** A week has 7 days, and nobody needs more than a handful of windows in each of them. */
+const MAX_AVAILABILITY_WINDOWS = 70;
+
+export async function saveAvailability(windows: { weekday: number; startMin: number; endMin: number }[], session?: SessionPayload | null): Promise<{ error?: string }> {
   const ctx = await requireRole([...ADMIN_ROLES], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
 
+  // These rows drive the public booking page, which quotes real times from them to
+  // strangers. A window with a nonsense weekday or an end before its start produced either
+  // no slots at all or an endless loop of them, so it is refused rather than stored.
+  if (windows.length > MAX_AVAILABILITY_WINDOWS) return { error: `That is more than ${MAX_AVAILABILITY_WINDOWS} windows. Combine the overlapping ones.` };
+  const clean = windows.map((w) => ({ weekday: Math.trunc(w.weekday), startMin: Math.trunc(w.startMin), endMin: Math.trunc(w.endMin) }));
+  const bad = clean.find((w) => !Number.isFinite(w.weekday) || w.weekday < 0 || w.weekday > 6 || !Number.isFinite(w.startMin) || !Number.isFinite(w.endMin) || w.startMin < 0 || w.endMin > 24 * 60 || w.endMin <= w.startMin);
+  if (bad) return { error: "Each window needs a weekday from Sunday to Saturday and an end time after its start." };
+
   await prisma.$transaction(async (tx) => {
     await tx.availability.deleteMany({ where: { businessId: business.id } });
-    await tx.availability.createMany({ data: windows.map((w) => ({ businessId: business.id, ...w })) });
+    await tx.availability.createMany({ data: clean.map((w) => ({ businessId: business.id, ...w })) });
   });
   revalidatePath("/dashboard/settings");
+  return {};
 }
 
 /**

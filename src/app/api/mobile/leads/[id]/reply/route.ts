@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSessionFromRequest } from "@/lib/auth";
 import { sendReplyAction } from "@/app/actions/inbox";
-import { requireMobileBusiness, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { STAFF_ROLES } from "@/lib/auth";
 
 const schema = z.object({ body: z.string().min(1) });
 
@@ -12,7 +13,10 @@ const schema = z.object({ body: z.string().min(1) });
  * session. The lead lookup is scoped to the caller's own business, and sendReplyAction
  * re-verifies the conversation against that same businessId — never trusts the id alone. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireMobileBusiness(req);
+  // The lead pipeline is staff-only. The action below enforces that too, but the lead
+  // lookup runs first, so without this a client portal login could probe which lead ids
+  // exist in the workspace.
+  const ctx = await requireMobileRole(req, STAFF_ROLES);
   if (isErrorResponse(ctx)) return ctx;
   const session = await getSessionFromRequest(req);
   const { id } = await params;

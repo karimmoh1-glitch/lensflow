@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
-import { getSessionFromRequest } from "@/lib/auth";
+import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { toggleAutomation, updateAutomation, deleteAutomation } from "@/app/actions/automations";
 
 const schema = z.object({ enabled: z.boolean() });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireMobileBusiness(req);
+  const ctx = await requireMobileRole(req, STAFF_ROLES);
   if (isErrorResponse(ctx)) return ctx;
   const session = await getSessionFromRequest(req);
   const { id } = await params;
@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
 const updateSchema = z.object({ name: z.string(), trigger: z.enum(["BOOKING_CREATED", "DAYS_BEFORE_SHOOT", "SHOOT_COMPLETED", "LEAD_INACTIVE"]), action: z.enum(["SEND_CONFIRMATION", "SEND_QUESTIONNAIRE", "SEND_REMINDER", "SEND_THANK_YOU", "SEND_FOLLOW_UP"]), offsetHours: z.number().int(), messageTemplate: z.string() });
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireMobileBusiness(req);
+  const ctx = await requireMobileRole(req, STAFF_ROLES);
   if (isErrorResponse(ctx)) return ctx;
   const session = await getSessionFromRequest(req);
   const { id } = await params;
@@ -34,7 +34,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, paused: r.paused ?? null });
 }
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireMobileBusiness(req);
+  const ctx = await requireMobileRole(req, STAFF_ROLES);
   if (isErrorResponse(ctx)) return ctx;
   const session = await getSessionFromRequest(req);
   const { id } = await params;

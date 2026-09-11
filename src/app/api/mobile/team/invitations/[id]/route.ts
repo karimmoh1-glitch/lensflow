@@ -13,6 +13,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!parsed.success) return jsonError("action must be revoke or resend", 400);
   try {
     if (parsed.data.action === "revoke") { await revokeInvitation(id, session); return NextResponse.json({ ok: true }); }
-    const r = await resendInvitation(id, session); return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, link: r.link });
+    const r = await resendInvitation(id, session); return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, link: r.link, emailed: r.delivery?.emailed ?? false, deliveryNote: r.delivery?.note ?? "" });
   } catch (e) { return jsonError(e instanceof Error && e.message !== "unauthorized" ? e.message : "Not allowed", 403); }
 }

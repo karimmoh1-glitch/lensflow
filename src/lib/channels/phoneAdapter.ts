@@ -24,6 +24,6 @@ export class PhoneAdapter implements ChannelAdapter {
 
   async send(message: OutboundMessage): Promise<SendResult> {
     console.info(`[phone-adapter:not-configured] call notes skipped (${message.body.length} chars)`);
-    return { ok: true, simulated: true };
+    return { ok: true, simulated: true, reason: "Daythread cannot place calls, so nothing was sent." };
   }
 }

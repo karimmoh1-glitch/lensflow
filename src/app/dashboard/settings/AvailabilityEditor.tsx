@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Card, CardBody, Input, Label, SaveButton } from "@/components/ui";
 import { saveAvailability } from "@/app/actions/settings";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/Toaster";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -13,6 +14,7 @@ export function AvailabilityEditor({ initialWindows }: { initialWindows: { weekd
   const [endMin, setEndMin] = useState(initialWindows[0]?.endMin ?? 17 * 60);
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const { toast } = useToast();
 
   const toTime = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
   const fromTime = (v: string) => {
@@ -53,7 +55,11 @@ export function AvailabilityEditor({ initialWindows }: { initialWindows: { weekd
           saved={saved}
           onClick={() =>
             startTransition(async () => {
-              await saveAvailability(days.map((weekday) => ({ weekday, startMin, endMin })));
+              const result = await saveAvailability(days.map((weekday) => ({ weekday, startMin, endMin })));
+              if (result?.error) {
+                toast({ tone: "signal", title: "Hours not saved", body: result.error });
+                return;
+              }
               setSaved(true);
               setTimeout(() => setSaved(false), 2000);
             })

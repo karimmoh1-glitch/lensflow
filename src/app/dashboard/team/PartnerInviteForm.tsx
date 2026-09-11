@@ -10,6 +10,8 @@ export function PartnerInviteForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
+  const [emailed, setEmailed] = useState(false);
+  const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -25,6 +27,8 @@ export function PartnerInviteForm() {
         return;
       }
       setLink(result.link ?? null);
+      setEmailed(result.delivery?.emailed ?? false);
+      setNote(result.delivery?.note ?? "");
       formRef.current?.reset();
       router.refresh();
     });
@@ -34,8 +38,8 @@ export function PartnerInviteForm() {
     return (
       <Card>
         <CardBody>
-          <p className="text-sm font-medium mb-1">Invitation sent</p>
-          <p className="text-xs text-ink/70 mb-3">Share this link, or they&apos;ll get it by email.</p>
+          <p className="text-sm font-medium mb-1">{emailed ? "Invitation sent" : "Invitation ready"}</p>
+          <p className="text-xs text-ink/70 mb-3">{emailed ? "Share this link, or they\u2019ll get it by email." : `${note} Send them this link yourself.`}</p>
           <div className="flex items-center gap-2">
             <Input value={link} readOnly className="text-xs" />
             <Button

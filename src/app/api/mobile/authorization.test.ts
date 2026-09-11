@@ -23,6 +23,7 @@ describe("mobile API authorization", () => {
   let partnerToken: string;
   let partnerMembershipId: string;
   let leadId: string;
+  let conversationId: string;
   let ownBookingId: string;
   let otherBookingId: string;
 
@@ -50,6 +51,7 @@ describe("mobile API authorization", () => {
     const someoneElse = await prisma.client.create({ data: { businessId: biz.id, name: "Private Person", email: "private@example.test", phone: "+15125550111" } });
     const conversation = await prisma.conversation.create({ data: { businessId: biz.id, clientId: someoneElse.id, channel: "EMAIL", externalHandle: "private@example.test", lastMessageAt: new Date(), category: "PRIORITY" } });
     await prisma.message.create({ data: { conversationId: conversation.id, direction: "INBOUND", body: "Confidential enquiry about my wedding budget" } });
+    conversationId = conversation.id;
     leadId = (await prisma.lead.create({ data: { businessId: biz.id, clientId: someoneElse.id, conversationId: conversation.id, status: "NEW", lastInboundAt: new Date() } })).id;
     ownBookingId = (await prisma.booking.create({ data: { businessId: biz.id, clientId: theirClient.id, serviceId: service.id, startAt: new Date(Date.now() + 86400000), endAt: new Date(Date.now() + 90000000), status: "CONFIRMED", totalCents: 20000 } })).id;
     otherBookingId = (await prisma.booking.create({ data: { businessId: biz.id, clientId: someoneElse.id, serviceId: service.id, startAt: new Date(Date.now() + 172800000), endAt: new Date(Date.now() + 176400000), status: "CONFIRMED", totalCents: 20000 } })).id;
@@ -103,6 +105,37 @@ describe("mobile API authorization", () => {
     expect((await GET(req(`/api/mobile/bookings/${otherBookingId}`, partnerToken), params(otherBookingId))).status).toBe(200);
     // Staff see the workspace's bookings.
     expect((await GET(req(`/api/mobile/bookings/${otherBookingId}`, ownerToken), params(otherBookingId))).status).toBe(200);
+  });
+
+  it("every staff route refuses a customer's login at its own boundary, before it reads anything", async () => {
+    // These ten routes used to authenticate, query, and only then hand the session to an
+    // action that checked the role. The answer was right but the read had already happened,
+    // which let a customer's login probe which lead and conversation ids exist.
+    const post = (path: string, token: string, body: unknown = {}) =>
+      new Request(`http://localhost${path}`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+    type Handler = (r: Request, p: { params: Promise<{ id: string }> }) => Promise<Response>;
+    const cases: Array<[string, Promise<Record<string, unknown>>, string, unknown]> = [
+      ["POST", import("./assistant/route"), "/api/mobile/assistant", { question: "who are my clients" }],
+      ["POST", import("./conversations/[id]/draft/route"), `/api/mobile/conversations/${conversationId}/draft`, {}],
+      ["POST", import("./conversations/[id]/read/route"), `/api/mobile/conversations/${conversationId}/read`, {}],
+      ["POST", import("./conversations/[id]/reply/route"), `/api/mobile/conversations/${conversationId}/reply`, { body: "hello" }],
+      ["POST", import("./conversations/[id]/summary/route"), `/api/mobile/conversations/${conversationId}/summary`, {}],
+      ["POST", import("./leads/[id]/follow-up/route"), `/api/mobile/leads/${leadId}/follow-up`, { at: new Date(Date.now() + 86400000).toISOString() }],
+      ["POST", import("./leads/[id]/handled/route"), `/api/mobile/leads/${leadId}/handled`, {}],
+      ["POST", import("./leads/[id]/status/route"), `/api/mobile/leads/${leadId}/status`, { status: "WON" }],
+      ["POST", import("./leads/[id]/draft/route"), `/api/mobile/leads/${leadId}/draft`, {}],
+      ["POST", import("./leads/[id]/reply/route"), `/api/mobile/leads/${leadId}/reply`, { body: "hello" }],
+    ];
+
+    for (const [method, mod, path, body] of cases) {
+      const handlers = await mod;
+      const id = path.split("/")[4];
+      const call = (method === "GET" ? handlers.GET : handlers.POST) as Handler;
+      const request = method === "GET" ? req(path, clientToken) : post(path, clientToken, body);
+      const res = await call(request, params(id));
+      expect(res.status, `${method} ${path} let a customer's login through`).toBe(403);
+    }
   });
 
   it("an unparseable booking time is refused rather than becoming a server error", async () => {

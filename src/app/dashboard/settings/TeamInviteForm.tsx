@@ -10,6 +10,10 @@ export function TeamInviteForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
+  // Whether the email actually left the building. Without this the screen said "sent"
+  // even on a deployment with no email provider, and nobody ever got the invitation.
+  const [emailed, setEmailed] = useState(false);
+  const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -25,6 +29,8 @@ export function TeamInviteForm() {
         return;
       }
       setLink(result.link ?? null);
+      setEmailed(result.delivery?.emailed ?? false);
+      setNote(result.delivery?.note ?? "");
       formRef.current?.reset();
       router.refresh();
     });
@@ -34,8 +40,8 @@ export function TeamInviteForm() {
     return (
       <Card>
         <CardBody>
-          <p className="text-sm font-medium mb-1">Invitation sent</p>
-          <p className="text-xs text-ink/70 mb-3">They&rsquo;ll get it by email. You can also share the link directly.</p>
+          <p className="text-sm font-medium mb-1">{emailed ? "Invitation sent" : "Invitation ready"}</p>
+          <p className="text-xs text-ink/70 mb-3">{emailed ? "They\u2019ll get it by email. You can also share the link directly." : `${note} Send them this link yourself.`}</p>
           <div className="flex items-center gap-2">
             <Input value={link} readOnly className="text-xs" aria-label="Invitation link" />
             <Button

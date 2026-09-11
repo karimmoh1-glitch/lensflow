@@ -31,6 +31,23 @@ export async function sendOnChannel(params: {
   });
 }
 
+/**
+ * What actually happened to a transactional email, in a form the UI can be honest about.
+ * `emailed` is true only when the provider accepted the message; everything else carries a
+ * sentence explaining why the recipient has not been contacted, so no screen can claim a
+ * message was sent when nothing left the building.
+ */
+export type TransactionalDelivery = { emailed: boolean; note: string };
+
+export async function sendTransactional(params: Parameters<typeof sendOnChannel>[0]): Promise<TransactionalDelivery> {
+  const result = await sendOnChannel(params).catch(() => ({ ok: false as const, error: "Email provider error" }));
+  if (!result.ok) return { emailed: false, note: `We could not send the email: ${result.error}` };
+  if (result.simulated) {
+    return { emailed: false, note: result.reason ?? "Email isn't switched on for this workspace yet, so nothing was sent." };
+  }
+  return { emailed: true, note: "Sent by email." };
+}
+
 export function messagingIsLive(channel: ChannelType): boolean {
   return getChannelAdapter(channel).capabilities().live;
 }

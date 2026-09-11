@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
-import { getSessionFromRequest } from "@/lib/auth";
+import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { setLeadStatus } from "@/app/actions/leads";
 
 const schema = z.object({ status: z.enum(["QUALIFIED", "COLD", "LOST", "CONTACTED"]) });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireMobileBusiness(req);
+  const ctx = await requireMobileRole(req, STAFF_ROLES);
   if (isErrorResponse(ctx)) return ctx;
   const session = await getSessionFromRequest(req);
   const { id } = await params;

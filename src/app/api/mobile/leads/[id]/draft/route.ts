@@ -2,14 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionFromRequest } from "@/lib/auth";
 import { generateDraftAction } from "@/app/actions/inbox";
-import { requireMobileBusiness, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { STAFF_ROLES } from "@/lib/auth";
 
 /** AI-drafts a reply grounded in the real conversation + business services/pricing — same
  * generateDraftAction() (and its deterministic no-API-key fallback) the web dashboard uses.
  * Returns the draft text only; the client must explicitly send it via /reply to become an
  * outbound message — nothing is sent automatically here. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireMobileBusiness(req);
+  // The lead pipeline is staff-only. The action below enforces that too, but the lead
+  // lookup runs first, so without this a client portal login could probe which lead ids
+  // exist in the workspace.
+  const ctx = await requireMobileRole(req, STAFF_ROLES);
   if (isErrorResponse(ctx)) return ctx;
   const session = await getSessionFromRequest(req);
   const { id } = await params;

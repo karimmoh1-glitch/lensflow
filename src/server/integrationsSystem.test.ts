@@ -20,7 +20,7 @@ vi.mock("@/lib/auth", async (importOriginal) => { const mod = await importOrigin
 
 import { signOAuthState, beginPkce, signOAuthStateRaw, verifyOAuthStateWithNonce } from "@/lib/integrations/oauthState";
 import { completeOAuthConnect, type OAuthConnectSpec } from "@/server/oauthConnect";
-import { runWebhook, retryFailedWebhooks, MAX_ATTEMPTS } from "@/server/webhookInbox";
+import { runWebhook, retryFailedWebhooks, MAX_ATTEMPTS, STALE_CLAIM_MS } from "@/server/webhookInbox";
 import { requestAccess, decideAccess, accessGranted, accessRequestFor } from "@/server/accessRequests";
 import { GROUPS, PROVIDERS, COMING_SOON, comingSoonFor, providerMaturity, type RegisteredProvider } from "@/lib/integrations/registry";
 import { accessGated } from "@/lib/integrations/flags";
@@ -152,6 +152,35 @@ describe("webhook inbox", () => {
     expect(runs).toBe(1);
     const row = await prisma.webhookEvent.findUnique({ where: { provider_eventId: { provider, eventId: id } } });
     expect(row).toMatchObject({ status: "processed", attempts: 1, payload: null });
+  });
+
+  it("a claim whose handler was killed is taken over, rather than losing the event for ever", async () => {
+    // A function timeout or an out-of-memory kill leaves the row at "received" with no catch
+    // block ever running. Answering "duplicate" to every later redelivery meant the event was
+    // lost: a paid subscription that never activated, a customer's message that never arrived.
+    const id = `evt_${stamp()}`;
+    let ran = 0;
+    await prisma.webhookEvent.create({ data: { provider, eventId: id, status: "received" } });
+
+    // While it might still be in flight, a redelivery is a duplicate and must not run twice.
+    expect((await runWebhook(provider, id, { n: 1 }, async () => { ran++; })).status).toBe("duplicate");
+    expect(ran).toBe(0);
+
+    // Once it is plainly not coming back, the next redelivery is allowed to take it over.
+    await prisma.webhookEvent.update({ where: { provider_eventId: { provider, eventId: id } }, data: { receivedAt: new Date(Date.now() - STALE_CLAIM_MS - 1000) } });
+    expect((await runWebhook(provider, id, { n: 1 }, async () => { ran++; })).status).toBe("processed");
+    expect(ran).toBe(1);
+    expect((await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_eventId: { provider, eventId: id } } })).status).toBe("processed");
+  });
+
+  it("the daily run releases claims that never finished, so the provider's redelivery is accepted", async () => {
+    const id = `evt_${stamp()}`;
+    await prisma.webhookEvent.create({ data: { provider, eventId: id, status: "received", receivedAt: new Date(Date.now() - STALE_CLAIM_MS - 1000) } });
+    await retryFailedWebhooks({ [provider]: async () => {} });
+    const row = await prisma.webhookEvent.findUniqueOrThrow({ where: { provider_eventId: { provider, eventId: id } } });
+    // No stored payload to replay, so it is released rather than processed.
+    expect(["failed", "processed"]).toContain(row.status);
+    expect(row.status).not.toBe("received");
   });
 
   it("a failed delivery keeps the verified payload and a scrubbed error; the provider's redelivery and the daily run process it again; after the cap it is a dead letter", async () => {

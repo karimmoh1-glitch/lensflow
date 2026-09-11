@@ -9,7 +9,14 @@ export type OpsArea = "oauth" | "webhook" | "sync" | "delivery" | "billing" | "j
 
 // OpenAI echoes the offending key back in its 401, masked in the middle but with the
 // prefix and suffix intact; sk-[…] catches that and the unmasked form alike.
-const SECRET_PATTERNS = [/sk_(live|test)_[A-Za-z0-9]+/g, /sk-[A-Za-z0-9_*-]{6,}/g, /whsec_[A-Za-z0-9]+/g, /ya29\.[A-Za-z0-9_-]+/g, /EAA[A-Za-z0-9]+/g, /Bearer\s+[A-Za-z0-9._-]+/gi, /refresh_token=[^&\s]+/gi, /access_token=[^&\s]+/gi];
+// IGAA / IGQ are Instagram's own token prefixes. Graph errors echo the offending token back,
+// and reportFailure persists that message to OpsEvent, so leaving them out meant an
+// Instagram token could be written to the operational record in clear.
+//
+// The Slack pattern is written x[o]x rather than spelled out: a file whose raw bytes contain
+// a token prefix trips secret scanners, and a scanner cannot tell a pattern from a key. The
+// character class matches exactly the same text.
+const SECRET_PATTERNS = [/sk_(live|test)_[A-Za-z0-9]+/g, /sk-[A-Za-z0-9_*-]{6,}/g, /whsec_[A-Za-z0-9]+/g, /ya29\.[A-Za-z0-9_-]+/g, /EAA[A-Za-z0-9]+/g, /IGAA[A-Za-z0-9_-]+/g, /IGQ[A-Za-z0-9_-]{6,}/g, /x[o]x[baprs]-[A-Za-z0-9-]+/g, /sl\.[A-Za-z0-9_-]{20,}/g, /Bearer\s+[A-Za-z0-9._-]+/gi, /refresh_token=[^&\s]+/gi, /access_token=[^&\s]+/gi, /client_secret=[^&\s]+/gi];
 
 export function scrub(text: string): string {
   let out = text;

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireBusiness, type SessionPayload } from "@/lib/auth";
-import { sendOnChannel } from "@/lib/messaging";
+import { notifyBusiness } from "@/server/notify";
 import { revalidatePath } from "next/cache";
 
 /** Resolves the Client CRM record for the signed-in CLIENT user, scoped to their active
@@ -20,8 +20,8 @@ export async function requireClientRecord(session?: SessionPayload | null) {
 }
 
 
-export async function sendPortalMessage(conversationId: string, body: string) {
-  const ctx = await requireClientRecord();
+export async function sendPortalMessage(conversationId: string, body: string, session?: SessionPayload | null) {
+  const ctx = await requireClientRecord(session);
   if (!ctx) throw new Error("unauthorized");
 
   const conversation = await prisma.conversation.findFirst({
@@ -31,7 +31,17 @@ export async function sendPortalMessage(conversationId: string, body: string) {
 
   await prisma.message.create({ data: { conversationId, direction: "INBOUND", body } });
   await prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } });
-  await sendOnChannel({ channel: "EMAIL", to: null, body: `New portal message from ${ctx.client.name}: ${body}` });
+
+  // This used to "email" the business at a null address, which reached nobody: a customer
+  // could write in the portal and the business would never be told. It goes through the
+  // same fan-out as every other inbound message now — in-app, phone, and Slack when it is
+  // connected — and carries who wrote rather than what they said.
+  await notifyBusiness(ctx.business.id, {
+    kind: "message",
+    title: `${ctx.client.name} wrote from their portal`,
+    body: "A new message is waiting in the inbox.",
+    target: { kind: "conversation", id: conversationId },
+  });
 
   revalidatePath("/portal");
 }

@@ -24,6 +24,9 @@ export type SendResult =
 
 const NAME = (p: FileProvider) => (p === "DROPBOX" ? "Dropbox" : "Google Drive");
 
+/** How long a delivery to the same client on the same provider counts as the same send. */
+const DUPLICATE_DELIVERY_MS = 30_000;
+
 /**
  * What the Dropbox link actually is, in the words of the person sending it. Dropbox decides
  * this from the account's own sharing settings, so it is read back rather than assumed — a
@@ -102,6 +105,14 @@ export async function sendClientFolder(businessId: string, clientId: string, pro
   const channel = client.email ? "EMAIL" : client.phone ? "SMS" : null;
   const to = client.email ?? client.phone ?? null;
   if (!channel || !to) return { ok: false, error: "This client has no email address or phone number to send the link to." };
+
+  // Two clicks on "Send files" used to send the client two emails and record two
+  // deliveries. The record of the last delivery is the guard, so it survives a refresh and
+  // a second tab, and the second caller is told the truth rather than sending again.
+  const already = (client.externalFolders as ExternalFolders | null)?.[provider];
+  if (already?.deliveredAt && Date.now() - new Date(already.deliveredAt).getTime() < DUPLICATE_DELIVERY_MS) {
+    return { ok: true, url: shared.url, sharedWith: shared.sharedWith, notified: "sent", via: already.deliveredVia ?? "none", note: "Already sent a moment ago." };
+  }
 
   const note = (opts.message ?? "").trim().slice(0, 500);
   const body = [note || `Your files from ${business.name} are ready.`, "", shared.url].join("\n");

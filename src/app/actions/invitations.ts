@@ -30,25 +30,31 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, email, phone } = parsed.data;
 
-  const client =
-    (await prisma.client.findFirst({ where: { businessId: business.id, email } })) ??
-    (await prisma.client.create({ data: { businessId: business.id, name, email, phone } }));
-
-  await prisma.invitation.updateMany({
-    where: { businessId: business.id, clientId: client.id, status: "PENDING" },
-    data: { status: "REVOKED" },
-  });
-
-  const invitation = await prisma.invitation.create({
-    data: {
-      businessId: business.id,
-      email,
-      role: "CLIENT",
-      token: generateInvitationToken(),
-      clientId: client.id,
-      invitedByUserId: session.userId,
-      expiresAt: invitationExpiry(),
-    },
+  // Look up the person, retire any outstanding invitation, and issue the new one as one
+  // step. Two clicks used to race here: both found no client, both created one, and the
+  // business ended up with the same customer twice and two live invitation links. The
+  // workspace row is the lock, which is the same way a booking holds its slot.
+  const { client, invitation } = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${business.id} FOR UPDATE`;
+    const person =
+      (await tx.client.findFirst({ where: { businessId: business.id, email } })) ??
+      (await tx.client.create({ data: { businessId: business.id, name, email, phone } }));
+    await tx.invitation.updateMany({
+      where: { businessId: business.id, clientId: person.id, status: "PENDING" },
+      data: { status: "REVOKED" },
+    });
+    const created = await tx.invitation.create({
+      data: {
+        businessId: business.id,
+        email,
+        role: "CLIENT",
+        token: generateInvitationToken(),
+        clientId: person.id,
+        invitedByUserId: session.userId,
+        expiresAt: invitationExpiry(),
+      },
+    });
+    return { client: person, invitation: created };
   });
 
   await prisma.auditLog.create({

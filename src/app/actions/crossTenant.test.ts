@@ -12,6 +12,7 @@ import { markConversationRead, reclassifyConversation, setClientRelationship, as
 import { deleteConversation, markLeadLost } from "@/app/actions/inbox";
 import { listPayments } from "@/server/payments";
 import { shareClientFolder } from "@/server/clientDelivery";
+import { sendPortalMessage } from "@/app/actions/portal";
 
 /**
  * One workspace reaching for another's records, one action at a time. Every id here is real
@@ -78,7 +79,7 @@ describe("one workspace may not touch another's records", () => {
 
   it("a conversation: reading, reclassifying, assigning, archiving and deleting are all refused", async () => {
     await markConversationRead(b.conversationId, true, a.session);
-    expect(await reclassifyConversation(b.conversationId, "OTHER", a.session)).toMatchObject({ error: expect.any(String) });
+    expect(await reclassifyConversation(b.conversationId, "SPAM", a.session)).toMatchObject({ error: expect.any(String) });
     expect(await assignConversation(b.conversationId, a.membershipId, a.session)).toMatchObject({ error: expect.any(String) });
     expect(await removeConversationForMe(b.conversationId, true, a.session)).toMatchObject({ error: expect.any(String) });
     await rejects(deleteConversation(b.conversationId, a.session));
@@ -113,5 +114,41 @@ describe("one workspace may not touch another's records", () => {
     expect(await prisma.clientNote.count({ where: { clientId: a.clientId } })).toBe(1);
     expect(await setLeadStatus(a.leadId, "CONTACTED", a.session)).not.toMatchObject({ error: expect.any(String) });
     expect((await prisma.lead.findUniqueOrThrow({ where: { id: a.leadId } })).status).toBe("CONTACTED");
+  });
+});
+
+describe("the client portal reaches only its own client record", () => {
+  const ids: string[] = [];
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { orgMemberships: { some: { businessId: { in: ids } } } } });
+    await prisma.business.deleteMany({ where: { id: { in: ids } } });
+  });
+
+  it("a customer writing in the portal reaches their own thread, not another customer's, and the business is actually told", async () => {
+    const s = stamp();
+    const business = await prisma.business.create({ data: { name: "Portal Co", handle: `portal-${s}`, timezone: "America/Chicago" } });
+    ids.push(business.id);
+    const user = await prisma.user.create({ data: { name: "Customer", email: `portal-cust-${s}@example.test`, passwordHash: "x" } });
+    await prisma.orgMembership.create({ data: { userId: user.id, businessId: business.id, role: "CLIENT" } });
+    const mine = await prisma.client.create({ data: { businessId: business.id, name: "Mine", userId: user.id } });
+    const theirs = await prisma.client.create({ data: { businessId: business.id, name: "Somebody Else" } });
+    const myThread = await prisma.conversation.create({ data: { businessId: business.id, clientId: mine.id, channel: "WEBSITE", externalHandle: "mine", lastMessageAt: new Date(), category: "PRIORITY" } });
+    const theirThread = await prisma.conversation.create({ data: { businessId: business.id, clientId: theirs.id, channel: "WEBSITE", externalHandle: "theirs", lastMessageAt: new Date(), category: "PRIORITY" } });
+    const session = (await verifySessionToken(await createSessionToken({ userId: user.id, activeBusinessId: business.id })))!;
+
+    // Same workspace, valid id, somebody else's thread.
+    await expect(sendPortalMessage(theirThread.id, "let me in", session)).rejects.toThrow();
+    expect(await prisma.message.count({ where: { conversationId: theirThread.id } })).toBe(0);
+
+    await sendPortalMessage(myThread.id, "Any update on my booking?", session);
+    expect(await prisma.message.count({ where: { conversationId: myThread.id, direction: "INBOUND" } })).toBe(1);
+
+    // The business used to be "emailed" at a null address and so was never told at all.
+    const notice = await prisma.notification.findFirst({ where: { businessId: business.id }, orderBy: { createdAt: "desc" } });
+    expect(notice?.title).toContain("Mine");
+    expect(notice?.path).toBe(`/inbox?c=${myThread.id}`);
+    // What they wrote is not repeated in the notification.
+    expect(`${notice?.title} ${notice?.body}`).not.toContain("Any update on my booking?");
   });
 });

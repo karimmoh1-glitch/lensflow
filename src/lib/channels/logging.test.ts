@@ -16,9 +16,9 @@ describe("unconfigured channels never log what was being sent", () => {
   afterEach(() => vi.restoreAllMocks());
 
   const cases = [
-    { name: "email", run: () => new EmailAdapter().send({ channel: "EMAIL", to: RECIPIENT, body: SECRET_BODY, subject: "Your files" }) },
-    { name: "website", run: () => new WebsiteAdapter().send({ channel: "WEBSITE", to: RECIPIENT, body: SECRET_BODY }) },
-    { name: "phone", run: () => new PhoneAdapter().send({ channel: "PHONE", to: RECIPIENT, body: SECRET_BODY }) },
+    { name: "email", run: () => new EmailAdapter().send({ to: RECIPIENT, body: SECRET_BODY, subject: "Your files" }) },
+    { name: "website", run: () => new WebsiteAdapter().send({ to: RECIPIENT, body: SECRET_BODY }) },
+    { name: "phone", run: () => new PhoneAdapter().send({ to: RECIPIENT, body: SECRET_BODY }) },
   ];
 
   for (const c of cases) {

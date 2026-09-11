@@ -22,6 +22,8 @@ export type FolderRef = {
   /** When the link was last sent to the client, and how it went out. */
   deliveredAt?: string;
   deliveredVia?: string;
+  /** Dropbox only: who can open the link, as Dropbox resolved it. Never assumed. */
+  visibility?: string;
 };
 export type ExternalFolders = Partial<Record<FileProvider, FolderRef>>;
 export type ClientFile = { id: string; name: string; url: string | null; modifiedAt: string | null; size: number | null; isFolder: boolean };
@@ -87,8 +89,15 @@ export async function ensureClientFolder(businessId: string, clientId: string, p
       const token = await dropboxToken(row);
       const path = folders.DROPBOX?.path ?? `/${CLIENTS}/${safeName(client.name)}`;
       const f = await ensureDropboxFolder(token, path);
-      const url = folders.DROPBOX?.url ?? (await dropboxFolderLink(token, f.path));
-      folder = { id: f.id, path: f.path, url, createdAt: folders.DROPBOX?.createdAt ?? new Date().toISOString() };
+      const existing = folders.DROPBOX;
+      const link = existing?.url ? null : await dropboxFolderLink(token, f.path);
+      folder = {
+        id: f.id,
+        path: f.path,
+        url: existing?.url ?? link?.url ?? null,
+        visibility: existing?.visibility ?? link?.visibility,
+        createdAt: existing?.createdAt ?? new Date().toISOString(),
+      };
     }
     // Commit under a row lock, merging into whatever is there now rather than the copy read
     // at the top. Two providers being set up at once used to clobber each other's entry in

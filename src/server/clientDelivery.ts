@@ -24,6 +24,28 @@ export type SendResult =
 
 const NAME = (p: FileProvider) => (p === "DROPBOX" ? "Dropbox" : "Google Drive");
 
+/**
+ * What the Dropbox link actually is, in the words of the person sending it. Dropbox decides
+ * this from the account's own sharing settings, so it is read back rather than assumed — a
+ * personal account cannot restrict a folder link, and saying otherwise would be a lie about
+ * who can see a customer's files.
+ */
+function dropboxLinkNote(visibility: string | undefined): string {
+  switch (visibility) {
+    case "team_only":
+      return "Only people in your Dropbox team can open this link.";
+    case "password":
+    case "team_and_password":
+      return "This link asks for the Dropbox password you set on it.";
+    case "shared_folder_only":
+      return "Only people already in this shared folder can open the link.";
+    case "public":
+      return "Anyone with this link can view the folder, so send it only to this client.";
+    default:
+      return "Dropbox did not say who can open this link. Check the folder's sharing settings in Dropbox before sending it.";
+  }
+}
+
 async function saveFolder(clientId: string, folders: ExternalFolders, provider: FileProvider, patch: Partial<FolderRef>): Promise<FolderRef> {
   const next = { ...(folders[provider] as FolderRef), ...patch };
   await prisma.client.update({ where: { id: clientId }, data: { externalFolders: { ...folders, [provider]: next } } });
@@ -42,7 +64,7 @@ export async function shareClientFolder(businessId: string, clientId: string, pr
   if (provider === "DROPBOX") {
     if (!folder.url) return { ok: false, error: "Dropbox did not return a link for this folder. Open it in Dropbox once, then try again." };
     await saveFolder(client.id, folders, provider, { sharedAt: new Date().toISOString(), sharedWith: null });
-    return { ok: true, url: folder.url, sharedWith: null, note: "Anyone with this link can view the folder, so send it only to this client." };
+    return { ok: true, url: folder.url, sharedWith: null, note: dropboxLinkNote(folder.visibility) };
   }
 
   if (!folder.id) return { ok: false, error: "The Drive folder is missing. Create it again from this page." };

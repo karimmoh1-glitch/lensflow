@@ -5,6 +5,7 @@ vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined, set: () => {}, delete: () => {} }) }));
 
 import { ensureClientFolder, type ExternalFolders } from "@/server/clientFiles";
+import { shareClientFolder } from "@/server/clientDelivery";
 
 /**
  * A client's folders live in one JSON column, and the folder itself lives in somebody's
@@ -19,6 +20,7 @@ const future = () => new Date(Date.now() + 3_600_000);
 
 let driveFolders = 0;
 let dropboxFolders = 0;
+let dropboxVisibility = "public";
 
 describe("file store folder creation", () => {
   const ids: string[] = [];
@@ -46,7 +48,7 @@ describe("file store folder creation", () => {
         dropboxFolders++;
         return json({ metadata: { id: `id:dropbox-${dropboxFolders}`, path_lower: "/clients/dana client", name: "Dana Client" } });
       }
-      if (u.includes("/sharing/create_shared_link_with_settings")) return json({ url: "https://www.dropbox.com/scl/fo/abc" });
+      if (u.includes("/sharing/create_shared_link_with_settings")) return json({ url: "https://www.dropbox.com/scl/fo/abc", link_permissions: { resolved_visibility: { ".tag": dropboxVisibility } } });
       if (u.includes("/sharing/list_shared_links")) return json({ links: [] });
       if (u.includes("/files/list_folder")) return json({ entries: [], has_more: false });
       if (u.includes("/files/get_metadata")) return json({ id: "id:dropbox-1", path_lower: "/clients/dana client", name: "Dana Client", ".tag": "folder" });
@@ -90,6 +92,25 @@ describe("file store folder creation", () => {
     const again = await ensureClientFolder(businessId, clientId, "GOOGLE_DRIVE");
     expect(again.ok).toBe(true);
     expect(driveFolders).toBe(madeSoFar);
+  });
+
+  it("what the business is told about a Dropbox link is what Dropbox reported", async () => {
+    // A personal Dropbox account cannot restrict a folder link. Saying otherwise would be a
+    // lie about who can see a customer's files, so the sentence follows the provider.
+    const shared = await shareClientFolder(businessId, clientId, "DROPBOX");
+    expect(shared.ok).toBe(true);
+    if (!shared.ok) return;
+    expect(shared.sharedWith).toBeNull();
+    expect(shared.note).toMatch(/anyone with this link/i);
+
+    // A team account resolves the same call differently, and the sentence has to follow.
+    dropboxVisibility = "team_only";
+    const fresh = await prisma.client.create({ data: { businessId, name: "Team Client", email: "team@example.test" } });
+    const teamShare = await shareClientFolder(businessId, fresh.id, "DROPBOX");
+    expect(teamShare.ok).toBe(true);
+    if (!teamShare.ok) return;
+    expect(teamShare.note).toMatch(/your dropbox team/i);
+    expect(teamShare.note).not.toMatch(/anyone with this link/i);
   });
 
   it("a client from another workspace is refused, whatever the id looks like", async () => {

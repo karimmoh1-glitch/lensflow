@@ -75,19 +75,35 @@ export async function listDropboxFolder(accessToken: string, path: string): Prom
 }
 
 /** A link the owner can open in Dropbox. Shared links are the documented way to get one for an app-folder path. */
-export async function dropboxFolderLink(accessToken: string, path: string): Promise<string | null> {
+/**
+ * Who can open a Dropbox link, as Dropbox itself resolved it — not as we hoped. A personal
+ * account cannot restrict a folder link at all, so the honest answer there is "public", and
+ * the product has to say that rather than imply the link reaches one named person.
+ */
+export type LinkVisibility = "public" | "team_only" | "password" | "team_and_password" | "shared_folder_only" | "unknown";
+
+type LinkResponse = { url: string; link_permissions?: { resolved_visibility?: { ".tag"?: string } } };
+
+const visibilityOf = (r: LinkResponse | undefined): LinkVisibility => {
+  const tag = r?.link_permissions?.resolved_visibility?.[".tag"];
+  const known: LinkVisibility[] = ["public", "team_only", "password", "team_and_password", "shared_folder_only"];
+  return known.find((k) => k === tag) ?? "unknown";
+};
+
+export async function dropboxFolderLink(accessToken: string, path: string): Promise<{ url: string; visibility: LinkVisibility } | null> {
   // No requested_visibility: Dropbox then applies the most restrictive setting the account
   // allows. Asking for "team_only" is refused outright on a personal account, which left
   // every folder without a link.
   try {
-    const r = await rpc<{ url: string }>(accessToken, "sharing/create_shared_link_with_settings", { path });
-    return r.url;
+    const r = await rpc<LinkResponse>(accessToken, "sharing/create_shared_link_with_settings", { path });
+    return { url: r.url, visibility: visibilityOf(r) };
   } catch (err) {
     // 409 covers "a link already exists" as well as a settings refusal; either way the
     // existing link is the answer, and finding it needs sharing.read.
     if (err instanceof OAuthError && err.status === 409) {
-      const r = await rpc<{ links: Array<{ url: string }> }>(accessToken, "sharing/list_shared_links", { path, direct_only: true }).catch(() => ({ links: [] }));
-      return r.links?.[0]?.url ?? null;
+      const r = await rpc<{ links: LinkResponse[] }>(accessToken, "sharing/list_shared_links", { path, direct_only: true }).catch(() => ({ links: [] as LinkResponse[] }));
+      const first = r.links?.[0];
+      return first ? { url: first.url, visibility: visibilityOf(first) } : null;
     }
     return null;
   }

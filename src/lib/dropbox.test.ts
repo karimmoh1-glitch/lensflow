@@ -51,9 +51,11 @@ describe("Dropbox: no-argument endpoints carry no body and no content type", () 
 
 describe("Dropbox: folder links work on a personal account", () => {
   it("never asks for team_only, which a personal account refuses outright", async () => {
-    responder = () => json({ url: "https://www.dropbox.com/scl/fo/abc" });
+    responder = () => json({ url: "https://www.dropbox.com/scl/fo/abc", link_permissions: { resolved_visibility: { ".tag": "public" } } });
     const link = await dropboxFolderLink("tok", "/Clients/Jane");
-    expect(link).toBe("https://www.dropbox.com/scl/fo/abc");
+    // Dropbox decides who can open the link from the account's own settings, so the answer
+    // is read back rather than assumed: a personal account cannot restrict a folder link.
+    expect(link).toEqual({ url: "https://www.dropbox.com/scl/fo/abc", visibility: "public" });
     const call = calls.find((c) => c.url.includes("create_shared_link_with_settings"));
     const sent = JSON.parse(call!.body!);
     expect(sent.path).toBe("/Clients/Jane");
@@ -64,11 +66,18 @@ describe("Dropbox: folder links work on a personal account", () => {
   it("an existing link is found rather than reported as no link at all", async () => {
     responder = (url) => {
       if (url.includes("create_shared_link_with_settings")) return json({ error_summary: "shared_link_already_exists/..." }, 409);
-      if (url.includes("list_shared_links")) return json({ links: [{ url: "https://www.dropbox.com/scl/fo/existing" }] });
+      if (url.includes("list_shared_links")) return json({ links: [{ url: "https://www.dropbox.com/scl/fo/existing", link_permissions: { resolved_visibility: { ".tag": "team_only" } } }] });
       return json({});
     };
-    expect(await dropboxFolderLink("tok", "/Clients/Jane")).toBe("https://www.dropbox.com/scl/fo/existing");
+    expect(await dropboxFolderLink("tok", "/Clients/Jane")).toEqual({ url: "https://www.dropbox.com/scl/fo/existing", visibility: "team_only" });
     expect(calls.some((c) => c.url.includes("list_shared_links"))).toBe(true);
+  });
+
+  it("a link Dropbox describes in terms we do not recognise is reported as unknown, never as safe", async () => {
+    responder = () => json({ url: "https://www.dropbox.com/scl/fo/xyz", link_permissions: { resolved_visibility: { ".tag": "some_new_tag" } } });
+    expect(await dropboxFolderLink("tok", "/Clients/Jane")).toEqual({ url: "https://www.dropbox.com/scl/fo/xyz", visibility: "unknown" });
+    responder = () => json({ url: "https://www.dropbox.com/scl/fo/xyz" });
+    expect((await dropboxFolderLink("tok", "/Clients/Jane"))?.visibility).toBe("unknown");
   });
 
   it("requests sharing.read, without which the existing-link fallback can never run", () => {

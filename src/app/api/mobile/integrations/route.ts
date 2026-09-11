@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireMobileBusiness, isErrorResponse } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse } from "@/lib/mobileApi";
 import { PROVIDERS, providerConfigured, displayStatus } from "@/lib/integrations/registry";
 import { usageFor, QUOTA_PROVIDERS } from "@/server/integrationQuota";
 import { PLANS } from "@/lib/billing";
+import { STAFF_ROLES } from "@/lib/auth";
 
 /** Real integration status, straight from the Integration table — DEMO is reported as
  * DEMO, never upgraded to look like CONNECTED — plus the plan's connected-integrations
  * allowance, computed by the same code that refuses a connection on the server. */
 export async function GET(req: Request) {
-  const ctx = await requireMobileBusiness(req);
+  const ctx = await requireMobileRole(req, [...STAFF_ROLES]);
   if (isErrorResponse(ctx)) return ctx;
 
   const rows = await prisma.integration.findMany({ where: { businessId: ctx.business.id } });

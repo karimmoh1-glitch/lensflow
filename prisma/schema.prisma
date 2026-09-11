@@ -710,6 +710,9 @@ model Payment {
   method     PaymentMethodType
   purpose    PaymentPurpose
   amountCents Int
+  /// ISO 4217, lowercase, as the provider reports it. A business that charges in euros must
+  /// never have its takings rendered as dollars.
+  currency   String            @default("usd")
   status     PaymentStatus     @default(AWAITING_CONFIRMATION)
   reference  String? // Zelle/bank memo reference shown to customer
   stripePaymentIntentId String?
@@ -1008,6 +1011,9 @@ model Notification {
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   title      String
   body       String
+  /// Where this notice points inside the web dashboard, relative to /dashboard. Written
+  /// from a structured target so the web and phone apps can each resolve their own route.
+  path       String?
   read       Boolean  @default(false)
   createdAt  DateTime @default(now())
 

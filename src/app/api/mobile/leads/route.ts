@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireMobileBusiness, isErrorResponse } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse } from "@/lib/mobileApi";
+import { STAFF_ROLES } from "@/lib/auth";
 import type { LeadStatus } from "@prisma/client";
 
 const ACTIVE_STATUSES: LeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED"];
 
-/** Inbox list — every active lead for this org, newest inbound first. Mirrors the web
- * dashboard's inbox query, scoped through the same tenant-isolated requireBusiness(). */
+/**
+ * Inbox list — every active lead for this org, newest inbound first. Staff only: a CLIENT
+ * has a login for their own portal and a PARTNER only sees work assigned to them, so
+ * neither may read the pipeline. Mirrors the web dashboard, which redirects both away from
+ * the inbox entirely.
+ */
 export async function GET(req: Request) {
-  const ctx = await requireMobileBusiness(req);
+  const ctx = await requireMobileRole(req, [...STAFF_ROLES]);
   if (isErrorResponse(ctx)) return ctx;
 
   const url = new URL(req.url);
@@ -23,6 +28,8 @@ export async function GET(req: Request) {
       conversation: { include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } } },
     },
     orderBy: { lastInboundAt: "desc" },
+    // Capped like every other list in the app, so a long pipeline cannot stall the phone.
+    take: 200,
   });
 
   return NextResponse.json({

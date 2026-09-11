@@ -48,6 +48,21 @@ export function formatMoney(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
+/**
+ * Money as a ledger must show it: every cent, in the currency it was actually taken in.
+ * formatMoney above rounds to whole units on purpose for prices and estimates; a record of
+ * what someone paid may never round, and may never assume dollars.
+ */
+export function formatMoneyExact(cents: number, currency = "usd") {
+  const code = (currency || "usd").toUpperCase();
+  try {
+    return (cents / 100).toLocaleString("en-US", { style: "currency", currency: code });
+  } catch {
+    // An unknown currency code must not blank the page.
+    return `${(cents / 100).toFixed(2)} ${code}`;
+  }
+}
+
 export function initials(name: string) {
   return name
     .split(" ")

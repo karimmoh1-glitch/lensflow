@@ -78,7 +78,7 @@ export async function submitWebsiteLead(
     },
   });
 
-  await notifyBusiness(business.id, { kind: "lead", title: "New website inquiry", body: `${name} submitted your website contact form${service ? ` about ${service.name}` : ""}.`, path: `/conversation/${conversation.id}` });
+  await notifyBusiness(business.id, { kind: "lead", title: "New website inquiry", body: `${name} submitted your website contact form${service ? ` about ${service.name}` : ""}.`, target: { kind: "conversation", id: conversation.id } });
 
   const owner = await prisma.orgMembership.findFirst({ where: { businessId: business.id, role: "OWNER" }, include: { user: true } });
   if (owner) {

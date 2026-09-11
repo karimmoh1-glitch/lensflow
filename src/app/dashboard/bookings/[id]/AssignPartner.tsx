@@ -1,9 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Card, CardBody, Select, Label } from "@/components/ui";
 import { assignPartner } from "@/app/actions/bookings";
+import { useAction } from "@/components/useAction";
 
 export function AssignPartner({
   bookingId,
@@ -14,8 +14,10 @@ export function AssignPartner({
   partners: { id: string; name: string }[];
   assignedMembershipId: string | null;
 }) {
-  const [pending, startTransition] = useTransition();
-  const router = useRouter();
+  // The select is optimistic, so a refused change has to put it back rather than leave the
+  // page claiming an assignment that never happened.
+  const [value, setValue] = useState(assignedMembershipId ?? "");
+  const { run, pending } = useAction();
 
   return (
     <Card>
@@ -24,13 +26,13 @@ export function AssignPartner({
         <Select
           id="assign-partner"
           disabled={pending}
-          defaultValue={assignedMembershipId ?? ""}
-          onChange={(e) =>
-            startTransition(async () => {
-              await assignPartner(bookingId, e.target.value || null);
-              router.refresh();
-            })
-          }
+          value={value}
+          onChange={(e) => {
+            const next = e.target.value;
+            const previous = value;
+            setValue(next);
+            run(() => assignPartner(bookingId, next || null), { failure: "Couldn't assign that partner", onError: () => setValue(previous) });
+          }}
         >
           <option value="">Unassigned</option>
           {partners.map((p) => (

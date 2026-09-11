@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { promoteToPartner } from "@/app/actions/joinRequests";
 import { Button } from "@/components/ui";
+import { useAction } from "@/components/useAction";
 
 export function PromotePartnerButton({ membershipId, name }: { membershipId: string; name: string }) {
   const [confirming, setConfirming] = useState(false);
-  const [pending, startTransition] = useTransition();
-  const router = useRouter();
+  const { run, pending } = useAction();
 
   if (confirming) {
     return (
@@ -27,10 +26,13 @@ export function PromotePartnerButton({ membershipId, name }: { membershipId: str
           size="sm"
           disabled={pending}
           onClick={() =>
-            startTransition(async () => {
-              await promoteToPartner(membershipId);
-              router.refresh();
-            })
+            run(
+              async () => {
+                await promoteToPartner(membershipId);
+                setConfirming(false);
+              },
+              { failure: `Couldn't make ${name} a partner`, success: `${name} is now a partner` }
+            )
           }
         >
           Confirm

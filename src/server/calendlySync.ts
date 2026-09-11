@@ -4,7 +4,7 @@ import { calendlyToken, listCalendlyEvents, listCalendlyInvitees, rawToEvent, ty
 import { findKnownClient } from "@/server/identity";
 import { pushBookingToCalendars } from "@/server/calendarSync";
 import { fireAutomationEvent } from "@/server/automationRunner";
-import { notifyBusiness, noticePath } from "@/server/notify";
+import { notifyBusiness } from "@/server/notify";
 import { recordAudit } from "@/server/audit";
 import { OAuthError } from "@/lib/integrations/oauth";
 import type { Integration } from "@prisma/client";
@@ -98,7 +98,7 @@ export async function applyCalendlyEvent(integration: Integration, event: Calend
   await recordAudit({ businessId, action: "booking.imported", targetType: "booking", targetId: booking.id, metadata: { source: "CALENDLY" } });
   await pushBookingToCalendars(booking.id).catch(() => {});
   await fireAutomationEvent({ businessId, trigger: "BOOKING_CREATED", targetType: "booking", targetId: booking.id }).catch(() => {});
-  await notifyBusiness(businessId, { kind: "booking", title: "New booking from Calendly", body: `${client.name} · ${startAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`, path: noticePath.booking(booking.id) });
+  await notifyBusiness(businessId, { kind: "booking", title: "New booking from Calendly", body: `${client.name} · ${startAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`, target: { kind: "booking", id: booking.id } });
   return "created";
 }
 

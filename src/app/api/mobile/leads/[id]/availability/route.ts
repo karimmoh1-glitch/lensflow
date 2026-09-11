@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireMobileBusiness, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
 import { getAvailableSlots } from "@/lib/availability";
+import { STAFF_ROLES } from "@/lib/auth";
 
 /** "Check Availability" — real bookable slots for the lead's service on a given day,
  * computed the same way the public booking page does (working hours ∩ blocked dates ∩
  * existing bookings + buffer + lead time). Never static/fake slots. */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await requireMobileBusiness(req);
+  const ctx = await requireMobileRole(req, [...STAFF_ROLES]);
   if (isErrorResponse(ctx)) return ctx;
   const { id } = await params;
 

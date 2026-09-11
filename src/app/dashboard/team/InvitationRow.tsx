@@ -79,7 +79,13 @@ export function InvitationRow({
             aria-label="Revoke invitation"
             disabled={pending}
             className="hover:text-danger"
-            onClick={() => startTransition(async () => { await revokeInvitation(id); router.refresh(); })}
+            onClick={() =>
+              startTransition(async () => {
+                const result = await revokeInvitation(id);
+                router.refresh();
+                if (result.error) toast({ tone: "signal", title: "Couldn't revoke", body: result.error });
+              })
+            }
           >
             <Ban className="w-4 h-4" strokeWidth={2} />
           </IconButton>

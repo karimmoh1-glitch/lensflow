@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Card, CardBody, Label, Input, Textarea, Select, SaveButton } from "@/components/ui";
 import { updateBusinessProfile } from "@/app/actions/settings";
 import type { Business } from "@prisma/client";
+import { useToast } from "@/components/Toaster";
 
 export function BusinessProfileForm({ business }: { business: Business }) {
   const [name, setName] = useState(business.name);
@@ -13,6 +14,7 @@ export function BusinessProfileForm({ business }: { business: Business }) {
   const [bookingLeadHours, setBookingLeadHours] = useState(business.bookingLeadHours);
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const { toast } = useToast();
 
   return (
     <Card>
@@ -49,7 +51,12 @@ export function BusinessProfileForm({ business }: { business: Business }) {
           saved={saved}
           onClick={() =>
             startTransition(async () => {
-              await updateBusinessProfile({ name, bio, timezone, bufferMinutes, bookingLeadHours });
+              try {
+                await updateBusinessProfile({ name, bio, timezone, bufferMinutes, bookingLeadHours });
+              } catch (err) {
+                toast({ tone: "signal", title: "Profile not saved", body: err instanceof Error && err.message !== "unauthorized" ? err.message : "You may not have permission to change this." });
+                return;
+              }
               setSaved(true);
               setTimeout(() => setSaved(false), 2000);
             })

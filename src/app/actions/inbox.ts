@@ -146,7 +146,10 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
 export async function markLeadLost(leadId: string) {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (!ctx) throw new Error("unauthorized");
-  await prisma.lead.updateMany({ where: { id: leadId, businessId: ctx.business.id }, data: { status: "LOST" } });
+  // The where clause is the tenant guard, so a lead belonging to somebody else matches
+  // nothing. Throwing on that keeps the control from reporting a change it never made.
+  const { count } = await prisma.lead.updateMany({ where: { id: leadId, businessId: ctx.business.id }, data: { status: "LOST" } });
+  if (count === 0) throw new Error("That lead doesn't exist in this workspace.");
   revalidatePath("/dashboard/inbox");
   revalidatePath("/dashboard");
 }

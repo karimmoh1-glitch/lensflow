@@ -175,14 +175,19 @@ export async function inviteTeammate(formData: FormData, actingSession?: Session
   });
 }
 
-export async function revokeInvitation(id: string, actingSession?: SessionPayload | null) {
+export async function revokeInvitation(id: string, actingSession?: SessionPayload | null): Promise<{ error?: string }> {
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) throw new Error("unauthorized");
-  await prisma.invitation.updateMany({
+  // updateMany is the tenant guard: an id from another workspace simply matches nothing.
+  // It also matches nothing when the invitation was already accepted or revoked, and the
+  // caller has to be told the difference from a revocation that actually happened.
+  const { count } = await prisma.invitation.updateMany({
     where: { id, businessId: ctx.business.id, status: "PENDING" },
     data: { status: "REVOKED" },
   });
   revalidatePath("/dashboard/team");
+  if (count === 0) return { error: "That invitation is no longer pending in this workspace." };
+  return {};
 }
 
 export async function resendInvitation(id: string, actingSession?: SessionPayload | null): Promise<{ link?: string; error?: string; delivery?: TransactionalDelivery }> {

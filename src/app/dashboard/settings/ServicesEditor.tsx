@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 import { Card, CardBody, Input, Button, Label, SaveButton, IconButton } from "@/components/ui";
 import { saveServices } from "@/app/actions/settings";
+import { useToast } from "@/components/Toaster";
 
 type Svc = { id?: string; name: string; priceCents: number; durationMins: number };
 
@@ -11,6 +12,7 @@ export function ServicesEditor({ initialServices }: { initialServices: Svc[] }) 
   const [services, setServices] = useState<Svc[]>(initialServices);
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const { toast } = useToast();
 
   return (
     <Card>
@@ -54,7 +56,12 @@ export function ServicesEditor({ initialServices }: { initialServices: Svc[] }) 
             saved={saved}
             onClick={() =>
               startTransition(async () => {
-                await saveServices(services);
+                try {
+                  await saveServices(services);
+                } catch (err) {
+                  toast({ tone: "signal", title: "Services not saved", body: err instanceof Error && err.message !== "unauthorized" ? err.message : "You may not have permission to change services." });
+                  return;
+                }
                 setSaved(true);
                 setTimeout(() => setSaved(false), 2000);
               })

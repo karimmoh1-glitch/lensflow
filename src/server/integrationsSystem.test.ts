@@ -22,7 +22,7 @@ import { signOAuthState, beginPkce, signOAuthStateRaw, verifyOAuthStateWithNonce
 import { completeOAuthConnect, type OAuthConnectSpec } from "@/server/oauthConnect";
 import { runWebhook, retryFailedWebhooks, MAX_ATTEMPTS } from "@/server/webhookInbox";
 import { requestAccess, decideAccess, accessGranted, accessRequestFor } from "@/server/accessRequests";
-import { GROUPS, PROVIDERS, providerMaturity, type RegisteredProvider } from "@/lib/integrations/registry";
+import { GROUPS, PROVIDERS, COMING_SOON, comingSoonFor, providerMaturity, type RegisteredProvider } from "@/lib/integrations/registry";
 import { accessGated } from "@/lib/integrations/flags";
 import { notifyBusiness, postToSlack } from "@/server/notify";
 
@@ -229,6 +229,17 @@ describe("beta gate", () => {
 });
 
 describe("registry", () => {
+  it("nothing that cannot be connected is ever offered as if it could be", () => {
+    // A coming-soon entry must not collide with a real provider, or the hub would show the
+    // same integration twice and one of them would be a lie.
+    for (const c of COMING_SOON) {
+      expect(Object.keys(PROVIDERS)).not.toContain(c.key);
+      expect(GROUPS.some((g) => g.key === c.group)).toBe(true);
+      expect(c.summary.length).toBeGreaterThan(10);
+    }
+    expect(comingSoonFor("meetings").length).toBeGreaterThan(0);
+  });
+
   it("every registered provider sits in exactly one group, and every group entry is registered", () => {
     const seen = new Map<string, number>();
     for (const g of GROUPS) for (const p of g.providers) { seen.set(p, (seen.get(p) ?? 0) + 1); expect(PROVIDERS[p]).toBeTruthy(); expect(PROVIDERS[p].group).toBe(g.key); }

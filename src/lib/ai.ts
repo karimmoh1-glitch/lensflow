@@ -168,13 +168,27 @@ function emptyExtraction(): ExtractedLead {
   return { name: null, serviceHint: null, dateText: null, location: null, budgetCents: null, intent: "UNKNOWN" };
 }
 
+/**
+ * A fallback hint for what someone is asking about, used only when none of the business's
+ * own service names appear in the message. It covers the kinds of work Daythread is for —
+ * a tutor's enquiry should be recognised as readily as a wedding photographer's.
+ */
 const SERVICE_KEYWORDS: Record<string, string[]> = {
-  graduation: ["graduation", "grad photos", "cap and gown"],
   wedding: ["wedding", "engagement", "bride", "groom"],
+  graduation: ["graduation", "grad photos", "cap and gown"],
   family: ["family session", "family photos", "family shoot"],
-  portrait: ["portrait", "headshot"],
+  portrait: ["portrait", "headshot", "profile picture"],
   newborn: ["newborn", "maternity", "baby photos"],
-  event: ["event", "party", "corporate"],
+  event: ["event", "party", "corporate", "conference", "launch"],
+  tutoring: ["tutor", "tutoring", "lesson", "lessons", "exam prep", "homework help", "sat prep", "act prep"],
+  consultation: ["consultation", "consult", "advisory", "strategy session", "discovery call", "office hours"],
+  coaching: ["coaching", "coach", "mentoring", "1:1", "one on one", "accountability"],
+  design: ["logo", "branding", "brand identity", "website design", "web design", "mockup", "rebrand"],
+  video: ["video", "videography", "film", "reel", "edit my footage", "promo video"],
+  repair: ["repair", "fix", "install", "installation", "maintenance", "service call", "quote for the job"],
+  cleaning: ["cleaning", "clean my", "deep clean", "move out clean"],
+  training: ["training", "workshop", "course", "bootcamp", "onboarding session"],
+  beauty: ["haircut", "hair appointment", "makeup", "nails", "massage", "facial", "treatment"],
 };
 
 const DATE_PATTERN =

@@ -62,7 +62,9 @@ export async function POST(req: Request) {
 
     const business = await prisma.business.findUnique({ where: { handle } });
     if (!business) {
-      console.warn(`[webhook:email] no business found for handle "${handle}" (to: ${toAddress})`);
+      // The handle identifies the misrouted mailbox; the full address is a person's email
+      // and does not belong in an operational log.
+      console.warn(`[webhook:email] no business found for handle "${handle}"`);
       return NextResponse.json({ ok: true }); // unknown recipient — not an error, just not ours
     }
 

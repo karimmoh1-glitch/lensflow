@@ -60,7 +60,11 @@ export class EmailAdapter implements ChannelAdapter {
         return { ok: false, error: "Email provider error" };
       }
     }
-    console.info(`[email-adapter:not-configured] to ${message.to ?? "unknown"}: ${message.body}`);
+    // Deliberately not the body or the address. This branch is the *normal* state on a
+    // deployment without RESEND_API_KEY, so anything written here would be written for every
+    // outbound message a business ever sends — customer correspondence, and the share links
+    // that give access to their files.
+    console.info(`[email-adapter:not-configured] send skipped (${message.body.length} chars)`);
     return { ok: true, simulated: true };
   }
 }

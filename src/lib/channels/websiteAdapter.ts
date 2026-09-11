@@ -19,7 +19,7 @@ export class WebsiteAdapter implements ChannelAdapter {
   }
 
   async send(message: OutboundMessage): Promise<SendResult> {
-    console.info(`[website-adapter] no outbound channel for website leads: ${message.body}`);
+    console.info(`[website-adapter] no outbound channel for website leads (${message.body.length} chars)`);
     return { ok: true, simulated: true };
   }
 }

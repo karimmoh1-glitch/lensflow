@@ -63,7 +63,7 @@ export async function deliverToCustomer(params: {
     if (gmail?.status !== "NOT_CONNECTED" && gmail?.refreshToken && gmail.externalAccount) {
       try {
         const accessToken = await getValidAccessToken(gmail);
-        const sent = await sendGmailMessage({ accessToken, fromEmail: gmail.externalAccount, fromName: businessName, to, subject: subject ?? "Re: your inquiry", body, inReplyTo: inReplyTo ?? undefined, references: inReplyTo ?? undefined });
+        const sent = await sendGmailMessage({ accessToken, fromEmail: gmail.externalAccount, fromName: businessName, to, subject: subject ?? "Re: your inquiry", body, html, inReplyTo: inReplyTo ?? undefined, references: inReplyTo ?? undefined });
         return { status: "SENT", providerMessageId: sent.id, statusDetail: "accepted", via: "gmail" };
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Gmail send failed";

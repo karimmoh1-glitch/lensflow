@@ -176,25 +176,48 @@ export type SendGmailParams = {
   to: string;
   subject: string;
   body: string;
+  /** An HTML part. Sent alongside the text, never instead of it. */
+  html?: string;
   replyTo?: string;
   inReplyTo?: string;
   references?: string;
 };
 
+/** One MIME part, base64 so any character in it survives the trip. */
+function mimePart(contentType: string, content: string): string {
+  const encoded = Buffer.from(content, "utf-8").toString("base64").replace(/(.{76})/g, "$1\r\n");
+  return [`Content-Type: ${contentType}; charset="UTF-8"`, "Content-Transfer-Encoding: base64", "", encoded].join("\r\n");
+}
+
 export async function sendGmailMessage(params: SendGmailParams): Promise<{ id: string }> {
   const from = params.fromName ? `${encodeHeaderWord(params.fromName)} <${params.fromEmail}>` : params.fromEmail;
-  const lines = [
-    `From: ${from}`,
-    `To: ${params.to}`,
-    `Subject: ${encodeHeaderWord(params.subject)}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: text/plain; charset="UTF-8"`,
-    `Content-Transfer-Encoding: 7bit`,
-  ];
-  if (params.replyTo) lines.push(`Reply-To: ${params.replyTo}`);
-  if (params.inReplyTo) lines.push(`In-Reply-To: ${params.inReplyTo}`);
-  if (params.references) lines.push(`References: ${params.references}`);
-  const mime = `${lines.join("\r\n")}\r\n\r\n${params.body}`;
+  const headers = [`From: ${from}`, `To: ${params.to}`, `Subject: ${encodeHeaderWord(params.subject)}`, `MIME-Version: 1.0`];
+  if (params.replyTo) headers.push(`Reply-To: ${params.replyTo}`);
+  if (params.inReplyTo) headers.push(`In-Reply-To: ${params.inReplyTo}`);
+  if (params.references) headers.push(`References: ${params.references}`);
+
+  // The body was declared 7bit while carrying UTF-8, so an accented name, a curly quote or
+  // an em-dash went out as raw bytes the receiving server was told not to expect. Every
+  // part is base64 now, which is what the declaration always should have said.
+  let mime: string;
+  if (params.html) {
+    // Text first, HTML second: a mail client shows the last part it can render, and the
+    // text part is what everything else falls back to.
+    const boundary = `dt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+    mime = [
+      headers.join("\r\n"),
+      "",
+      `--${boundary}`,
+      mimePart("text/plain", params.body),
+      `--${boundary}`,
+      mimePart("text/html", params.html),
+      `--${boundary}--`,
+      "",
+    ].join("\r\n");
+  } else {
+    mime = `${headers.join("\r\n")}\r\n${mimePart("text/plain", params.body)}`;
+  }
 
   const res = await fetch(`${GMAIL_API}/messages/send`, {
     method: "POST",

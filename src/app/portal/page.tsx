@@ -5,6 +5,7 @@ import { PageHeader, Card, Badge, EmptyState } from "@/components/ui";
 import { toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
 import { PortalMessages } from "./PortalMessages";
+import { portalDeliveries } from "@/server/portalDeliveries";
 import { ExternalLink } from "lucide-react";
 
 const STATUS_TONE: Record<string, "neutral" | "success" | "warning" | "info" | "danger"> = {
@@ -25,7 +26,7 @@ export default async function PortalHomePage() {
   if (!ctx) redirect("/login");
   const { client, business } = ctx;
 
-  const [bookings, conversation] = await Promise.all([
+  const [bookings, conversation, deliveries] = await Promise.all([
     prisma.booking.findMany({
       where: { clientId: client.id, businessId: business.id },
       include: { service: true },
@@ -35,6 +36,7 @@ export default async function PortalHomePage() {
       where: { clientId: client.id, businessId: business.id },
       include: { messages: { orderBy: { createdAt: "asc" } } },
     }),
+    portalDeliveries(business.id, client.id),
   ]);
 
   const upcoming = bookings.filter((b) => b.status !== "CANCELED" && b.status !== "COMPLETED" && b.status !== "FOLLOWED_UP" && b.status !== "BALANCE_PAID");
@@ -96,6 +98,40 @@ export default async function PortalHomePage() {
           </Card>
         </div>
       )}
+
+      <div className="mb-8">
+        <h2 className="text-sm font-medium text-ink mb-2.5">Your files</h2>
+        {deliveries.length === 0 ? (
+          <EmptyState title="Nothing sent yet" description={`When ${business.name} sends you files, they'll appear here and stay here.`} />
+        ) : (
+          <Card>
+            <div className="divide-y divide-border">
+              {deliveries.map((d) => (
+                <a
+                  key={d.id}
+                  href={d.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-accent-soft/30 focus-visible:outline-none focus-visible:bg-accent-soft/40"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{d.title}</div>
+                    <div className="text-xs text-ink/70">
+                      Sent {format(toZonedDisplayDate(d.deliveredAt, business.timezone), "MMMM d, yyyy")}
+                      {d.source ? ` · ${d.source}` : ""}
+                    </div>
+                    {d.note && <p className="mt-1 text-xs text-ink/70 line-clamp-2">{d.note}</p>}
+                  </div>
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-accent-text shrink-0">
+                    Open
+                    <ExternalLink className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
+                  </span>
+                </a>
+              ))}
+            </div>
+          </Card>
+        )}
+      </div>
 
       <div>
         <h2 className="text-sm font-medium text-ink mb-2.5">Messages</h2>

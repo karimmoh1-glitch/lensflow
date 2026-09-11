@@ -66,6 +66,9 @@ export async function generateDraftAction(
   return { text };
 }
 
+/** How long an identical outbound message on the same thread counts as the same send. */
+const DUPLICATE_SEND_MS = 15_000;
+
 export async function sendReplyAction(conversationId: string, body: string, aiDrafted: boolean, session?: SessionPayload | null) {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
@@ -83,6 +86,23 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
       orderBy: { createdAt: "desc" },
     });
     lastInboundMessageId = lastInbound?.providerMessageId ?? undefined;
+  }
+
+  // A second click, a second tab, or an impatient press on a slow connection must not put
+  // the same message in front of the customer twice. Disabling the button is not enough:
+  // the request is already in flight, and a refresh can replay the submission. The record
+  // of what was already sent is the guard, so it holds across instances and page loads.
+  const justSent = await prisma.message.findFirst({
+    where: { conversationId, direction: "OUTBOUND", body, createdAt: { gte: new Date(Date.now() - DUPLICATE_SEND_MS) } },
+    orderBy: { createdAt: "desc" },
+    select: { status: true, providerMessageId: true },
+  });
+  if (justSent) {
+    return (justSent.status === "SENT"
+      ? { ok: true, simulated: false, providerMessageId: justSent.providerMessageId ?? undefined }
+      : justSent.status === "NOT_DELIVERED"
+        ? { ok: true, simulated: true }
+        : { ok: false, error: "That message is already on its way." }) as SendResult;
   }
 
   // A downgraded business keeps reading SMS but can't send on it.

@@ -11,6 +11,7 @@ type Msg = { id: string; direction: "INBOUND" | "OUTBOUND"; body: string; create
 
 export function PortalMessages({ conversationId, messages }: { conversationId: string | null; messages: Msg[] }) {
   const [body, setBody] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -20,10 +21,17 @@ export function PortalMessages({ conversationId, messages }: { conversationId: s
 
   function send() {
     if (!body.trim() || !conversationId) return;
+    setError(null);
     startTransition(async () => {
-      await sendPortalMessage(conversationId, body);
-      setBody("");
-      router.refresh();
+      try {
+        await sendPortalMessage(conversationId, body);
+        // Only cleared once it actually sent: nobody should lose what they wrote, and
+        // nobody should believe a message went through when it did not.
+        setBody("");
+        router.refresh();
+      } catch {
+        setError("That didn't send. Your message is still here — try again in a moment.");
+      }
     });
   }
 
@@ -42,6 +50,11 @@ export function PortalMessages({ conversationId, messages }: { conversationId: s
             </div>
           ))}
         </div>
+        {error && (
+          <p role="alert" className="text-[12px] text-warning-text">
+            {error}
+          </p>
+        )}
         <div className="flex gap-2 pt-2 border-t border-border">
           <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} placeholder="Write a message…" />
           <Button size="sm" onClick={send} disabled={!body.trim() || pending}>

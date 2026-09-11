@@ -1,14 +1,13 @@
 "use client";
 
-import { useRef, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { Button, Textarea } from "@/components/ui";
 import { addClientNote } from "@/app/actions/clients";
+import { useAction } from "@/components/useAction";
 
 export function NoteForm({ clientId }: { clientId: string }) {
   const ref = useRef<HTMLTextAreaElement>(null);
-  const [pending, startTransition] = useTransition();
-  const router = useRouter();
+  const { run, pending } = useAction();
 
   return (
     <div className="flex gap-2">
@@ -19,11 +18,11 @@ export function NoteForm({ clientId }: { clientId: string }) {
         onClick={() => {
           const value = ref.current?.value.trim();
           if (!value) return;
-          startTransition(async () => {
+          // The note is only cleared once it is actually saved, so nothing is lost on a failure.
+          run(async () => {
             await addClientNote(clientId, value);
             if (ref.current) ref.current.value = "";
-            router.refresh();
-          });
+          }, { failure: "Couldn't save that note" });
         }}
       >
         Add

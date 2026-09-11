@@ -20,10 +20,13 @@ export async function assignPartner(bookingId: string, membershipId: string | nu
     if (!membership) throw new Error("not a partner in this organization");
   }
 
-  await prisma.booking.updateMany({
+  // updateMany is the tenant-safe write, but it reports success having changed nothing when
+  // the id belongs to another workspace. The caller is told instead.
+  const changed = await prisma.booking.updateMany({
     where: { id: bookingId, businessId: ctx.business.id },
     data: { assignedMembershipId: membershipId },
   });
+  if (changed.count === 0) throw new Error("That booking no longer exists.");
   revalidatePath(`/dashboard/bookings/${bookingId}`);
 }
 

@@ -9,13 +9,21 @@ import { runFixMyDay, type FixMyDayItem } from "@/app/actions/fixMyDay";
 export function FixMyDayButton() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<FixMyDayItem[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function run() {
     setOpen(true);
+    setFailed(false);
+    setItems(null);
     startTransition(async () => {
-      const result = await runFixMyDay();
-      setItems(result);
+      try {
+        setItems(await runFixMyDay());
+      } catch {
+        // Without this the dialog settles with every branch false: an empty box and no
+        // explanation.
+        setFailed(true);
+      }
     });
   }
 
@@ -46,7 +54,11 @@ export function FixMyDayButton() {
                   </div>
                 )}
 
-                {!pending && items && items.length === 0 && (
+                {!pending && failed && (
+                  <EmptyState title="Couldn't gather your day" description="Something went wrong on our side. Close this and try again in a moment." />
+                )}
+
+                {!pending && !failed && items && items.length === 0 && (
                   <EmptyState
                     title="You're all caught up"
                     description="Nothing needs your attention right now."
@@ -59,7 +71,7 @@ export function FixMyDayButton() {
                   />
                 )}
 
-                {!pending && items && items.length > 0 && (
+                {!pending && !failed && items && items.length > 0 && (
                   <>
                     <p className="text-sm text-ink/75 mb-4">
                       {items.length} thing{items.length > 1 ? "s" : ""} need{items.length === 1 ? "s" : ""} attention:

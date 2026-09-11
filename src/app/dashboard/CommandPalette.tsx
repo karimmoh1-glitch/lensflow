@@ -39,6 +39,7 @@ export function CommandPalette() {
   const [summary, setSummary] = useState<Awaited<ReturnType<typeof universalSearch>>["summary"]>();
   const [cursor, setCursor] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -91,13 +92,22 @@ export function CommandPalette() {
       setSummary(undefined);
       return;
     }
+    setSearchFailed(false);
     setLoading(true);
     const t = setTimeout(async () => {
-      const r = await universalSearch(term);
-      setHits(r.hits);
-      setSummary(r.summary);
-      setCursor(0);
-      setLoading(false);
+      try {
+        const r = await universalSearch(term);
+        setHits(r.hits);
+        setSummary(r.summary);
+        setCursor(0);
+      } catch {
+        // A failed search says so instead of spinning for ever.
+        setHits([]);
+        setSummary(undefined);
+        setSearchFailed(true);
+      } finally {
+        setLoading(false);
+      }
     }, 140);
     return () => clearTimeout(t);
   }, [q, open]);
@@ -174,7 +184,8 @@ export function CommandPalette() {
 
         <ul id="cmd-list" role="listbox" className="max-h-[52vh] overflow-y-auto scrollbar-thin py-2">
           {loading && items.length === 0 && <li className="px-4 py-3 text-sm text-ink/65">Looking…</li>}
-          {!loading && q.trim().length >= 2 && hits.length === 0 && (
+          {!loading && searchFailed && <li className="px-4 py-3 text-sm text-warning-text">Search didn&rsquo;t come back. Try again in a moment.</li>}
+          {!loading && !searchFailed && q.trim().length >= 2 && hits.length === 0 && (
             <li className="px-4 py-3 text-sm text-ink/65">Nothing on the thread matches “{q.trim()}”.</li>
           )}
           {items.map((it, i) => {

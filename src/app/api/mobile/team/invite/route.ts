@@ -12,5 +12,5 @@ export async function POST(req: Request) {
   if (!parsed.success) return jsonError("A name and a valid email are required.", 400);
   const fd = new FormData(); fd.set("name", parsed.data.name); fd.set("email", parsed.data.email);
   const r = parsed.data.role === "partner" ? await invitePartner(fd, session) : await inviteTeammate(fd, session);
-  return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, link: r.link });
+  return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, link: r.link, emailed: r.delivery?.emailed ?? false, deliveryNote: r.delivery?.note ?? "" });
 }

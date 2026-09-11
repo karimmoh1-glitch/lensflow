@@ -7,7 +7,7 @@ import { requireRole, hashPassword, verifyPassword, setSessionCookie, homeRouteF
 import { withLock } from "@/lib/dbLock";
 import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
 import { revalidatePath } from "next/cache";
-import { sendOnChannel } from "@/lib/messaging";
+import { sendTransactional, type TransactionalDelivery } from "@/lib/messaging";
 import { canAddTeamSeat, planLimits, teamEntitled } from "@/lib/billing";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
@@ -17,7 +17,7 @@ const inviteSchema = z.object({
   phone: z.string().optional(),
 });
 
-export async function inviteClient(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string }> {
+export async function inviteClient(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string; delivery?: TransactionalDelivery }> {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
@@ -56,7 +56,7 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
   });
 
   const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
-  await sendOnChannel({
+  const delivery = await sendTransactional({
     channel: "EMAIL",
     to: email,
     subject: `You're invited to ${business.name}`,
@@ -65,7 +65,7 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
 
   revalidatePath("/dashboard/clients");
   revalidatePath("/dashboard/team");
-  return { link };
+  return { link, delivery };
 }
 
 const partnerInviteSchema = z.object({
@@ -73,7 +73,7 @@ const partnerInviteSchema = z.object({
   email: z.string().email("Enter a valid email"),
 });
 
-export async function invitePartner(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string }> {
+export async function invitePartner(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string; delivery?: TransactionalDelivery }> {
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
@@ -118,7 +118,7 @@ export async function invitePartner(formData: FormData, actingSession?: SessionP
     });
 
     const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
-    await sendOnChannel({
+    const delivery = await sendTransactional({
       channel: "EMAIL",
       to: email,
       subject: `${business.name} invited you to join their team`,
@@ -126,7 +126,7 @@ export async function invitePartner(formData: FormData, actingSession?: SessionP
     });
 
     revalidatePath("/dashboard/team");
-    return { link };
+    return { link, delivery };
   });
 }
 
@@ -135,7 +135,7 @@ export async function invitePartner(formData: FormData, actingSession?: SessionP
  * is enforced here and again at accept time: pending invitations count, so a burst of
  * invites can't be accepted past the plan's limit.
  */
-export async function inviteTeammate(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string }> {
+export async function inviteTeammate(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string; delivery?: TransactionalDelivery }> {
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   const { business, session } = ctx;
@@ -167,11 +167,11 @@ export async function inviteTeammate(formData: FormData, actingSession?: Session
     await prisma.auditLog.create({ data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "teammate", targetId: invitation.id } });
 
     const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
-    await sendOnChannel({ channel: "EMAIL", to: email, subject: `${business.name} invited you to their Daythread inbox`, body: `Hi ${name}, ${business.name} invited you to share their inbox on Daythread. Accept your invitation: ${link}` });
+    const delivery = await sendTransactional({ channel: "EMAIL", to: email, subject: `${business.name} invited you to their Daythread inbox`, body: `Hi ${name}, ${business.name} invited you to share their inbox on Daythread. Accept your invitation: ${link}` });
 
     revalidatePath("/dashboard/settings");
     revalidatePath("/dashboard/team");
-    return { link };
+    return { link, delivery };
   });
 }
 
@@ -185,7 +185,7 @@ export async function revokeInvitation(id: string, actingSession?: SessionPayloa
   revalidatePath("/dashboard/team");
 }
 
-export async function resendInvitation(id: string, actingSession?: SessionPayload | null): Promise<{ link?: string; error?: string }> {
+export async function resendInvitation(id: string, actingSession?: SessionPayload | null): Promise<{ link?: string; error?: string; delivery?: TransactionalDelivery }> {
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   // Only an invitation that is still outstanding may be resent. Reviving an ACCEPTED or
@@ -201,10 +201,10 @@ export async function resendInvitation(id: string, actingSession?: SessionPayloa
   });
 
   const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${updated.token}`;
-  await sendOnChannel({ channel: "EMAIL", to: updated.email, subject: `Reminder: join ${ctx.business.name}`, body: `Accept your invitation: ${link}` });
+  const delivery = await sendTransactional({ channel: "EMAIL", to: updated.email, subject: `Reminder: join ${ctx.business.name}`, body: `Accept your invitation: ${link}` });
 
   revalidatePath("/dashboard/team");
-  return { link };
+  return { link, delivery };
 }
 
 // ── Public acceptance flow ──────────────────────────────────────────────────

@@ -14,5 +14,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!client.email) return jsonError("Add an email address for this person first.", 400);
   const fd = new FormData(); fd.set("name", client.name); fd.set("email", client.email); if (client.phone) fd.set("phone", client.phone);
   const r = await inviteClient(fd, session);
-  return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, link: r.link });
+  return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, link: r.link, emailed: r.delivery?.emailed ?? false, deliveryNote: r.delivery?.note ?? "" });
 }

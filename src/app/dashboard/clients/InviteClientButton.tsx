@@ -10,6 +10,8 @@ export function InviteClientButton() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
+  const [emailed, setEmailed] = useState(false);
+  const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -32,6 +34,8 @@ export function InviteClientButton() {
         return;
       }
       setLink(result.link ?? null);
+      setEmailed(result.delivery?.emailed ?? false);
+      setNote(result.delivery?.note ?? "");
       router.refresh();
     });
   }
@@ -77,7 +81,9 @@ export function InviteClientButton() {
                 ) : (
                   <div>
                     <p className="text-sm text-ink/75 mb-3">
-                      They&apos;ll be able to see their bookings and messages once they accept.
+                      {emailed
+                        ? "We\u2019ve emailed them the link. They\u2019ll be able to see their bookings and messages once they accept."
+                        : `${note} Send them this link yourself \u2014 they\u2019ll be able to see their bookings and messages once they accept.`}
                     </p>
                     <div className="flex items-center gap-2">
                       <Input value={link} readOnly className="text-xs" />

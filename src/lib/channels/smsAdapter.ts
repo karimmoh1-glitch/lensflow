@@ -28,7 +28,7 @@ export class SmsAdapter implements ChannelAdapter {
   async send(message: OutboundMessage): Promise<SendResult> {
     const from = message.from ?? fromNumber;
     if (!configured || !message.to || !from) {
-      return { ok: true, simulated: true };
+      return { ok: true, simulated: true, reason: "SMS isn’t connected for this workspace, so nothing was sent." };
     }
     try {
       const twilio = (await import("twilio")).default;

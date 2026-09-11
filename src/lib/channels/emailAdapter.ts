@@ -65,6 +65,6 @@ export class EmailAdapter implements ChannelAdapter {
     // outbound message a business ever sends — customer correspondence, and the share links
     // that give access to their files.
     console.info(`[email-adapter:not-configured] send skipped (${message.body.length} chars)`);
-    return { ok: true, simulated: true };
+    return { ok: true, simulated: true, reason: "Email sending isn’t switched on for this deployment yet, so nothing was sent." };
   }
 }

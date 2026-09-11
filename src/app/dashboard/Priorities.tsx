@@ -16,15 +16,17 @@ const ACTIVE = ["CONNECTED", "NEEDS_ATTENTION", "SYNC_ERROR"] as const;
 export async function Priorities({ businessId, plan }: { businessId: string; plan: PlanKey }) {
   const p = await getPersonalization(businessId);
   if (!p) return null;
-  const [integrations, services, automations, seats] = await Promise.all([
+  const [integrations, services, automations, seats, deliveries] = await Promise.all([
     prisma.integration.findMany({ where: { businessId }, select: { provider: true, status: true } }),
     prisma.service.count({ where: { businessId } }),
     prisma.automation.count({ where: { businessId } }),
     prisma.orgMembership.count({ where: { businessId, status: "ACTIVE", role: { not: "CLIENT" } } }),
+    prisma.booking.count({ where: { businessId, deliveredAt: { not: null } } }),
   ]);
   const connected = integrations.filter((r) => (ACTIVE as readonly string[]).includes(r.status)).map((r) => r.provider as string);
   const toConnect = p.connectProviders.filter((x) => x !== "GOOGLE_CALENDAR" && !connected.includes(x));
   const calendarWanted = p.connectProviders.includes("GOOGLE_CALENDAR") && !connected.includes("GOOGLE_CALENDAR");
+  const fileStore = connected.includes("GOOGLE_DRIVE") || connected.includes("DROPBOX");
 
   const cards = p.priorities.map((f: Feature) => {
     const base = PRIORITY_COPY[f];
@@ -55,6 +57,13 @@ export async function Priorities({ businessId, plan }: { businessId: string; pla
         break;
       case "people":
         cta = "Open People";
+        break;
+      case "files":
+        // Three real states, read from the database: no file store connected, connected but
+        // nothing sent yet, and work already delivered to somebody.
+        if (!fileStore) { cta = "Connect Google Drive or Dropbox"; href = "/dashboard/settings?tab=channels"; }
+        else if (deliveries === 0) { cta = "Send a client their files"; href = "/dashboard/clients"; }
+        else { cta = `${deliveries} ${deliveries === 1 ? "delivery" : "deliveries"} sent`; href = "/dashboard/clients"; done = true; }
         break;
     }
     return { key: f, title: base.title, blurb: base.blurb, cta, href, done };

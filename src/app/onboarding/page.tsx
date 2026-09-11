@@ -37,7 +37,16 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   const byProvider = new Map(rows.map((r) => [r.provider, r]));
   const encryptionOk = process.env.NODE_ENV !== "production" || tokenCryptoConfigured();
   const order: IntegrationProvider[] = ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS"];
-  const wantedFirst = personalization ? [...personalization.connectProviders.filter((p): p is Exclude<typeof p, "GOOGLE_CALENDAR"> => p !== "GOOGLE_CALENDAR"), ...order.filter((p) => !personalization.connectProviders.includes(p as never))] : order;
+  // This step is about where customers reach them. A calendar and a file store are named in
+  // onboarding too, but they belong to the Files and Calendar cards on Today, not here.
+  const notAChannel = ["GOOGLE_CALENDAR", "GOOGLE_DRIVE", "DROPBOX"] as const;
+  type NotAChannel = (typeof notAChannel)[number];
+  const wantedFirst = personalization
+    ? [
+        ...personalization.connectProviders.filter((p): p is Exclude<typeof p, NotAChannel> => !(notAChannel as readonly string[]).includes(p)),
+        ...order.filter((p) => !personalization.connectProviders.includes(p as never)),
+      ]
+    : order;
   const channels: ChannelOption[] = wantedFirst.map((provider) => {
     const spec = PROVIDERS[provider as keyof typeof PROVIDERS];
     const configured = providerConfigured(spec) && (spec.auth === "oauth" ? encryptionOk : true);

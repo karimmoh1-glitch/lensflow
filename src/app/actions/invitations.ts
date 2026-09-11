@@ -8,6 +8,7 @@ import { withLock } from "@/lib/dbLock";
 import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
 import { revalidatePath } from "next/cache";
 import { sendTransactional, type TransactionalDelivery } from "@/lib/messaging";
+import { invitationEmail, linkTo } from "@/lib/emails";
 import { canAddTeamSeat, planLimits, teamEntitled } from "@/lib/billing";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
@@ -61,13 +62,9 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
     data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "client", targetId: client.id },
   });
 
-  const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
-  const delivery = await sendTransactional({
-    channel: "EMAIL",
-    to: email,
-    subject: `You're invited to ${business.name}`,
-    body: `Hi ${name}, you've been invited to join ${business.name}. Accept your invitation: ${link}`,
-  });
+  const link = linkTo(`/invite/${invitation.token}`);
+  const mail = invitationEmail({ businessName: business.name, recipientName: name, token: invitation.token, role: "client" });
+  const delivery = await sendTransactional({ channel: "EMAIL", to: email, fromName: business.name, subject: mail.subject, body: mail.text, html: mail.html });
 
   revalidatePath("/dashboard/clients");
   revalidatePath("/dashboard/team");
@@ -123,13 +120,9 @@ export async function invitePartner(formData: FormData, actingSession?: SessionP
       data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "partner", targetId: invitation.id },
     });
 
-    const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
-    const delivery = await sendTransactional({
-      channel: "EMAIL",
-      to: email,
-      subject: `${business.name} invited you to join their team`,
-      body: `Hi ${name}, ${business.name} invited you to join their team as a partner. Accept your invitation: ${link}`,
-    });
+    const link = linkTo(`/invite/${invitation.token}`);
+    const mail = invitationEmail({ businessName: business.name, recipientName: name, token: invitation.token, role: "partner" });
+    const delivery = await sendTransactional({ channel: "EMAIL", to: email, fromName: business.name, subject: mail.subject, body: mail.text, html: mail.html });
 
     revalidatePath("/dashboard/team");
     return { link, delivery };
@@ -172,8 +165,9 @@ export async function inviteTeammate(formData: FormData, actingSession?: Session
     });
     await prisma.auditLog.create({ data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "teammate", targetId: invitation.id } });
 
-    const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.token}`;
-    const delivery = await sendTransactional({ channel: "EMAIL", to: email, subject: `${business.name} invited you to their Daythread inbox`, body: `Hi ${name}, ${business.name} invited you to share their inbox on Daythread. Accept your invitation: ${link}` });
+    const link = linkTo(`/invite/${invitation.token}`);
+    const mail = invitationEmail({ businessName: business.name, recipientName: name, token: invitation.token, role: "teammate" });
+    const delivery = await sendTransactional({ channel: "EMAIL", to: email, fromName: business.name, subject: mail.subject, body: mail.text, html: mail.html });
 
     revalidatePath("/dashboard/settings");
     revalidatePath("/dashboard/team");
@@ -211,8 +205,9 @@ export async function resendInvitation(id: string, actingSession?: SessionPayloa
     data: { token: generateInvitationToken(), expiresAt: invitationExpiry(), status: "PENDING" },
   });
 
-  const link = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${updated.token}`;
-  const delivery = await sendTransactional({ channel: "EMAIL", to: updated.email, subject: `Reminder: join ${ctx.business.name}`, body: `Accept your invitation: ${link}` });
+  const link = linkTo(`/invite/${updated.token}`);
+  const mail = invitationEmail({ businessName: ctx.business.name, recipientName: updated.email.split("@")[0], token: updated.token, role: updated.role === "CLIENT" ? "client" : updated.role === "PARTNER" ? "partner" : "teammate", reminder: true });
+  const delivery = await sendTransactional({ channel: "EMAIL", to: updated.email, fromName: ctx.business.name, subject: mail.subject, body: mail.text, html: mail.html });
 
   revalidatePath("/dashboard/team");
   return { link, delivery };

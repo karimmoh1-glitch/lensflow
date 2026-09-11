@@ -3,6 +3,7 @@ import { ensureClientFolder, type FileProvider, type ExternalFolders, type Folde
 import { driveToken, shareDriveFolderWithEmail } from "@/lib/googleDrive";
 import { deliverToCustomer } from "@/server/deliver";
 import { recordAudit } from "@/server/audit";
+import { fileDeliveryEmail } from "@/lib/emails";
 import { reportFailure } from "@/lib/observe";
 import { OAuthError } from "@/lib/integrations/oauth";
 
@@ -115,8 +116,11 @@ export async function sendClientFolder(businessId: string, clientId: string, pro
   }
 
   const note = (opts.message ?? "").trim().slice(0, 500);
-  const body = [note || `Your files from ${business.name} are ready.`, "", shared.url].join("\n");
-  const delivery = await deliverToCustomer({ businessId, businessName: business.name, businessHandle: business.handle, channel, to, body, subject: `Your files from ${business.name}` });
+  // One template, so what the customer receives looks like something the business sent
+  // rather than a debug line. SMS gets the text part; email gets both.
+  const mail = fileDeliveryEmail({ businessName: business.name, recipientName: client.name, url: shared.url, message: note });
+  const body = channel === "EMAIL" ? mail.text : [note || `Your files from ${business.name} are ready.`, "", shared.url].join("\n");
+  const delivery = await deliverToCustomer({ businessId, businessName: business.name, businessHandle: business.handle, channel, to, body, subject: mail.subject, html: channel === "EMAIL" ? mail.html : undefined });
 
   const folders = (client.externalFolders ?? {}) as ExternalFolders;
   const when = new Date();

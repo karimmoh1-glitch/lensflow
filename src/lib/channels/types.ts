@@ -26,6 +26,9 @@ export type OutboundMessage = {
   headers?: Record<string, string>;
   /** The business's own sending identity on this channel (its Twilio number). */
   from?: string | null;
+  /** An HTML part for channels that render one. Text stays the source of truth: any channel
+   * that cannot show markup sends `body`, and the two always say the same thing. */
+  html?: string;
 };
 
 export type SendResult =

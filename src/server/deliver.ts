@@ -49,8 +49,11 @@ export async function deliverToCustomer(params: {
   inReplyTo?: string | null;
   /** For WhatsApp's service window: when the customer last wrote. */
   lastInboundAt?: Date | null;
+  /** An HTML part for email. The business's own Gmail sends the text part either way, so
+   * the two always carry the same words. */
+  html?: string;
 }): Promise<Delivery> {
-  const { businessId, businessName, businessHandle, channel, to, body, subject, inReplyTo } = params;
+  const { businessId, businessName, businessHandle, channel, to, body, subject, inReplyTo, html } = params;
   if (!to) return { status: "NOT_DELIVERED", error: "No address to send to.", statusDetail: "no_recipient", via: "none" };
   if (!body.trim()) return { status: "NOT_DELIVERED", error: "Nothing to send.", statusDetail: "empty", via: "none" };
 
@@ -148,7 +151,7 @@ export async function deliverToCustomer(params: {
   const inboundDomain = process.env.RESEND_INBOUND_DOMAIN;
   const replyTo = channel === "EMAIL" && inboundDomain ? `${businessHandle}@${inboundDomain}` : undefined;
   const headers = channel === "EMAIL" && inReplyTo ? { "In-Reply-To": inReplyTo, References: inReplyTo } : undefined;
-  const result = await sendOnChannel({ channel, to, body, subject, fromName: businessName, replyTo, headers, from });
+  const result = await sendOnChannel({ channel, to, body, subject, fromName: businessName, replyTo, headers, from, html: channel === "EMAIL" ? html : undefined });
   if (!result.ok) {
     await reportFailure("delivery", `${channel} send failed`, { businessId, provider: channel, error: result.error });
     return { status: "FAILED", error: scrubMetaMessage(result.error), statusDetail: "provider_rejected", via: "provider" };

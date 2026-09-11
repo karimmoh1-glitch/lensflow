@@ -84,6 +84,18 @@ describe("payments ledger", () => {
     expect(crossed.count).toBe(0);
   });
 
+  it("a legacy DEMO integration row is not a connected Stripe account", async () => {
+    // The seed leaves DEMO rows behind. Reading one as connected would tell a workspace its
+    // money was being recorded from Stripe when nothing is.
+    const demo = await prisma.business.create({ data: { name: "Demo Co", handle: `demo-${stamp()}` } });
+    ids.push(demo.id);
+    await prisma.integration.create({ data: { businessId: demo.id, provider: "STRIPE", status: "DEMO" } });
+    const row = await prisma.integration.findUniqueOrThrow({ where: { businessId_provider: { businessId: demo.id, provider: "STRIPE" } } });
+    const connected = row.status !== "NOT_CONNECTED" && row.status !== "DEMO";
+    expect(connected).toBe(false);
+    expect((await listPayments(demo.id)).count).toBe(0);
+  });
+
   it("pages without losing the summary", async () => {
     const page = await listPayments(a, { take: 2 });
     expect(page.rows).toHaveLength(2);

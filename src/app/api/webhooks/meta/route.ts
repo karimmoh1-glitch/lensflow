@@ -58,7 +58,9 @@ export async function POST(req: Request) {
   }
 
   const raw = await req.text();
-  if (raw.length > MAX_BODY_BYTES) return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  // String length counts UTF-16 units, so a body of non-ASCII text measured that way passed
+  // at up to three times the real byte ceiling. Measure the bytes.
+  if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return NextResponse.json({ error: "Payload too large" }, { status: 413 });
 
   const signature = req.headers.get("x-hub-signature-256");
   const matched = { meta: Boolean(metaSecret) && verifyMetaSignature(raw, signature, metaSecret!), instagram: Boolean(igSecret) && verifyMetaSignature(raw, signature, igSecret!) };

@@ -25,6 +25,9 @@ export type PersonalWelcome = {
   billingLive: boolean;
   trialOffered: boolean;
   canBill: boolean;
+  /** Set while the workspace has the beta month of Pro and no subscription. */
+  betaProEndsAt: string | null;
+  businessUnavailable: boolean;
 };
 const ICON: Partial<Record<IntegrationProvider, ChannelKey>> = { EMAIL: "gmail", INSTAGRAM: "instagram", WHATSAPP: "whatsapp", SMS: "sms" };
 const BLURB: Partial<Record<IntegrationProvider, string>> = {
@@ -252,11 +255,21 @@ function PlanBlock({ personal, pending, onStart, onFree }: { personal: PersonalW
   const rec = personal.recommendedPlan;
   const chosen = personal.selectedPlan && personal.selectedPlan !== "FREE" ? personal.selectedPlan : null;
   if (rec === "FREE" && !chosen) return null;
-  const plan = (chosen ?? rec) as "PRO" | "BUSINESS";
+  const wanted = (chosen ?? rec) as "PRO" | "BUSINESS";
+  const plan: "PRO" | "BUSINESS" = wanted === "BUSINESS" && personal.businessUnavailable ? "PRO" : wanted;
   const trial = plan === "PRO" && personal.trialOffered;
+  if (personal.betaProEndsAt) {
+    const until = new Date(personal.betaProEndsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+    return (
+      <div className="mt-6 rounded-[22px] border border-success/30 bg-success-soft/40 px-5 py-4">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-success-text">Pro is on · beta</p>
+        <p className="mt-1.5 text-sm text-ink/80 leading-relaxed">While Daythread is in beta, this workspace has Pro free until {until}. No card, nothing to cancel.{wanted === "BUSINESS" && personal.businessUnavailable ? " Business is temporarily unavailable." : ""}</p>
+      </div>
+    );
+  }
   return (
     <div className="mt-6 rounded-[22px] border border-signal/25 bg-signal-soft/30 px-5 py-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">{chosen ? `You chose ${planName(chosen)}` : `We'd recommend ${planName(rec)}`}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">{chosen && chosen === plan ? `You chose ${planName(chosen)}` : `We'd recommend ${planName(plan)}`}</p>
       <p className="mt-1.5 text-sm text-ink/80 leading-relaxed">{personal.reasons[0]}</p>
       {personal.billingLive && personal.canBill ? (
         <div className="mt-3 flex flex-wrap items-center gap-3">

@@ -9,6 +9,7 @@ import { recordPaywallEvent } from "@/app/actions/paywall";
 import { startUpgradeCheckout } from "@/app/actions/billing";
 import { useToast } from "@/components/Toaster";
 import { cn } from "@/lib/utils";
+import { BetaClaimButton } from "@/components/BetaClaimButton";
 
 /**
  * The paywall: one dialog, copy keyed on the exact feature someone reached for, one
@@ -21,7 +22,7 @@ import { cn } from "@/lib/utils";
  * that says upgrades aren't open yet. Nothing here changes a plan; Stripe's webhook does.
  */
 export type PersonalCopy = { title: string; lede: string };
-type Config = { plan: "FREE" | "PRO" | "BUSINESS"; billingLive: boolean; trialOffered: boolean; canBill: boolean; prices: { PRO: number; BUSINESS: number }; personal?: { PRO?: PersonalCopy | null; BUSINESS?: PersonalCopy | null } };
+type Config = { plan: "FREE" | "PRO" | "BUSINESS"; billingLive: boolean; trialOffered: boolean; canBill: boolean; betaClaimable?: boolean; businessUnavailable?: boolean; prices: { PRO: number; BUSINESS: number }; personal?: { PRO?: PersonalCopy | null; BUSINESS?: PersonalCopy | null } };
 type Ctx = { open: (feature: PaywallFeature, source: string) => void; config: Config };
 const PaywallContext = createContext<Ctx | null>(null);
 
@@ -100,6 +101,28 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
           ))}
         </ul>
 
+        {plan === "PRO" && config.betaClaimable ? (
+          <div className="mt-6 rounded-2xl border border-accent/30 bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+            <div>
+              <div className="font-sans font-extrabold text-2xl tracking-[-0.03em] text-ink"><span className="text-success-text">Free for 1 month</span><span className="text-ink/60 text-base font-semibold"> · beta</span></div>
+              <p className="mt-1 text-xs text-ink/70 leading-relaxed">Daythread is in beta, so Pro is free for a month. No card. When the month ends you&rsquo;re back on Free unless you choose to subscribe.</p>
+            </div>
+            <div className="mt-4 sm:mt-0 flex flex-col items-stretch gap-2 shrink-0 sm:w-56">
+              {config.canBill ? <BetaClaimButton onClaimed={onClose} /> : <p className="text-xs text-ink/70">Ask the workspace owner to claim it.</p>}
+              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-full">Not now</button>
+            </div>
+          </div>
+        ) : plan === "BUSINESS" && config.businessUnavailable ? (
+          <div className="mt-6 rounded-2xl border border-border bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+            <div>
+              <div className="font-sans font-extrabold text-xl tracking-[-0.02em] text-ink">Business is temporarily unavailable</div>
+              <p className="mt-1 text-xs text-ink/70 leading-relaxed">It isn&rsquo;t open to new workspaces during the beta. Everything else in Daythread keeps working.</p>
+            </div>
+            <div className="mt-4 sm:mt-0 flex flex-col items-stretch gap-2 shrink-0 sm:w-56">
+              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Got it</button>
+            </div>
+          </div>
+        ) : (
         <div className="mt-6 rounded-2xl border border-border bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
           <div>
             <div className="font-sans font-extrabold text-2xl tracking-[-0.03em] text-ink tabular-nums">
@@ -122,6 +145,7 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
             <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-full">Not now</button>
           </div>
         </div>
+        )}
         <p className="mt-3 text-[11px] text-ink/65">Your conversations, contacts and bookings stay exactly as they are whatever you choose. Daythread only ever bills its own subscription.</p>
       </div>
     </BottomSheet>

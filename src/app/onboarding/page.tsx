@@ -7,7 +7,7 @@ import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { Welcome, type ChannelOption, type PersonalWelcome } from "./Welcome";
 import { connectGoogle } from "@/app/actions/googleAuth";
 import { connectInstagram, connectWhatsApp } from "@/app/actions/connect";
-import { smsEntitled, trialEligible } from "@/lib/billing";
+import { smsEntitled, trialEligible, betaProActive, planPurchasable } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { getPersonalization } from "@/server/personalization";
 import { buildSteps } from "@/lib/personalization";
@@ -74,6 +74,8 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
         billingLive: subscriptionBillingIsLive,
         trialOffered: subscriptionBillingIsLive && trialEligible(ctx.business),
         canBill: ctx.role === "OWNER" || ctx.role === "ADMIN",
+        betaProEndsAt: betaProActive(ctx.business) && ctx.business.planTier === "FREE" ? ctx.business.betaProEndsAt!.toISOString() : null,
+        businessUnavailable: !planPurchasable("BUSINESS"),
       }
     : null;
 

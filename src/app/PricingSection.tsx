@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PLANS, VISIBLE_PLANS, type PlanKey } from "@/lib/billing";
+import { PLANS, VISIBLE_PLANS, BETA_PRO_DAYS, planPurchasable, type PlanKey } from "@/lib/billing";
 import { formatMoney, cn } from "@/lib/utils";
 import { RevealOnScroll } from "./RevealOnScroll";
 import { ValueLadder } from "./landing/ValueLadder";
@@ -31,7 +31,7 @@ const LADDER: Record<PlanKey, { who: string; why?: string; gets: string[]; badge
   },
 };
 
-export function PricingSection({ trial = false }: { trial?: boolean }) {
+export function PricingSection({ trial = false, beta = false }: { trial?: boolean; beta?: boolean }) {
   const [interval, setInterval] = useState<"month" | "year">("month");
   const price = (cents: number) => (interval === "year" ? cents * 10 : cents);
   return (
@@ -39,7 +39,8 @@ export function PricingSection({ trial = false }: { trial?: boolean }) {
       <ValueLadder />
       <div className="max-w-2xl mb-8">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Pricing</p>
-        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">Start free. Step up when it&rsquo;s obvious.</h2>
+        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">{beta ? <>Pro is free for a month.</> : <>Start free. Step up when it&rsquo;s obvious.</>}</h2>
+        {beta && <p className="mt-4 text-base text-ink/70">Daythread is in beta, so every new account gets Pro free for {BETA_PRO_DAYS} days. No card.</p>}
       </div>
       <div role="group" aria-label="Billing interval" className="mb-8 inline-flex items-center h-10 rounded-full border border-border bg-white p-0.5">
         {(["month", "year"] as const).map((v) => (
@@ -53,16 +54,28 @@ export function PricingSection({ trial = false }: { trial?: boolean }) {
           const plan = PLANS[key];
           const l = LADDER[key];
           const pro = key === "PRO";
+          const unavailable = key !== "FREE" && !planPurchasable(key);
+          const betaPro = pro && beta;
+          const badge = unavailable ? "Temporarily unavailable" : betaPro ? "Free for 1 month · beta" : l.badge;
           return (
             <RevealOnScroll key={key} delay={i * 90} className="h-full">
-              <div className={cn("relative h-full rounded-[22px] border p-6 md:p-7 flex flex-col transition-all duration-300 hover:-translate-y-1", pro ? "border-accent bg-white shadow-[0_24px_60px_-24px_rgba(240,82,77,0.45)]" : "border-border bg-white hover:shadow-popover")}>
-                {l.badge && <span className={cn("absolute -top-3 left-6 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white rounded-full px-2.5 py-1", pro ? "bg-accent-strong" : "bg-ink")}>{l.badge}</span>}
+              <div className={cn("relative h-full rounded-[22px] border p-6 md:p-7 flex flex-col transition-all duration-300", unavailable ? "border-border bg-paper" : "hover:-translate-y-1", pro ? "border-accent bg-white shadow-[0_24px_60px_-24px_rgba(240,82,77,0.45)]" : !unavailable && "border-border bg-white hover:shadow-popover")} aria-disabled={unavailable || undefined}>
+                {badge && <span className={cn("absolute -top-3 left-6 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white rounded-full px-2.5 py-1", pro ? "bg-accent-strong" : unavailable ? "bg-ink/55" : "bg-ink")}>{badge}</span>}
                 <div className="text-sm font-semibold text-ink/70 leading-snug min-h-[2.5rem]">{l.who}</div>
-                <div className="mt-3 flex items-baseline gap-1.5">
-                  <span className="font-sans font-extrabold text-4xl tracking-[-0.04em] text-ink">{plan.priceCents === 0 ? "Free" : formatMoney(price(plan.priceCents))}</span>
-                  {plan.priceCents > 0 && <span className="text-sm text-ink/65">/ {interval === "year" ? "year" : "month"}</span>}
+                <div className={cn("mt-3 flex items-baseline gap-1.5", unavailable && "opacity-60")}>
+                  {betaPro ? (
+                    <>
+                      <span className="font-sans font-extrabold text-4xl tracking-[-0.04em] text-ink">Free</span>
+                      <span className="text-sm text-ink/65">for 1 month, then {formatMoney(price(plan.priceCents))} / {interval === "year" ? "year" : "month"}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-sans font-extrabold text-4xl tracking-[-0.04em] text-ink">{plan.priceCents === 0 ? "Free" : formatMoney(price(plan.priceCents))}</span>
+                      {plan.priceCents > 0 && <span className="text-sm text-ink/65">/ {interval === "year" ? "year" : "month"}</span>}
+                    </>
+                  )}
                 </div>
-                {plan.priceCents > 0 && interval === "year" && <p className="mt-1 text-xs font-semibold text-success-text">{formatMoney(plan.priceCents * 10 / 12)} a month, billed yearly</p>}
+                {plan.priceCents > 0 && interval === "year" && !unavailable && <p className="mt-1 text-xs font-semibold text-success-text">{formatMoney(plan.priceCents * 10 / 12)} a month, billed yearly</p>}
                 <div className="mt-1 text-lg font-extrabold tracking-tight text-ink">{plan.name}</div>
                 <ul className="mt-5 space-y-2 flex-1">
                   {l.gets.map((g) => (
@@ -70,13 +83,18 @@ export function PricingSection({ trial = false }: { trial?: boolean }) {
                   ))}
                 </ul>
                 {l.why && <p className="mt-5 text-xs text-ink/70 leading-relaxed">{l.why}</p>}
-                {pro && trial && <p className="mt-3 text-xs font-semibold text-ink leading-relaxed">7-day free trial · card required · first charge on day 8 · cancel before then and pay nothing.</p>}
-                <Link
-                  href="/start"
-                  className={cn("mt-6 inline-flex items-center justify-center h-11 rounded-full text-sm font-extrabold transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", pro ? "bg-accent-strong text-white" : "bg-ink text-white")}
-                >
-                  {key === "FREE" ? "Start free" : `Start free, then ${plan.name}`}
-                </Link>
+                {pro && trial && !beta && <p className="mt-3 text-xs font-semibold text-ink leading-relaxed">7-day free trial · card required · first charge on day 8 · cancel before then and pay nothing.</p>}
+                {betaPro && <p className="mt-3 text-xs font-semibold text-ink leading-relaxed">No card. When the month ends you stay on Free unless you choose Pro.</p>}
+                {unavailable ? (
+                  <span className="mt-6 inline-flex items-center justify-center h-11 rounded-full text-sm font-extrabold bg-black/5 text-ink/55 cursor-not-allowed select-none">Temporarily unavailable</span>
+                ) : (
+                  <Link
+                    href="/start"
+                    className={cn("mt-6 inline-flex items-center justify-center h-11 rounded-full text-sm font-extrabold transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", pro ? "bg-accent-strong text-white" : "bg-ink text-white")}
+                  >
+                    {key === "FREE" ? "Start free" : betaPro ? "Claim 1 month of Pro free" : `Start free, then ${plan.name}`}
+                  </Link>
+                )}
               </div>
             </RevealOnScroll>
           );

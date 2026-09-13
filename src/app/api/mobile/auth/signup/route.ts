@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { betaGrantForNewWorkspace } from "@/server/betaOffer";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashPassword, createSessionToken, homeRouteFor } from "@/lib/auth";
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
     const passwordHash = await hashPassword(password);
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { name, email, passwordHash } });
-      const business = await tx.business.create({ data: { name: workspaceName, handle } });
+      const business = await tx.business.create({ data: { name: workspaceName, handle, ...betaGrantForNewWorkspace() } });
       await tx.orgMembership.create({ data: { userId: user.id, businessId: business.id, role: "OWNER" } });
       return { user, business };
     });

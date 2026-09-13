@@ -73,6 +73,11 @@ model Business {
   trialEndsAt          DateTime?
   /// Set the first time this business starts a subscription with a trial — one trial per business.
   trialUsedAt          DateTime?
+  /// Beta offer: Pro without a subscription until this moment. Set once per workspace by the
+  /// server (at signup, or when an owner claims it) and never from a client value.
+  betaProEndsAt        DateTime?
+  /// When the beta offer was granted; its presence is what makes it once per workspace.
+  betaProClaimedAt     DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

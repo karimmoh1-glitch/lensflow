@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
 import { trackReferralMilestone } from "@/server/referral";
-import { PLANS, effectivePlan, planForIntegrations, type PlanKey } from "@/lib/billing";
+import { PLANS, effectivePlan, planForIntegrations, planPurchasable, type PlanKey } from "@/lib/billing";
 import type { Integration, IntegrationProvider, IntegrationStatus, Prisma } from "@prisma/client";
 
 /**
@@ -39,18 +39,18 @@ export type IntegrationUsage = {
   nextPlan: PlanKey | null;
 };
 
-export function usageFor(business: { planTier: PlanKey; billingStatus: string | null }, rows: Array<{ provider: IntegrationProvider; status: IntegrationStatus }>): IntegrationUsage {
+export function usageFor(business: { planTier: PlanKey; billingStatus: string | null; compedPlan?: PlanKey | null; betaProEndsAt?: Date | null }, rows: Array<{ provider: IntegrationProvider; status: IntegrationStatus }>): IntegrationUsage {
   const plan = effectivePlan(business as Parameters<typeof effectivePlan>[0]);
   const limit = PLANS[plan].maxIntegrations;
   const active = rows.filter(countsTowardQuota).length;
   const atLimit = active >= limit;
   const next = Number.isFinite(limit) ? planForIntegrations(active + 1) : null;
-  return { plan, active, limit, atLimit, overQuota: active > limit, nextPlan: next && next !== plan ? next : Number.isFinite(limit) ? "BUSINESS" : null };
+  return { plan, active, limit, atLimit, overQuota: active > limit, nextPlan: next && next !== plan && planPurchasable(next) ? next : null };
 }
 
 export async function integrationUsage(businessId: string): Promise<IntegrationUsage> {
   const [business, rows] = await Promise.all([
-    prisma.business.findUniqueOrThrow({ where: { id: businessId }, select: { planTier: true, billingStatus: true, compedPlan: true } }),
+    prisma.business.findUniqueOrThrow({ where: { id: businessId }, select: { planTier: true, billingStatus: true, compedPlan: true, betaProEndsAt: true } }),
     prisma.integration.findMany({ where: { businessId }, select: { provider: true, status: true } }),
   ]);
   return usageFor(business, rows);
@@ -60,7 +60,7 @@ export async function integrationUsage(businessId: string): Promise<IntegrationU
  * transactional check in `activateIntegration` is the one that decides. */
 export async function canActivate(businessId: string, provider: IntegrationProvider): Promise<{ ok: true } | { ok: false; usage: IntegrationUsage }> {
   const [business, rows] = await Promise.all([
-    prisma.business.findUniqueOrThrow({ where: { id: businessId }, select: { planTier: true, billingStatus: true, compedPlan: true } }),
+    prisma.business.findUniqueOrThrow({ where: { id: businessId }, select: { planTier: true, billingStatus: true, compedPlan: true, betaProEndsAt: true } }),
     prisma.integration.findMany({ where: { businessId }, select: { provider: true, status: true } }),
   ]);
   const usage = usageFor(business, rows);
@@ -88,7 +88,7 @@ export async function activateIntegration(params: {
   const result = await prisma.$transaction(
     async (tx) => {
       // Serialize every activation for this workspace: the lock is held until commit.
-      const locked = await tx.$queryRaw<Array<{ id: string; planTier: PlanKey; billingStatus: string | null; compedPlan: PlanKey | null }>>`SELECT "id", "planTier", "billingStatus", "compedPlan" FROM "Business" WHERE "id" = ${businessId} FOR UPDATE`;
+      const locked = await tx.$queryRaw<Array<{ id: string; planTier: PlanKey; billingStatus: string | null; compedPlan: PlanKey | null; betaProEndsAt: Date | null }>>`SELECT "id", "planTier", "billingStatus", "compedPlan", "betaProEndsAt" FROM "Business" WHERE "id" = ${businessId} FOR UPDATE`;
       const business = locked[0];
       if (!business) throw new Error("Business not found");
       const rows = await tx.integration.findMany({ where: { businessId }, select: { provider: true, status: true } });

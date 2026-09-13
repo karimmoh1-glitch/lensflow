@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { betaGrantForNewWorkspace } from "@/server/betaOffer";
 import { prisma } from "@/lib/db";
 import { hashPassword, setSessionCookie, getUserMemberships, homeRouteFor } from "@/lib/auth";
 import { exchangeCodeForTokens, revokeGoogleToken } from "@/lib/google";
@@ -48,7 +49,7 @@ export async function completeGoogleSignIn(code: string): Promise<{ ok: true; re
       const passwordHash = await hashPassword(randomBytes(32).toString("hex"));
       const row = await prisma.$transaction(async (tx) => {
         const created = await tx.user.create({ data: { name: name.slice(0, 80), email, passwordHash } });
-        const business = await tx.business.create({ data: { name: workspaceName, handle } });
+        const business = await tx.business.create({ data: { name: workspaceName, handle, ...betaGrantForNewWorkspace() } });
         await tx.orgMembership.create({ data: { userId: created.id, businessId: business.id, role: "OWNER" } });
         return created;
       });

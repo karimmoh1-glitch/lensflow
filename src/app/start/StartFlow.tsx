@@ -89,7 +89,7 @@ function reachable(steps: Step[], d: Draft): number {
 const fmt = (cents: number) => `$${(cents / 100).toFixed(0)}`;
 const planName = (p: PlanKey) => (p === "PRO" ? "Pro" : p === "BUSINESS" ? "Business" : "Free");
 
-export function StartFlow(props: { google: boolean; billingLive: boolean; prices: { PRO: number; BUSINESS: number } }) {
+export function StartFlow(props: { google: boolean; billingLive: boolean; prices: { PRO: number; BUSINESS: number }; beta?: boolean; businessUnavailable?: boolean }) {
   return (
     <Suspense fallback={<main className="min-h-screen bg-paper" />}>
       <Flow {...props} />
@@ -97,7 +97,7 @@ export function StartFlow(props: { google: boolean; billingLive: boolean; prices
   );
 }
 
-function Flow({ google, billingLive, prices }: { google: boolean; billingLive: boolean; prices: { PRO: number; BUSINESS: number } }) {
+function Flow({ google, billingLive, prices, beta = false, businessUnavailable = false }: { google: boolean; billingLive: boolean; prices: { PRO: number; BUSINESS: number }; beta?: boolean; businessUnavailable?: boolean }) {
   const sp = useSearchParams();
   const [draft, setDraftState] = useState<Draft>({});
   const [idx, setIdx] = useState(0);
@@ -258,7 +258,7 @@ function Flow({ google, billingLive, prices }: { google: boolean; billingLive: b
               </>
             )}
 
-            {step.kind === "summary" && (personalization ? <Summary p={personalization} name={draft.displayName ?? ""} billingLive={billingLive} prices={prices} onChoose={(plan) => choosePlan(personalization, plan)} onShown={() => event("recommended_plan_shown", { recommendedPlan: personalization.recommendedPlan })} /> : <p className="text-sm text-ink/70">Answer the questions above and we&rsquo;ll set Daythread up around them.</p>)}
+            {step.kind === "summary" && (personalization ? <Summary p={personalization} name={draft.displayName ?? ""} billingLive={billingLive} prices={prices} beta={beta} businessUnavailable={businessUnavailable} onChoose={(plan) => choosePlan(personalization, plan)} onShown={() => event("recommended_plan_shown", { recommendedPlan: personalization.recommendedPlan })} /> : <p className="text-sm text-ink/70">Answer the questions above and we&rsquo;ll set Daythread up around them.</p>)}
 
             {step.kind === "account" && <Account google={google} draft={draft} answersJson={parsedAnswers.success ? JSON.stringify(parsedAnswers.data) : null} anonymousId={anon.current} googleError={googleError} referral={ref} />}
           </div>
@@ -290,12 +290,13 @@ function Flow({ google, billingLive, prices }: { google: boolean; billingLive: b
   );
 }
 
-function Summary({ p, name, billingLive, prices, onChoose, onShown }: { p: Personalization; name: string; billingLive: boolean; prices: { PRO: number; BUSINESS: number }; onChoose: (plan: PlanKey) => void; onShown: () => void }) {
+function Summary({ p, name, billingLive, prices, beta, businessUnavailable, onChoose, onShown }: { p: Personalization; name: string; billingLive: boolean; prices: { PRO: number; BUSINESS: number }; beta: boolean; businessUnavailable: boolean; onChoose: (plan: PlanKey) => void; onShown: () => void }) {
   useEffect(() => {
     onShown();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.recommendedPlan]);
-  const rec = p.recommendedPlan;
+  // A plan that is not on sale is never recommended; Pro is the nearest one that is.
+  const rec: PlanKey = p.recommendedPlan === "BUSINESS" && businessUnavailable ? "PRO" : p.recommendedPlan;
   const channelNames = p.answers.channels.filter((c) => c !== "other").map((c) => labelOf(CHANNELS, c));
   const first = name.trim().split(/\s+/)[0];
   return (
@@ -329,7 +330,7 @@ function Summary({ p, name, billingLive, prices, onChoose, onShown }: { p: Perso
           ))}
         </ul>
         <p className="mt-4 text-sm text-ink/70">
-          {rec === "FREE" ? "Free is $0, no card, and stays free. Pro is there when you need it." : rec === "PRO" ? `Pro is ${fmt(prices.PRO)} a month${billingLive ? ", and starts with 7 days free" : ""}. Free is always there too.` : `Business is ${fmt(prices.BUSINESS)} a month. Free and Pro are always there too.`}
+          {beta ? (rec === "FREE" ? "Free is $0 and stays free. While Daythread is in beta, every new account also gets Pro free for its first month — no card." : "While Daythread is in beta, your account starts with Pro free for a month — no card. After that you stay on Free unless you choose Pro.") : rec === "FREE" ? "Free is $0, no card, and stays free. Pro is there when you need it." : rec === "PRO" ? `Pro is ${fmt(prices.PRO)} a month${billingLive ? ", and starts with 7 days free" : ""}. Free is always there too.` : `Business is ${fmt(prices.BUSINESS)} a month. Free and Pro are always there too.`}
         </p>
 
         <div className="mt-5 flex flex-col sm:flex-row sm:flex-wrap gap-2.5">
@@ -343,7 +344,9 @@ function Summary({ p, name, billingLive, prices, onChoose, onShown }: { p: Perso
           )}
         </div>
         <p className="mt-3 text-xs text-ink/65 leading-relaxed">
-          {rec !== "FREE" && !billingLive
+          {beta
+            ? "Nothing is charged today, and nothing is charged when the free month ends."
+            : rec !== "FREE" && !billingLive
             ? `Upgrades aren't open on this deployment yet, so everyone starts on Free. We'll keep this recommendation under Settings → Subscription.`
             : rec === "PRO" && billingLive
               ? "Nothing is charged today. Pro begins as a 7-day free trial once your account exists — a card is asked for then, and cancelling before day 8 costs nothing."

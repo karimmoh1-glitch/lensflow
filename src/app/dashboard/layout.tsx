@@ -6,7 +6,7 @@ import { InboxLive } from "./InboxLive";
 import { Toaster } from "@/components/Toaster";
 import { prisma } from "@/lib/db";
 import { PROVIDERS } from "@/lib/integrations/registry";
-import { PLANS, effectivePlan, trialEligible } from "@/lib/billing";
+import { PLANS, effectivePlan, trialEligible, betaOfferOpen, planPurchasable } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { PaywallProvider } from "@/components/Paywall";
 import { getPersonalization } from "@/server/personalization";
@@ -46,6 +46,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     billingLive: subscriptionBillingIsLive,
     trialOffered: subscriptionBillingIsLive && trialEligible(business),
     canBill: role === "OWNER" || role === "ADMIN",
+    betaClaimable: betaOfferOpen() && !business.betaProClaimedAt && effectivePlan(business) === "FREE",
+    businessUnavailable: !planPurchasable("BUSINESS"),
     prices: { PRO: PLANS.PRO.priceCents, BUSINESS: PLANS.BUSINESS.priceCents },
     personal: personalization ? { PRO: personalPaywallCopy(personalization, "PRO"), BUSINESS: personalPaywallCopy(personalization, "BUSINESS") } : undefined,
   };

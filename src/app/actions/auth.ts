@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { betaGrantForNewWorkspace } from "@/server/betaOffer";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, getUserMemberships, homeRouteFor } from "@/lib/auth";
@@ -82,7 +83,7 @@ export async function signup(formData: FormData): Promise<FormState> {
 
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { name, email, passwordHash } });
-      const business = await tx.business.create({ data: { name: workspaceName, handle } });
+      const business = await tx.business.create({ data: { name: workspaceName, handle, ...betaGrantForNewWorkspace() } });
       await tx.orgMembership.create({ data: { userId: user.id, businessId: business.id, role: "OWNER" } });
       return { user, business };
     });

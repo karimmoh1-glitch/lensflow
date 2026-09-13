@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
 import { getSessionFromRequest } from "@/lib/auth";
-import { PLANS, effectivePlan, planLimits, trialEligible } from "@/lib/billing";
+import { PLANS, effectivePlan, planLimits, trialEligible, betaProActive } from "@/lib/billing";
 import { STAFF_ROLES } from "@/lib/auth";
 
 /** Where the workspace stands with billing — read from the record Stripe's webhook wrote. Changing plans happens on the web (Stripe-hosted). */
@@ -18,6 +18,7 @@ export async function GET(req: Request) {
     comped: Boolean(b.compedPlan && b.compedPlan !== "FREE"),
     trialEligible: trialEligible(b),
     trialEndsAt: b.trialEndsAt,
+    betaProEndsAt: betaProActive(b) ? b.betaProEndsAt : null,
     currentPeriodEnd: b.currentPeriodEnd,
     limits: { seats: Number.isFinite(limits.maxTeamSeats) ? limits.maxTeamSeats : null, automations: Number.isFinite(limits.maxAutomations) ? limits.maxAutomations : null },
     canManage: ctx.role === "OWNER",

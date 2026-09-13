@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { MapPin } from "lucide-react";
+import { MapPin, ChevronLeft } from "lucide-react";
 import { Card, CardBody, PageHeader } from "@/components/ui";
 import { ConversationLink } from "./ConversationLink";
 import { formatMoney, toZonedDisplayDate } from "@/lib/utils";
@@ -65,7 +65,8 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const currentIndex = LIFECYCLE.findIndex((s) => s.status === booking.status);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
+    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
+      <Link href="/dashboard/bookings" className="inline-flex items-center gap-1 min-h-[32px] -mt-2 mb-2 text-13 text-ink/65 hover:text-ink"><ChevronLeft className="w-4 h-4" strokeWidth={1.75} aria-hidden />Bookings</Link>
       <PageHeader
         title={`${booking.client.name} — ${booking.service.name}`}
         description={format(toZonedDisplayDate(booking.startAt, business.timezone), "EEEE, MMMM d, yyyy · h:mm a")}
@@ -74,27 +75,27 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       {booking.status !== "CANCELED" && currentIndex >= 0 && (
         <div className="mb-8 max-w-xl" aria-label={`Stage: ${LIFECYCLE[currentIndex].label}, step ${currentIndex + 1} of ${LIFECYCLE.length}`}>
           <div className="flex items-baseline justify-between text-13">
-            <span className="font-semibold text-ink">{LIFECYCLE[currentIndex].label}</span>
-            {currentIndex < LIFECYCLE.length - 1 && <span className="text-ink/60">Next: {LIFECYCLE[currentIndex + 1].label}</span>}
+            <span className="font-medium text-ink">{LIFECYCLE[currentIndex].label}</span>
+            {currentIndex < LIFECYCLE.length - 1 && <span className="text-ink/65">Next: {LIFECYCLE[currentIndex + 1].label}</span>}
           </div>
           <div aria-hidden className="mt-2 grid gap-1" style={{ gridTemplateColumns: `repeat(${LIFECYCLE.length}, minmax(0, 1fr))` }}>
-            {LIFECYCLE.map((step, i) => <span key={step.status} title={step.label} className={`h-1 rounded-full ${i <= currentIndex ? "bg-ink" : "bg-black/[0.08]"}`} />)}
+            {LIFECYCLE.map((step, i) => <span key={step.status} title={step.label} className={`h-1 rounded-full ${i <= currentIndex ? "bg-booking" : "bg-ink/[0.08]"}`} />)}
           </div>
         </div>
       )}
-      {booking.status === "CANCELED" && <p className="mb-8 text-13 font-medium text-ink/60">Canceled</p>}
+      {booking.status === "CANCELED" && <p className="mb-8 text-13 font-medium text-ink/65">Canceled</p>}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardBody>
-              <div className="text-13 font-semibold text-ink/65 mb-3">Details</div>
-              <dl className="space-y-2 text-sm">
-                <div className="flex justify-between"><dt className="text-ink/75">Service</dt><dd className="font-medium">{booking.service.name}</dd></div>
-                <div className="flex justify-between"><dt className="text-ink/75">When</dt><dd className="font-medium">{format(toZonedDisplayDate(booking.startAt, business.timezone), "EEE, MMM d · h:mm a")} – {format(toZonedDisplayDate(booking.endAt, business.timezone), "h:mm a")}</dd></div>
-                {booking.location && <div className="flex justify-between"><dt className="text-ink/75">Where</dt><dd className="font-medium">{booking.location}</dd></div>}
-                <div className="flex justify-between"><dt className="text-ink/75">Price</dt><dd className="font-medium">{formatMoney(booking.totalCents)}</dd></div>
-                {booking.externalCalendarProvider && <div className="flex justify-between"><dt className="text-ink/75">On your calendar</dt><dd className="font-medium">{booking.externalCalendarProvider === "GOOGLE_CALENDAR" ? "Google Calendar" : "Apple Calendar"}</dd></div>}
+              <h2 className="text-13 font-semibold text-ink mb-3">Details</h2>
+              <dl className="divide-y divide-border text-sm [&>div]:py-2 [&>div:first-child]:pt-0 [&>div]:gap-4 [&_dt]:text-ink/65 [&_dd]:text-right">
+                <div className="flex justify-between"><dt className="text-ink/75">Service</dt><dd className="text-ink">{booking.service.name}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink/75">When</dt><dd className="text-ink">{format(toZonedDisplayDate(booking.startAt, business.timezone), "EEE, MMM d · h:mm a")} – {format(toZonedDisplayDate(booking.endAt, business.timezone), "h:mm a")}</dd></div>
+                {booking.location && <div className="flex justify-between"><dt className="text-ink/75">Where</dt><dd className="text-ink">{booking.location}</dd></div>}
+                <div className="flex justify-between"><dt className="text-ink/75">Price</dt><dd className="text-ink">{formatMoney(booking.totalCents)}</dd></div>
+                {booking.externalCalendarProvider && <div className="flex justify-between"><dt className="text-ink/75">On your calendar</dt><dd className="text-ink">{booking.externalCalendarProvider === "GOOGLE_CALENDAR" ? "Google Calendar" : "Apple Calendar"}</dd></div>}
               </dl>
               <div className="mt-4 pt-4 border-t border-border"><ConversationLink businessId={booking.businessId} bookingId={booking.id} conversationId={booking.conversationId} clientId={booking.clientId} /></div>
             </CardBody>
@@ -103,7 +104,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           {showMeeting && (role === "PARTNER" ? (
             <Card>
               <CardBody>
-                <div className="text-13 font-semibold text-ink/65 mb-3">Video meeting</div>
+                <div className="text-13 font-semibold text-ink mb-3">Video meeting</div>
                 <a href={meetingJoinUrl!} target="_blank" rel="noopener noreferrer" className="text-sm font-medium break-all hover:underline">{meetingJoinUrl}</a>
               </CardBody>
             </Card>
@@ -129,7 +130,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <div>
           <Card>
             <CardBody>
-              <div className="text-13 font-semibold text-ink/65 mb-3">Client</div>
+              <div className="text-13 font-semibold text-ink mb-3">Client</div>
               <Link href={`/dashboard/clients/${booking.clientId}`} className="font-medium text-sm hover:underline">
                 {booking.client.name}
               </Link>
@@ -137,7 +138,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               {booking.client.phone && <div className="text-xs text-ink/70">{booking.client.phone}</div>}
               {booking.location && (
                 <div className="flex items-center gap-1 text-xs text-ink/70 mt-2">
-                  <MapPin className="w-3 h-3" strokeWidth={2} />
+                  <MapPin className="w-3 h-3" strokeWidth={1.75} aria-hidden />
                   {booking.location}
                 </div>
               )}
@@ -157,7 +158,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <div className="mt-4">
             <BookingActions bookingId={booking.id} status={booking.status} />
             {role !== "PARTNER" && !["CANCELED", "COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"].includes(booking.status) && (
-              <div className="mt-4 rounded-xl border border-border bg-white px-5 py-4"><RescheduleCancel bookingId={booking.id} canCancel canReschedule timezone={business.timezone} currentStartISO={booking.startAt.toISOString()} /></div>
+              <div className="mt-4 rounded-lg border border-border bg-white px-5 py-4"><RescheduleCancel bookingId={booking.id} canCancel canReschedule timezone={business.timezone} currentStartISO={booking.startAt.toISOString()} /></div>
             )}
           </div>
         </div>

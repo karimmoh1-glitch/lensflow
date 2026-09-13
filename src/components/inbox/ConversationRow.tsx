@@ -61,25 +61,25 @@ export function ConversationRow({ name, channel, time, timeISO, preview, fromYou
   const label = `${name}. ${CHANNEL_META[channel].label}, ${time}. ${said}.${tail ? ` ${tail}.` : ""}`;
   const body = (
     <>
-      <span aria-hidden className={cn("absolute left-0 top-2 bottom-2 w-[2px] rounded-r-full bg-ink transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] origin-center", active ? "scale-y-100" : "scale-y-0")} />
+      <span aria-hidden className={cn("absolute -left-4 md:-left-5 -top-3 -bottom-3 w-[2px] bg-ink", active ? "opacity-100" : "opacity-0")} />
       <div className="flex items-start gap-3">
-        <div className={cn("relative mt-0.5 w-8 h-8 rounded-full flex items-center justify-center text-2xs font-semibold shrink-0", isPerson ? "bg-ink/[0.06] text-ink/75" : "bg-black/[0.035] text-ink/60")}>
+        <div className={cn("relative mt-0.5 w-8 h-8 rounded-full flex items-center justify-center text-2xs font-semibold shrink-0", isPerson ? "bg-ink/[0.07] text-ink/75" : "bg-ink/[0.04] text-ink/65")}>
           {initials(name)}
           {(waiting || unread) && <span aria-hidden className={cn("absolute -top-px -right-px w-2.5 h-2.5 rounded-full ring-2 ring-white", waiting ? "bg-accent" : "bg-ink/70")} />}
         </div>
         <div className={cn("min-w-0 flex-1", tools && "md:group-hover:pr-28 md:group-focus-within:pr-28")}>
           <div className="flex items-baseline gap-2">
-            <span className={cn("text-sm truncate leading-5", unread ? "font-semibold text-ink" : isPerson ? "font-medium text-ink/90" : "font-medium text-ink/60")}>{name}</span>
-            {!isPerson && categoryLabel && <span className="text-2xs font-medium text-ink/60 shrink-0">{categoryLabel}</span>}
+            <span className={cn("text-sm truncate leading-5", unread ? "font-semibold text-ink" : isPerson ? "font-medium text-ink" : "text-ink/70")}>{name}</span>
+            {!isPerson && categoryLabel && <span className="text-xs font-medium text-ink/60 shrink-0">{categoryLabel}</span>}
             {assigneeName && <span title={`Assigned to ${assigneeName}`} className="w-4 h-4 rounded-full bg-ink/80 text-white text-[9.5px] leading-none font-semibold flex items-center justify-center shrink-0">{initials(assigneeName).slice(0, 1)}</span>}
             <span className="ml-auto flex items-baseline gap-2 shrink-0">
-              {followUp && !waiting && <span className="text-2xs font-medium text-ink/60">{followUp}</span>}
-              <time dateTime={timeISO} suppressHydrationWarning className={cn("text-xs tabular-nums", unread || waiting ? "text-ink/70" : "text-ink/60")}>{time}</time>
+              {followUp && !waiting && <span className="text-xs font-medium text-ink/60">{followUp}</span>}
+              <time dateTime={timeISO} suppressHydrationWarning className={cn("text-xs tabular-nums", unread || waiting ? "text-ink" : "text-ink/65")}>{time}</time>
             </span>
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 min-w-0">
             <ChannelBadge channel={channel} className="w-3.5 h-3.5 rounded-[4px] opacity-90" />
-            <p className={cn("text-13 leading-5 truncate", unread ? "text-ink/80" : "text-ink/60")}>
+            <p className={cn("text-13 leading-5 truncate", unread ? "text-ink/80" : "text-ink/65")}>
               {line ?? (
                 <>
                   {fromYou && <span className="text-ink/60">You: </span>}
@@ -93,8 +93,8 @@ export function ConversationRow({ name, channel, time, timeISO, preview, fromYou
     </>
   );
   const cls = cn(
-    "group relative block w-full text-left pl-4 pr-3 md:pl-5 md:pr-4 py-2.5 transition-colors duration-100 hover:bg-black/[0.025] focus-within:bg-black/[0.035] cursor-pointer",
-    active && "bg-black/[0.04] hover:bg-black/[0.045]",
+    "group relative block w-full text-left pl-4 pr-3 md:pl-5 md:pr-4 py-3 transition-colors duration-100 hover:bg-paper focus-within:bg-paper cursor-pointer",
+    active && "bg-ink/[0.045] hover:bg-ink/[0.05]",
     className
   );
   const Wrap = as;

@@ -107,7 +107,7 @@ export function CheckoutReturn({ outcome, expectedPlan, currentPlan }: { outcome
 
   if (outcome !== "success" || landed) return null;
   return (
-    <div role="status" className="mb-6 rounded-xl border border-border bg-black/[0.03] px-4 py-3 text-sm text-ink/80 flex items-center gap-3">
+    <div role="status" className="mb-6 rounded-lg border border-border bg-ink/[0.03] px-4 py-3 text-sm text-ink/80 flex items-center gap-3">
       <span className="w-2 h-2 rounded-full bg-ink animate-pulse" />
       {waitedTooLong ? (
         <span>Payment received by Stripe, but the confirmation hasn&rsquo;t reached us yet. It usually takes seconds; if this page doesn&rsquo;t update in a minute, reload or open Manage billing.</span>

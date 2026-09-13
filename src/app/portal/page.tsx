@@ -91,7 +91,7 @@ export default async function PortalHomePage() {
                       rel="noreferrer"
                       className="mt-2.5 flex items-center gap-2 text-sm text-accent-text hover:underline bg-accent-soft/50 rounded-lg px-3 py-2"
                     >
-                      <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
                       View your delivery
                     </a>
                   )}
@@ -127,7 +127,7 @@ export default async function PortalHomePage() {
                   </div>
                   <span className="flex items-center gap-1.5 text-sm font-medium text-accent-text shrink-0">
                     Open
-                    <ExternalLink className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
+                    <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden />
                   </span>
                 </a>
               ))}

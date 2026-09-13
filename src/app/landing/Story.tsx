@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { ChannelIcon } from "./ChannelIcon";
 import { ScrollScene } from "./Scroll";
 import { Reveal } from "./Reveal";
-import type { ChannelStatus } from "./channelStatus";
 
 /**
  * One client, start to finish, told by the product's own pieces and driven by the scroll:
@@ -30,7 +29,7 @@ const BEATS = [
   { key: "client", label: "Client", title: "The follow-through runs itself.", body: "A reminder the day before, a thank-you after. Switched on once, written into the thread every time.", at: [0.79, 0.84] },
 ] as const;
 
-export function Story({ instagram }: { instagram: ChannelStatus }) {
+export function Story() {
   return (
     <>
       {/* Wide screens: pinned, scroll-driven. Hidden under reduced motion (see globals.css). */}
@@ -51,13 +50,13 @@ export function Story({ instagram }: { instagram: ChannelStatus }) {
               <div className="relative h-[260px]">
                 {BEATS.map((b) => (
                   <Step key={b.key} a={b.at[0]} b={b.at[1]} c={b.at[2]} d={b.at[3]} dy="18px" className="absolute inset-0">
-                    <h2 className="font-sans font-bold text-[clamp(2.1rem,3.6vw,3.2rem)] leading-[1] tracking-[-0.04em] text-ink text-balance">{b.title}</h2>
+                    <h2 className="font-serif font-normal text-[clamp(2.4rem,4vw,3.6rem)] leading-[1.02] tracking-[-0.012em] text-ink text-balance">{b.title}</h2>
                     <p className="mt-4 text-[1.0625rem] text-ink/60 leading-relaxed max-w-sm">{b.body}</p>
                   </Step>
                 ))}
               </div>
             </div>
-            <Stage instagram={instagram} />
+            <Stage />
           </div>
         </div>
       </ScrollScene>
@@ -71,10 +70,10 @@ export function Story({ instagram }: { instagram: ChannelStatus }) {
                 <p className="text-13 font-medium text-ink/60">
                   {i + 1} · {b.label}
                 </p>
-                <h2 className="mt-2 font-sans font-bold text-[1.9rem] leading-[1.02] tracking-[-0.035em] text-ink text-balance">{b.title}</h2>
+                <h2 className="mt-2 font-serif font-normal text-[2.2rem] leading-[1.04] tracking-[-0.012em] text-ink text-balance">{b.title}</h2>
                 <p className="mt-3 text-[15px] text-ink/60 leading-relaxed">{b.body}</p>
                 <div className="mt-6">
-                  <Still beat={b.key} instagram={instagram} />
+                  <Still beat={b.key} />
                 </div>
               </Reveal>
             </li>
@@ -101,14 +100,14 @@ function Step({ as: Tag = "div", a, b, c, d, dy, ds, className, style, children 
   );
 }
 
-const frame = "rounded-xl border border-border bg-white shadow-[0_1px_0_rgba(16,17,20,0.03),0_30px_70px_-40px_rgba(16,17,20,0.35)]";
+const frame = "rounded-xl border border-border bg-white shadow-elev-2";
 
 /** The pinned stage: the product window, thread on the left, the rail on the right. */
-function Stage({ instagram }: { instagram: ChannelStatus }) {
+function Stage() {
   return (
     <div className={cn(frame, "relative overflow-hidden grid grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] h-[560px]")}>
       <div className="min-w-0 flex flex-col border-r border-border">
-        <ThreadHeader instagram={instagram} live />
+        <ThreadHeader live />
         <div className="flex-1 px-4 py-4 space-y-3">
           <Step a={-1} b={0} dy="14px">
             <Inbound highlightAt={0.2} />
@@ -117,7 +116,7 @@ function Stage({ instagram }: { instagram: ChannelStatus }) {
             <ReadChips />
           </Step>
           <Step a={0.61} b={0.69} dy="14px">
-            <Outbound instagram={instagram} />
+            <Outbound />
           </Step>
           <Step a={0.85} b={0.92} dy="14px">
             <ThankYou />
@@ -147,11 +146,11 @@ function Stage({ instagram }: { instagram: ChannelStatus }) {
 }
 
 /** The stacked version: each beat's piece, at rest. */
-function Still({ beat, instagram }: { beat: (typeof BEATS)[number]["key"]; instagram: ChannelStatus }) {
+function Still({ beat }: { beat: (typeof BEATS)[number]["key"] }) {
   if (beat === "inquiry") {
     return (
       <div className={cn(frame, "overflow-hidden")}>
-        <ThreadHeader instagram={instagram} />
+        <ThreadHeader />
         <div className="px-4 py-4">
           <Inbound />
         </div>
@@ -184,7 +183,7 @@ function Still({ beat, instagram }: { beat: (typeof BEATS)[number]["key"]; insta
     return (
       <div className="space-y-3">
         <div className={cn(frame, "px-4 py-4")}>
-          <Outbound instagram={instagram} />
+          <Outbound />
         </div>
         <div className={cn(frame, "p-4")}>
           <Booked />
@@ -206,7 +205,7 @@ function Still({ beat, instagram }: { beat: (typeof BEATS)[number]["key"]; insta
 
 // ── The pieces, drawn as the product draws them ─────────────────────────────
 
-function ThreadHeader({ instagram, live }: { instagram: ChannelStatus; live?: boolean }) {
+function ThreadHeader({ live }: { live?: boolean }) {
   return (
     <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
       <span className="w-8 h-8 rounded-full bg-ink/[0.06] text-ink/75 text-2xs font-semibold flex items-center justify-center">MC</span>
@@ -214,7 +213,6 @@ function ThreadHeader({ instagram, live }: { instagram: ChannelStatus; live?: bo
         <p className="text-sm font-semibold text-ink leading-5">Maya Chen</p>
         <p className="text-xs text-ink/60 flex items-center gap-1.5">
           <ChannelIcon k="instagram" size={14} /> Instagram · @maya.makes
-          {instagram !== "Live" && <span className="text-2xs font-medium text-ink/60 rounded-md bg-black/[0.04] px-1.5">{instagram}</span>}
         </p>
       </div>
       {live ? (
@@ -230,7 +228,7 @@ function Inbound({ highlightAt }: { highlightAt?: number }) {
   const phrase = <>Friday at 2</>;
   return (
     <div>
-      <p className="inline-block max-w-[88%] rounded-2xl rounded-tl-md bg-black/[0.045] px-3.5 py-2.5 text-13 text-ink leading-relaxed">
+      <p className="inline-block max-w-[88%] rounded-2xl rounded-tl-md bg-ink/[0.045] px-3.5 py-2.5 text-13 text-ink leading-relaxed">
         Hi! Can you do{" "}
         {highlightAt === undefined ? (
           phrase
@@ -252,7 +250,7 @@ function ReadChips() {
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="text-2xs font-medium text-ink/60 mr-1">Daythread read</span>
       {[["Intent", "Wants to book"], ["Date", "Friday"], ["Time", "2:00 PM"], ["Service", "Portrait session"], ["Context", "Returning client"]].map(([k, v]) => (
-        <span key={k} className="inline-flex items-center gap-1 rounded-md bg-black/[0.045] px-1.5 py-0.5 text-2xs font-medium text-ink/75">
+        <span key={k} className="inline-flex items-center gap-1 rounded-md bg-ink/[0.045] px-1.5 py-0.5 text-2xs font-medium text-ink/75">
           <span className="text-ink/60">{k}</span>
           {v}
         </span>
@@ -302,7 +300,7 @@ function Slots() {
   );
 }
 
-function Outbound({ instagram }: { instagram: ChannelStatus }) {
+function Outbound() {
   return (
     <div>
       <div className="flex justify-end">
@@ -312,7 +310,7 @@ function Outbound({ instagram }: { instagram: ChannelStatus }) {
       </div>
       <p className="mt-1.5 text-right text-2xs text-ink/60 flex items-center justify-end gap-1.5">
         <Check className="w-3 h-3 text-success" strokeWidth={2.5} aria-hidden />
-        Sent on Instagram{instagram !== "Live" ? ` (${instagram.toLowerCase()})` : ""} by your confirmation automation
+        Sent on Instagram by your confirmation automation
       </p>
     </div>
   );

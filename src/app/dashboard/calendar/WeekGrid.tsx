@@ -30,7 +30,7 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
   const t = (d: Date) => format(toZonedDisplayDate(d, timezone), "h:mm a");
 
   return (
-    <section aria-label="Week" className="rounded-xl border border-border bg-white overflow-hidden">
+    <section aria-label="Week" className="rounded-lg border border-border bg-white overflow-hidden">
       <div className="overflow-x-auto">
         <div className="min-w-[680px]">
           {/* day headers */}
@@ -41,10 +41,10 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
               const sel = isSameDay(d, selected);
               const allDay = agendas[i].items.filter((it) => it.kind === "busy" && it.allDay);
               return (
-                <Link key={dayKey(d)} href={`?view=week&day=${dayKey(d)}`} className={cn("px-2 py-2.5 text-center border-l border-border hover:bg-black/[0.02]", sel && "bg-paper")} aria-current={isToday ? "date" : undefined}>
-                  <div className="text-13 font-semibold text-ink/65">{format(d, "EEE")}</div>
-                  <div className={cn("mx-auto mt-0.5 w-7 h-7 rounded-full flex items-center justify-center text-sm font-extrabold tabular-nums", isToday ? "bg-accent-strong text-white" : "text-ink")}>{format(d, "d")}</div>
-                  {allDay.length > 0 && <div className="mt-1 text-2xs font-semibold text-ink/65 truncate" title={allDay.map((a) => a.title).join(", ")}>{allDay.length === 1 ? allDay[0].title : `${allDay.length} all-day`}</div>}
+                <Link key={dayKey(d)} href={`?view=week&day=${dayKey(d)}`} className={cn("px-2 py-2.5 text-center border-l border-border hover:bg-paper", sel && "bg-paper")} aria-current={isToday ? "date" : undefined}>
+                  <div className="text-xs font-medium text-ink/65">{format(d, "EEE")}</div>
+                  <div className={cn("mx-auto mt-0.5 w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium tabular-nums", isToday ? "bg-accent-strong text-white" : "text-ink")}>{format(d, "d")}</div>
+                  {allDay.length > 0 && <div className="mt-1 text-xs text-ink/65 truncate" title={allDay.map((a) => a.title).join(", ")}>{allDay.length === 1 ? allDay[0].title : `${allDay.length} all-day`}</div>}
                 </Link>
               );
             })}
@@ -53,14 +53,14 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
           <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]" style={{ height }}>
             <div className="relative">
               {hours.map((h) => (
-                <span key={h} className="absolute right-2 -translate-y-1/2 text-2xs text-ink/65 tabular-nums" style={{ top: top(h * 60) }}>{h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`}</span>
+                <span key={h} className="absolute right-2 -translate-y-1/2 text-xs text-ink/65 tabular-nums" style={{ top: top(h * 60) }}>{h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`}</span>
               ))}
             </div>
             {week.map((d, i) => {
               const a = agendas[i];
               const isToday = isSameDay(d, today);
               return (
-                <div key={dayKey(d)} className={cn("relative border-l border-border", a.blocked ? "bg-[repeating-linear-gradient(135deg,transparent,transparent_6px,rgba(16,17,20,0.04)_6px,rgba(16,17,20,0.04)_7px)]" : "bg-paper/60")}>
+                <div key={dayKey(d)} className={cn("relative border-l border-border", a.blocked ? "bg-[repeating-linear-gradient(135deg,transparent,transparent_6px,rgba(16,17,20,0.04)_6px,rgba(16,17,20,0.04)_7px)]" : "bg-paper")}>
                   {/* working hours */}
                   {a.working.map((w) => (
                     <span key={w.startAt.toISOString()} aria-hidden className="absolute inset-x-0 bg-white" style={{ top: top(mins(w.startAt)), height: Math.max(0, (mins(w.endAt) || 24 * 60) - mins(w.startAt)) * PX_PER_MIN }} />
@@ -75,16 +75,16 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
                     const style = { top: top(s) + 1, height: (e - s) * PX_PER_MIN - 2 };
                     if (it.kind === "booking") {
                       return (
-                        <Link key={it.id} href={`/dashboard/bookings/${it.id}`} className={cn("absolute left-1 right-1 rounded-md border px-1.5 py-1 overflow-hidden text-left hover:brightness-95 transition-[filter]", it.status === "BOOKED" ? "bg-warning-soft border-warning/40" : "bg-accent-soft border-accent/40")} style={style} title={`${it.title} · ${t(it.startAt)}–${t(it.endAt)}`}>
-                          <div className={cn("text-2xs font-bold leading-tight truncate", it.status === "BOOKED" ? "text-warning-text" : "text-accent-text")}>{it.title}</div>
-                          <div className="text-2xs text-ink/65 leading-tight truncate tabular-nums">{t(it.startAt)}{it.status === "BOOKED" ? " · not confirmed" : ""}</div>
+                        <Link key={it.id} href={`/dashboard/bookings/${it.id}`} className={cn("absolute left-1 right-1 rounded border px-1.5 py-1 overflow-hidden text-left hover:brightness-95 transition-[filter]", it.status === "BOOKED" ? "bg-warning-soft border-warning/30" : "bg-booking-soft border-booking/30")} style={style} title={`${it.title} · ${t(it.startAt)}–${t(it.endAt)}`}>
+                          <div className={cn("text-xs font-medium leading-tight truncate", it.status === "BOOKED" ? "text-warning-text" : "text-booking-text")}>{it.title}</div>
+                          <div className="text-xs text-ink/65 leading-tight truncate tabular-nums">{t(it.startAt)}{it.status === "BOOKED" ? " · not confirmed" : ""}</div>
                         </Link>
                       );
                     }
                     return (
-                      <div key={it.id} className="absolute left-1 right-1 rounded-md bg-ink/[0.07] border border-ink/10 px-1.5 py-1 overflow-hidden" style={style} title={`${it.title} · ${it.subtitle}`}>
-                        <div className="text-2xs font-semibold text-ink/70 leading-tight truncate">{it.title}</div>
-                        <div className="text-2xs text-ink/65 leading-tight truncate">{it.subtitle}</div>
+                      <div key={it.id} className="absolute left-1 right-1 rounded bg-ink/[0.06] border border-ink/10 px-1.5 py-1 overflow-hidden" style={style} title={`${it.title} · ${it.subtitle}`}>
+                        <div className="text-xs font-medium text-ink/75 leading-tight truncate">{it.title}</div>
+                        <div className="text-xs text-ink/65 leading-tight truncate">{it.subtitle}</div>
                       </div>
                     );
                   })}

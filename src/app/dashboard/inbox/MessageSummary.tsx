@@ -30,7 +30,7 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
     });
   };
 
-  const tone = outbound ? "text-white/70 hover:text-white hover:bg-white/10" : "text-ink/65 hover:text-ink hover:bg-black/[0.06]";
+  const tone = outbound ? "text-white/70 hover:text-white hover:bg-white/10" : "text-ink/65 hover:text-ink hover:bg-ink/[0.06]";
   return (
     <div className="mt-1.5">
       <button
@@ -48,7 +48,7 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 disabled:opacity-60"
         )}
       >
-        <AlignLeft className="w-3 h-3" strokeWidth={2.2} aria-hidden />
+        <AlignLeft className="w-3 h-3" strokeWidth={2} aria-hidden />
         {pending ? "Summarizing…" : summary ? (open ? "Hide summary" : "Summary") : "Summarize"}
       </button>
       {error && <p role="alert" className={cn("mt-1 text-[12px]", outbound ? "text-white/80" : "text-ink/70")}>{error}</p>}
@@ -58,7 +58,7 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
             <p className="flex-1">{summary}</p>
             <button type="button" onClick={() => setOpen(false)} aria-label="Hide summary" className={cn("shrink-0 w-5 h-5 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-md inline-flex items-center justify-center", tone)}><X className="w-3 h-3" strokeWidth={2.5} aria-hidden /></button>
           </div>
-          <p className={cn("mt-1 text-2xs font-medium", outbound ? "text-white/70" : "text-ink/65")}>{source === "ai" ? "Written by the model from this message" : "From the message, by rules"}</p>
+          <p className={cn("mt-1 text-xs font-medium", outbound ? "text-white/70" : "text-ink/65")}>{source === "ai" ? "Written by the model from this message" : "From the message, by rules"}</p>
         </div>
       )}
     </div>

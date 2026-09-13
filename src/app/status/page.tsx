@@ -56,8 +56,8 @@ export default async function StatusPage() {
   return (
     <main className="min-h-screen bg-paper">
       <div className="max-w-2xl mx-auto px-6 py-12 md:py-16">
-        <Link href="/" className="inline-flex items-center gap-2 text-ink"><LogoMark className="w-6 h-6" /><span className="font-sans font-extrabold text-lg tracking-tight">Daythread</span></Link>
-        <h1 className="mt-8 font-sans font-extrabold text-3xl tracking-tight text-ink">Status</h1>
+        <Link href="/" className="inline-flex items-center gap-2 text-ink"><LogoMark className="w-6 h-6" /><span className="font-sans font-semibold text-lg tracking-tight">Daythread</span></Link>
+        <h1 className="mt-8 font-sans font-semibold text-3xl tracking-tight text-ink">Status</h1>
         <p className="mt-2 text-sm text-ink/70">Checked when you opened this page, at {checkedAt.toUTCString()}.</p>
 
         <section aria-label="Daythread" className="mt-8 rounded-2xl border border-border bg-white divide-y divide-border">

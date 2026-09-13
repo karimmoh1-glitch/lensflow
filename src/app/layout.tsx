@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Instrument_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-// One type family, deliberately. Inter is the most generic SaaS body font there is, and
-// Playfair Display as the wordmark read as a wedding-photography studio — exactly the
-// vertical the product is NOT limited to. Manrope is geometric but warm, and carries
-// weights 500–800 well enough to do both the body and the display job; both CSS
-// variables point at it so every existing font-display/font-sans site moves together.
-const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const display = Manrope({ subsets: ["latin"], variable: "--font-display", display: "swap" });
+// Two faces from one family. Instrument Sans does all the work in the product: neutral,
+// compact, legible at 12–14px, with a real medium weight. Instrument Serif is the editorial
+// voice for the few places that should read like a publication, not an app — landing
+// headlines, the founder page, a Today greeting. It has one weight on purpose: it is never
+// bolded, so it can never turn into a shouting headline.
+const sans = Instrument_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif", display: "swap" });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
 const TITLE = "Daythread — The inbox that books your clients";
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable}`}>
+    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );

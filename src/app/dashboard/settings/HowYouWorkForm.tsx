@@ -51,8 +51,8 @@ export function HowYouWorkForm({ initial }: { initial: OnboardingAnswers | null 
   );
 
   return (
-    <section aria-labelledby="how-you-work" className="rounded-xl border border-border bg-white px-5 py-5">
-      <h2 id="how-you-work" className="text-[15px] font-extrabold text-ink">How you work</h2>
+    <section aria-labelledby="how-you-work" className="rounded-lg border border-border bg-white px-5 py-5">
+      <h2 id="how-you-work" className="text-[15px] font-semibold text-ink">How you work</h2>
       <p className="mt-1 text-sm text-ink/65 leading-relaxed">{initial ? "What you told us when you started. Change anything and Daythread re-orders itself around it." : "Tell Daythread how you work and it puts the right things first — on Today, in empty pages, and in what it recommends."}</p>
       <div className="mt-5 space-y-6">
         <Q label="What do you do?"><OptionGrid label="What do you do?" options={USER_TYPES} value={draft.userType} onChange={single("userType")} columns={3} size="sm" /></Q>

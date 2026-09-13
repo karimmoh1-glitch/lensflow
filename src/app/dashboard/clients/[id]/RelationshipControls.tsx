@@ -18,8 +18,8 @@ export function RelationshipControls({ clientId, relationship, name }: { clientI
   const { toast } = useToast();
   return (
     <div>
-      <div className="text-13 font-semibold text-ink/65 mb-1.5">Relationship</div>
-      <div role="radiogroup" aria-label="Relationship" className="inline-flex items-center rounded-full bg-black/[0.05] p-0.5">
+      <div className="text-xs font-medium text-ink/65 mb-1.5">Relationship</div>
+      <div role="radiogroup" aria-label="Relationship" className="inline-flex items-center rounded-full bg-ink/[0.05] p-0.5">
         {OPTIONS.map((o) => {
           const on = o.key === relationship;
           return (

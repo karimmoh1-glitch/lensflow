@@ -76,7 +76,7 @@ export function ClientFilesActions({ clientId, model }: { clientId: string; mode
 
   if (!model.hasFolder) {
     return (
-      <button type="button" onClick={create} disabled={pending} className="text-xs font-semibold text-ink/70 hover:text-ink disabled:opacity-60">
+      <button type="button" onClick={create} disabled={pending} className="text-xs font-medium text-ink/70 hover:text-ink disabled:opacity-60">
         {busy === "create" ? "Creating…" : "Create folder"}
       </button>
     );
@@ -85,20 +85,20 @@ export function ClientFilesActions({ clientId, model }: { clientId: string; mode
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 justify-end">
       {model.url && (
-        <Link href={model.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-ink/70 hover:text-ink">
+        <Link href={model.url} target="_blank" rel="noreferrer" className="text-xs font-medium text-ink/70 hover:text-ink">
           Open
         </Link>
       )}
       {model.url && (
-        <button type="button" onClick={copy} className="text-xs font-semibold text-ink/70 hover:text-ink">
+        <button type="button" onClick={copy} className="text-xs font-medium text-ink/70 hover:text-ink">
           Copy link
         </button>
       )}
-      <button type="button" onClick={share} disabled={pending} className="text-xs font-semibold text-ink/70 hover:text-ink disabled:opacity-60">
+      <button type="button" onClick={share} disabled={pending} className="text-xs font-medium text-ink/70 hover:text-ink disabled:opacity-60">
         {busy === "share" ? "Sharing…" : model.sharedWith ? "Re-share" : "Share with client"}
       </button>
       {model.clientHasContact && (
-        <button type="button" onClick={() => setComposing((v) => !v)} className="text-xs font-semibold text-ink/70 hover:text-ink">
+        <button type="button" onClick={() => setComposing((v) => !v)} className="text-xs font-medium text-ink/70 hover:text-ink">
           {composing ? "Cancel" : model.deliveredAt ? "Send again" : "Send link"}
         </button>
       )}
@@ -111,7 +111,7 @@ export function ClientFilesActions({ clientId, model }: { clientId: string; mode
             maxLength={500}
             aria-label="A line for the client (optional)"
             placeholder="A line for the client (optional)"
-            className="w-full rounded-xl border border-border px-3 py-2 text-13 text-ink placeholder:text-ink/60 focus:outline-none focus:ring-2 focus:ring-ink/70"
+            className="w-full rounded-lg border border-border px-3 py-2 text-13 text-ink placeholder:text-ink/60 focus:outline-none focus:ring-2 focus:ring-ink/70"
           />
           <Button size="sm" onClick={send} loading={pending && busy === "send"} loadingLabel="Sending">
             Send the link

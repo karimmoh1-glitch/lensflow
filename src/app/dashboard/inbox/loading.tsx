@@ -23,7 +23,7 @@ export default function Loading() {
           ))}
         </div>
       </div>
-      <div className="hidden lg:block flex-1 bg-paper/40" />
+      <div className="hidden lg:block flex-1 bg-paper" />
     </div>
   );
 }

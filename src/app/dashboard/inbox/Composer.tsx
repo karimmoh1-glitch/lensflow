@@ -98,14 +98,14 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
   const canSend = body.trim().length > 0 && !pending;
 
   return (
-    <div className="sticky bottom-0 border-t border-border bg-white/95 backdrop-blur px-3 md:px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:py-4">
+    <div className="sticky bottom-0 bg-white px-3 md:px-8 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-5">
       {closed && (
-        <p role="status" className="mb-2.5 rounded-xl border border-warning/40 bg-warning-soft/50 px-3 py-2 text-[12px] leading-snug text-ink/80">
+        <p role="status" className="mb-2.5 rounded-lg border border-warning/40 bg-warning-soft/50 px-3 py-2 text-[12px] leading-snug text-ink/80">
           {windowNotice.text}
         </p>
       )}
-      {windowNotice?.open && <p className="mb-2 text-2xs text-ink/65">WhatsApp reply window closes in {windowNotice.endsIn}.</p>}
-      <div className={cn("rounded-xl border bg-white transition-[border-color,box-shadow] duration-150 focus-within:border-ink/30 focus-within:shadow-[0_0_0_4px_rgba(16,17,20,0.05)]", error ? "border-danger/40" : "border-ink/[0.14]", sentPulse && "dt-confirm")}>
+      {windowNotice?.open && <p className="mb-2 text-xs text-ink/65">WhatsApp reply window closes in {windowNotice.endsIn}.</p>}
+      <div className={cn("rounded-lg border bg-white shadow-xs transition-[border-color,box-shadow] duration-150 focus-within:border-ink/40 focus-within:ring-[3px] focus-within:ring-ink/[0.06]", error ? "border-danger/40" : "border-border-strong", sentPulse && "dt-confirm")}>
         <textarea
           ref={ref}
           value={body}
@@ -129,24 +129,24 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
               disabled={drafting || pending}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-13 font-semibold text-ink/75 hover:bg-black/[0.03] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium text-ink/65 hover:bg-ink/[0.03] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
             >
-              {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> : <PenLine className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />}
+              {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden /> : <PenLine className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden />}
               {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}
             </button>
             {menuOpen && !wasAiDrafted && (
-              <div role="menu" aria-label="What should the draft do?" className="absolute bottom-11 left-0 z-20 w-64 rounded-xl border border-border bg-white shadow-overlay p-1.5 dt-swap">
+              <div role="menu" aria-label="What should the draft do?" className="absolute bottom-11 left-0 z-20 w-64 rounded-lg bg-white shadow-overlay p-1.5 dt-swap">
                 {DRAFT_MODES.map(([key, label, hint]) => (
-                  <button key={key} role="menuitem" type="button" onClick={() => draft(key)} className="w-full text-left rounded-xl px-3 py-2 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.05]">
+                  <button key={key} role="menuitem" type="button" onClick={() => draft(key)} className="w-full text-left rounded-xl px-3 py-2 hover:bg-ink/[0.04] focus-visible:outline-none focus-visible:bg-ink/[0.05]">
                     <span className="block text-13 font-semibold text-ink">{label}</span>
-                    <span className="block text-2xs text-ink/65 leading-snug">{hint}</span>
+                    <span className="block text-xs text-ink/65 leading-snug">{hint}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden md:inline text-2xs text-ink/65" aria-hidden>⌘↵</span>
+            <span className="hidden md:inline text-xs text-ink/65" aria-hidden>⌘↵</span>
             <Button size="sm" onClick={send} disabled={!canSend} loading={pending && !drafting} loadingLabel={closed ? "Saving" : "Sending"} aria-label={closed ? "Save to thread" : "Send"} className={cn("min-w-[2.25rem] px-3", !canSend && "bg-ink/25")}>
               {closed ? "Save" : <><span className="hidden sm:inline">Send</span><ArrowUp className="w-4 h-4 sm:ml-0.5" strokeWidth={2.5} aria-hidden /></>}
             </Button>

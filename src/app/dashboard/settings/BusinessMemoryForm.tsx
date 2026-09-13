@@ -31,8 +31,8 @@ export function BusinessMemoryForm({ initial }: { initial: BusinessMemory }) {
     </Field>
   );
   return (
-    <section aria-labelledby="memory-title" className="rounded-xl border border-border bg-white px-5 py-5">
-      <h2 id="memory-title" className="text-[15px] font-extrabold text-ink">How Daythread should understand your business</h2>
+    <section aria-labelledby="memory-title" className="rounded-lg border border-border bg-white px-5 py-5">
+      <h2 id="memory-title" className="text-[15px] font-semibold text-ink">How Daythread should understand your business</h2>
       <p className="mt-1 text-sm text-ink/65 leading-relaxed">In your words. Drafts and the assistant treat these as facts they may quote and must not contradict; anything not written here they ask about rather than invent. Nothing on this page is ever written by the model.</p>
       <div className="mt-5 space-y-5">
         <fieldset>

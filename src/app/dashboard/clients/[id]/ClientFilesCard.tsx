@@ -21,7 +21,7 @@ export async function ClientFilesCard({ businessId, clientId }: { businessId: st
   return (
     <Card>
       <CardBody>
-        <div className="text-13 font-semibold text-ink/65 mb-2">Files</div>
+        <div className="text-xs font-medium text-ink/65 mb-2">Files</div>
         <div className="space-y-4">
           {stores.map((s) => {
             const folder = (s.folder ?? null) as FolderRef | null;
@@ -31,13 +31,13 @@ export async function ClientFilesCard({ businessId, clientId }: { businessId: st
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-ink">{s.name}</div>
                     {folder?.deliveredAt ? (
-                      <p className="text-2xs text-success-text">Sent {formatDistanceToNowStrict(new Date(folder.deliveredAt))} ago{folder.deliveredVia ? ` by ${folder.deliveredVia.toLowerCase()}` : ""}</p>
+                      <p className="text-xs text-success-text">Sent {formatDistanceToNowStrict(new Date(folder.deliveredAt))} ago{folder.deliveredVia ? ` by ${folder.deliveredVia.toLowerCase()}` : ""}</p>
                     ) : folder?.sharedWith ? (
-                      <p className="text-2xs text-ink/65">Shared with {folder.sharedWith}</p>
+                      <p className="text-xs text-ink/65">Shared with {folder.sharedWith}</p>
                     ) : folder ? (
-                      <p className="text-2xs text-ink/65">Not shared with the client yet</p>
+                      <p className="text-xs text-ink/65">Not shared with the client yet</p>
                     ) : (
-                      <p className="text-2xs text-ink/65">No folder yet</p>
+                      <p className="text-xs text-ink/65">No folder yet</p>
                     )}
                   </div>
                   <ClientFilesActions
@@ -53,8 +53,8 @@ export async function ClientFilesCard({ businessId, clientId }: { businessId: st
                     }}
                   />
                 </div>
-                {s.error && <p className="mt-1 text-2xs text-warning-text">{s.error}</p>}
-                {folder && !s.error && s.files.length === 0 && <p className="mt-1 text-2xs text-ink/65">Folder is empty. Anything you add there shows up here.</p>}
+                {s.error && <p className="mt-1 text-xs text-warning-text">{s.error}</p>}
+                {folder && !s.error && s.files.length === 0 && <p className="mt-1 text-xs text-ink/65">Folder is empty. Anything you add there shows up here.</p>}
                 {s.files.length > 0 && (
                   <ul className="mt-1.5 space-y-1">
                     {s.files.slice(0, 8).map((f) => (
@@ -69,7 +69,7 @@ export async function ClientFilesCard({ businessId, clientId }: { businessId: st
                         {f.isFolder ? <span className="text-ink/60"> · folder</span> : null}
                       </li>
                     ))}
-                    {s.files.length > 8 && <li className="text-2xs text-ink/60">and {s.files.length - 8} more in the folder</li>}
+                    {s.files.length > 8 && <li className="text-xs text-ink/60">and {s.files.length - 8} more in the folder</li>}
                   </ul>
                 )}
               </div>

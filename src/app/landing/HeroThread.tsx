@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChannelIcon, CHANNEL, type ChannelKey } from "./ChannelIcon";
-import type { ChannelStatus } from "./channelStatus";
 
 /**
  * The hero: many inputs → one system → one result, told by the information itself.
@@ -63,7 +62,7 @@ const STORIES: Story[] = [
 const PANEL_IN_Y = 150;
 const gutterPath = (i: number) => `M 0 ${30 + i * 60} C 60 ${30 + i * 60}, 60 ${PANEL_IN_Y}, 120 ${PANEL_IN_Y}`;
 
-export function HeroThread({ status }: { status: Record<ChannelKey, ChannelStatus> }) {
+export function HeroThread() {
   const [active, setActive] = useState<ChannelKey>("instagram");
   const [shown, setShown] = useState<ChannelKey>("instagram");
   const [phase, setPhase] = useState<0 | 1 | 2 | 3 | 4>(4); // 0 in flight · 1 read · 2 acted · 3 outcome · 4 next
@@ -118,8 +117,6 @@ export function HeroThread({ status }: { status: Record<ChannelKey, ChannelStatu
 
   return (
     <div className="relative w-full select-none" aria-label="Messages from Instagram, Gmail, texts, WhatsApp and your booking page flowing into one Daythread">
-      {/* ambient: the active channel's color, softly, behind the product */}
-      <div aria-hidden className="absolute -inset-10 rounded-[40px] blur-3xl transition-colors duration-700 pointer-events-none" style={{ background: `radial-gradient(60% 60% at 70% 50%, ${brand}22, transparent 70%)` }} />
 
       <div className="relative grid grid-cols-1 sm:grid-cols-[64px_120px_minmax(0,1fr)] items-center gap-y-5">
         {/* Channels */}
@@ -129,17 +126,12 @@ export function HeroThread({ status }: { status: Record<ChannelKey, ChannelStatu
               <button
                 type="button"
                 aria-pressed={st.k === active}
-                aria-label={`Show ${CHANNEL[st.k].name}${status[st.k] !== "Live" ? ` (${status[st.k].toLowerCase()})` : ""}`}
+                aria-label={`Show ${CHANNEL[st.k].name}`}
                 onMouseEnter={() => pick(st.k)}
                 onClick={() => pick(st.k)}
                 className="relative rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2"
               >
                 <ChannelIcon k={st.k} size={56} active={st.k === active} className={cn("max-[359px]:!w-11 max-[359px]:!h-11", st.k === active ? "" : "opacity-75 hover:opacity-100")} />
-                {status[st.k] !== "Live" && (
-                  <span aria-hidden className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-white px-1.5 py-px text-2xs leading-none font-medium text-ink/70 shadow-surface">
-                    {status[st.k] === "Beta" ? "Beta" : "Soon"}
-                  </span>
-                )}
               </button>
             </li>
           ))}
@@ -188,14 +180,14 @@ export function HeroThread({ status }: { status: Record<ChannelKey, ChannelStatu
 
         {/* Daythread */}
         <div
-          className={cn("relative rounded-2xl border border-border bg-white overflow-hidden shadow-[0_32px_80px_-32px_rgba(16,17,20,0.35),0_2px_6px_rgba(16,17,20,0.05)]", phase === 1 && !still && "dt-pulse")}
+          className={cn("relative rounded-2xl border border-border bg-white overflow-hidden shadow-elev-2", phase === 1 && !still && "dt-pulse")}
           style={{ ["--dt-pulse" as string]: `${brand}55` }}
         >
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-paper/70">
             <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
-            <span className="text-13 font-extrabold tracking-tight text-ink">Daythread</span>
+            <span className="text-13 font-semibold tracking-tight text-ink">Daythread</span>
             <span className="text-2xs text-ink/65">Inbox</span>
-            <span className={cn("ml-auto text-2xs font-semibold rounded-md px-1.5 py-0.5 transition-colors", inFlight ? "bg-accent-soft text-accent-text" : phase < 4 ? "bg-black/[0.05] text-ink/70" : "bg-success-soft text-success-text")}>
+            <span className={cn("ml-auto text-2xs font-semibold rounded-md px-1.5 py-0.5 transition-colors", inFlight ? "bg-accent-soft text-accent-text" : phase < 4 ? "bg-ink/[0.05] text-ink/70" : "bg-success-soft text-success-text")}>
               {inFlight ? "Incoming" : phase < 4 ? "Reading" : "Handled"}
             </span>
           </div>
@@ -203,15 +195,15 @@ export function HeroThread({ status }: { status: Record<ChannelKey, ChannelStatu
           <div className={cn("grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_200px] lg:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_200px] transition-opacity duration-500", inFlight ? "opacity-40" : "opacity-100")}>
             <ol className="relative pl-9 pr-4 py-4 min-h-[300px]">
               <span aria-hidden className="absolute left-[19px] top-4 bottom-4 w-px bg-border" />
-              <span aria-hidden className="absolute left-[19px] top-4 w-px bg-gradient-to-b from-accent via-ink/40 to-success origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 4})` }} />
-              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}${status[shown] !== "Live" ? ` · ${status[shown]}` : ""}`} labelClass="text-ink/60">
+              <span aria-hidden className="absolute left-[19px] top-4 w-px bg-ink/20 origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 4})` }} />
+              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}`} labelClass="text-ink/60">
                 <span className="font-semibold">{s.who}</span>{" "}
                 <span className="text-ink/70">“<Highlight text={s.msg} part={s.highlight} on={on(2)} />”</span>
                 <span className="mt-1.5 flex flex-wrap gap-1.5">
                   {s.extracted.map(([k, v], i) => (
                     <span
                       key={k}
-                      className={cn("inline-flex items-center gap-1 rounded-md bg-black/[0.045] px-1.5 py-0.5 text-2xs font-medium text-ink/75 transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
+                      className={cn("inline-flex items-center gap-1 rounded-md bg-ink/[0.045] px-1.5 py-0.5 text-2xs font-medium text-ink/75 transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
                       style={{ transitionDelay: on(2) ? `${120 + i * 110}ms` : "0ms" }}
                     >
                       <span className="text-ink/60">{k}</span>
@@ -235,7 +227,7 @@ export function HeroThread({ status }: { status: Record<ChannelKey, ChannelStatu
               <div className="text-xs font-medium text-ink/60 mb-2">{s.who.split(" ")[0]}</div>
               <div className="text-xs text-ink/70 leading-relaxed">{s.ctx}</div>
               <div className="mt-auto pt-4">
-                <div className={cn("rounded-2xl border px-3 py-2.5 transition-all duration-500", on(4) ? "border-border bg-white shadow-[0_1px_3px_rgba(16,17,20,0.06)] opacity-100 translate-y-0" : "border-border opacity-0 translate-y-1")}>
+                <div className={cn("rounded-2xl border px-3 py-2.5 transition-all duration-500", on(4) ? "border-border bg-white shadow-elev-2 opacity-100 translate-y-0" : "border-border opacity-0 translate-y-1")}>
                   <div className="text-xs font-medium text-ink/60 mb-0.5">Next</div>
                   <div className="text-13 font-semibold text-ink leading-snug">{s.next}</div>
                   <div className="text-2xs text-ink/65 mt-0.5 leading-snug">{s.nextWhy}</div>
@@ -257,7 +249,7 @@ function Highlight({ text, part, on }: { text: string; part: string; on: boolean
   return (
     <>
       {text.slice(0, i)}
-      <span className={cn("rounded-[4px] px-0.5 -mx-0.5 transition-colors duration-500", on ? "bg-black/[0.05] text-ink/70" : "bg-transparent")}>{part}</span>
+      <span className={cn("rounded-[4px] px-0.5 -mx-0.5 transition-colors duration-500", on ? "bg-ink/[0.05] text-ink/70" : "bg-transparent")}>{part}</span>
       {text.slice(i + part.length)}
     </>
   );

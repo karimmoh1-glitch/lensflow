@@ -59,79 +59,84 @@ export function NextActions({ rows, atRisk, caughtUp }: { rows: Row[]; atRisk: M
   }
   const draftHref = (row: Row) => (row.draftMode && row.person.conversationId ? `/dashboard/inbox?c=${row.person.conversationId}&draft=${row.draftMode}` : row.href);
 
-  const btn = "inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-13 font-semibold transition-[background-color,border-color,transform] duration-150 active:translate-y-px disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2";
-  const primary = cn(btn, "bg-ink text-white hover:bg-black");
-  const quiet = cn(btn, "border border-ink/[0.12] bg-white text-ink hover:border-ink/25");
+  const btn = "inline-flex items-center gap-1.5 h-8 px-3 rounded text-13 font-medium transition-colors duration-fast disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2";
+  const primary = cn(btn, "bg-ink text-white hover:bg-[#2A2B30]");
+  const quiet = cn(btn, "border border-border-strong bg-white text-ink shadow-xs hover:bg-paper");
+  const ghost = cn(btn, "text-ink/70 hover:text-ink hover:bg-ink/[0.05]");
 
   return (
     <section aria-labelledby="now-label">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-2.5">
-        <h2 id="now-label" className="text-13 font-semibold text-ink/70">Needs you{live.length > 0 ? <span className="ml-1.5 font-normal text-ink/60 tabular-nums">{live.length}</span> : null}</h2>
-        {risk && <p className="text-xs text-ink/60">{risk}</p>}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-3">
+        <h2 id="now-label" className="text-13 font-semibold text-ink">Needs you{live.length > 0 ? <span className="ml-1.5 font-normal text-ink/65 tabular-nums">{live.length}</span> : null}</h2>
+        {risk && <p className="text-xs text-ink/65">{risk}</p>}
       </div>
 
       {!top ? (
-        <div className="rounded-xl border border-border bg-white shadow-surface px-5 py-4 flex items-center gap-3 dt-swap">
-          <span className="w-2 h-2 rounded-full bg-success shrink-0" aria-hidden />
+        <div className="rounded-lg border border-border px-4 sm:px-5 py-4 flex items-center gap-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" aria-hidden />
           <p className="text-sm text-ink/70">{caughtUp}</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-white shadow-surface overflow-hidden">
-          <article aria-label={top.headline} className="px-4 sm:px-5 py-4 sm:py-5">
-            <div className="flex items-start gap-3.5">
-              <span className="relative w-10 h-10 rounded-full bg-ink/[0.06] text-ink/75 flex items-center justify-center text-13 font-semibold shrink-0">
-                {looksLikeHandle(top.person.name) ? "New" : initials(top.person.name)}
-                {top.rule === "waiting_reply" && <span aria-hidden className="absolute -top-px -right-px w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-white" />}
+        <div className="rounded-lg border border-border overflow-hidden">
+          <article aria-label={top.headline} className="px-4 sm:px-5 pt-4 pb-4 sm:pb-5">
+            <div className="flex items-center gap-2.5 text-13">
+              <span aria-hidden className="relative w-7 h-7 rounded-full bg-ink/[0.06] text-ink/75 flex items-center justify-center text-2xs font-semibold shrink-0">
+                {looksLikeHandle(top.person.name) ? "?" : initials(top.person.name)}
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                  <h3 className="text-[1.0625rem] font-semibold leading-snug tracking-[-0.01em] text-ink">{top.headline}</h3>
-                  <span className="text-xs text-ink/60">{top.stage}</span>
-                </div>
-                <p className="mt-1 text-sm text-ink/70 leading-snug">{top.why}{top.detail ? ` ${top.detail}.` : ""}</p>
-                {top.value && <p className="mt-1 text-xs text-ink/60">{top.value.label}{top.value.known ? "" : " · estimate"}</p>}
-                <div className="mt-3.5 flex flex-wrap gap-2">
-                  {top.kind === "confirm_booking" ? (
-                    <Link href={top.href} className={primary}>Open booking<ArrowRight className="w-3.5 h-3.5" strokeWidth={2.2} aria-hidden /></Link>
+              <span className="font-medium text-ink truncate">{top.person.name}</span>
+              <span className="text-ink/65 truncate">{top.stage}</span>
+              {top.rule === "waiting_reply" && (
+                <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-accent-text shrink-0">
+                  <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-accent" />Waiting on you
+                </span>
+              )}
+            </div>
+            <h3 className="mt-3 text-[17px] leading-6 font-semibold tracking-[-0.01em] text-ink">{top.headline}</h3>
+            {/* What Daythread read, set apart from what you do about it. */}
+            <div className="mt-2.5 border-l-2 border-signal-line pl-3">
+              <p className="text-sm text-ink/75">{top.why}{top.detail ? ` ${top.detail}.` : ""}</p>
+              {top.value && <p className="mt-0.5 text-xs text-ink/65">{top.value.label}{top.value.known ? "" : " · estimate"}</p>}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {top.kind === "confirm_booking" ? (
+                <Link href={top.href} className={primary}>Open booking<ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden /></Link>
+              ) : (
+                <>
+                  <Link href={draftHref(top)} className={primary}>{top.kind === "reply" ? "Draft reply" : "Draft follow-up"}<ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden /></Link>
+                  {top.kind === "reply" ? (
+                    <button type="button" disabled={pending} onClick={() => run(top, "handled")} className={quiet}>Mark handled</button>
                   ) : (
                     <>
-                      <Link href={draftHref(top)} className={primary}>{top.kind === "reply" ? "Draft reply" : "Draft follow-up"}<ArrowRight className="w-3.5 h-3.5" strokeWidth={2.2} aria-hidden /></Link>
-                      {top.kind === "reply" ? (
-                        <button type="button" disabled={pending} onClick={() => run(top, "handled")} className={quiet}>Mark handled</button>
-                      ) : (
-                        <>
-                          <button type="button" disabled={pending} onClick={() => run(top, "tomorrow")} className={quiet}>Tomorrow</button>
-                          <button type="button" disabled={pending} onClick={() => run(top, "aside")} className={cn(quiet, "border-transparent text-ink/60 hover:text-ink")}>Set aside</button>
-                          <button type="button" disabled={pending} onClick={() => run(top, "lost")} className={cn(quiet, "border-transparent text-ink/60 hover:text-ink")}>Mark lost</button>
-                        </>
-                      )}
+                      <button type="button" disabled={pending} onClick={() => run(top, "tomorrow")} className={quiet}>Tomorrow</button>
+                      <button type="button" disabled={pending} onClick={() => run(top, "aside")} className={ghost}>Set aside</button>
+                      <button type="button" disabled={pending} onClick={() => run(top, "lost")} className={ghost}>Mark lost</button>
                     </>
                   )}
-                </div>
-              </div>
+                </>
+              )}
             </div>
           </article>
 
           {rest.length > 0 && (
             <ol className="border-t border-border divide-y divide-border" aria-label="Also needs you">
               {rest.slice(0, 8).map((r) => (
-                <li key={r.id} className="group relative flex items-center gap-3 px-4 sm:px-5 py-2.5 hover:bg-black/[0.02] focus-within:bg-black/[0.03] transition-colors">
-                  <span className={cn("w-16 text-xs font-medium shrink-0", r.rule === "waiting_reply" ? "text-ink" : "text-ink/60")}>
-                    {r.rule === "waiting_reply" && <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-1.5 align-middle" />}
+                <li key={r.id} className="group relative flex items-center gap-3 px-4 sm:px-5 min-h-[48px] py-2 hover:bg-paper focus-within:bg-paper transition-colors">
+                  <span className={cn("w-[72px] inline-flex items-center gap-1.5 text-xs shrink-0", r.rule === "waiting_reply" ? "text-ink" : "text-ink/65")}>
+                    <span aria-hidden className={cn("w-1.5 h-1.5 rounded-full", r.rule === "waiting_reply" ? "bg-accent" : r.rule === "confirm_booking" ? "bg-warning" : "bg-ink/25")} />
                     {CHIP_LABEL[r.rule]}
                   </span>
                   {/* The whole row opens the person; the actions beside it sit above the stretched link. */}
                   <Link href={r.href} className="min-w-0 flex-1 focus-visible:outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ink/70">
-                    <span className="block text-13 text-ink truncate"><span className="font-semibold group-hover:underline">{r.person.name}</span><span className="text-ink/60"> · {withoutName(r.why, r.person.name)}{r.detail ? ` ${r.detail}.` : ""}</span></span>
+                    <span className="block text-13 text-ink truncate"><span className="font-medium">{r.person.name}</span><span className="text-ink/65"> · {withoutName(r.why, r.person.name)}{r.detail ? ` ${r.detail}.` : ""}</span></span>
                   </Link>
-                  {r.value && <span className="hidden md:block text-xs text-ink/60 tabular-nums shrink-0">{r.value.label}</span>}
+                  {r.value && <span className="hidden lg:block text-xs text-ink/65 tabular-nums shrink-0">{r.value.label}</span>}
                   {r.kind !== "confirm_booking" && (
-                    <span className="relative z-10 hidden sm:flex items-center gap-1 shrink-0">
-                      <Link href={draftHref(r)} className="h-7 px-2.5 inline-flex items-center rounded-md text-xs font-semibold text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">{r.kind === "reply" ? "Draft reply" : "Draft follow-up"}</Link>
+                    <span className="relative z-10 hidden sm:flex items-center gap-0.5 shrink-0 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                      <Link href={draftHref(r)} className="h-7 px-2 inline-flex items-center rounded text-xs font-medium text-ink hover:bg-ink/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">{r.kind === "reply" ? "Draft reply" : "Draft follow-up"}</Link>
                       {r.kind === "reply" ? (
-                        <button type="button" disabled={pending} onClick={() => run(r, "handled")} className="h-7 px-2.5 rounded-md text-xs font-medium text-ink/60 hover:text-ink hover:bg-black/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Handled</button>
+                        <button type="button" disabled={pending} onClick={() => run(r, "handled")} className="h-7 px-2 rounded text-xs font-medium text-ink/65 hover:text-ink hover:bg-ink/[0.06] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Handled</button>
                       ) : (
-                        <button type="button" disabled={pending} onClick={() => run(r, "tomorrow")} className="h-7 px-2.5 rounded-md text-xs font-medium text-ink/60 hover:text-ink hover:bg-black/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Tomorrow</button>
+                        <button type="button" disabled={pending} onClick={() => run(r, "tomorrow")} className="h-7 px-2 rounded text-xs font-medium text-ink/65 hover:text-ink hover:bg-ink/[0.06] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Tomorrow</button>
                       )}
                     </span>
                   )}
@@ -141,7 +146,7 @@ export function NextActions({ rows, atRisk, caughtUp }: { rows: Row[]; atRisk: M
           )}
         </div>
       )}
-      {rest.length > 8 && <Link href="/dashboard/inbox?filter=unanswered" className="inline-block mt-2 text-xs font-medium text-ink/60 hover:text-ink pl-1">{rest.length - 8} more in the inbox</Link>}
+      {rest.length > 8 && <Link href="/dashboard/inbox?filter=unanswered" className="inline-flex items-center min-h-[32px] mt-1 text-13 text-ink/65 hover:text-ink">{rest.length - 8} more in the inbox</Link>}
     </section>
   );
 }

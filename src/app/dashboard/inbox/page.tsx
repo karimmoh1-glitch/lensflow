@@ -168,14 +168,14 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       {gmailConnected && <AutoGmailSync immediate />}
       {/* Below lg the list and the thread take turns (a tablet is a wide phone here); from lg they sit side by side. */}
       <div className={cn("w-full lg:w-[380px] xl:w-[400px] shrink-0 min-h-0 border-r border-border flex-col bg-white", selectedId ? "hidden lg:flex" : "flex")}>
-        <div className="px-3 md:px-4 pt-2.5 pb-2 border-b border-border space-y-2">
-          <div className="flex items-center gap-2 h-9">
-            <h1 className="text-[15px] font-semibold tracking-[-0.01em] text-ink pl-1">Inbox</h1>
-            <div role="tablist" aria-label="Inbox view" className="ml-1 inline-flex items-center rounded-lg bg-black/[0.045] p-0.5 text-xs font-medium">
-              <Link role="tab" aria-selected={view === "priority"} href={href({ view: "priority", cat: "all" })} className={cn("px-2.5 h-6 inline-flex items-center rounded-md transition-colors", view === "priority" ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink")}>
+        <div className="px-3 md:px-4 pt-2 pb-2 border-b border-border space-y-2">
+          <div className="flex items-center gap-2 h-10">
+            <h1 className="text-sm font-semibold text-ink pl-1">Inbox</h1>
+            <div role="tablist" aria-label="Inbox view" className="ml-1.5 inline-flex items-center rounded bg-ink/[0.05] p-0.5 text-13 font-medium">
+              <Link role="tab" aria-selected={view === "priority"} href={href({ view: "priority", cat: "all" })} className={cn("px-2.5 h-7 inline-flex items-center rounded-sm transition-colors", view === "priority" ? "bg-white text-ink shadow-xs" : "text-ink/65 hover:text-ink")}>
                 Priority
               </Link>
-              <Link role="tab" aria-selected={view === "all"} href={href({ view: "all", filter: "all" })} className={cn("px-2.5 h-6 inline-flex items-center rounded-md transition-colors", view === "all" ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink")}>
+              <Link role="tab" aria-selected={view === "all"} href={href({ view: "all", filter: "all" })} className={cn("px-2.5 h-7 inline-flex items-center rounded-sm transition-colors", view === "all" ? "bg-white text-ink shadow-xs" : "text-ink/65 hover:text-ink")}>
                 All
               </Link>
             </div>
@@ -217,7 +217,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                   : "Connect a channel under Settings and every message from it lands here — with who they are and what they need."
                 }
                 tone={view === "priority" && filter !== "all" && !q ? "success" : "neutral"}
-                action={view === "priority" && filter === "all" && channel === "all" && !q && enriched.length === 0 ? <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-4 rounded-lg bg-ink text-white text-sm font-semibold">{personalEmpty?.cta ?? "Connect a channel"}</Link> : undefined}
+                action={view === "priority" && filter === "all" && channel === "all" && !q && enriched.length === 0 ? <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-3.5 rounded bg-ink text-white text-13 font-medium hover:bg-[#2A2B30]">{personalEmpty?.cta ?? "Connect a channel"}</Link> : undefined}
               />
             </div>
           )}
@@ -260,16 +260,16 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         {active ? (
           <ThreadPanel conversationId={active.id} autoSummarize={sp.summarize === "1"} backHref={href({})} />
         ) : (
-          <div className="hidden lg:flex flex-1 items-center justify-center px-10 bg-paper/40">
+          <div className="hidden lg:flex flex-1 items-center justify-center px-10 bg-paper">
             <div className="w-full max-w-sm">
               {waiting.length > 0 && !q ? (
                 <>
-                  <p className="text-[15px] font-semibold text-ink tracking-[-0.005em]">{headline}</p>
-                  <p className="mt-1 text-sm text-ink/60">Oldest first. Answering first is how the booking is won.</p>
-                  <ul className="mt-4 rounded-xl border border-border bg-white shadow-surface divide-y divide-border overflow-hidden">
+                  <p className="font-serif text-[26px] leading-tight text-ink">{headline}</p>
+                  <p className="mt-1.5 text-sm text-ink/65">Oldest first. Whoever answers first usually wins the booking.</p>
+                  <ul className="mt-5 rounded-lg border border-border bg-white divide-y divide-border overflow-hidden">
                     {[...waiting].sort((a, b) => a.conv.lastMessageAt.getTime() - b.conv.lastMessageAt.getTime()).slice(0, 4).map((r) => (
                       <li key={r.conv.id}>
-                        <Link href={rowHref(r.conv.id)} className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-black/[0.025] focus-visible:outline-none focus-visible:bg-black/[0.035]">
+                        <Link href={rowHref(r.conv.id)} className="flex items-center gap-3 px-3.5 h-11 hover:bg-paper focus-visible:outline-none focus-visible:bg-paper">
                           <ChannelBadge channel={r.conv.channel} className="w-3.5 h-3.5 rounded-[4px]" />
                           <span className="text-13 font-medium text-ink truncate">{nameOf(r.conv)}</span>
                           <span className="ml-auto text-xs text-ink/60 tabular-nums shrink-0">{shortAgo(r.conv.lastMessageAt)}</span>
@@ -280,7 +280,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 </>
               ) : (
                 <div className="text-center">
-                  <p className="text-[15px] font-semibold text-ink">{rows.length === 0 ? "Nothing to open yet" : "Nobody is waiting on you"}</p>
+                  <p className="font-serif text-[26px] leading-tight text-ink">{rows.length === 0 ? "Nothing to open yet" : "Nobody is waiting on you"}</p>
                   <p className="mt-1 text-sm text-ink/60 leading-relaxed">Open a conversation to see who they are, what they asked for, and what to do next.</p>
                 </div>
               )}
@@ -324,11 +324,11 @@ function buildInboxHref(o: { view: View; filter: Filter; cat: Cat; channel: Chan
 
 function Chip({ href, active, label, count, icon, dot }: { href: string; active: boolean; label: string; count?: number; icon?: React.ReactNode; dot?: boolean }) {
   return (
-    <Link href={href} aria-current={active ? "page" : undefined} className={cn("inline-flex items-center gap-1.5 h-7 px-2 rounded-md font-medium whitespace-nowrap transition-colors duration-100 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", active ? "bg-ink/[0.08] text-ink" : "text-ink/60 hover:text-ink hover:bg-black/[0.04]")}>
+    <Link href={href} aria-current={active ? "page" : undefined} className={cn("inline-flex items-center gap-1.5 h-7 px-2 rounded border font-medium whitespace-nowrap transition-colors duration-100 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", active ? "border-border-strong bg-white text-ink shadow-xs" : "border-transparent text-ink/65 hover:text-ink hover:bg-ink/[0.04]")}>
       {dot && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-accent" />}
       {icon}
       {label}
-      {typeof count === "number" && count > 0 && <span className={cn("tabular-nums", active ? "text-ink/60" : "text-ink/60")}>{count}</span>}
+      {typeof count === "number" && count > 0 && <span className="tabular-nums text-ink/65">{count}</span>}
     </Link>
   );
 }

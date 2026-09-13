@@ -17,7 +17,7 @@ export function Trust() {
   return (
     <div className="max-w-[1200px] mx-auto px-6">
       <Reveal className="max-w-2xl mb-10">
-        <h2 className="font-sans font-bold text-[clamp(2.1rem,4.2vw,3.4rem)] leading-[1] tracking-[-0.04em] text-ink text-balance">Your clients trust you. Daythread is built to keep it.</h2>
+        <h2 className="font-serif font-normal text-[clamp(2.4rem,4.8vw,3.9rem)] leading-[1.02] tracking-[-0.012em] text-ink text-balance">Your clients trust you. Daythread is built to keep it.</h2>
       </Reveal>
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl overflow-hidden border border-border bg-border">
         {ITEMS.map((it) => (

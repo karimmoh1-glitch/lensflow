@@ -72,20 +72,20 @@ export default async function AutomationsPage() {
         description="The repetitive parts of your business, handled while you work."
         action={
           <div className="flex items-center gap-3">
-            <span className="hidden lg:inline text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></span>
+            <span className="hidden lg:inline text-xs font-medium text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></span>
             <NewAutomationButton />
           </div>
         }
       />
-      <p className="lg:hidden -mt-4 mb-5 text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></p>
+      <p className="lg:hidden -mt-4 mb-5 text-xs font-medium text-ink/70 tabular-nums">{capped ? `${on} / ${limits.maxAutomations} on` : `${on} on · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></p>
       {capped && on >= limits.maxAutomations && !overCap && (
-        <div className="mb-5 rounded-xl border border-border bg-black/[0.03] px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="mb-5 rounded-lg border border-border bg-ink/[0.03] px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span><span className="font-semibold text-ink">Automation limit reached.</span> {PLANS[plan].name} includes {limits.maxAutomations} switched on at once. Turn one off to enable another, or upgrade to Pro for {limitLabel(PLANS.PRO.maxAutomations).toLowerCase()} automations.</span>
           <Link href="/dashboard/settings?tab=subscription" className="text-ink/75 font-semibold hover:underline">See plans →</Link>
         </div>
       )}
       {overCap && (
-        <div role="alert" className="mb-5 rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">
+        <div role="alert" className="mb-5 rounded-lg border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">
           <span className="font-semibold text-ink">{on} automations are on; {PLANS[plan].name} runs {limits.maxAutomations}.</span> Nothing was deleted — the {limits.maxAutomations} oldest keep running and the rest are paused (marked below) until you turn some off or upgrade. <Link href="/dashboard/settings?tab=subscription" className="text-ink/75 font-semibold hover:underline">See plans →</Link>
         </div>
       )}
@@ -104,10 +104,10 @@ export default async function AutomationsPage() {
                 <div className="flex items-center justify-between gap-4 mb-3">
                   <span className="text-sm font-medium text-ink flex items-center gap-2 min-w-0">
                     <span className="truncate">{a.name}</span>
-                    {a.enabled && !running.has(a.id) && <span className="shrink-0 text-2xs font-medium text-warning-text bg-warning-soft rounded-md px-1.5 py-0.5">Paused by plan</span>}
+                    {a.enabled && !running.has(a.id) && <span className="shrink-0 text-xs font-medium text-warning-text bg-warning-soft rounded-md px-1.5 py-0.5">Paused by plan</span>}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
-                    {isEditable(a.trigger, a.action) ? <EditAutomationButton automation={{ id: a.id, name: a.name, trigger: a.trigger as EditableTrigger, action: a.action as EditableAction, offsetHours: a.offsetHours, messageTemplate: a.messageTemplate }} /> : <span className="text-13 font-semibold text-ink/65">Legacy</span>}
+                    {isEditable(a.trigger, a.action) ? <EditAutomationButton automation={{ id: a.id, name: a.name, trigger: a.trigger as EditableTrigger, action: a.action as EditableAction, offsetHours: a.offsetHours, messageTemplate: a.messageTemplate }} /> : <span className="text-xs font-medium text-ink/65">Legacy</span>}
                     <AutomationToggle id={a.id} enabled={a.enabled} name={a.name} />
                   </div>
                 </div>
@@ -153,16 +153,16 @@ export default async function AutomationsPage() {
 
 const BEAT: Record<"signal" | "thinking" | "outcome", { dot: string; label: string; bg: string }> = {
   // One neutral block per beat; the words When / If / Then carry the structure, not three colors.
-  signal: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-black/[0.03]" },
-  thinking: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-black/[0.03]" },
-  outcome: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-black/[0.03]" },
+  signal: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-ink/[0.03]" },
+  thinking: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-ink/[0.03]" },
+  outcome: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-ink/[0.03]" },
 };
 
 function Beat({ label, tone, text }: { label: string; tone: keyof typeof BEAT; text: string }) {
   const t = BEAT[tone];
   return (
     <div className={cn("rounded-xl px-3 py-2.5 min-w-0", t.bg)}>
-      <div className={cn("flex items-center gap-1.5 text-2xs font-medium mb-0.5", t.label)}>
+      <div className={cn("flex items-center gap-1.5 text-xs font-medium mb-0.5", t.label)}>
         {label}
       </div>
       <div className="text-sm text-ink truncate">{text}</div>

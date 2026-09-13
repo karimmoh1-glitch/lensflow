@@ -69,44 +69,44 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         description={isSelectedToday ? "What's on today, and when you're free." : format(selected, "EEEE, MMMM d")}
         action={
           <div className="flex items-center gap-1.5">
-            {!isSelectedToday && <Link href={`?view=${view}&day=${dayKey(today)}`} className="inline-flex items-center h-8 px-3 rounded-lg border border-ink/[0.12] bg-white text-13 font-semibold text-ink hover:border-ink/25">Today</Link>}
-            <div role="group" aria-label="View" className="inline-flex items-center rounded-lg bg-black/[0.045] p-0.5">
+            {!isSelectedToday && <Link href={`?view=${view}&day=${dayKey(today)}`} className="inline-flex items-center h-8 px-3 rounded border border-border-strong bg-white shadow-xs text-13 font-medium text-ink hover:bg-paper">Today</Link>}
+            <div role="group" aria-label="View" className="inline-flex items-center rounded bg-ink/[0.05] p-0.5">
               {(["day", "week"] as const).map((v) => (
-                <Link key={v} href={`?view=${v}&day=${dayKey(selected)}`} aria-current={view === v ? "page" : undefined} className={cn("inline-flex items-center h-7 px-3 rounded-md text-13 font-medium transition-colors", view === v ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink")}>{v === "day" ? "Day" : "Week"}</Link>
+                <Link key={v} href={`?view=${v}&day=${dayKey(selected)}`} aria-current={view === v ? "page" : undefined} className={cn("inline-flex items-center h-7 px-3 rounded-sm text-13 font-medium transition-colors", view === v ? "bg-white text-ink shadow-xs" : "text-ink/65 hover:text-ink")}>{v === "day" ? "Day" : "Week"}</Link>
               ))}
             </div>
-            <Link href="/dashboard/bookings" className="hidden sm:inline-flex items-center h-8 px-3 rounded-lg border border-ink/[0.12] bg-white text-13 font-semibold text-ink hover:border-ink/25">All bookings</Link>
+            <Link href="/dashboard/bookings" className="hidden sm:inline-flex items-center h-8 px-3 rounded border border-border-strong bg-white shadow-xs text-13 font-medium text-ink hover:bg-paper">All bookings</Link>
           </div>
         }
       />
 
       {attention.length > 0 && (
-        <div role="alert" className="mb-4 rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <AlertTriangle className="w-4 h-4 text-warning-text shrink-0" strokeWidth={2} aria-hidden />
+        <div role="alert" className="mb-4 rounded-lg border border-warning/30 bg-warning-soft px-4 py-2.5 text-13 text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <AlertTriangle className="w-4 h-4 text-warning-text shrink-0" strokeWidth={1.75} aria-hidden />
           <span className="flex-1"><span className="font-semibold text-ink">{attention.map((c) => (c.provider === "GOOGLE_CALENDAR" ? "Google Calendar" : "Apple Calendar")).join(" and ")}</span> {attention.length === 1 ? "isn't" : "aren't"} syncing, so busy time there may be missing here.</span>
-          <Link href="/dashboard/settings?tab=channels" className="text-ink/75 font-semibold hover:underline">Fix in Settings →</Link>
+          <Link href="/dashboard/settings?tab=channels" className="text-ink font-medium hover:underline">Fix in Settings</Link>
         </div>
       )}
 
       {/* Week strip: seven big targets, the selected day solid. */}
       <div className="flex items-center gap-1 mb-4">
-        <Link href={`?view=${view}&day=${dayKey(addDays(selected, -7))}`} aria-label="Previous week" className="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded-md text-ink/70 hover:text-ink hover:bg-black/[0.05]"><ChevronLeft className="w-4 h-4" strokeWidth={2} /></Link>
+        <Link href={`?view=${view}&day=${dayKey(addDays(selected, -7))}`} aria-label="Previous week" className="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded text-ink/70 hover:text-ink hover:bg-ink/[0.05]"><ChevronLeft className="w-4 h-4" strokeWidth={1.75} /></Link>
         <ol className="flex-1 grid grid-cols-7 gap-1">
           {week.map((d) => {
             const sel = isSameDay(d, selected);
             const count = byDay.get(dayKey(d))?.length ?? 0;
             return (
               <li key={d.toISOString()}>
-                <Link href={`?view=${view}&day=${dayKey(d)}`} aria-current={sel ? "date" : undefined} className={cn("flex flex-col items-center rounded-xl py-2 min-h-[3.75rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", sel ? "bg-ink text-white" : "bg-white border border-border text-ink hover:bg-black/[0.03]")}>
-                  <span className={cn("text-2xs font-medium", sel ? "text-white/70" : "text-ink/65")}>{format(d, "EEE")}</span>
-                  <span className={cn("text-lg font-extrabold tabular-nums leading-tight", !sel && isSameDay(d, today) && "text-accent-text")}>{format(d, "d")}</span>
-                  <span className="h-1.5 flex items-center gap-0.5" aria-hidden>{Array.from({ length: Math.min(3, count) }).map((_, i) => <span key={i} className={cn("w-1 h-1 rounded-full", sel ? "bg-white/80" : "bg-accent")} />)}</span>
+                <Link href={`?view=${view}&day=${dayKey(d)}`} aria-current={sel ? "date" : undefined} className={cn("flex flex-col items-center rounded-lg py-2 min-h-[3.75rem] border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", sel ? "bg-ink border-ink text-white" : "bg-white border-transparent text-ink hover:bg-paper")}>
+                  <span className={cn("text-xs font-medium", sel ? "text-white/70" : "text-ink/65")}>{format(d, "EEE")}</span>
+                  <span className={cn("text-lg font-semibold tabular-nums leading-tight", !sel && isSameDay(d, today) && "text-accent-text")}>{format(d, "d")}</span>
+                  <span className="h-1.5 flex items-center gap-0.5" aria-hidden>{Array.from({ length: Math.min(3, count) }).map((_, i) => <span key={i} className={cn("w-1 h-1 rounded-full", sel ? "bg-white/80" : "bg-booking")} />)}</span>
                 </Link>
               </li>
             );
           })}
         </ol>
-        <Link href={`?view=${view}&day=${dayKey(addDays(selected, 7))}`} aria-label="Next week" className="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded-md text-ink/70 hover:text-ink hover:bg-black/[0.05]"><ChevronRight className="w-4 h-4" strokeWidth={2} /></Link>
+        <Link href={`?view=${view}&day=${dayKey(addDays(selected, 7))}`} aria-label="Next week" className="w-9 h-9 shrink-0 inline-flex items-center justify-center rounded text-ink/70 hover:text-ink hover:bg-ink/[0.05]"><ChevronRight className="w-4 h-4" strokeWidth={1.75} /></Link>
       </div>
 
       {view === "week" && weekAgendas && (
@@ -117,15 +117,15 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
       <div className={cn("grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mb-10", view === "week" && "hidden")}>
         {/* Day agenda */}
-        <section aria-label="Day agenda" className="rounded-xl border border-border bg-white overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-border flex items-center justify-between gap-3">
-            <h2 className="text-sm font-semibold text-ink">{isSelectedToday ? "Today" : format(selected, "EEEE")} <span className="text-ink/65 font-medium">· {format(selected, "MMM d")}</span></h2>
+        <section aria-label="Day agenda" className="rounded-lg border border-border bg-white overflow-hidden">
+          <div className="px-5 h-12 border-b border-border flex items-center justify-between gap-3">
+            <h2 className="text-13 font-semibold text-ink">{isSelectedToday ? "Today" : format(selected, "EEEE")} <span className="text-ink/65 font-normal">· {format(selected, "MMM d")}</span></h2>
             <span className="text-xs text-ink/65">{agenda.items.length === 0 ? "Nothing scheduled" : `${agenda.items.length} ${agenda.items.length === 1 ? "item" : "items"}`}</span>
           </div>
           {agenda.items.length === 0 ? (
             <div className="px-5 py-10 text-center">
-              <div className="mx-auto w-10 h-10 rounded-full bg-success-soft text-success-text flex items-center justify-center"><CalendarDays className="w-5 h-5" strokeWidth={2} aria-hidden /></div>
-              <p className="mt-3 text-sm font-semibold text-ink">{agenda.blocked ? "Blocked off." : agenda.working.length === 0 ? "Not a working day." : "Your day is clear."}</p>
+              <CalendarDays className="mx-auto w-5 h-5 text-ink/40" strokeWidth={1.75} aria-hidden />
+              <p className="mt-3 text-sm font-medium text-ink">{agenda.blocked ? "Blocked off." : agenda.working.length === 0 ? "Not a working day." : "Your day is clear."}</p>
               <p className="mt-1 text-xs text-ink/70">{agenda.blocked ? "This date is blocked in Availability." : agenda.working.length === 0 ? "No working hours set for this weekday." : `Working ${agenda.working.map((w) => `${t(w.startAt)}–${t(w.endAt)}`).join(", ")}.`}</p>
             </div>
           ) : (
@@ -133,26 +133,26 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
               {agenda.items.map((item, idx) => (
                 <li key={`${item.kind}-${item.id}`} className={cn(isSelectedToday && nowIndex === idx && "dt-now")}>
                   {item.kind === "booking" ? (
-                    <Link href={`/dashboard/bookings/${item.id}`} className="flex gap-4 px-5 py-3.5 hover:bg-black/[0.02] active:bg-black/[0.04]">
+                    <Link href={`/dashboard/bookings/${item.id}`} className="flex gap-4 px-5 py-3 hover:bg-paper">
                       <div className="w-[4.5rem] shrink-0 text-right">
-                        <div className="text-sm font-semibold text-ink tabular-nums">{t(item.startAt)}</div>
-                        <div className="text-2xs text-ink/65 tabular-nums">{t(item.endAt)}</div>
+                        <div className="text-13 font-medium text-ink tabular-nums whitespace-nowrap">{t(item.startAt)}</div>
+                        <div className="text-xs text-ink/65 tabular-nums">{t(item.endAt)}</div>
                       </div>
-                      <div className="w-1 rounded-full bg-accent shrink-0" aria-hidden />
+                      <div className={cn("w-[3px] rounded-full shrink-0", item.status === "BOOKED" ? "bg-warning" : "bg-booking")} aria-hidden />
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-ink truncate">{item.title}</div>
+                        <div className="text-sm font-medium text-ink truncate">{item.title}</div>
                         <div className="text-xs text-ink/65 truncate">{item.subtitle}{item.location ? ` · ${item.location}` : ""}</div>
-                        {item.status === "BOOKED" && <span className="mt-1 inline-block text-2xs font-medium text-warning-text bg-warning-soft rounded-md px-1.5 py-0.5">Not confirmed</span>}
+                        {item.status === "BOOKED" && <span className="mt-1 inline-flex items-center h-5 text-xs text-warning-text bg-warning-soft rounded-sm px-1.5">Not confirmed</span>}
                       </div>
                       <ChevronRight className="w-4 h-4 text-ink/30 self-center shrink-0" aria-hidden />
                     </Link>
                   ) : (
-                    <div className="flex gap-4 px-5 py-3.5">
+                    <div className="flex gap-4 px-5 py-3">
                       <div className="w-[4.5rem] shrink-0 text-right">
-                        <div className="text-sm font-semibold text-ink/70 tabular-nums">{item.allDay ? "All day" : t(item.startAt)}</div>
-                        {!item.allDay && <div className="text-2xs text-ink/65 tabular-nums">{t(item.endAt)}</div>}
+                        <div className="text-13 font-medium text-ink/70 tabular-nums whitespace-nowrap">{item.allDay ? "All day" : t(item.startAt)}</div>
+                        {!item.allDay && <div className="text-xs text-ink/65 tabular-nums">{t(item.endAt)}</div>}
                       </div>
-                      <div className="w-1 rounded-full bg-black/15 shrink-0" aria-hidden />
+                      <div className="w-[3px] rounded-full bg-ink/15 shrink-0" aria-hidden />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-ink/80 truncate">{item.title}</div>
                         <div className="text-xs text-ink/65 truncate">{item.subtitle}</div>
@@ -166,28 +166,28 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         </section>
 
         {/* Free windows */}
-        <aside aria-label="Free time" className="rounded-xl border border-border bg-white">
-          <div className="px-5 py-3.5 border-b border-border">
-            <h2 className="text-sm font-semibold text-ink">Free {isSelectedToday ? "today" : format(selected, "EEEE")}</h2>
-            <p className="text-2xs text-ink/65 mt-0.5">Working hours minus bookings, buffers and busy calendar time.</p>
+        <aside aria-label="Free time" className="rounded-lg border border-border bg-white">
+          <div className="px-5 py-3 border-b border-border">
+            <h2 className="text-13 font-semibold text-ink">Free {isSelectedToday ? "today" : format(selected, "EEEE")}</h2>
+            <p className="text-xs text-ink/65 mt-0.5">Working hours minus bookings, buffers and busy calendar time.</p>
           </div>
           <div className="px-5 py-4">
             {agenda.free.length === 0 ? (
               <p className="text-sm text-ink/65">{agenda.blocked ? "Blocked off." : agenda.working.length === 0 ? "No working hours set." : "Fully booked."}</p>
             ) : (
               <>
-                {nextFree && isSelectedToday && <p className="text-sm text-ink mb-3"><span className="font-semibold">Next free:</span> {t(nextFree.startAt)} – {t(nextFree.endAt)}</p>}
+                {nextFree && isSelectedToday && <p className="text-sm text-ink mb-3"><span className="font-medium">Next free:</span> {t(nextFree.startAt)} – {t(nextFree.endAt)}</p>}
                 <ul className="flex flex-wrap gap-1.5">
                   {agenda.free.map((f) => (
-                    <li key={f.startAt.toISOString()} className="text-xs font-semibold text-success-text bg-success-soft rounded-lg px-2.5 py-1 tabular-nums">{t(f.startAt)} – {t(f.endAt)}</li>
+                    <li key={f.startAt.toISOString()} className="text-xs font-medium text-ink bg-paper border border-border rounded px-2 h-7 inline-flex items-center tabular-nums">{t(f.startAt)} – {t(f.endAt)}</li>
                   ))}
                 </ul>
               </>
             )}
             {agenda.calendars.length > 0 && (
-              <p className="mt-4 text-2xs text-ink/65">{agenda.calendars.map((c) => `${c.provider === "GOOGLE_CALENDAR" ? "Google" : "Apple"}${c.lastSyncedAt ? ` synced ${format(c.lastSyncedAt, "h:mm a")}` : c.status === "CONNECTED" ? " connected" : " needs attention"}`).join(" · ")}</p>
+              <p className="mt-4 text-xs text-ink/65">{agenda.calendars.map((c) => `${c.provider === "GOOGLE_CALENDAR" ? "Google" : "Apple"}${c.lastSyncedAt ? ` synced ${format(c.lastSyncedAt, "h:mm a")}` : c.status === "CONNECTED" ? " connected" : " needs attention"}`).join(" · ")}</p>
             )}
-            {agenda.calendars.length === 0 && <Link href="/dashboard/settings?tab=channels" className="mt-3 inline-flex items-center min-h-[32px] text-xs font-semibold text-ink/75 hover:underline">Connect Google or Apple Calendar so busy time counts →</Link>}
+            {agenda.calendars.length === 0 && <Link href="/dashboard/settings?tab=channels" className="mt-3 inline-flex items-center min-h-[32px] text-13 font-medium text-ink hover:underline">Connect Google or Apple Calendar so busy time counts</Link>}
           </div>
         </aside>
       </div>
@@ -195,31 +195,31 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       {/* Month */}
       <section aria-label="Month">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <h2 className="font-sans font-extrabold text-lg tracking-tight text-ink">{format(anchor, "MMMM yyyy")}</h2>
+          <h2 className="text-sm font-semibold text-ink">{format(anchor, "MMMM yyyy")}</h2>
           <div className="flex items-center gap-1">
-            <Link href={`?view=${view}&day=${dayKey(selected)}&month=${prevMonth}`} aria-label="Previous month" className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink/70 hover:text-ink hover:bg-black/[0.05]"><ChevronLeft className="w-4 h-4" strokeWidth={2} /></Link>
-            <Link href={`?view=${view}&day=${dayKey(selected)}&month=${nextMonth}`} aria-label="Next month" className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink/70 hover:text-ink hover:bg-black/[0.05]"><ChevronRight className="w-4 h-4" strokeWidth={2} /></Link>
+            <Link href={`?view=${view}&day=${dayKey(selected)}&month=${prevMonth}`} aria-label="Previous month" className="inline-flex items-center justify-center w-9 h-9 rounded text-ink/70 hover:text-ink hover:bg-ink/[0.05]"><ChevronLeft className="w-4 h-4" strokeWidth={1.75} /></Link>
+            <Link href={`?view=${view}&day=${dayKey(selected)}&month=${nextMonth}`} aria-label="Next month" className="inline-flex items-center justify-center w-9 h-9 rounded text-ink/70 hover:text-ink hover:bg-ink/[0.05]"><ChevronRight className="w-4 h-4" strokeWidth={1.75} /></Link>
           </div>
         </div>
-        <div className="grid grid-cols-7 text-2xs md:text-xs font-semibold text-ink/65 mb-1.5">
+        <div className="grid grid-cols-7 text-xs text-ink/65 mb-1.5">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => <div key={d} className="px-1 md:px-2 py-1 text-center md:text-left">{d}</div>)}
         </div>
-        <div className="grid grid-cols-7 gap-1 md:gap-1.5">
+        <div className="grid grid-cols-7 gap-px bg-border border border-border rounded-lg overflow-hidden">
           {days.map((day) => {
             const key = dayKey(day);
             const dayBookings = byDay.get(key) ?? [];
             const inMonth = isSameMonth(day, anchor);
             const sel = isSameDay(day, selected);
             return (
-              <Link key={key} href={`?view=${view}&day=${key}`} aria-label={`${format(day, "EEEE, MMMM d")}${dayBookings.length ? `, ${dayBookings.length} booking${dayBookings.length === 1 ? "" : "s"}` : ""}`} className={cn("min-h-[3.25rem] md:min-h-28 rounded-lg md:rounded-xl border p-1.5 md:p-2 bg-white transition-colors hover:bg-black/[0.02]", !inMonth && "bg-black/[0.02] text-ink/65", isSameDay(day, today) && "ring-1 ring-inset ring-ink/20", sel ? "border-ink" : "border-border")}>
-                <div className={cn("text-xs font-medium mb-1 text-center md:text-left", isSameDay(day, today) && "text-accent-text")}>{format(day, "d")}</div>
+              <Link key={key} href={`?view=${view}&day=${key}`} aria-label={`${format(day, "EEEE, MMMM d")}${dayBookings.length ? `, ${dayBookings.length} booking${dayBookings.length === 1 ? "" : "s"}` : ""}`} className={cn("relative min-h-[3.25rem] md:min-h-28 p-1.5 md:p-2 bg-white transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink/70", !inMonth && "bg-paper text-ink/65", sel && "ring-2 ring-inset ring-ink")}>
+                <div className="mb-1 flex justify-center md:justify-start"><span className={cn("w-6 h-6 rounded-full inline-flex items-center justify-center text-xs tabular-nums", isSameDay(day, today) ? "bg-accent-strong text-white font-medium" : "")}>{format(day, "d")}</span></div>
                 <div className="hidden md:block space-y-1">
                   {dayBookings.slice(0, 3).map((b) => (
-                    <div key={b.id} className="truncate text-2xs rounded bg-accent-soft text-accent-text px-1.5 py-0.5" title={`${t(b.startAt)} ${b.service.name} — ${b.client.name}`}>{format(toZonedDisplayDate(b.startAt, tz), "h:mma")} {b.client.name}</div>
+                    <div key={b.id} className="truncate text-xs rounded-sm bg-booking-soft text-booking-text px-1.5 py-0.5" title={`${t(b.startAt)} ${b.service.name} — ${b.client.name}`}>{format(toZonedDisplayDate(b.startAt, tz), "h:mma")} {b.client.name}</div>
                   ))}
-                  {dayBookings.length > 3 && <div className="text-2xs text-ink/65">+{dayBookings.length - 3} more</div>}
+                  {dayBookings.length > 3 && <div className="text-xs text-ink/65">+{dayBookings.length - 3} more</div>}
                 </div>
-                <div className="md:hidden flex justify-center gap-0.5" aria-hidden>{dayBookings.slice(0, 3).map((b) => <span key={b.id} className="w-1.5 h-1.5 rounded-full bg-accent" />)}</div>
+                <div className="md:hidden flex justify-center gap-0.5" aria-hidden>{dayBookings.slice(0, 3).map((b) => <span key={b.id} className="w-1.5 h-1.5 rounded-full bg-booking" />)}</div>
               </Link>
             );
           })}

@@ -52,10 +52,9 @@ export type CardModel = {
   /** Why Connect is withheld by the plan, and where to fix it. */
   limit: { message: string; upgradePlan: string | null; upgradeHref: string } | null;
   calendarsConnected?: number;
-  accent: string;
 };
 
-const PILL: Record<CardModel["pill"]["tone"], string> = { success: "bg-success-soft text-success-text", warning: "bg-warning-soft text-warning-text", accent: "bg-accent-soft text-accent-text", signal: "bg-black/[0.03] text-ink/75", neutral: "bg-black/[0.05] text-ink/70" };
+const PILL: Record<CardModel["pill"]["tone"], string> = { success: "bg-success-soft text-success-text", warning: "bg-warning-soft text-warning-text", accent: "bg-accent-soft text-accent-text", signal: "bg-ink/[0.05] text-ink/75", neutral: "bg-ink/[0.05] text-ink/70" };
 
 export function IntegrationCard({ model, icon, connect, manage, children }: { model: CardModel; icon: React.ReactNode; connect?: (formData: FormData) => Promise<void>; /** Detail shown in the Manage sheet for a non-calendar provider (WhatsApp's number and window rules). */ manage?: React.ReactNode; children?: React.ReactNode }) {
   const [open, setOpen] = useState<null | "manage" | "apple" | "setup">(null);
@@ -106,7 +105,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
   }
 
   const statusPill = (
-    <span className={cn("inline-flex items-center gap-1.5 text-2xs font-bold rounded-md px-2 py-0.5", PILL[model.pill.tone])}>
+    <span className={cn("inline-flex items-center gap-1 h-5 text-xs font-medium rounded-sm px-1.5", PILL[model.pill.tone])}>
       {(model.status === "connected" || model.status === "always_on") && <Check className="w-3 h-3" strokeWidth={3} aria-hidden />}
       {model.pill.tone === "signal" && <Lock className="w-3 h-3" strokeWidth={2.5} aria-hidden />}
       {model.pill.label}
@@ -121,7 +120,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
     if (!model.entitled) {
       if (model.limit) {
         return (
-          <PaywallTrigger feature={model.provider === "SMS" ? "sms" : "channels"} source="settings-channels" className="inline-flex items-center justify-center h-8 px-3.5 rounded-lg text-13 font-semibold border border-border text-ink/75 bg-black/[0.03] hover:bg-black/[0.03] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 whitespace-nowrap">{model.limit.upgradePlan ? `Unlock with ${model.limit.upgradePlan}` : "See plans"}</PaywallTrigger>
+          <PaywallTrigger feature={model.provider === "SMS" ? "sms" : "channels"} source="settings-channels" className="inline-flex items-center justify-center h-8 px-3 rounded text-13 font-medium border border-border-strong text-ink bg-white shadow-xs hover:bg-paper transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 whitespace-nowrap">{model.limit.upgradePlan ? `Unlock with ${model.limit.upgradePlan}` : "See plans"}</PaywallTrigger>
         );
       }
       return null;
@@ -131,11 +130,11 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
       if (connect) return <form action={connect} onSubmit={() => setConnecting(true)}><Button type="submit" size="sm" loading={connecting} loadingLabel="Opening">Reconnect</Button></form>;
     }
     if (model.status === "disconnected") {
-      if (model.provider === "APPLE_CALENDAR") return <Button size="sm" onClick={() => setOpen("apple")}>Connect <ArrowRight className="w-3.5 h-3.5 ml-1" strokeWidth={2.5} aria-hidden /></Button>;
-      if (connect) return <form action={connect} onSubmit={() => setConnecting(true)}><Button type="submit" size="sm" loading={connecting} loadingLabel="Connecting">Connect <ArrowRight className="w-3.5 h-3.5 ml-1" strokeWidth={2.5} aria-hidden /></Button></form>;
+      if (model.provider === "APPLE_CALENDAR") return <Button size="sm" onClick={() => setOpen("apple")}>Connect </Button>;
+      if (connect) return <form action={connect} onSubmit={() => setConnecting(true)}><Button type="submit" size="sm" loading={connecting} loadingLabel="Connecting">Connect </Button></form>;
       return null;
     }
-    if (model.status === "sync_issue" && retryable) return <Button size="sm" variant="outline" onClick={retry} loading={pending} loadingLabel="Syncing"><RefreshCw className="w-3.5 h-3.5 mr-1" strokeWidth={2} aria-hidden />Retry</Button>;
+    if (model.status === "sync_issue" && retryable) return <Button size="sm" variant="outline" onClick={retry} loading={pending} loadingLabel="Syncing"><RefreshCw className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} aria-hidden />Retry</Button>;
     return null;
   })();
 
@@ -145,7 +144,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
       {connected && (
         <div className="flex flex-wrap items-center gap-1 sm:justify-end">
           {hasManage && (
-            <button type="button" onClick={() => setOpen("manage")} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
+            <button type="button" onClick={() => setOpen("manage")} className="text-13 sm:text-xs font-medium text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded hover:bg-ink/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
               Manage
             </button>
           )}
@@ -153,13 +152,13 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
               permission the business later removed, or a webhook Meta never accepted. */}
           {!isCalendar && connect && model.status !== "needs_attention" && !confirm && (
             <form action={connect} onSubmit={() => setConnecting(true)}>
-              <button type="submit" disabled={connecting} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 disabled:opacity-60">
+              <button type="submit" disabled={connecting} className="text-13 sm:text-xs font-medium text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded hover:bg-ink/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 disabled:opacity-60">
                 {connecting ? "Opening…" : "Reconnect"}
               </button>
             </form>
           )}
           {!isCalendar && !confirm && (
-            <button type="button" onClick={() => setConfirm(true)} disabled={pending} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05]">
+            <button type="button" onClick={() => setConfirm(true)} disabled={pending} className="text-13 sm:text-xs font-medium text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded hover:bg-ink/[0.05]">
               Disconnect
             </button>
           )}
@@ -176,43 +175,42 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
 
   return (
     <>
-      <article aria-label={model.name} data-provider={model.provider} data-connection-state={model.configState} className="group relative rounded-xl border border-border bg-white transition-all duration-200 hover:border-ink/20 hover:shadow-[0_18px_44px_-30px_rgba(16,17,20,0.35)] hover:-translate-y-px">
-        <div aria-hidden className="absolute inset-x-0 top-0 h-[3px] rounded-t-[22px] opacity-80" style={{ background: connected || model.status === "always_on" ? model.accent : "transparent" }} />
-        <div className="px-4 sm:px-5 pt-5 pb-4">
+      <article aria-label={model.name} data-provider={model.provider} data-connection-state={model.configState} className="group relative rounded-lg border border-border bg-white">
+        <div className="px-4 sm:px-5 py-4">
           <div className="flex gap-3.5 sm:gap-4">
-          <span className="shrink-0 mt-0.5 w-10 h-10 rounded-xl border border-border bg-paper flex items-center justify-center">{icon}</span>
+          <span className="shrink-0 w-9 h-9 rounded-lg border border-border bg-white flex items-center justify-center">{icon}</span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-[15px] font-semibold text-ink">{model.name}</h3>
+              <h3 className="text-sm font-semibold text-ink">{model.name}</h3>
               {statusPill}
             </div>
-            {connected && model.account && <p className="mt-0.5 text-sm text-ink/80 truncate">{model.account}{model.calendarsConnected ? ` · ${model.calendarsConnected} calendar${model.calendarsConnected === 1 ? "" : "s"}` : ""}</p>}
-            <p className="mt-1 text-sm text-ink/65 leading-snug">{model.description}</p>
+            {connected && model.account && <p className="mt-0.5 text-13 text-ink/80 truncate">{model.account}{model.calendarsConnected ? ` · ${model.calendarsConnected} calendar${model.calendarsConnected === 1 ? "" : "s"}` : ""}</p>}
+            <p className="mt-1 text-13 text-ink/65">{model.description}</p>
             <ul className="mt-2.5 flex flex-wrap gap-1.5">
               {model.capabilities.map((c) => (
-                <li key={c} className="text-2xs font-medium text-ink/65 bg-black/[0.04] rounded-md px-1.5 py-0.5">{c}</li>
+                <li key={c} className="text-xs text-ink/65 bg-ink/[0.04] rounded-sm px-1.5 h-5 inline-flex items-center">{c}</li>
               ))}
             </ul>
-            {model.status === "connected" && model.lastReceivedAt && <p className="mt-2 text-2xs text-ink/65">Last message received {model.lastReceivedAt}</p>}
-            {model.status === "connected" && model.lastSyncedAt && <p className="mt-2 text-2xs text-ink/65">Last synced {model.lastSyncedAt}</p>}
+            {model.status === "connected" && model.lastReceivedAt && <p className="mt-2 text-xs text-ink/65">Last message received {model.lastReceivedAt}</p>}
+            {model.status === "connected" && model.lastSyncedAt && <p className="mt-2 text-xs text-ink/65">Last synced {model.lastSyncedAt}</p>}
             {model.status === "sync_issue" && !model.lastError && (
-              <p className="mt-2 text-2xs text-warning-text">
+              <p className="mt-2 text-xs text-warning-text">
                 {isCalendar ? "Calendar sync temporarily failed. Daythread will retry automatically" : `The last sync with ${model.name} failed. Messages already received are unaffected`}
                 {model.lastSyncedAt ? ` · last good sync ${model.lastSyncedAt}` : ""}.
               </p>
             )}
-            {model.status === "needs_attention" && <p className="mt-2 text-2xs text-accent-text">Your {model.name} connection needs to be renewed.</p>}
-            {model.status === "unavailable" && <p className="mt-2 text-2xs text-ink/65">{model.detail}</p>}
-            {model.status !== "unavailable" && (model.maturity === "coming_soon" || model.access) && model.detail && <p className="mt-2 text-2xs text-ink/65">{model.detail}</p>}
+            {model.status === "needs_attention" && <p className="mt-2 text-xs text-accent-text">Your {model.name} connection needs to be renewed.</p>}
+            {model.status === "unavailable" && <p className="mt-2 text-xs text-ink/65">{model.detail}</p>}
+            {model.status !== "unavailable" && (model.maturity === "coming_soon" || model.access) && model.detail && <p className="mt-2 text-xs text-ink/65">{model.detail}</p>}
             {model.limit && (model.status === "disconnected" || model.status === "needs_attention") && (
-              <div className="mt-2.5 rounded-xl border border-border bg-black/[0.03] px-3 py-2">
+              <div className="mt-2.5 rounded-lg border border-border bg-ink/[0.03] px-3 py-2">
                 <p className="text-xs font-semibold text-ink">{/limit reached/i.test(model.limit.message) ? "Integration limit reached" : "Upgrade required"}</p>
-                <p className="mt-0.5 text-2xs text-ink/70 leading-relaxed">{model.limit.message.replace(/^Integration limit reached\.\s*/i, "")}</p>
+                <p className="mt-0.5 text-xs text-ink/70 leading-relaxed">{model.limit.message.replace(/^Integration limit reached\.\s*/i, "")}</p>
               </div>
             )}
-            {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && model.maturity === "ga" && !model.access && <p className="mt-2 text-2xs text-ink/65">{model.detail}</p>}
-            {model.lastError && model.status !== "unavailable" && <p className="mt-2 text-2xs text-warning-text leading-snug">{model.lastError}</p>}
-            {model.adminNote && <p className="mt-2 text-2xs text-warning-text">{model.adminNote}</p>}
+            {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && model.maturity === "ga" && !model.access && <p className="mt-2 text-xs text-ink/65">{model.detail}</p>}
+            {model.lastError && model.status !== "unavailable" && <p className="mt-2 text-xs text-warning-text leading-snug">{model.lastError}</p>}
+            {model.adminNote && <p className="mt-2 text-xs text-warning-text">{model.adminNote}</p>}
           </div>
           <div className="hidden sm:flex shrink-0 flex-col items-end gap-2">{actions}</div>
           </div>
@@ -220,9 +218,9 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
               cramped column squeezed beside the text. */}
           <div className="sm:hidden mt-3.5 flex flex-wrap items-center gap-2">{actions}</div>
         </div>
-        {Children.toArray(children).some(Boolean) && <div className="border-t border-border bg-paper/60 px-4 sm:px-5 py-3 rounded-b-[22px]">{children}</div>}
+        {Children.toArray(children).some(Boolean) && <div className="border-t border-border bg-paper px-4 sm:px-5 py-3 rounded-b-lg">{children}</div>}
         {model.approval && model.status !== "always_on" && model.maturity !== "coming_soon" && (
-          <details className="border-t border-border px-4 sm:px-5 py-2.5 text-2xs text-ink/65">
+          <details className="border-t border-border px-4 sm:px-5 py-2.5 text-xs text-ink/65">
             <summary className="cursor-pointer select-none hover:text-ink/70">What {model.name} requires</summary>
             <p className="mt-1 leading-relaxed">{model.approval}</p>
           </details>
@@ -231,16 +229,16 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
 
       {open && typeof document !== "undefined" && createPortal(
         <div className="fixed inset-0 z-[80] overflow-y-auto" role="presentation">
-          <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={closeSheet} aria-hidden />
+          <div className="absolute inset-0 bg-ink/30" onClick={closeSheet} aria-hidden />
           <div className="relative min-h-full flex items-end sm:items-center justify-center p-0 sm:p-6">
-          <div ref={sheet} role="dialog" aria-modal="true" aria-label={`${model.name} ${open === "manage" ? "settings" : "setup"}`} className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-xl bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] dt-land">
-            <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-border px-5 py-3.5 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg border border-border bg-paper flex items-center justify-center">{icon}</span>
+          <div ref={sheet} role="dialog" aria-modal="true" aria-label={`${model.name} ${open === "manage" ? "settings" : "setup"}`} className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-overlay dt-sheet">
+            <div className="sticky top-0 bg-white border-b border-border px-5 py-3.5 flex items-center gap-3">
+              <span className="w-8 h-8 rounded border border-border bg-white flex items-center justify-center">{icon}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-ink">{model.name}</div>
-                <div className="text-2xs text-ink/65">{open === "manage" ? "Manage connection" : open === "apple" ? "Connect with an app-specific password" : "Choose calendars"}</div>
+                <div className="text-xs text-ink/65">{open === "manage" ? "Manage connection" : open === "apple" ? "Connect with an app-specific password" : "Choose calendars"}</div>
               </div>
-              <button type="button" onClick={closeSheet} aria-label="Close" className="w-11 h-11 sm:w-8 sm:h-8 -mr-1.5 sm:mr-0 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"><X className="w-4 h-4" strokeWidth={2} /></button>
+              <button type="button" onClick={closeSheet} aria-label="Close" className="w-11 h-11 sm:w-8 sm:h-8 -mr-1.5 sm:mr-0 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-ink/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"><X className="w-4 h-4" strokeWidth={1.75} /></button>
             </div>
             {/* Bottom sheet on a phone: the home-indicator inset is part of the padding so
                 the last control is never under it. */}

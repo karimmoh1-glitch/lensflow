@@ -30,11 +30,10 @@ export function AuthShell({
     <main className="min-h-screen bg-paper lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
       {/* Environment */}
       <section className="relative bg-midnight text-paper overflow-hidden lg:min-h-screen">
-        <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_30%_30%,rgba(109,90,230,0.22),transparent_70%),radial-gradient(50%_40%_at_80%_80%,rgba(240,82,77,0.14),transparent_70%)]" />
         <div className="relative flex flex-col h-full px-6 py-6 lg:px-12 lg:py-10">
           <Link href="/" className="inline-flex items-center gap-2.5 text-paper w-fit">
             <LogoMark className="w-6 h-6" />
-            <span className="font-sans font-extrabold text-lg tracking-tight">Daythread</span>
+            <span className="font-sans font-semibold text-lg tracking-tight">Daythread</span>
           </Link>
           <div aria-hidden className="mt-6 lg:mt-auto lg:mb-auto">
             <AuthEnvironment />
@@ -47,12 +46,12 @@ export function AuthShell({
       <section className="flex items-start lg:items-center justify-center px-6 py-10 lg:py-16">
         <div className="w-full max-w-sm dt-swap">
           {back && (
-            <Link href={back.href} className="inline-flex items-center gap-1 text-xs font-semibold text-ink/65 hover:text-ink transition-colors mb-6">
+            <Link href={back.href} className="inline-flex items-center gap-1 text-xs font-medium text-ink/65 hover:text-ink transition-colors mb-6">
               <span aria-hidden>←</span> {back.label}
             </Link>
           )}
-          {eyebrow && <p className="text-13 font-semibold text-ink/65 mb-3">{eyebrow}</p>}
-          <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">{title}</h1>
+          {eyebrow && <p className="text-13 font-semibold text-ink mb-3">{eyebrow}</p>}
+          <h1 className="font-serif font-normal text-[2.5rem] leading-[1.04] tracking-[-0.012em] text-ink">{title}</h1>
           {lede && <p className="mt-3 text-sm text-ink/70 leading-relaxed">{lede}</p>}
           <div className="mt-8">{children}</div>
           {footer && <div className="mt-8 text-sm text-ink/65">{footer}</div>}

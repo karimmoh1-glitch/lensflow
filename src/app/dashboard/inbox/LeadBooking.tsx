@@ -87,14 +87,14 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
   return (
     <div className="space-y-3">
       <div>
-        <label htmlFor={`svc-${leadId}`} className="block text-13 font-semibold text-ink/65 mb-1.5">
+        <label htmlFor={`svc-${leadId}`} className="block text-xs font-medium text-ink/65 mb-1.5">
           Service
         </label>
         <select
           id={`svc-${leadId}`}
           value={service ?? ""}
           onChange={(e) => pickService(e.target.value)}
-          className="w-full h-9 rounded-lg border border-ink/[0.14] bg-white px-2.5 text-13 text-ink focus:outline-none focus:border-ink/40 focus:ring-[3px] focus:ring-ink/[0.06]"
+          className="w-full h-9 rounded-lg border border-border-strong bg-white px-2.5 text-13 text-ink focus:outline-none focus:border-ink/40 focus:ring-[3px] focus:ring-ink/[0.06]"
         >
           {!service && <option value="">Pick a service…</option>}
           {services.map((s) => (
@@ -105,7 +105,7 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
         </select>
       </div>
 
-      <div className="text-13 font-semibold text-ink/65">Pick a day</div>
+      <div className="text-xs font-medium text-ink/65">Pick a day</div>
       <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1">
         {NEXT_DAYS.map((day) => {
           const active = selectedDay && isSameDay(day, selectedDay);
@@ -121,7 +121,7 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
                 active ? "bg-ink text-white border-ink" : "bg-white text-ink border-border hover:border-ink/30"
               )}
             >
-              <span className={cn("text-2xs font-medium", active ? "text-white/60" : "text-ink/65")}>{format(day, "EEE")}</span>
+              <span className={cn("text-xs font-medium", active ? "text-white/60" : "text-ink/65")}>{format(day, "EEE")}</span>
               <span className="text-sm font-semibold mt-0.5">{format(day, "d")}</span>
             </button>
           );
@@ -147,7 +147,7 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
                   disabled={pending}
                   aria-pressed={on}
                   onClick={() => setChosenSlot(on ? null : slot)}
-                  className={cn("text-xs font-medium h-8 px-2.5 rounded-md border transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", on ? "bg-ink text-white border-ink" : "bg-white text-ink border-ink/[0.12] hover:border-ink/30")}
+                  className={cn("text-xs font-medium h-8 px-2.5 rounded-md border transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", on ? "bg-ink text-white border-ink" : "bg-white text-ink border-border-strong hover:bg-paper")}
                 >
                   {timeFmt.format(new Date(slot.start))}
                 </button>
@@ -158,7 +158,7 @@ export function LeadBooking({ leadId, serviceId, services, timezone }: { leadId:
       ) : null}
 
       {chosenSlot && chosen && (
-        <div className="rounded-lg border border-border bg-paper/60 p-3 dt-swap" aria-live="polite">
+        <div className="rounded-lg border border-border bg-paper p-3 dt-swap" aria-live="polite">
           <p className="text-13 text-ink leading-snug">
             <span className="font-semibold">{chosen.name}</span> · {new Intl.DateTimeFormat("en-US", { timeZone: timezone, weekday: "short", month: "short", day: "numeric" }).format(new Date(chosenSlot.start))} at {timeFmt.format(new Date(chosenSlot.start))}
           </p>

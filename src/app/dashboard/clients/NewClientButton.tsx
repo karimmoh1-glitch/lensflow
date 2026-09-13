@@ -50,7 +50,7 @@ export function NewClientButton({ bookingUrl, autoOpen = false, variant = "prima
   return (
     <>
       <Button size="sm" variant={variant} onClick={() => setOpen(true)}>
-        <UserRoundPlus className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
+        <UserRoundPlus className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden />
         Add a client
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)} title="Add a client" description="A name and one way to reach them. Their conversations and bookings gather here.">
@@ -73,9 +73,9 @@ export function NewClientButton({ bookingUrl, autoOpen = false, variant = "prima
           <p className="text-13 font-semibold text-ink">Or send your booking link</p>
           <p className="mt-0.5 text-13 text-ink/60">A booking made there arrives with the client, the service and the time already filled in.</p>
           <div className="mt-2 flex items-center gap-2">
-            <code className="min-w-0 flex-1 rounded-lg border border-border bg-paper px-2.5 py-1.5 text-2xs font-mono text-ink/80 truncate">{bookingUrl}</code>
+            <code className="min-w-0 flex-1 rounded-lg border border-border bg-paper px-2.5 py-1.5 text-xs font-mono text-ink/80 truncate">{bookingUrl}</code>
             <Button size="sm" variant="outline" onClick={copy} aria-label="Copy booking link">
-              {copied ? <Check className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden /> : <Copy className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />}
+              {copied ? <Check className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden /> : <Copy className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden />}
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>

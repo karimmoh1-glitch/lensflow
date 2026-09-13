@@ -20,12 +20,12 @@ export default async function PartnerLayout({ children }: { children: React.Reac
     <div className="min-h-screen bg-paper">
       <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-5 md:px-8 border-b border-border bg-white">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
+          <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-medium shrink-0">
             {initials(business.name)}
           </div>
           <div>
             <div className="font-display text-base leading-tight text-ink">{business.name}</div>
-            <div className="text-2xs text-ink/65 leading-tight">Partner access</div>
+            <div className="text-xs text-ink/65 leading-tight">Partner access</div>
           </div>
         </div>
         <nav className="hidden sm:flex items-center gap-5 text-sm">

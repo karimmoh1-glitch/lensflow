@@ -33,7 +33,7 @@ export function Faq() {
     <div className="max-w-[880px] mx-auto px-6">
       <Reveal className="mb-10">
         <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Questions</p>
-        <h2 className="font-sans font-extrabold text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[0.94] tracking-[-0.045em] text-ink">Before you connect anything.</h2>
+        <h2 className="font-serif font-normal text-[clamp(2.4rem,4.8vw,3.9rem)] leading-[1.02] tracking-[-0.012em] text-ink">Before you connect anything.</h2>
       </Reveal>
       <div className="divide-y divide-border border-y border-border">
         {FAQ.map((item) => (

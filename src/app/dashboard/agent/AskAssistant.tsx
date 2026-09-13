@@ -29,18 +29,18 @@ export function AskAssistant() {
   }
 
   return (
-    <section aria-label="Ask the assistant" className="rounded-xl border border-border bg-white overflow-hidden">
+    <section aria-label="Ask the assistant" className="rounded-lg border border-border bg-white overflow-hidden">
       <div className="px-5 pt-4 pb-3">
-        <div className="text-13 font-semibold text-ink/75">Ask</div>
+        <div className="text-xs font-medium text-ink/65">Ask</div>
         <form
-          className="mt-2 flex items-center gap-2 rounded-xl border border-ink/[0.14] bg-white pl-3 pr-1.5 h-12 focus-within:border-ink/30 focus-within:shadow-[0_0_0_4px_rgba(16,17,20,0.05)] transition-[border-color,box-shadow]"
+          className="mt-2 flex items-center gap-2 rounded-lg border border-border-strong bg-white pl-3 pr-1.5 h-12 focus-within:border-ink/30 focus-within:shadow-[0_0_0_4px_rgba(16,17,20,0.05)] transition-[border-color,box-shadow]"
           onSubmit={(e) => {
             e.preventDefault();
             ask(q);
           }}
         >
-          <Search className="w-4 h-4 text-ink/60 shrink-0" strokeWidth={2} aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about your inbox, calendar or customers…" aria-label="Ask the assistant" maxLength={500} className="flex-1 bg-transparent text-[16px] md:text-sm text-ink placeholder:text-ink/65 outline-none min-w-0" />
+          <Search className="w-4 h-4 text-ink/60 shrink-0" strokeWidth={1.75} aria-hidden />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about your inbox, calendar or customers…" aria-label="Ask the assistant" maxLength={500} className="flex-1 h-10 bg-transparent text-[16px] md:text-sm text-ink placeholder:text-ink/65 outline-none min-w-0" />
           <button type="submit" disabled={!q.trim() || pending} aria-label="Ask" className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", q.trim() && !pending ? "bg-ink hover:bg-black" : "bg-ink/25")}>
             {pending ? <WorkingDots /> : <ArrowUp className="w-4 h-4" strokeWidth={2.5} aria-hidden />}
           </button>
@@ -48,7 +48,7 @@ export function AskAssistant() {
         {history.length === 0 && (
           <ul className="mt-2.5 flex flex-wrap gap-1.5">
             {PROMPTS.map((p) => (
-              <li key={p}><button type="button" onClick={() => ask(p)} disabled={pending} className="h-8 px-3 rounded-lg border border-border text-xs font-semibold text-ink/70 hover:text-ink hover:border-ink/25 transition-colors disabled:opacity-50">{p}</button></li>
+              <li key={p}><button type="button" onClick={() => ask(p)} disabled={pending} className="h-8 px-3 rounded-lg border border-border text-xs font-medium text-ink/70 hover:text-ink hover:border-ink/25 transition-colors disabled:opacity-50">{p}</button></li>
             ))}
           </ul>
         )}
@@ -57,13 +57,13 @@ export function AskAssistant() {
         <ol className="border-t border-border divide-y divide-border" aria-live="polite">
           {history.map((h, i) => (
             <li key={i} className="px-5 py-3.5 dt-msg-in">
-              <div className="text-xs font-semibold text-ink/70">{h.q}</div>
+              <div className="text-xs font-medium text-ink/70">{h.q}</div>
               <p className="mt-1 text-sm text-ink leading-relaxed whitespace-pre-wrap">{h.a}</p>
             </li>
           ))}
         </ol>
       )}
-      <p className="px-5 py-2.5 border-t border-border text-2xs text-ink/65">Answers come from your own records. The assistant never takes an action from here.</p>
+      <p className="px-5 py-2.5 border-t border-border text-xs text-ink/65">Answers come from your own records. The assistant never takes an action from here.</p>
     </section>
   );
 }

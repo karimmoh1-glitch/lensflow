@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { CHANNEL_META } from "@/lib/channelIcons";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isAcknowledgement, splitMessage } from "@/lib/cleanMessage";
-import { PageHeader, EmptyState, Card, Badge } from "@/components/ui";
+import { PageHeader, EmptyState, Badge } from "@/components/ui";
 import { initials } from "@/lib/utils";
 import { InviteClientButton } from "./InviteClientButton";
 import { NewClientButton } from "./NewClientButton";
 import { PromotePartnerButton } from "./PromotePartnerButton";
 import { readOpportunity } from "@/lib/opportunity";
-import { cn } from "@/lib/utils";
 
 export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
   const ctx = await requireBusiness();
@@ -84,42 +84,52 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           action={<NewClientButton bookingUrl={bookingUrl} />}
         />
       ) : (
-        <Card>
-          <div className="divide-y divide-border">
+        <div className="rounded-lg border border-border overflow-hidden">
+          <div aria-hidden className="hidden md:grid grid-cols-[minmax(0,1fr)_120px_110px_150px] gap-4 px-5 h-9 items-center border-b border-border bg-paper text-xs text-ink/65">
+            <span>Name</span>
+            <span>Relationship</span>
+            <span>Bookings</span>
+            <span>Last conversation</span>
+          </div>
+          <ul className="divide-y divide-border">
             {listed.map(({ c, opportunity }) => {
+              const bookings = c.bookings.filter((b) => b.status !== "CANCELED").length;
               return (
                 // The whole row opens the person (a stretched link), and the partner action sits
                 // above it rather than inside it — a button nested in a link is not operable.
-                <div
+                <li
                   key={c.id}
-                  className="relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-5 py-3.5 hover:bg-black/[0.02] focus-within:bg-black/[0.03]"
+                  className="relative grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_120px_100px_200px] items-center gap-x-4 gap-y-1 px-4 md:px-5 py-3 hover:bg-paper focus-within:bg-paper"
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-ink/[0.06] text-ink/75 flex items-center justify-center text-2xs font-semibold shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div aria-hidden className="w-8 h-8 rounded-full bg-ink/[0.07] text-ink/75 flex items-center justify-center text-2xs font-semibold shrink-0">
                       {initials(c.name)}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <Link href={`/dashboard/clients/${c.id}`} className="block text-sm font-medium truncate after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ink/70">{c.name}</Link>
-                      <div className="text-xs text-ink/70 truncate">{opportunity.rank > 0 ? <><span className={cn("font-semibold", opportunity.kind === "client" ? "text-success-text" : "text-ink")}>{opportunity.label}</span> · {opportunity.reason}</> : (c.email ?? c.phone ?? (c.instagram ? `@${c.instagram}` : "No contact info"))}</div>
+                    <div className="min-w-0">
+                      <Link href={`/dashboard/clients/${c.id}`} className="block text-sm font-medium text-ink truncate after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ink/70">{c.name}</Link>
+                      <div className="text-xs text-ink/65 truncate">{opportunity.rank > 0 ? <><span className="text-ink/80">{opportunity.label}</span> · {opportunity.reason}</> : (c.email ?? c.phone ?? (c.instagram ? `@${c.instagram}` : "No contact info"))}</div>
                     </div>
                   </div>
-                  <div className="flex items-center flex-wrap gap-3 pl-11 sm:pl-0 shrink-0">
-                    <Badge tone={c.relationship === "CUSTOMER" ? "success" : c.relationship === "CONTACT" ? "neutral" : "info"}>{c.relationship === "CUSTOMER" ? "Customer" : c.relationship === "CONTACT" ? "Contact" : "Potential"}</Badge>
-                    {c.subscriptions.length > 0 && <Badge tone="success">Member</Badge>}
-                    {c.userId ? <Badge tone="info">Portal active</Badge> : null}
-                    <div className="text-right">
-                      <div className="text-sm font-medium">{c.bookings.filter((b) => b.status !== "CANCELED").length} booking{c.bookings.filter((b) => b.status !== "CANCELED").length !== 1 && "s"}</div>
-                      <div className="text-xs text-ink/65">{c.conversations[0] ? `Last on ${c.conversations[0].channel.toLowerCase()}` : "No conversation yet"}</div>
-                    </div>
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end md:justify-start">
+                    <Badge tone={c.relationship === "CUSTOMER" ? "success" : "neutral"}>{c.relationship === "CUSTOMER" ? "Customer" : c.relationship === "CONTACT" ? "Contact" : "Potential"}</Badge>
+                    {c.subscriptions.length > 0 && <Badge>Member</Badge>}
+                    {c.userId ? <Badge>Portal</Badge> : null}
                     {canPromote && c.userId && clientMembershipByUserId.has(c.userId) && (
-                      <div className="relative z-10"><PromotePartnerButton membershipId={clientMembershipByUserId.get(c.userId)!} name={c.name} /></div>
+                      <span className="md:hidden relative z-10"><PromotePartnerButton membershipId={clientMembershipByUserId.get(c.userId)!} name={c.name} /></span>
                     )}
                   </div>
-                </div>
+                  <div className="hidden md:block text-13 text-ink tabular-nums">{bookings} {bookings === 1 ? "booking" : "bookings"}</div>
+                  <div className="hidden md:flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-13 text-ink/65 truncate">{c.conversations[0] ? CHANNEL_META[c.conversations[0].channel].label : "None yet"}</span>
+                    {canPromote && c.userId && clientMembershipByUserId.has(c.userId) && (
+                      <span className="relative z-10 shrink-0"><PromotePartnerButton membershipId={clientMembershipByUserId.get(c.userId)!} name={c.name} /></span>
+                    )}
+                  </div>
+                </li>
               );
             })}
-          </div>
-        </Card>
+          </ul>
+        </div>
       )}
       {unlisted > 0 && <p className="mt-3 text-xs text-ink/65">{unlisted} {unlisted === 1 ? "contact" : "contacts"} without a conversation or booking {unlisted === 1 ? "is" : "are"} kept but not listed here.</p>}
     </div>

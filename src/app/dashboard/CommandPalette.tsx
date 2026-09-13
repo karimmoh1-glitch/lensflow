@@ -146,10 +146,10 @@ export function CommandPalette() {
   let lastGroup: Item["group"] | null = null;
   return (
     <div className="fixed inset-0 z-[80] flex items-start justify-center px-4 pt-[12vh]" role="presentation">
-      <div className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" onClick={() => setOpen(false)} aria-hidden />
-      <div role="dialog" aria-modal="true" aria-label="Search and go" className="relative w-full max-w-xl rounded-xl border border-ink/10 bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] overflow-hidden dt-land">
+      <div className="absolute inset-0 bg-ink/30" onClick={() => setOpen(false)} aria-hidden />
+      <div role="dialog" aria-modal="true" aria-label="Search and go" className="relative w-full max-w-xl rounded-lg border border-ink/10 bg-white shadow-overlay overflow-hidden dt-land">
         <div className="flex items-center gap-3 px-4 border-b border-border">
-          <Search className="w-4 h-4 text-ink/65 shrink-0" strokeWidth={2} />
+          <Search className="w-4 h-4 text-ink/65 shrink-0" strokeWidth={1.75} />
           <input
             ref={inputRef}
             value={q}
@@ -163,21 +163,21 @@ export function CommandPalette() {
             aria-expanded="true"
             className="flex-1 h-14 bg-transparent text-[15px] text-ink placeholder:text-ink/65 outline-none"
           />
-          <kbd className="hidden sm:inline-flex items-center rounded-md border border-border bg-paper px-1.5 py-0.5 text-2xs font-semibold text-ink/65">esc</kbd>
+          <kbd className="hidden sm:inline-flex items-center rounded-md border border-border bg-paper px-1.5 py-0.5 text-xs font-medium text-ink/65">esc</kbd>
         </div>
 
         {summary && (
-          <button type="button" onClick={() => go(summary.href)} className="w-full text-left px-4 py-3 border-b border-border bg-black/[0.03] hover:bg-black/[0.03] transition-colors">
+          <button type="button" onClick={() => go(summary.href)} className="w-full text-left px-4 py-3 border-b border-border bg-ink/[0.03] hover:bg-ink/[0.03] transition-colors">
             <div className="flex items-center gap-3">
-              <span className="w-9 h-9 rounded-full bg-black/[0.03] text-ink/75 flex items-center justify-center text-xs font-extrabold shrink-0">{summary.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}</span>
+              <span className="w-9 h-9 rounded-full bg-ink/[0.03] text-ink/75 flex items-center justify-center text-xs font-semibold shrink-0">{summary.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}</span>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-extrabold text-ink">{summary.name}</div>
+                <div className="text-sm font-semibold text-ink">{summary.name}</div>
                 <div className="text-xs text-ink/65">
                   {summary.conversations} conversation{summary.conversations === 1 ? "" : "s"} · {summary.bookings} booking{summary.bookings === 1 ? "" : "s"}
                   {summary.nextAction && <span className="text-accent-text font-semibold"> · Next: {summary.nextAction}</span>}
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-ink/30" strokeWidth={2} />
+              <ArrowRight className="w-4 h-4 text-ink/30" strokeWidth={1.75} />
             </div>
           </button>
         )}
@@ -194,7 +194,7 @@ export function CommandPalette() {
             const on = i === cursor;
             return (
               <li key={it.key} role="presentation">
-                {header && <div className="px-4 pt-2 pb-1 text-2xs font-medium text-ink/65">{it.group}</div>}
+                {header && <div className="px-4 pt-2 pb-1 text-xs font-medium text-ink/65">{it.group}</div>}
                 <button
                   id={`cmd-${it.key}`}
                   role="option"
@@ -202,16 +202,16 @@ export function CommandPalette() {
                   type="button"
                   onMouseEnter={() => setCursor(i)}
                   onClick={() => go(it.href)}
-                  className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors", on ? "bg-black/[0.04]" : "hover:bg-black/[0.03]")}
+                  className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors", on ? "bg-ink/[0.04]" : "hover:bg-ink/[0.03]")}
                 >
-                  <span className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", on ? "bg-ink text-white" : "bg-black/[0.05] text-ink/65")}>
-                    <it.icon className="w-4 h-4" strokeWidth={2} />
+                  <span className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", on ? "bg-ink text-white" : "bg-ink/[0.05] text-ink/65")}>
+                    <it.icon className="w-4 h-4" strokeWidth={1.75} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold text-ink truncate">{it.title}</span>
                     {it.subtitle && <span className="block text-xs text-ink/70 truncate">{it.subtitle}</span>}
                   </span>
-                  {on && <kbd className="hidden sm:inline text-2xs font-semibold text-ink/65">⏎</kbd>}
+                  {on && <kbd className="hidden sm:inline text-xs font-medium text-ink/65">⏎</kbd>}
                 </button>
               </li>
             );

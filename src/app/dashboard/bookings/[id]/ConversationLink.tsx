@@ -13,7 +13,7 @@ export async function ConversationLink({ businessId, bookingId, conversationId, 
   if (!conv) return <p className="text-xs text-ink/65">No conversation with this person yet.</p>;
   return (
     <Link href={`/dashboard/inbox?c=${conv.id}`} className="inline-flex items-center gap-2 min-h-[32px] text-sm font-semibold text-ink hover:text-ink/70 transition-colors" data-booking={bookingId}>
-      <MessageSquare className="w-4 h-4 text-ink/65" strokeWidth={2} aria-hidden />
+      <MessageSquare className="w-4 h-4 text-ink/65" strokeWidth={1.75} aria-hidden />
       Open the conversation
     </Link>
   );

@@ -28,9 +28,9 @@ export function EntitlementNotice({ message }: { message: string }) {
             : "Every channel, AI, and your team on one inbox.";
 
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-black/[0.03] px-3.5 py-3 max-w-sm">
+    <div className="flex items-start gap-3 rounded-lg border border-border bg-ink/[0.03] px-3.5 py-3 max-w-sm">
       <span className="w-7 h-7 rounded-lg bg-ink text-ink/75 flex items-center justify-center shrink-0 mt-0.5">
-        <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
+        <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={1.75} />
       </span>
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-ink">{feature} {feature === "AI-drafted replies" || feature === "Unlimited automations" ? "are" : "is"} part of Pro</div>

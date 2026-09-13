@@ -87,7 +87,7 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
     <div>
       <div className="flex items-center gap-1.5 mb-4">
         {[0, 1, 2].map((i) => (
-          <div key={i} className={cn("h-1 flex-1 rounded-full", i <= step ? "bg-accent" : "bg-black/[0.08]")} />
+          <div key={i} className={cn("h-1 flex-1 rounded-full", i <= step ? "bg-accent" : "bg-ink/[0.08]")} />
         ))}
       </div>
       <Card>
@@ -182,7 +182,7 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
               <Textarea id="bf-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
             </div>
 
-            <div className="rounded-lg bg-black/[0.03] p-3 text-sm flex justify-between">
+            <div className="rounded-lg bg-ink/[0.03] p-3 text-sm flex justify-between">
               <span className="text-ink/75">Total</span>
               <span className="font-medium">{formatMoney(service.priceCents)}</span>
             </div>

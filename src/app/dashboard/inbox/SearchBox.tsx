@@ -49,7 +49,7 @@ export function SearchBox({ initial }: { initial: string }) {
 
   return (
     <div className="relative">
-      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/60 pointer-events-none" strokeWidth={2.2} aria-hidden />
+      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/60 pointer-events-none" strokeWidth={2} aria-hidden />
       <input
         ref={inputRef}
         type="search"
@@ -59,10 +59,10 @@ export function SearchBox({ initial }: { initial: string }) {
         placeholder="Search people and messages"
         aria-label="Search the inbox"
         enterKeyHint="search"
-        className="w-full h-10 md:h-8 rounded-lg border border-transparent bg-black/[0.04] pl-8 pr-9 text-[16px] md:text-13 text-ink placeholder:text-ink/60 outline-none transition-colors hover:bg-black/[0.055] focus:border-ink/20 focus:bg-white focus:ring-[3px] focus:ring-ink/[0.06] [&::-webkit-search-cancel-button]:hidden"
+        className="w-full h-10 md:h-8 rounded border border-border-strong bg-white pl-8 pr-9 text-[16px] md:text-13 text-ink placeholder:text-ink/50 outline-none transition-[border-color,box-shadow] hover:border-ink/25 focus:border-ink/45 focus:ring-[3px] focus:ring-ink/[0.07] [&::-webkit-search-cancel-button]:hidden"
       />
       {value ? (
-        <button type="button" onClick={() => setValue("")} aria-label="Clear search" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-lg flex items-center justify-center text-ink/65 hover:text-ink hover:bg-black/[0.05]">
+        <button type="button" onClick={() => setValue("")} aria-label="Clear search" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-lg flex items-center justify-center text-ink/65 hover:text-ink hover:bg-ink/[0.05]">
           <X className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden />
         </button>
       ) : (

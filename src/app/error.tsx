@@ -15,7 +15,7 @@ export default function RootError({ error, reset }: { error: Error & { digest?: 
     <main className="min-h-screen bg-paper flex items-center justify-center px-6">
       <div className="max-w-md text-center dt-swap">
         <LogoMark className="w-7 h-7 mx-auto mb-6 text-ink" />
-        <h1 className="font-sans font-extrabold text-2xl tracking-tight text-ink">That didn&rsquo;t work.</h1>
+        <h1 className="font-sans font-semibold text-2xl tracking-tight text-ink">That didn&rsquo;t work.</h1>
         <p className="mt-2 text-sm text-ink/65 leading-relaxed">Something broke on our side while loading this page. Nothing of yours was lost. Try again, or go back to the start.</p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Button onClick={reset}>Try again</Button>

@@ -15,13 +15,15 @@ import type { ChannelStatus } from "./channelStatus";
  *   confirmed     the confirmation goes back out where they wrote, by your automation
  *   client        the follow-through runs itself; they're a client now
  *
- * On a wide screen the stage is pinned and the scroll plays the sequence forward and back;
+ * On a wide screen the stage is pinned and the scroll plays the sequence forward and back.
+ * The first beat is fully drawn at rest, so arriving at the section (from "See how it works")
+ * always shows the message and its headline, never an empty stage waiting for a scroll;
  * on a phone, and under reduced motion, the same five beats stack and read top to bottom.
  * Nothing here is a capability the product doesn't have, and nothing is sent without you
  * or an automation you switched on. The person is fiction.
  */
 const BEATS = [
-  { key: "inquiry", label: "Inquiry", title: "A message arrives.", body: "On whatever channel they use. It lands in one list, sorted by who has waited longest.", at: [0, 0.02, 0.17, 0.21] },
+  { key: "inquiry", label: "Inquiry", title: "A message arrives.", body: "On whatever channel they use. It lands in one list, sorted by who has waited longest.", at: [-1, 0, 0.17, 0.21] },
   { key: "read", label: "Conversation", title: "Daythread reads it.", body: "Who this is, what they want, when. The next step is written for you.", at: [0.19, 0.24, 0.37, 0.41] },
   { key: "book", label: "Booking", title: "You pick the time.", body: "From your real availability, checked against your calendar. One click books it.", at: [0.39, 0.44, 0.57, 0.61] },
   { key: "confirm", label: "Confirmed", title: "They're told where they wrote.", body: "Your confirmation goes out on the same channel, sent by the automation you switched on.", at: [0.59, 0.64, 0.77, 0.81] },
@@ -108,7 +110,7 @@ function Stage({ instagram }: { instagram: ChannelStatus }) {
       <div className="min-w-0 flex flex-col border-r border-border">
         <ThreadHeader instagram={instagram} live />
         <div className="flex-1 px-4 py-4 space-y-3">
-          <Step a={0.02} b={0.1} dy="14px">
+          <Step a={-1} b={0} dy="14px">
             <Inbound highlightAt={0.2} />
           </Step>
           <Step a={0.22} b={0.3} c={0.83} d={0.88} dy="8px">
@@ -123,7 +125,7 @@ function Stage({ instagram }: { instagram: ChannelStatus }) {
         </div>
       </div>
       <div className="relative min-w-0 bg-paper/60 p-4">
-        <Step a={0.1} b={0.15} c={0.23} d={0.27} dy="0px" className="absolute inset-4">
+        <Step a={-1} b={0} c={0.23} d={0.27} dy="0px" className="absolute inset-4">
           <p className="text-xs font-medium text-ink/60">Next step</p>
           <p className="mt-1 text-[15px] font-semibold text-ink/60">Reading the message…</p>
         </Step>

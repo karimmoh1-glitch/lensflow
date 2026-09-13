@@ -33,29 +33,29 @@ type Story = {
 
 const STORIES: Story[] = [
   {
-    k: "instagram", who: "Maya Chen", handle: "@maya.makes", msg: "Hey! Are you free Tuesday afternoon?", highlight: "Tuesday afternoon",
-    extracted: [["Date", "Tuesday PM"], ["Intent", "High"]], ctx: "Returning client · $2,150 lifetime", ctxMeta: "Booked twice · prefers afternoons",
-    action: "Booked · Brand session · Tue 2:00 PM", outcome: "Confirmation sent · on your calendar", next: "Send Maya the questionnaire", nextWhy: "Booked and confirmed. This is the one thing left.",
+    k: "instagram", who: "Maya Chen", handle: "@maya.makes", msg: "Hey! Are you free Friday at 2 for a portrait session?", highlight: "Friday at 2",
+    extracted: [["Date", "Friday · 2:00 PM"], ["Service", "Portrait session"]], ctx: "Returning client", ctxMeta: "Booked twice before",
+    action: "Friday 2:00 PM is open", outcome: "You booked it · confirmation sent on Instagram", next: "Nothing to do", nextWhy: "She was told where she wrote.",
   },
   {
     k: "gmail", who: "Jordan Lee", handle: "jordan@northloop.co", msg: "Following up on pricing for a September date.", highlight: "September",
-    extracted: [["Date", "September"], ["Intent", "Medium"]], ctx: "Warm lead · asked twice", ctxMeta: "First wrote 9 days ago",
-    action: "Pricing sheet sent", outcome: "Follow-up set · 2 days", next: "Reply to Jordan", nextWhy: "Leads that wait 9 days usually go cold.",
+    extracted: [["Date", "September"], ["Intent", "Pricing"]], ctx: "Potential client · asked twice", ctxMeta: "First wrote 9 days ago",
+    action: "Reply drafted from your prices", outcome: "Waiting for your approval", next: "Approve and send", nextWhy: "Inquiries go cold fast. This one is 9 days old.",
   },
   {
     k: "sms", who: "(512) 555-0148", handle: "New number", msg: "Do you have anything open next week?", highlight: "next week",
-    extracted: [["Date", "Next week"], ["Intent", "Medium"]], ctx: "New lead · contact created", ctxMeta: "Not in your clients until now",
-    action: "Booking link sent", outcome: "Viewed · picking a time", next: "Nothing yet", nextWhy: "Daythread will tell you when they book.",
+    extracted: [["Date", "Next week"], ["Intent", "Availability"]], ctx: "New inquiry · contact created", ctxMeta: "First message from this number",
+    action: "Open times found for next week", outcome: "Waiting on your reply", next: "Send times next week", nextWhy: "Answering first is how the booking is won.",
   },
   {
     k: "whatsapp", who: "Sam Okafor", handle: "+1 415 …", msg: "Can we move Thursday to 4pm?", highlight: "Thursday to 4pm",
-    extracted: [["Date", "Thu 4:00 PM"], ["Intent", "High"]], ctx: "Client · booked Thursday", ctxMeta: "Consult · $180 · confirmed",
-    action: "Moved to 4:00 PM · confirmed", outcome: "Reminder rescheduled", next: "Nothing to do", nextWhy: "Sam got the confirmation on WhatsApp.",
+    extracted: [["Date", "Thu · 4:00 PM"], ["Intent", "Reschedule"]], ctx: "Client · booked Thursday", ctxMeta: "Consult · confirmed",
+    action: "Thursday 4:00 PM is open", outcome: "You moved it · Sam was told on WhatsApp", next: "Nothing to do", nextWhy: "The calendar and the reminder moved with it.",
   },
   {
     k: "website", who: "Priya Patel", handle: "Booking page", msg: "Booked the Full package for Sep 18.", highlight: "Full package",
-    extracted: [["Service", "Full package"], ["Date", "Sep 18"]], ctx: "New client · $1,800", ctxMeta: "Came in through your booking page",
-    action: "Confirmation + questionnaire sent", outcome: "On your calendar · Sep 18", next: "Nothing to do", nextWhy: "Everything sent itself.",
+    extracted: [["Service", "Full package"], ["Date", "Sep 18"]], ctx: "New client", ctxMeta: "Came in through your booking page",
+    action: "Booked through your booking page", outcome: "On your calendar · confirmation sent", next: "Nothing to do", nextWhy: "It arrived with everything filled in.",
   },
 ];
 
@@ -116,7 +116,7 @@ export function HeroThread() {
   const idx = STORIES.findIndex((x) => x.k === active);
 
   return (
-    <div className="relative w-full select-none" aria-label="Messages from Instagram, Gmail, Messages, WhatsApp and your booking page flowing into one Daythread">
+    <div className="relative w-full select-none" aria-label="Messages from Instagram, Gmail, texts, WhatsApp and your booking page flowing into one Daythread">
       {/* ambient: the active channel's color, softly, behind the product */}
       <div aria-hidden className="absolute -inset-10 rounded-[40px] blur-3xl transition-colors duration-700 pointer-events-none" style={{ background: `radial-gradient(60% 60% at 70% 50%, ${brand}22, transparent 70%)` }} />
 
@@ -145,13 +145,13 @@ export function HeroThread() {
             <defs>
               <linearGradient id="dt-hero-grad" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0" stopColor={brand} />
-                <stop offset="1" stopColor="#6D5AE6" />
+                <stop offset="1" stopColor="#101114" />
               </linearGradient>
             </defs>
             {STORIES.map((st, i) => {
               const d = gutterPath(i);
               const isOn = st.k === active;
-              const c = CHANNEL[st.k].brand === "#101114" ? "#6D5AE6" : CHANNEL[st.k].brand;
+              const c = CHANNEL[st.k].brand === "#101114" ? "#3A3B40" : CHANNEL[st.k].brand;
               return (
                 <g key={st.k}>
                   <path d={d} stroke="rgba(16,17,20,0.08)" strokeWidth="1.5" />
@@ -189,7 +189,7 @@ export function HeroThread() {
             <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
             <span className="text-13 font-extrabold tracking-tight text-ink">Daythread</span>
             <span className="text-2xs text-ink/65">Inbox</span>
-            <span className={cn("ml-auto text-2xs font-bold rounded-full px-2 py-0.5 transition-colors", inFlight ? "bg-accent-soft text-accent-text" : phase < 4 ? "bg-signal-soft text-signal-text" : "bg-success-soft text-success-text")}>
+            <span className={cn("ml-auto text-2xs font-semibold rounded-md px-1.5 py-0.5 transition-colors", inFlight ? "bg-accent-soft text-accent-text" : phase < 4 ? "bg-black/[0.05] text-ink/70" : "bg-success-soft text-success-text")}>
               {inFlight ? "Incoming" : phase < 4 ? "Reading" : "Handled"}
             </span>
           </div>
@@ -197,40 +197,40 @@ export function HeroThread() {
           <div className={cn("grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_200px] lg:grid-cols-1 xl:grid-cols-[minmax(0,1fr)_200px] transition-opacity duration-500", inFlight ? "opacity-40" : "opacity-100")}>
             <ol className="relative pl-9 pr-4 py-4 min-h-[300px]">
               <span aria-hidden className="absolute left-[19px] top-4 bottom-4 w-px bg-border" />
-              <span aria-hidden className="absolute left-[19px] top-4 w-px bg-gradient-to-b from-accent via-signal to-success origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 4})` }} />
-              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}`} labelClass="text-accent-text">
+              <span aria-hidden className="absolute left-[19px] top-4 w-px bg-gradient-to-b from-accent via-ink/40 to-success origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 4})` }} />
+              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}`} labelClass="text-ink/55">
                 <span className="font-semibold">{s.who}</span>{" "}
                 <span className="text-ink/70">“<Highlight text={s.msg} part={s.highlight} on={on(2)} />”</span>
                 <span className="mt-1.5 flex flex-wrap gap-1.5">
                   {s.extracted.map(([k, v], i) => (
                     <span
                       key={k}
-                      className={cn("inline-flex items-center gap-1 rounded-md bg-signal-soft/70 px-1.5 py-0.5 text-2xs font-semibold text-signal-text transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
+                      className={cn("inline-flex items-center gap-1 rounded-md bg-black/[0.045] px-1.5 py-0.5 text-2xs font-medium text-ink/75 transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
                       style={{ transitionDelay: on(2) ? `${120 + i * 110}ms` : "0ms" }}
                     >
-                      <span className="text-signal-text">{k}</span>
+                      <span className="text-ink/50">{k}</span>
                       {v}
                     </span>
                   ))}
                 </span>
               </Node>
-              <Node on={on(2)} dot={cn("bg-signal", phase === 1 && !still && "animate-[dtBreathe_1.1s_ease-in-out_infinite]")} label="Daythread knows" labelClass="text-signal-text">
+              <Node on={on(2)} dot={cn("bg-ink", phase === 1 && !still && "animate-[dtBreathe_1.1s_ease-in-out_infinite]")} label="Daythread read" labelClass="text-ink/55">
                 <span className="font-semibold">{s.ctx}</span>
                 <span className="block text-xs text-ink/65">{s.ctxMeta}</span>
               </Node>
-              <Node on={on(3)} dot="bg-ink/75" label="Done for you" labelClass="text-ink/70">
+              <Node on={on(3)} dot="bg-ink/75" label="Your calendar" labelClass="text-ink/55">
                 {s.action}
               </Node>
-              <Node on={on(4)} dot="bg-success" label="Outcome" labelClass="text-success-text">
+              <Node on={on(4)} dot="bg-success" label="Outcome" labelClass="text-ink/55">
                 {s.outcome}
               </Node>
             </ol>
             <aside className="hidden md:flex lg:hidden xl:flex flex-col border-l border-border bg-paper/60 p-4">
-              <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">{s.who.split(" ")[0]}</div>
+              <div className="text-xs font-medium text-ink/55 mb-2">{s.who.split(" ")[0]}</div>
               <div className="text-xs text-ink/70 leading-relaxed">{s.ctx}</div>
               <div className="mt-auto pt-4">
-                <div className={cn("rounded-2xl border px-3 py-2.5 transition-all duration-500", on(4) ? "border-accent/35 bg-gradient-to-br from-accent-soft/80 to-white opacity-100 translate-y-0" : "border-border opacity-0 translate-y-1")}>
-                  <div className="text-2xs font-bold uppercase tracking-[0.12em] text-accent-text mb-0.5">Next</div>
+                <div className={cn("rounded-2xl border px-3 py-2.5 transition-all duration-500", on(4) ? "border-border bg-white shadow-[0_1px_3px_rgba(16,17,20,0.06)] opacity-100 translate-y-0" : "border-border opacity-0 translate-y-1")}>
+                  <div className="text-xs font-medium text-ink/55 mb-0.5">Next</div>
                   <div className="text-13 font-semibold text-ink leading-snug">{s.next}</div>
                   <div className="text-2xs text-ink/65 mt-0.5 leading-snug">{s.nextWhy}</div>
                 </div>
@@ -251,7 +251,7 @@ function Highlight({ text, part, on }: { text: string; part: string; on: boolean
   return (
     <>
       {text.slice(0, i)}
-      <span className={cn("rounded-[4px] px-0.5 -mx-0.5 transition-colors duration-500", on ? "bg-signal-soft text-signal-text" : "bg-transparent")}>{part}</span>
+      <span className={cn("rounded-[4px] px-0.5 -mx-0.5 transition-colors duration-500", on ? "bg-black/[0.05] text-ink/70" : "bg-transparent")}>{part}</span>
       {text.slice(i + part.length)}
     </>
   );
@@ -261,7 +261,7 @@ function Node({ on, dot, label, labelClass, children }: { on: boolean; dot: stri
   return (
     <li className={cn("relative py-2 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]", on ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
       <span aria-hidden className={cn("absolute -left-[26px] top-[13px] w-[15px] h-[15px] rounded-full border-[3px] border-white transition-transform duration-300", dot, on ? "scale-100" : "scale-0")} />
-      <div className={cn("text-2xs font-bold uppercase tracking-[0.12em] mb-0.5", labelClass)}>{label}</div>
+      <div className={cn("text-xs font-medium mb-0.5", labelClass)}>{label}</div>
       <div className="text-sm text-ink">{children}</div>
     </li>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Inbox, Users, CalendarClock, Zap, Home, CalendarDays, Sparkles } from "lucide-react";
+import { Inbox, Users, CalendarClock, Zap, Home, CalendarDays, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Reveal } from "./Reveal";
 import { ChannelIcon, type ChannelKey } from "./ChannelIcon";
@@ -18,11 +18,11 @@ type Tab = "inbox" | "client" | "booking" | "calendar" | "automation" | "ai";
 
 const TABS: { key: Tab; label: string; icon: typeof Inbox; hint: string; tint: string }[] = [
   { key: "inbox", label: "Inbox", icon: Inbox, hint: "Click a conversation — the context appears.", tint: "#F0524D" },
-  { key: "client", label: "Client", icon: Users, hint: "A client is a history, not a row.", tint: "#6D5AE6" },
+  { key: "client", label: "Client", icon: Users, hint: "A client is a history, not a row.", tint: "#101114" },
   { key: "booking", label: "Booking", icon: CalendarClock, hint: "Made from the conversation, mirrored to your calendar.", tint: "#101114" },
   { key: "calendar", label: "Calendar", icon: CalendarDays, hint: "Today, in order — bookings and busy time together.", tint: "#1E8E5A" },
-  { key: "automation", label: "Automations", icon: Zap, hint: "Turn one on. It reads like a sentence.", tint: "#6D5AE6" },
-  { key: "ai", label: "Assistant", icon: Sparkles, hint: "Ask it what needs you today.", tint: "#6D5AE6" },
+  { key: "automation", label: "Automations", icon: Zap, hint: "Turn one on. It reads like a sentence.", tint: "#101114" },
+  { key: "ai", label: "Assistant", icon: ListChecks, hint: "Ask it what needs you today.", tint: "#101114" },
 ];
 
 const CONVOS: { id: string; name: string; ch: ChannelKey; msg: string; when: string; tag: string; tagTone: string; score: number; status: string; ltv: string; mention: [string, string][]; history: string[] }[] = [
@@ -50,6 +50,8 @@ export function ProductDemo() {
       if (!el) return;
       const r = el.getBoundingClientRect();
       if (r.bottom < 0 || r.top > window.innerHeight) return;
+      // Only when the demo itself has focus: arrow keys scroll the page everywhere else.
+      if (!el.contains(document.activeElement)) return;
       e.preventDefault();
       setConvo((cur) => {
         const i = CONVOS.findIndex((x) => x.id === cur);
@@ -66,9 +68,8 @@ export function ProductDemo() {
       <div aria-hidden className="absolute inset-x-0 top-1/3 h-2/3 -z-0 pointer-events-none transition-all duration-1000" style={{ background: `radial-gradient(50% 50% at 50% 60%, ${active.tint}1a, transparent 70%)` }} />
 
       <Reveal className="relative text-center max-w-2xl mx-auto mb-8">
-        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Try it</p>
-        <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">This is the inbox.</h2>
-        <p className="mt-4 text-ink/70 text-base">The real interface. Click a conversation and the context appears beside it.</p>
+        <h2 className="font-sans font-bold text-[clamp(2.1rem,4.2vw,3.4rem)] leading-[1] tracking-[-0.04em] text-ink">Try the inbox.</h2>
+        <p className="mt-4 text-ink/60 text-[1.0625rem]">A working model with sample conversations. Click one and see what Daythread shows beside it.</p>
       </Reveal>
 
       <div className="relative flex flex-wrap items-center justify-center gap-2 mb-4" role="tablist" aria-label="Product surfaces">
@@ -108,7 +109,7 @@ export function ProductDemo() {
             { k: "booking", label: "Bookings", icon: CalendarClock },
             { k: "calendar", label: "Calendar", icon: CalendarDays },
             { k: "automation", label: "Automations", icon: Zap },
-            { k: "ai", label: "Assistant", icon: Sparkles },
+            { k: "ai", label: "Assistant", icon: ListChecks },
           ].map((i) => {
             const on = i.k === tab;
             const clickable = TABS.some((t) => t.key === i.k);
@@ -157,7 +158,7 @@ export function ProductDemo() {
               </div>
               <div key={convo} className="dt-swap border-t lg:border-t-0 lg:border-l border-border bg-paper/60 p-5">
                 <div className="flex items-center gap-3">
-                  <span className="w-10 h-10 rounded-full bg-signal-soft text-signal-text flex items-center justify-center text-xs font-extrabold">{c.name.split(" ").map((p) => p[0]).join("")}</span>
+                  <span className="w-10 h-10 rounded-full bg-black/[0.05] text-ink/70 flex items-center justify-center text-xs font-extrabold">{c.name.split(" ").map((p) => p[0]).join("")}</span>
                   <div><div className="text-sm font-extrabold text-ink">{c.name}</div><div className="text-2xs text-ink/65">{c.status}</div></div>
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-2xs"><span className="rounded-full bg-success-soft text-success-text font-bold px-2 py-0.5">{c.tag}</span><span className="text-ink/70">{c.ltv}</span></div>
@@ -287,7 +288,7 @@ export function ProductDemo() {
 
           {tab === "ai" && (
             <div className="p-5 md:p-6 flex flex-col min-h-[400px]">
-              <div className="flex items-center gap-2 mb-4"><span className="w-7 h-7 rounded-full bg-signal-soft text-signal-text flex items-center justify-center"><Sparkles className="w-3.5 h-3.5" strokeWidth={2} /></span><span className="text-sm font-extrabold text-ink">Assistant</span><span className="text-2xs text-ink/65">knows your whole thread</span></div>
+              <div className="flex items-center gap-2 mb-4"><span className="w-7 h-7 rounded-full bg-black/[0.05] text-ink/70 flex items-center justify-center"><ListChecks className="w-3.5 h-3.5" strokeWidth={2} /></span><span className="text-sm font-extrabold text-ink">Assistant</span><span className="text-2xs text-ink/65">knows your whole thread</span></div>
               <div className="flex flex-wrap gap-2 mb-4">
                 {["What do I need to do today?", "What's on my calendar this week?", "Which inquiries are going cold?"].map((q) => (
                   <button key={q} type="button" onClick={() => setAsked(q)} className={cn("text-xs px-3 py-1.5 rounded-full border transition-all duration-200 active:scale-95", asked === q ? "bg-ink text-white border-ink" : "border-border hover:bg-black/[0.04] hover:-translate-y-px")}>{q}</button>
@@ -297,7 +298,7 @@ export function ProductDemo() {
                 <div key={asked} className="dt-swap space-y-3 max-w-lg">
                   <div className="ml-auto w-fit rounded-2xl bg-ink text-white text-sm px-3.5 py-2.5">{asked}</div>
                   <div className="flex items-start gap-2">
-                    <span className="w-6 h-6 rounded-full bg-signal-soft text-signal-text flex items-center justify-center shrink-0 mt-0.5"><Sparkles className="w-3 h-3" strokeWidth={2} /></span>
+                    <span className="w-6 h-6 rounded-full bg-black/[0.05] text-ink/70 flex items-center justify-center shrink-0 mt-0.5"><ListChecks className="w-3 h-3" strokeWidth={2} /></span>
                     <div className="rounded-2xl bg-signal-soft/50 border border-signal/15 text-sm text-ink px-3.5 py-2.5 leading-relaxed">
                       {asked.startsWith("What do") && <>Three things. <span className="font-semibold">Reply to Maya</span> — she asked about Tuesday 2 hours ago. <span className="font-semibold">Confirm Jordan&rsquo;s 10:00</span> consult. <span className="font-semibold">Follow up with Leo</span> — 5 hours, no reply yet.</>}
                       {asked.startsWith("What's") && <><span className="font-semibold">Four bookings.</span> Priya today at 10:00, Sam Thursday at 4:00, Maya Tuesday at 2:00, and Jordan&rsquo;s consult Friday at 10:00. Wednesday afternoon is free.</>}

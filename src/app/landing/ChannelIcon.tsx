@@ -1,4 +1,4 @@
-import { siWhatsapp, siInstagram, siImessage } from "simple-icons";
+import { siWhatsapp, siInstagram } from "simple-icons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * simple-icons — the official brand geometry, not an approximation — except Gmail, whose
  * four-color M is drawn from Google's own logo geometry because the library only carries a
  * monochrome glyph. Each app keeps its own form: Instagram's gradient tile, WhatsApp's
- * green circle, Gmail's white tile with the M, Messages' green bubble tile, and the booking page as Daythread's own ink.
+ * green circle, Gmail's white tile with the M, a green text-bubble tile, and the booking page as Daythread's own ink.
  * Messenger is deliberately absent: the product doesn't support it.
  */
 export type ChannelKey = "instagram" | "gmail" | "sms" | "whatsapp" | "website";
@@ -15,7 +15,7 @@ export type ChannelKey = "instagram" | "gmail" | "sms" | "whatsapp" | "website";
 export const CHANNEL: Record<ChannelKey, { name: string; brand: string; soft: string }> = {
   instagram: { name: "Instagram", brand: "#D62976", soft: "rgba(214,41,118,0.10)" },
   gmail: { name: "Gmail", brand: "#EA4335", soft: "rgba(234,67,53,0.10)" },
-  sms: { name: "Messages", brand: "#34C759", soft: "rgba(52,199,89,0.12)" },
+  sms: { name: "Texts", brand: "#34C759", soft: "rgba(52,199,89,0.12)" },
   whatsapp: { name: "WhatsApp", brand: "#25D366", soft: "rgba(37,211,102,0.12)" },
   website: { name: "Booking page", brand: "#101114", soft: "rgba(16,17,20,0.06)" },
 };
@@ -65,8 +65,11 @@ export function ChannelIcon({ k, size = 56, className, active }: { k: ChannelKey
   }
   if (k === "sms") {
     return (
-      <span className={common} style={{ ...base, borderRadius: Math.round(size * 0.24), background: "linear-gradient(180deg, #5DF77D 0%, #34C759 100%)" }} title="Messages">
-        <Mark path={siImessage.path} size={size * 0.56} />
+      // A plain text bubble, not Apple's Messages glyph: Daythread texts over SMS, it does not read iMessage.
+      <span className={common} style={{ ...base, borderRadius: Math.round(size * 0.24), background: "linear-gradient(180deg, #5DF77D 0%, #34C759 100%)" }} title="Texts (SMS)">
+        <svg viewBox="0 0 24 24" fill="none" style={{ width: size * 0.54, height: size * 0.54 }} aria-hidden>
+          <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16h0A2.5 2.5 0 0 1 4 13.5v-8Z" fill="white" />
+        </svg>
       </span>
     );
   }

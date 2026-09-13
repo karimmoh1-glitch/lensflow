@@ -20,7 +20,7 @@ export async function getInboxVersion(businessId: string): Promise<number> {
 }
 
 /** A verified provider event reached this connection: remembered for diagnostics. */
-export async function markWebhookSeen(businessId: string, provider: "INSTAGRAM" | "WHATSAPP" | "SMS" | "EMAIL", at = new Date()): Promise<void> {
+export async function markWebhookSeen(businessId: string, provider: "INSTAGRAM" | "WHATSAPP" | "SMS" | "EMAIL" | "ZOOM", at = new Date()): Promise<void> {
   await prisma.integration.updateMany({ where: { businessId, provider }, data: { lastWebhookAt: at } }).catch(() => {});
 }
 

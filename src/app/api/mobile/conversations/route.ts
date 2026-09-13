@@ -5,7 +5,7 @@ import { listConversations } from "@/server/mobileRead";
 import { STAFF_ROLES } from "@/lib/auth";
 import type { ChannelType } from "@prisma/client";
 
-const CHANNELS = new Set(["INSTAGRAM", "EMAIL", "SMS", "WHATSAPP", "WEBSITE", "PHONE"]);
+const CHANNELS = new Set(["INSTAGRAM", "EMAIL", "SMS", "WHATSAPP", "WEBSITE", "PHONE", "ZOOM"]);
 
 /** The inbox. `view=priority` is people with business value, in value order; `view=all` is everything, newest first. */
 export async function GET(req: Request) {

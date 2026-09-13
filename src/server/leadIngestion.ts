@@ -46,6 +46,10 @@ async function ingestUnlocked(params: {
   /** Transport headers that reveal bulk or automated mail — passed through, never used to
    * drop anything. */
   headers?: { listUnsubscribe?: string | null; listId?: string | null; precedence?: string | null; autoSubmitted?: string | null; replyTo?: string | null; messageId?: string | null } | null;
+  /** "rules" skips the model and reads the message with Daythread's own rules. For
+   * providers that give a webhook only seconds to answer (Zoom: three) before redelivering;
+   * AI summaries and drafts stay available on demand in the thread. */
+  extraction?: "ai" | "rules";
 }) {
   const { businessId, channel, senderName, senderHandle, subject, clientEmail, clientPhone, providerMessageId, rawBody, headers } = params;
   // Activation signal: the first real inbound message this workspace ever received. Only
@@ -153,7 +157,9 @@ async function ingestUnlocked(params: {
   // Reading the message must never cost the message: if extraction fails for any reason the
   // rules read it instead, and the message is still stored and the owner still told.
   const serviceNames = services.map((s) => s.name);
-  const extracted = await extractLeadInfo(splitMessage(body).text, { businessId, serviceNames }).catch(() => extractLeadInfoByRules(splitMessage(body).text, serviceNames));
+  const extracted = params.extraction === "rules"
+    ? extractLeadInfoByRules(splitMessage(body).text, serviceNames)
+    : await extractLeadInfo(splitMessage(body).text, { businessId, serviceNames }).catch(() => extractLeadInfoByRules(splitMessage(body).text, serviceNames));
   const hint = typeof extracted.serviceHint === "string" ? extracted.serviceHint.toLowerCase() : null;
   const matchedService = hint ? services.find((s) => s.name.toLowerCase().includes(hint)) : null;
 

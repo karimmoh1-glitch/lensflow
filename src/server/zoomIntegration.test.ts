@@ -487,7 +487,7 @@ describe("Zoom", () => {
   });
 
   it("the meeting body clamps durations and strips control characters from the topic", () => {
-    const body = meetingBody({ topic: "Hi  there", startTime: new Date("2030-01-01T10:00:00.123Z"), durationMins: 99999, timezone: "UTC" });
+    const body = meetingBody({ topic: "Hi\u0000\u001b there", startTime: new Date("2030-01-01T10:00:00.123Z"), durationMins: 99999, timezone: "UTC" });
     expect(body.topic).toBe("Hi   there");
     expect(body.duration).toBe(1440);
     expect(body.start_time).toBe("2030-01-01T10:00:00Z");

@@ -127,15 +127,15 @@ export function Welcome({
             <Building steps={personal.buildSteps} onDone={() => { try { sessionStorage.setItem(buildKey, "1"); } catch {} setView("welcome"); }} />
           ) : view === "welcome" ? (
             <section className="dt-swap" aria-labelledby="welcome-title">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Welcome</p>
+              <p className="text-13 font-semibold text-ink/65">Welcome</p>
               {personal ? (
                 <>
                   <h1 id="welcome-title" className="mt-3 font-sans font-extrabold text-[2.2rem] md:text-[3rem] leading-[1] tracking-[-0.04em] text-ink text-balance">Welcome, {firstName}.</h1>
                   <p className="mt-4 text-base md:text-lg text-ink/70 leading-relaxed max-w-lg">Your workspace is set up around the way you work.</p>
-                  <p className="mt-8 text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Your priorities</p>
+                  <p className="mt-8 text-13 font-semibold text-ink/65">Your priorities</p>
                   <ul className="mt-2.5 grid sm:grid-cols-2 gap-3">
                     {personal.priorities.map((f, i) => (
-                      <li key={f} className={cn("rounded-2xl border px-4 py-3.5", i === 0 ? "border-accent/40 bg-accent-soft/40" : "border-border bg-white")}>
+                      <li key={f} className={cn("rounded-xl border px-4 py-3.5", i === 0 ? "border-accent/40 bg-accent-soft/40" : "border-border bg-white")}>
                         <div className="text-sm font-extrabold text-ink">{PRIORITY_COPY[f].title}</div>
                         <div className="mt-1 text-xs text-ink/70 leading-relaxed">{PRIORITY_COPY[f].blurb}</div>
                       </li>
@@ -153,7 +153,7 @@ export function Welcome({
                   <p className="mt-4 text-base md:text-lg text-ink/70 leading-relaxed max-w-lg">Every message from every channel you connect lands in one place, sorted so the people waiting on you come first. Nothing arrives until you connect a channel — that&rsquo;s the next step.</p>
                   <ul className="mt-8 grid sm:grid-cols-3 gap-3">
                     {[["Connect", "Gmail, Instagram, WhatsApp or a text number, with the provider's own sign-in."], ["Read", "One list, newest first. Automated and promotional mail is kept out of the way."], ["Reply", "From the same address or account the message came from."]].map(([t, b]) => (
-                      <li key={t} className="rounded-2xl border border-border bg-white px-4 py-3.5">
+                      <li key={t} className="rounded-xl border border-border bg-white px-4 py-3.5">
                         <div className="text-sm font-extrabold text-ink">{t}</div>
                         <div className="mt-1 text-xs text-ink/65 leading-relaxed">{b}</div>
                       </li>
@@ -169,27 +169,27 @@ export function Welcome({
             </section>
           ) : (
             <section className="dt-swap" aria-labelledby="connect-title">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Step 2 of 2</p>
+              <p className="text-13 font-semibold text-ink/65">Step 2 of 2</p>
               <h1 id="connect-title" className="mt-3 font-sans font-extrabold text-[2rem] md:text-[2.6rem] leading-[1.02] tracking-[-0.04em] text-ink text-balance">{wantedNames.length ? "Connect your customer channels." : "Connect your first channel."}</h1>
               <p className="mt-3 text-base text-ink/70 leading-relaxed max-w-lg">
                 {wantedNames.length ? `You said customers reach you on ${wantedNames.join(", ")}. ` : ""}Each one opens the provider&rsquo;s own sign-in and brings you back here. You can add more, or disconnect any of them, under Settings.
                 {personal?.wantsCalendar ? " Google Calendar connects under Settings → Channels too." : ""}
               </p>
               {justConnected && (
-                <p role="status" className="mt-4 rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-3 text-sm text-success-text">Connected. Messages from it will start arriving in your inbox.</p>
+                <p role="status" className="mt-4 rounded-xl border border-success/30 bg-success-soft/50 px-4 py-3 text-sm text-success-text">Connected. Messages from it will start arriving in your inbox.</p>
               )}
               {connectError && (
-                <p role="alert" className="mt-4 rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">That connection didn&rsquo;t finish{connectError === "limit" ? " — your plan's channel limit is reached" : ""}. Nothing was saved; try again, or continue and connect it later from Settings.</p>
+                <p role="alert" className="mt-4 rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">That connection didn&rsquo;t finish{connectError === "limit" ? " — your plan's channel limit is reached" : ""}. Nothing was saved; try again, or continue and connect it later from Settings.</p>
               )}
               <ul className="mt-6 space-y-3">
                 {channels.map((c) => {
                   const action = actionFor(c.provider);
                   const icon = ICON[c.provider];
                   return (
-                    <li key={c.provider} className={cn("rounded-2xl border bg-white px-4 py-3.5 flex items-center gap-3.5 transition-colors", c.connected ? "border-success/40" : c.wanted ? "border-ink/30" : "border-border")}>
+                    <li key={c.provider} className={cn("rounded-xl border bg-white px-4 py-3.5 flex items-center gap-3.5 transition-colors", c.connected ? "border-success/40" : c.wanted ? "border-ink/30" : "border-border")}>
                       <span className="shrink-0 w-10 h-10 rounded-xl border border-border bg-paper flex items-center justify-center">{icon && <ChannelIcon k={icon} size={24} />}</span>
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-ink">{c.name}{c.wanted && !c.connected && <span className="ml-2 text-[10px] font-bold uppercase tracking-[0.12em] text-signal-text">You use this</span>}</div>
+                        <div className="text-sm font-semibold text-ink">{c.name}{c.wanted && !c.connected && <span className="ml-2 text-13 font-semibold text-ink/75">You use this</span>}</div>
                         <div className="text-xs text-ink/70">{c.note ?? BLURB[c.provider]}</div>
                       </div>
                       {c.connected ? (
@@ -261,15 +261,15 @@ function PlanBlock({ personal, pending, onStart, onFree }: { personal: PersonalW
   if (personal.betaProEndsAt) {
     const until = new Date(personal.betaProEndsAt).toLocaleDateString("en-US", { month: "long", day: "numeric" });
     return (
-      <div className="mt-6 rounded-[22px] border border-success/30 bg-success-soft/40 px-5 py-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-success-text">Pro is on · beta</p>
+      <div className="mt-6 rounded-xl border border-success/30 bg-success-soft/40 px-5 py-4">
+        <p className="text-13 font-semibold text-success-text">Pro is on · beta</p>
         <p className="mt-1.5 text-sm text-ink/80 leading-relaxed">While Daythread is in beta, this workspace has Pro free until {until}. No card, nothing to cancel.{wanted === "BUSINESS" && personal.businessUnavailable ? " Business is temporarily unavailable." : ""}</p>
       </div>
     );
   }
   return (
-    <div className="mt-6 rounded-[22px] border border-signal/25 bg-signal-soft/30 px-5 py-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">{chosen && chosen === plan ? `You chose ${planName(chosen)}` : `We'd recommend ${planName(plan)}`}</p>
+    <div className="mt-6 rounded-xl border border-border bg-black/[0.03] px-5 py-4">
+      <p className="text-13 font-semibold text-ink/75">{chosen && chosen === plan ? `You chose ${planName(chosen)}` : `We'd recommend ${planName(plan)}`}</p>
       <p className="mt-1.5 text-sm text-ink/80 leading-relaxed">{personal.reasons[0]}</p>
       {personal.billingLive && personal.canBill ? (
         <div className="mt-3 flex flex-wrap items-center gap-3">

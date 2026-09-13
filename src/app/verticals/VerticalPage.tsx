@@ -43,7 +43,7 @@ export function VerticalPage({ v }: { v: Vertical }) {
     <main className="bg-paper overflow-x-clip">
       <Navbar />
       <header className="max-w-[1200px] mx-auto px-6 pt-28 md:pt-36 pb-16 md:pb-20">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">{v.eyebrow}</p>
+        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65">{v.eyebrow}</p>
         <h1 className="mt-4 font-sans font-extrabold text-[clamp(2.4rem,5vw,4.5rem)] leading-[0.95] tracking-[-0.05em] text-ink max-w-4xl text-balance">{v.title}</h1>
         <p className="mt-6 text-base md:text-lg text-ink/70 leading-relaxed max-w-xl">{v.lede}</p>
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -65,7 +65,7 @@ export function VerticalPage({ v }: { v: Vertical }) {
               <li key={pr.title} className="h-full">
                 <RevealOnScroll delay={i * 70} className="h-full">
                   <div className="h-full rounded-2xl border border-border bg-paper px-5 py-5">
-                    <span className="text-[11px] font-bold text-accent-text tabular-nums">0{i + 1}</span>
+                    <span className="text-2xs font-bold text-accent-text tabular-nums">0{i + 1}</span>
                     <h3 className="mt-2 text-[15px] font-extrabold text-ink">{pr.title}</h3>
                     <p className="mt-1.5 text-sm text-ink/70 leading-relaxed">{pr.body}</p>
                   </div>
@@ -78,7 +78,7 @@ export function VerticalPage({ v }: { v: Vertical }) {
 
       <section className="py-16 md:py-24" aria-labelledby="how-title">
         <div className="max-w-[1200px] mx-auto px-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">What Daythread does about it</p>
+          <p className="text-2xs font-bold uppercase tracking-[0.16em] text-signal-text">What Daythread does about it</p>
           <h2 id="how-title" className="mt-3 font-sans font-extrabold text-[1.8rem] md:text-[2.4rem] leading-[1.02] tracking-[-0.04em] text-ink max-w-2xl text-balance">One thread, from the first message to the booking.</h2>
           <ol className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {v.steps.map((st, i) => (

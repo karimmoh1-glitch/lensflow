@@ -22,12 +22,12 @@ export function Trust() {
   return (
     <div className="max-w-[1200px] mx-auto px-6">
       <Reveal className="max-w-2xl mb-10">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-success-text mb-4">Trust</p>
+        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-success-text mb-4">Trust</p>
         <h2 className="font-sans font-extrabold text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[0.94] tracking-[-0.045em] text-ink">Built by people who thought about what happens to your data.</h2>
       </Reveal>
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {ITEMS.map((it) => (
-          <li key={it.title} className="rounded-[20px] border border-border bg-white px-5 py-5">
+          <li key={it.title} className="rounded-2xl border border-border bg-white px-5 py-5">
             <span className="w-9 h-9 rounded-xl bg-paper text-ink flex items-center justify-center"><it.icon className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
             <div className="mt-3 text-base font-extrabold text-ink">{it.title}</div>
             <p className="mt-1.5 text-sm text-ink/70 leading-relaxed">{it.body}</p>

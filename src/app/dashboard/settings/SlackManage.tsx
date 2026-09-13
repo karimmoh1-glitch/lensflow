@@ -34,14 +34,14 @@ export function SlackManage({ model }: { model: SlackManageModel }) {
   });
   return (
     <div className="space-y-4 text-sm">
-      <dl className="grid grid-cols-[110px_1fr] gap-y-1.5 text-[13px]">
+      <dl className="grid grid-cols-[110px_1fr] gap-y-1.5 text-13">
         <dt className="text-ink/60">Workspace</dt><dd className="text-ink">{model.teamName ?? "—"}</dd>
         <dt className="text-ink/60">Channel</dt><dd className="text-ink">{model.channelName ? `#${model.channelName}` : "Not chosen yet"}</dd>
         <dt className="text-ink/60">Last post</dt><dd className="text-ink">{model.lastPostAt ? new Date(model.lastPostAt).toLocaleString() : "—"}</dd>
       </dl>
       {model.lastPostError && <p className="text-[12px] text-warning-text">{model.lastPostError === "channel" ? "The channel is gone or the app was removed from it. Choose another." : model.lastPostError === "auth" ? "Slack revoked the app's access. Reconnect Slack." : "The last post was refused. Try another channel or reconnect."}</p>}
       <div>
-        <label htmlFor="slack-channel" className="block text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1.5">Post to</label>
+        <label htmlFor="slack-channel" className="block text-13 font-semibold text-ink/65 mb-1.5">Post to</label>
         {loadError ? <p className="text-[12px] text-warning-text">{loadError}</p> : channels === null ? <p className="text-[12px] text-ink/60">Loading channels…</p> : channels.length === 0 ? <p className="text-[12px] text-ink/60">No public channels the app can see. Create one in Slack, then reopen this.</p> : (
           <select id="slack-channel" value={current} onChange={(e) => setCurrent(e.target.value)} className="w-full h-10 rounded-xl border border-border bg-white px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/40">
             <option value="">Choose a channel</option>

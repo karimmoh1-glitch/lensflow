@@ -294,41 +294,41 @@ export async function IntegrationsHub({ business, role, connected, connectError,
 
   return (
     <div className="space-y-9">
-      <header className="relative overflow-hidden rounded-[26px] border border-border bg-[radial-gradient(120%_140%_at_0%_0%,rgba(109,90,230,0.10),transparent_55%),radial-gradient(100%_120%_at_100%_100%,rgba(240,82,77,0.08),transparent_55%)] px-6 py-6 md:px-8 md:py-7">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Integrations</p>
+      <header className="relative overflow-hidden rounded-xl border border-border bg-[radial-gradient(120%_140%_at_0%_0%,rgba(109,90,230,0.10),transparent_55%),radial-gradient(100%_120%_at_100%_100%,rgba(240,82,77,0.08),transparent_55%)] px-6 py-6 md:px-8 md:py-7">
+        <p className="text-13 font-semibold text-ink/75">Integrations</p>
         <h2 className="mt-2 font-sans font-extrabold text-[1.5rem] md:text-[1.9rem] leading-[1.05] tracking-[-0.03em] text-ink">Every place people write to you, book you, and pay you.</h2>
         <p className="mt-2 max-w-xl text-sm text-ink/70 leading-relaxed">Messages from every connected channel land in one inbox; calendars, scheduling tools and payments keep bookings and people in step. Every connection uses the provider&rsquo;s own sign-in — there is never a key to paste.</p>
-        <div className="mt-5 rounded-2xl border border-border bg-white/80 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3" aria-label="Connected integrations">
+        <div className="mt-5 rounded-xl border border-border bg-white/80 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3" aria-label="Connected integrations">
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2 flex-wrap">
               <span className="font-sans font-extrabold text-[1.25rem] tracking-[-0.02em] text-ink tabular-nums">{unlimited ? "Unlimited" : `${connectedCount} / ${usage.limit}`}</span>
               <span className="text-sm text-ink/70">{unlimited ? `connections on ${planName}` : "connected"}</span>
-              <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/80 ml-auto">{planName} plan</span>
+              <span className="text-13 font-semibold text-ink/80 ml-auto">{planName} plan</span>
             </div>
             {!unlimited && (
               <div className="mt-2 h-1.5 rounded-full bg-black/[0.06] overflow-hidden" role="progressbar" aria-valuenow={connectedCount} aria-valuemin={0} aria-valuemax={usage.limit} aria-label="Connections used">
-                <div className={cn2("h-full rounded-full transition-[width]", usage.overQuota ? "bg-warning" : usage.atLimit ? "bg-signal" : "bg-ink")} style={{ width: `${pct}%` }} />
+                <div className={cn2("h-full rounded-full transition-[width]", usage.overQuota ? "bg-warning" : usage.atLimit ? "bg-ink" : "bg-ink")} style={{ width: `${pct}%` }} />
               </div>
             )}
-            {!unlimited && !usage.atLimit && <p className="mt-1.5 text-[11px] text-ink/65">{usage.limit - connectedCount} more can be connected on {planName}.{nextPlanName ? ` ${PLANS[usage.nextPlan!].name} includes ${limitLabel(PLANS[usage.nextPlan!].maxIntegrations).toLowerCase()} connections.` : ""}</p>}
-            {usage.atLimit && !usage.overQuota && <p className="mt-1.5 text-[11px] text-signal-text font-semibold">Connection limit reached. {planName} includes {usage.limit} connection{usage.limit === 1 ? "" : "s"}.{nextPlanName ? ` Upgrade to ${nextPlanName} to connect every channel.` : ""}</p>}
+            {!unlimited && !usage.atLimit && <p className="mt-1.5 text-2xs text-ink/65">{usage.limit - connectedCount} more can be connected on {planName}.{nextPlanName ? ` ${PLANS[usage.nextPlan!].name} includes ${limitLabel(PLANS[usage.nextPlan!].maxIntegrations).toLowerCase()} connections.` : ""}</p>}
+            {usage.atLimit && !usage.overQuota && <p className="mt-1.5 text-2xs text-ink/75 font-semibold">Connection limit reached. {planName} includes {usage.limit} connection{usage.limit === 1 ? "" : "s"}.{nextPlanName ? ` Upgrade to ${nextPlanName} to connect every channel.` : ""}</p>}
           </div>
           {usage.atLimit && nextPlanName && (
-            <Link href="/dashboard/settings?tab=subscription" className="inline-flex items-center justify-center h-9 px-4 rounded-full bg-signal text-white text-sm font-bold shrink-0 hover:bg-signal-text transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50">Upgrade to {nextPlanName} →</Link>
+            <Link href="/dashboard/settings?tab=subscription" className="inline-flex items-center justify-center h-9 px-4 rounded-lg bg-ink text-white text-sm font-bold shrink-0 hover:bg-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40">Upgrade to {nextPlanName} →</Link>
           )}
         </div>
-        {wanted.length > 0 && <p className="mt-3 text-xs text-signal-text font-semibold">You said you use {wanted.join(", ")} — connect {wanted.length === 1 ? "it" : "them"} below.</p>}
+        {wanted.length > 0 && <p className="mt-3 text-xs text-ink/75 font-semibold">You said you use {wanted.join(", ")} — connect {wanted.length === 1 ? "it" : "them"} below.</p>}
       </header>
 
       {usage.overQuota && (
-        <div role="alert" className="rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3.5 text-sm text-ink/80">
+        <div role="alert" className="rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3.5 text-sm text-ink/80">
           <span className="font-semibold text-ink">You have {connectedCount} connections; {planName} includes {usage.limit}.</span> Nothing was disconnected and everything keeps working. New connections are paused until you disconnect down to {usage.limit}{nextPlanName ? `, or upgrade to ${nextPlanName}` : ""}.
-          {nextPlanName && <Link href="/dashboard/settings?tab=subscription" className="ml-2 font-semibold text-signal-text hover:underline">See plans →</Link>}
+          {nextPlanName && <Link href="/dashboard/settings?tab=subscription" className="ml-2 font-semibold text-ink/75 hover:underline">See plans →</Link>}
         </div>
       )}
 
       {banner && (
-        <div role={banner.tone === "warning" ? "alert" : "status"} className={cn2(banner.tone === "success" ? "rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-3 text-sm text-success-text" : "rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80")}>{banner.text}</div>
+        <div role={banner.tone === "warning" ? "alert" : "status"} className={cn2(banner.tone === "success" ? "rounded-xl border border-success/30 bg-success-soft/50 px-4 py-3 text-sm text-success-text" : "rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80")}>{banner.text}</div>
       )}
 
       {GROUPS.map((group) => (
@@ -341,7 +341,7 @@ export async function IntegrationsHub({ business, role, connected, connectError,
                 {provider === "SMS" && m.entitled && m.status !== "unavailable" ? <SmsNumberPicker current={business.twilioPhoneNumber} /> : null}
                 {provider === "EMAIL" && m.status === "connected" ? <p className="text-xs text-ink/70">New mail is pulled while Daythread is open and classified before it reaches you. Replies send from this account.</p> : null}
                 {provider === "WHATSAPP" && m.status === "connected" ? <p className="text-xs text-ink/70">Free-form replies are allowed within 24 hours of a customer&rsquo;s message; later ones need an approved template, and Daythread says so instead of sending.</p> : null}
-                {provider === "SLACK" && m.status === "connected" && !slackSettings.channelId ? <p className="text-xs text-signal-text font-semibold">Choose a channel under Manage — nothing is posted until you do.</p> : null}
+                {provider === "SLACK" && m.status === "connected" && !slackSettings.channelId ? <p className="text-xs text-ink/75 font-semibold">Choose a channel under Manage — nothing is posted until you do.</p> : null}
                 {provider === "WEBSITE" ? <p className="text-xs text-ink/70">Requests from <Link href={`/book/${business.handle}`} className="font-semibold text-ink hover:underline">/book/{business.handle}</Link> and the contact form at <Link href={`/embed/${business.handle}`} className="font-semibold text-ink hover:underline">/embed/{business.handle}</Link> arrive as conversations and bookings.</p> : null}
               </IntegrationCard>
             );
@@ -349,15 +349,15 @@ export async function IntegrationsHub({ business, role, connected, connectError,
           {comingSoonFor(group.key).map((c) => (
             <NotYet key={c.key} name={c.name} summary={c.summary} />
           ))}
-          {group.key === "scheduling" && <p className="text-[11px] text-ink/65 px-1">Daythread bookings are the source of truth and are mirrored to the calendar you choose. Events on selected calendars only block availability; they never create or change a booking. Calendly is the exception by design: its meetings become bookings here.</p>}
+          {group.key === "scheduling" && <p className="text-2xs text-ink/65 px-1">Daythread bookings are the source of truth and are mirrored to the calendar you choose. Events on selected calendars only block availability; they never create or change a booking. Calendly is the exception by design: its meetings become bookings here.</p>}
         </Group>
       ))}
 
       {owner && (
         <section aria-label="Deployment configuration">
           <div className="flex items-baseline gap-3 mb-3 px-1">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Deployment</h3>
-            <span className="text-[11px] text-ink/65">What the operator sets, not the business</span>
+            <h3 className="text-13 font-semibold text-ink/65">Deployment</h3>
+            <span className="text-2xs text-ink/65">What the operator sets, not the business</span>
           </div>
           <MetaConfigPanel />
         </section>
@@ -373,10 +373,10 @@ export async function IntegrationsHub({ business, role, connected, connectError,
  */
 function NotYet({ name, summary }: { name: string; summary: string }) {
   return (
-    <article aria-label={name} data-coming-soon="true" className="rounded-[22px] border border-dashed border-border bg-paper/40 px-4 sm:px-5 py-4">
+    <article aria-label={name} data-coming-soon="true" className="rounded-xl border border-dashed border-border bg-paper/40 px-4 sm:px-5 py-4">
       <div className="flex items-center gap-2 flex-wrap">
         <h3 className="text-[15px] font-semibold text-ink/70">{name}</h3>
-        <span className="inline-flex items-center text-[11px] font-bold rounded-full px-2 py-0.5 bg-black/[0.05] text-ink/60">Coming soon</span>
+        <span className="inline-flex items-center text-2xs font-bold rounded-md px-2 py-0.5 bg-black/[0.05] text-ink/60">Coming soon</span>
       </div>
       <p className="mt-1 text-sm text-ink/55 leading-snug">{summary}</p>
     </article>
@@ -387,8 +387,8 @@ function Group({ title, hint, children }: { title: string; hint: string; childre
   return (
     <section aria-label={title}>
       <div className="flex items-baseline gap-3 mb-3 px-1">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">{title}</h3>
-        <span className="text-[11px] text-ink/65">{hint}</span>
+        <h3 className="text-13 font-semibold text-ink/65">{title}</h3>
+        <span className="text-2xs text-ink/65">{hint}</span>
       </div>
       <div className="space-y-3">{children}</div>
     </section>
@@ -397,7 +397,7 @@ function Group({ title, hint, children }: { title: string; hint: string; childre
 function Details({ rows, note }: { rows: Array<[string, string]>; note?: string }) {
   return (
     <div className="space-y-3 text-sm">
-      <dl className="grid grid-cols-[120px_1fr] gap-y-1.5 text-[13px]">
+      <dl className="grid grid-cols-[120px_1fr] gap-y-1.5 text-13">
         {rows.map(([k, v]) => (<span key={k} className="contents"><dt className="text-ink/60">{k}</dt><dd className="text-ink break-all">{v}</dd></span>))}
       </dl>
       {note && <p className="text-[12px] text-ink/65 leading-relaxed">{note}</p>}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { PaywallTrigger } from "@/components/Paywall";
 import type { PaywallFeature } from "@/lib/paywall";
 
@@ -28,9 +28,9 @@ export function EntitlementNotice({ message }: { message: string }) {
             : "Every channel, AI, and your team on one inbox.";
 
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-signal/25 bg-signal-soft/50 px-3.5 py-3 max-w-sm">
-      <span className="w-7 h-7 rounded-lg bg-signal/15 text-signal-text flex items-center justify-center shrink-0 mt-0.5">
-        <Sparkles className="w-3.5 h-3.5" strokeWidth={2} />
+    <div className="flex items-start gap-3 rounded-xl border border-border bg-black/[0.03] px-3.5 py-3 max-w-sm">
+      <span className="w-7 h-7 rounded-lg bg-ink text-ink/75 flex items-center justify-center shrink-0 mt-0.5">
+        <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-ink">{feature} {feature === "AI-drafted replies" || feature === "Unlimited automations" ? "are" : "is"} part of Pro</div>

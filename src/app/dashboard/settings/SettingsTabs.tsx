@@ -38,7 +38,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
                   href={hrefFor(t.key)}
                   aria-current={on ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+                    "flex items-center gap-2.5 rounded-xl px-3 py-2 text-13 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
                     on ? "bg-ink text-white" : "text-ink/70 hover:text-ink hover:bg-black/[0.04]"
                   )}
                 >
@@ -54,7 +54,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
       {/* Phone: an index of sections, then the chosen one with a way back. */}
       {!explicit ? (
         <>
-          <ul className="lg:hidden divide-y divide-border rounded-[20px] border border-border bg-white overflow-hidden" aria-label="Settings sections">
+          <ul className="lg:hidden divide-y divide-border rounded-xl border border-border bg-white overflow-hidden" aria-label="Settings sections">
             {TABS.map((t) => (
               <li key={t.key}>
                 <Link href={`${hrefFor(t.key)}${t.key === "channels" ? "?tab=channels" : ""}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-black/[0.02] active:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.04]">

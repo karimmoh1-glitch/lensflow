@@ -38,13 +38,13 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-8 md:py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Founders only</p>
+            <p className="text-13 font-semibold text-ink/65">Founders only</p>
             <h1 className="mt-1 font-sans font-extrabold text-[1.9rem] leading-none tracking-[-0.03em] text-ink">Growth</h1>
             <p className="mt-2 text-sm text-ink/65">Counts from the database over the last {days} days. Nothing projected, nothing sampled.</p>
           </div>
           <nav aria-label="Window" className="flex items-center gap-1 rounded-full bg-black/[0.04] p-1">
             {[7, 30, 90].map((d) => (
-              <Link key={d} href={`/admin/growth?days=${d}${sp.b ? `&b=${sp.b}` : ""}`} aria-current={days === d ? "page" : undefined} className={cn("h-8 px-3.5 rounded-full text-[13px] font-semibold inline-flex items-center", days === d ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink")}>{d}d</Link>
+              <Link key={d} href={`/admin/growth?days=${d}${sp.b ? `&b=${sp.b}` : ""}`} aria-current={days === d ? "page" : undefined} className={cn("h-8 px-3.5 rounded-full text-13 font-semibold inline-flex items-center", days === d ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink")}>{d}d</Link>
             ))}
           </nav>
         </div>
@@ -66,7 +66,7 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
         </div>
 
         <section aria-labelledby="access-title" className="mt-10">
-          <h2 id="access-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2.5">Integration access requests ({accessRequests.filter((r) => r.status === "PENDING").length} pending)</h2>
+          <h2 id="access-title" className="text-13 font-semibold text-ink/65 mb-2.5">Integration access requests ({accessRequests.filter((r) => r.status === "PENDING").length} pending)</h2>
           <AccessRequestsPanel rows={accessRequests.map((r) => ({ ...r, createdAt: r.createdAt.toISOString(), reviewedAt: r.reviewedAt?.toISOString() ?? null }))} />
           <div className="mt-4">
             <Block title="Webhook deliveries needing attention" rows={deadLetters.length === 0 ? [["None failed", "0"]] : deadLetters.map((d) => [`${d.provider}${d.latest ? ` · ${d.latest.slice(0, 120)}` : ""}`, String(d.n)] as [string, string])} />
@@ -74,20 +74,20 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
         </section>
 
         <section aria-labelledby="funnel-title" className="mt-10">
-          <h2 id="funnel-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2.5">Activation funnel, last {days} days</h2>
+          <h2 id="funnel-title" className="text-13 font-semibold text-ink/65 mb-2.5">Activation funnel, last {days} days</h2>
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="rounded-[22px] border border-border bg-white px-5 py-4">
+            <div className="rounded-xl border border-border bg-white px-5 py-4">
               <ol className="space-y-1.5">
                 {g.activationFunnel.map((st, i) => (
                   <li key={st.label} className="flex items-baseline gap-3 text-sm">
-                    <span className="w-5 text-[11px] font-bold text-ink/55 tabular-nums">{i + 1}</span>
+                    <span className="w-5 text-2xs font-bold text-ink/55 tabular-nums">{i + 1}</span>
                     <span className="flex-1 text-ink/85">{st.label}</span>
                     <span className="font-extrabold text-ink tabular-nums">{st.n}</span>
-                    <span className={cn("w-16 text-right text-[11px] tabular-nums", st.drop === null ? "text-ink/40" : st.drop >= 50 ? "text-danger-text font-semibold" : "text-ink/60")}>{st.drop === null ? "" : `−${st.drop}%`}</span>
+                    <span className={cn("w-16 text-right text-2xs tabular-nums", st.drop === null ? "text-ink/40" : st.drop >= 50 ? "text-danger-text font-semibold" : "text-ink/60")}>{st.drop === null ? "" : `−${st.drop}%`}</span>
                   </li>
                 ))}
               </ol>
-              <p className="mt-2 text-[11px] text-ink/65">Workspaces per step in the window; the drop is the share of the previous step that did not reach it.</p>
+              <p className="mt-2 text-2xs text-ink/65">Workspaces per step in the window; the drop is the share of the previous step that did not reach it.</p>
             </div>
             <Block title="Who converts, by what they said at setup" rows={g.personaConversion.length ? g.personaConversion.map((pc) => [`${pc.status} (${pc.n})`, `${pc.paid} paid · ${pc.rate}%`] as [string, string]) : [["No profiles in the window", "—"]]} />
           </div>
@@ -95,8 +95,8 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
 
         <section aria-labelledby="ai-title" className="mt-10">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-2.5">
-            <h2 id="ai-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">AI usage, last 24 hours</h2>
-            <span className={cn("text-[11px] font-semibold", ai.state === "ready" ? "text-success-text" : ai.state === "disabled" ? "text-warning-text" : "text-ink/65")}>
+            <h2 id="ai-title" className="text-13 font-semibold text-ink/65">AI usage, last 24 hours</h2>
+            <span className={cn("text-2xs font-semibold", ai.state === "ready" ? "text-success-text" : ai.state === "disabled" ? "text-warning-text" : "text-ink/65")}>
               {ai.state === "ready" ? "Model configured and enabled" : ai.state === "disabled" ? "Switched off deliberately (AI_DISABLED)" : "No model configured (OPENAI_API_KEY unset)"}
             </span>
           </div>
@@ -107,9 +107,9 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
             <Block title="Limits per workspace" rows={[["Drafts", `${AI_RATE_LIMITS.draft!.limit}/hour`], ["Assistant proposals", `${AI_RATE_LIMITS.agent_draft!.limit}/hour`], ["Re-summaries", `${AI_RATE_LIMITS.summary_forced!.limit}/hour`], ["Assistant questions", `${ASSISTANT_HOURLY_LIMIT}/hour`], ["Message reading", `${AI_RATE_LIMITS.extraction!.limit}/day`], ["Every AI call", `${DAILY_CALL_CEILING.limit}/day`]]} />
           </div>
           {ai.byBusiness.length > 0 && (
-            <div className="mt-4 overflow-x-auto rounded-[22px] border border-border bg-white">
+            <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-white">
               <table className="w-full text-sm">
-                <thead className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65 text-left">
+                <thead className="text-13 font-semibold text-ink/65 text-left">
                   <tr>{["Workspace", "Calls", "This hour", "Tokens", "Est. cost", "Failed", "Refused", "By feature", "Last call"].map((h) => <th key={h} className="px-3 py-2.5 whitespace-nowrap">{h}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -130,11 +130,11 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
               </table>
             </div>
           )}
-          <p className="mt-2 text-[11px] text-ink/65">Cost is an estimate from the published price list in <code>lib/aiPolicy.ts</code>, applied to the tokens each call actually reported. No prompt, message or customer detail is recorded with a call.</p>
+          <p className="mt-2 text-2xs text-ink/65">Cost is an estimate from the published price list in <code>lib/aiPolicy.ts</code>, applied to the tokens each call actually reported. No prompt, message or customer detail is recorded with a call.</p>
         </section>
 
         {detail && (
-          <section aria-labelledby="detail-title" className="mt-10 rounded-[22px] border border-signal/25 bg-white overflow-hidden">
+          <section aria-labelledby="detail-title" className="mt-10 rounded-xl border border-signal/25 bg-white overflow-hidden">
             <div className="px-5 py-4 border-b border-border flex flex-wrap items-baseline justify-between gap-3">
               <h2 id="detail-title" className="font-sans font-extrabold text-xl tracking-[-0.02em] text-ink">{detail.name} <span className="text-ink/60 font-semibold text-sm">/{detail.handle}</span></h2>
               <Link href={`/admin/growth?days=${days}`} className="text-xs font-semibold text-ink/65 hover:text-ink">Close ×</Link>
@@ -149,7 +149,7 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
                 {detail.onboardingProfile && <p><span className="text-ink/60">Said</span> {detail.onboardingProfile.userType} · {detail.onboardingProfile.workCategory}{detail.onboardingProfile.workDetail ? ` (${detail.onboardingProfile.workDetail})` : ""} · {detail.onboardingProfile.businessStatus} · channels {detail.onboardingProfile.channels.join(", ") || "—"} · pain {detail.onboardingProfile.painPoints.join(", ") || "—"} · wants {detail.onboardingProfile.desiredFeatures.join(", ") || "—"} · bookings {detail.onboardingProfile.bookings} · team {detail.onboardingProfile.teamUsage} · recommended {detail.onboardingProfile.recommendedPlan}{detail.onboardingProfile.selectedPlan ? ` · chose ${detail.onboardingProfile.selectedPlan}` : ""}</p>}
               </div>
               <div className="bg-white px-5 py-4 text-sm space-y-1.5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Channels</p>
+                <p className="text-13 font-semibold text-ink/65">Channels</p>
                 {detail.integrations.length === 0 ? <p className="text-ink/60">Nothing connected yet.</p> : detail.integrations.map((i) => {
                   const sub = (i.settings as { webhooksSubscribed?: boolean } | null)?.webhooksSubscribed;
                   return (
@@ -165,22 +165,22 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
                     </div>
                   );
                 })}
-                <p className="pt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Work</p>
+                <p className="pt-2 text-13 font-semibold text-ink/65">Work</p>
                 <p>{detail._count.conversations} conversations · {detail._count.clients} people · {detail._count.leads} leads ({detail.leadsByStatus.map(([s, c]) => `${c} ${s.toLowerCase()}`).join(", ") || "none"})</p>
                 <p>{detail._count.bookings} bookings · {detail.services.length} services · {detail.automations.filter((a) => a.enabled).length}/{detail.automations.length} automations on · {detail.automationRuns} runs</p>
                 <p>{detail.followUpsSet} follow-ups set · needs attention now: {detail.attentionNow.length}</p>
-                <p className="pt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Inbox intelligence</p>
+                <p className="pt-2 text-13 font-semibold text-ink/65">Inbox intelligence</p>
                 <p>Conversations by kind: {detail.conversationsByCategory.map(([k, c]) => `${c} ${k.toLowerCase()}`).join(", ") || "none"}</p>
                 <p>{detail.peopleWithConversation} people with a real conversation · {detail.potentialClients} potential clients · {detail.messageSummaries} message summaries</p>
                 {detail.attentionNow.slice(0, 5).map((a, i) => <p key={i} className="text-xs text-ink/70">· {a.label} — {a.why}</p>)}
               </div>
               <div className="bg-white px-5 py-4 text-sm">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">What they use</p>
+                <p className="text-13 font-semibold text-ink/65">What they use</p>
                 <ul className="mt-1.5 space-y-0.5">{detail.eventTotals.slice(0, 14).map(([name, c]) => <li key={name} className="flex justify-between gap-3 tabular-nums"><span className="text-ink/80">{name}</span><span className="font-semibold text-ink">{c}</span></li>)}</ul>
               </div>
             </div>
             <div className="px-5 py-4 border-t border-border">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65 mb-2">Timeline (latest 80)</p>
+              <p className="text-13 font-semibold text-ink/65 mb-2">Timeline (latest 80)</p>
               <ol tabIndex={0} aria-label="Timeline" className="max-h-72 overflow-y-auto text-xs space-y-0.5 tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-md">
                 {detail.events.map((e, i) => <li key={i} className="flex gap-3"><span className="text-ink/60 shrink-0 w-32">{format(e.at, "MMM d HH:mm")}</span><span className="font-semibold text-ink">{e.name}</span><span className="text-ink/60 truncate">{e.props}</span></li>)}
               </ol>
@@ -189,10 +189,10 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
         )}
 
         <section aria-labelledby="biz-title" className="mt-10">
-          <h2 id="biz-title" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2.5">Workspaces, newest first</h2>
-          <div className="overflow-x-auto rounded-[22px] border border-border bg-white">
+          <h2 id="biz-title" className="text-13 font-semibold text-ink/65 mb-2.5">Workspaces, newest first</h2>
+          <div className="overflow-x-auto rounded-xl border border-border bg-white">
             <table className="w-full text-sm">
-              <thead className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65 text-left">
+              <thead className="text-13 font-semibold text-ink/65 text-left">
                 <tr>{["Workspace", "Owner", "Plan", "Started", "Said", "Channels", "Conv.", "Bookings", "Auto.", "Last activity", "Referred by"].map((h) => <th key={h} className="px-3 py-2.5 whitespace-nowrap">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -214,7 +214,7 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-[11px] text-ink/65">The owner&rsquo;s address is shown so you can reach a design partner; no message content, phone numbers or customer details appear anywhere on this page.</p>
+          <p className="mt-2 text-2xs text-ink/65">The owner&rsquo;s address is shown so you can reach a design partner; no message content, phone numbers or customer details appear anywhere on this page.</p>
         </section>
       </div>
     </main>
@@ -223,8 +223,8 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
 
 function Block({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
-    <section aria-label={title} className="rounded-[22px] border border-border bg-white px-5 py-4">
-      <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">{title}</h2>
+    <section aria-label={title} className="rounded-xl border border-border bg-white px-5 py-4">
+      <h2 className="text-13 font-semibold text-ink/65">{title}</h2>
       <dl className="mt-2.5 space-y-1">
         {rows.map(([k, v]) => (
           <div key={k} className="flex items-baseline justify-between gap-3 text-sm">

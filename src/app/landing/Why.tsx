@@ -36,7 +36,7 @@ export function Why() {
   return (
     <div ref={ref} className="max-w-[1200px] mx-auto px-6">
       <Reveal className="max-w-2xl mb-12">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text mb-4">Why Daythread</p>
+        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-signal-text mb-4">Why Daythread</p>
         <h2 className="font-sans font-extrabold text-[clamp(2.4rem,4.6vw,4rem)] leading-[0.94] tracking-[-0.045em] text-ink">Five tools don&rsquo;t know what the message is.</h2>
         <p className="mt-5 text-ink/70 text-base max-w-lg">Gmail, Instagram, WhatsApp, a calendar and a scheduling link each hold a piece. None of them know that “are you free Friday?” is a booking waiting to happen. Daythread keeps the conversation attached to what it becomes.</p>
       </Reveal>
@@ -44,7 +44,7 @@ export function Why() {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-10 lg:gap-16 items-start">
         {/* The scattered way, and what it costs. */}
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">What the scattered way costs</p>
+          <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">What the scattered way costs</p>
           <p className="mb-5 text-lg font-extrabold tracking-tight text-ink leading-snug">One missed booking can cost more than a month of Daythread.<br /><span className="font-medium text-ink/70">If a customer can reach you in five places, you shouldn&rsquo;t have to check five places.</span></p>
           <ul className="divide-y divide-border border-y border-border">
             {COST.map(([t, d], i) => (
@@ -57,16 +57,16 @@ export function Why() {
         </div>
 
         {/* One message, and everything it can become. */}
-        <div className="relative rounded-[22px] border border-border bg-white shadow-[0_32px_80px_-32px_rgba(16,17,20,0.3)] p-5 sm:p-6">
+        <div className="relative rounded-2xl border border-border bg-white shadow-[0_32px_80px_-32px_rgba(16,17,20,0.3)] p-5 sm:p-6">
           <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-paper px-3 py-2.5 w-fit max-w-full">
             <ChannelIcon k="instagram" size={30} />
             <div className="min-w-0">
               <div className="text-xs font-semibold text-ink">Nadia Okoro <span className="font-normal text-ink/60">· Instagram</span></div>
-              <div className="text-[13px] text-ink truncate">Are you free Friday afternoon for a brand session?</div>
+              <div className="text-13 text-ink truncate">Are you free Friday afternoon for a brand session?</div>
             </div>
           </div>
 
-          <div className="mt-3 ml-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-signal-text" style={{ opacity: know }}>
+          <div className="mt-3 ml-4 flex items-center gap-2 text-2xs font-bold uppercase tracking-[0.12em] text-signal-text" style={{ opacity: know }}>
             <MessageSquare className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />Daythread read it: booking request · Friday PM · returning customer
           </div>
 

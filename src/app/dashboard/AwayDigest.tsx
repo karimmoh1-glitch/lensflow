@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AwayDigest as Digest } from "@/server/awayDigest";
 
-const TONE = { accent: "bg-accent", signal: "bg-signal", success: "bg-success", neutral: "bg-ink/30" } as const;
+const TONE = { accent: "bg-accent", signal: "bg-ink", success: "bg-success", neutral: "bg-ink/30" } as const;
 const money = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
 /** What changed since the last visit — counts from the record, each a link to the exact list. */
@@ -11,10 +11,10 @@ export function AwayDigest({ digest }: { digest: Digest }) {
   const hours = Math.round(digest.hoursAway);
   const away = hours < 48 ? `${hours} hours` : `${Math.round(hours / 24)} days`;
   return (
-    <section aria-labelledby="away-label" className="mb-8 rounded-[22px] border border-border bg-white overflow-hidden">
+    <section aria-labelledby="away-label" className="mb-8 rounded-xl border border-border bg-white overflow-hidden">
       <div className="px-5 md:px-6 pt-5 pb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="away-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">While you were away</h2>
-        <span className="text-[11px] text-ink/65">The last {away}. Counts, not guesses.</span>
+        <h2 id="away-label" className="text-13 font-semibold text-ink/65">While you were away</h2>
+        <span className="text-2xs text-ink/65">The last {away}. Counts, not guesses.</span>
       </div>
       <ul className="px-5 md:px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
         {digest.items.map((it) => (

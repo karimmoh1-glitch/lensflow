@@ -30,7 +30,7 @@ export function ValueLadder() {
   return (
     <div ref={ref} className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_64px_minmax(0,1.1fr)] gap-6 md:gap-0 items-center mb-16 md:mb-24">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">What you&rsquo;re paying today</p>
+        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">What you&rsquo;re paying today</p>
         <ul className="space-y-2">
           {SCATTERED.map((s, i) => {
             const t = seg(p, 0.05 + i * 0.05, 0.35 + i * 0.05);
@@ -55,8 +55,8 @@ export function ValueLadder() {
           })}
         </svg>
       </div>
-      <div className="rounded-[22px] border border-border bg-white shadow-[0_24px_64px_-28px_rgba(16,17,20,0.3)] p-5" style={{ opacity: seg(p, 0.3, 0.7), transform: `translateY(${(1 - seg(p, 0.3, 0.7)) * 12}px)` }}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text mb-3">What you get instead</p>
+      <div className="rounded-2xl border border-border bg-white shadow-[0_24px_64px_-28px_rgba(16,17,20,0.3)] p-5" style={{ opacity: seg(p, 0.3, 0.7), transform: `translateY(${(1 - seg(p, 0.3, 0.7)) * 12}px)` }}>
+        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-signal-text mb-3">What you get instead</p>
         <ol className="relative pl-6">
           <span aria-hidden className="absolute left-[5px] top-2 bottom-2 w-px bg-border" />
           {ONE.map(([dot, label], i) => {

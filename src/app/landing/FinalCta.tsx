@@ -69,7 +69,7 @@ export function FinalCta() {
           </div>
           <ul className="flex flex-col justify-between h-[150px]" aria-label="What comes off the thread">
             {OUTPUTS.map((o, i) => (
-              <li key={o.label} className={cn("flex items-center gap-2 text-[13px] font-semibold text-paper/85", inView ? "dt-land" : "opacity-0")} style={{ animationDelay: `${700 + i * 90}ms` }}>
+              <li key={o.label} className={cn("flex items-center gap-2 text-13 font-semibold text-paper/85", inView ? "dt-land" : "opacity-0")} style={{ animationDelay: `${700 + i * 90}ms` }}>
                 <span className="w-7 h-7 rounded-lg bg-paper/10 flex items-center justify-center"><o.icon className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /></span>
                 <span className="sr-only sm:not-sr-only">{o.label}</span>
               </li>
@@ -79,7 +79,7 @@ export function FinalCta() {
       </div>
 
       <div className={cn("relative max-w-3xl mx-auto text-center mt-16 md:mt-20", inView ? "dt-land" : "opacity-0")} style={{ animationDelay: "900ms" }}>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-paper/60 mb-6">Meet Daythread</p>
+        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-paper/60 mb-6">Meet Daythread</p>
         <p className="font-sans font-extrabold text-[clamp(2.6rem,6.4vw,5.5rem)] leading-[0.92] tracking-[-0.05em] text-balance">
           One inbox.<br />Everything connected.
         </p>

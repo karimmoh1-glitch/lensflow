@@ -115,7 +115,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <div className="min-w-0">
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="font-display text-2xl truncate">{client.name}</h1>
-            <span className={cn("text-[10px] font-bold rounded-full px-2 py-0.5 shrink-0", client.relationship === "CUSTOMER" ? "bg-success-soft text-success-text" : client.relationship === "CONTACT" ? "bg-black/[0.05] text-ink/65" : "bg-signal-soft text-signal-text")}>
+            <span className={cn("text-2xs font-bold rounded-md px-2 py-0.5 shrink-0", client.relationship === "CUSTOMER" ? "bg-success-soft text-success-text" : client.relationship === "CONTACT" ? "bg-black/[0.05] text-ink/65" : "bg-black/[0.03] text-ink/75")}>
               {client.relationship === "CUSTOMER" ? "Customer" : client.relationship === "CONTACT" ? "Contact" : "Potential client"}
             </span>
           </div>
@@ -131,13 +131,13 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       {mergeCandidates.length > 0 && <MergeSuggestion clientId={client.id} name={client.name} candidates={mergeCandidates} />}
 
       {/* WHO IS THIS — the relationship, first. */}
-      <section aria-label="Where we stand" className="mb-8 rounded-[22px] border border-border bg-white overflow-hidden">
+      <section aria-label="Where we stand" className="mb-8 rounded-xl border border-border bg-white overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] divide-y md:divide-y-0 md:divide-x divide-border">
           <div className="px-5 md:px-6 py-5">
             <div className="flex items-center gap-2">
-              <span className={cn("w-2 h-2 rounded-full", standing.tone === "signal" ? "bg-accent" : standing.tone === "outcome" ? "bg-success" : standing.tone === "warning" ? "bg-warning" : standing.tone === "thinking" ? "bg-signal" : "bg-ink/30")} />
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Where we stand</span>
-              <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5", standing.tone === "signal" ? "bg-accent-soft text-accent-text" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-signal-soft text-signal-text" : "bg-black/[0.05] text-ink/65")}>{standing.label}</span>
+              <span className={cn("w-2 h-2 rounded-full", standing.tone === "signal" ? "bg-accent" : standing.tone === "outcome" ? "bg-success" : standing.tone === "warning" ? "bg-warning" : standing.tone === "thinking" ? "bg-ink" : "bg-ink/30")} />
+              <span className="text-13 font-semibold text-ink/65">Where we stand</span>
+              <span className={cn("ml-auto text-2xs font-bold rounded-md px-2 py-0.5", standing.tone === "signal" ? "bg-accent-soft text-accent-text" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-black/[0.03] text-ink/75" : "bg-black/[0.05] text-ink/65")}>{standing.label}</span>
             </div>
             <p className="mt-2 font-sans font-extrabold text-[1.35rem] leading-tight tracking-[-0.02em] text-ink">{standing.standing}</p>
             {(standing.theyWaitFor || standing.youWaitFor) && (
@@ -153,7 +153,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </p>
             )}
             {standing.nextAction && standingHref && (
-              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-full bg-accent-strong text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-strong text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
                 {standing.nextAction.label}
                 <span className="text-white/60 font-medium text-xs">· {standing.nextAction.why}</span>
               </Link>
@@ -161,19 +161,19 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           </div>
           <dl className="px-5 md:px-6 py-5 grid grid-cols-2 gap-x-4 gap-y-4 content-start">
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Upcoming</dt>
+              <dt className="text-13 font-semibold text-ink/65">Upcoming</dt>
               <dd className="mt-1 text-sm font-semibold text-ink">{nextBooking ? <Link href={`/dashboard/bookings/${nextBooking.id}`} className="hover:underline">{nextBooking.service.name} · {format(toZonedDisplayDate(nextBooking.startAt, tz), "MMM d")}</Link> : <span className="text-ink/65 font-medium">Nothing booked</span>}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Conversations</dt>
+              <dt className="text-13 font-semibold text-ink/65">Conversations</dt>
               <dd className="mt-1 text-sm font-semibold text-ink tabular-nums">{client.conversations.length}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Bookings</dt>
+              <dt className="text-13 font-semibold text-ink/65">Bookings</dt>
               <dd className="mt-1 text-sm font-semibold text-ink tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Came in via</dt>
+              <dt className="text-13 font-semibold text-ink/65">Came in via</dt>
               <dd className="mt-1 text-sm font-semibold text-ink">{firstConversation ? `${CHANNEL_META[firstConversation.channel].label} · ${format(firstConversation.createdAt, "MMM yyyy")}` : <span className="text-ink/65 font-medium">Added by you</span>}</dd>
             </div>
           </dl>
@@ -213,7 +213,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           {client.subscriptions.length > 0 && (
             <Card>
               <CardBody>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">Membership</div>
+                <div className="text-13 font-semibold text-ink/65 mb-2">Membership</div>
                 {client.subscriptions.map((s) => (
                   <div key={s.id} className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
@@ -230,7 +230,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           )}
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">At a glance</div>
+              <div className="text-13 font-semibold text-ink/65 mb-2">At a glance</div>
               <dl className="space-y-1.5 text-sm">
                 <div className="flex justify-between"><dt className="text-ink/70">Bookings</dt><dd className="font-medium tabular-nums">{client.bookings.length}</dd></div>
                 <div className="flex justify-between"><dt className="text-ink/70">Conversations</dt><dd className="font-medium tabular-nums">{client.conversations.length}</dd></div>
@@ -241,7 +241,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           {client.referrals.length > 0 && (
             <Card>
               <CardBody>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">Referred</div>
+                <div className="text-13 font-semibold text-ink/65 mb-2">Referred</div>
                 {client.referrals.map((r) => (
                   <div key={r.id} className="text-sm">{r.name}</div>
                 ))}

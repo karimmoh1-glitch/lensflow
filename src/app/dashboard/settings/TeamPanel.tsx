@@ -49,8 +49,8 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
   return (
     <div className="dt-stagger">
       {!entitled && (
-        <div className="mb-8 rounded-[22px] border border-signal/25 bg-signal-soft/40 px-5 py-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Daythread Pro</p>
+        <div className="mb-8 rounded-xl border border-border bg-black/[0.03] px-5 py-5">
+          <p className="text-13 font-semibold text-ink/75">Daythread Pro</p>
           <h2 className="mt-1.5 font-sans font-extrabold text-xl tracking-[-0.02em] text-ink">Run the inbox as a team.</h2>
           <p className="mt-1.5 text-sm text-ink/70 leading-relaxed max-w-lg">Pro puts up to {PLANS.PRO.maxTeamSeats} people on one shared inbox: everyone sees the same conversations, any thread can be assigned to whoever should answer it, and partners can be handed bookings. Business seats up to {PLANS.BUSINESS.maxTeamSeats}, with roles and internal notes.</p>
           <PaywallTrigger feature="team" source="settings-team" className="mt-4">Bring your team in →</PaywallTrigger>
@@ -62,14 +62,14 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
       </div>
 
       {over && (
-        <div role="alert" className="mb-5 rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">
-          <span className="font-semibold text-ink">{seats} team members; {PLANS[plan].name} includes {limits.maxTeamSeats}.</span> Everyone keeps access. New invitations are paused until you upgrade or deactivate someone.{nextPlan && <Link href="/dashboard/settings?tab=subscription" className="ml-2 font-semibold text-signal-text hover:underline">See plans →</Link>}
+        <div role="alert" className="mb-5 rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">
+          <span className="font-semibold text-ink">{seats} team members; {PLANS[plan].name} includes {limits.maxTeamSeats}.</span> Everyone keeps access. New invitations are paused until you upgrade or deactivate someone.{nextPlan && <Link href="/dashboard/settings?tab=subscription" className="ml-2 font-semibold text-ink/75 hover:underline">See plans →</Link>}
         </div>
       )}
       {full && !over && nextPlan && (
-        <div className="mb-5 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="mb-5 rounded-xl border border-border bg-black/[0.03] px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span><span className="font-semibold text-ink">Team is full.</span> {PLANS[plan].name} includes {limits.maxTeamSeats} team member{limits.maxTeamSeats === 1 ? "" : "s"}{pendingSeats ? ` (${pendingSeats} invitation${pendingSeats === 1 ? "" : "s"} pending)` : ""}. {PLANS[nextPlan].name} includes {limitLabel(PLANS[nextPlan].maxTeamSeats).toLowerCase()}.</span>
-          <Link href="/dashboard/settings?tab=subscription" className="text-signal-text font-semibold hover:underline">Upgrade →</Link>
+          <Link href="/dashboard/settings?tab=subscription" className="text-ink/75 font-semibold hover:underline">Upgrade →</Link>
         </div>
       )}
 

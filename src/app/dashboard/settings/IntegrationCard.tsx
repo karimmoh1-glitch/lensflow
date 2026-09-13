@@ -54,7 +54,7 @@ export type CardModel = {
   accent: string;
 };
 
-const PILL: Record<CardModel["pill"]["tone"], string> = { success: "bg-success-soft text-success-text", warning: "bg-warning-soft text-warning-text", accent: "bg-accent-soft text-accent-text", signal: "bg-signal-soft text-signal-text", neutral: "bg-black/[0.05] text-ink/70" };
+const PILL: Record<CardModel["pill"]["tone"], string> = { success: "bg-success-soft text-success-text", warning: "bg-warning-soft text-warning-text", accent: "bg-accent-soft text-accent-text", signal: "bg-black/[0.03] text-ink/75", neutral: "bg-black/[0.05] text-ink/70" };
 
 export function IntegrationCard({ model, icon, connect, manage, children }: { model: CardModel; icon: React.ReactNode; connect?: (formData: FormData) => Promise<void>; /** Detail shown in the Manage sheet for a non-calendar provider (WhatsApp's number and window rules). */ manage?: React.ReactNode; children?: React.ReactNode }) {
   const [open, setOpen] = useState<null | "manage" | "apple" | "setup">(null);
@@ -112,7 +112,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
   }
 
   const statusPill = (
-    <span className={cn("inline-flex items-center gap-1.5 text-[11px] font-bold rounded-full px-2 py-0.5", PILL[model.pill.tone])}>
+    <span className={cn("inline-flex items-center gap-1.5 text-2xs font-bold rounded-md px-2 py-0.5", PILL[model.pill.tone])}>
       {(model.status === "connected" || model.status === "always_on") && <Check className="w-3 h-3" strokeWidth={3} aria-hidden />}
       {model.pill.tone === "signal" && <Lock className="w-3 h-3" strokeWidth={2.5} aria-hidden />}
       {model.pill.label}
@@ -127,7 +127,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
     if (!model.entitled) {
       if (model.limit) {
         return (
-          <PaywallTrigger feature={model.provider === "SMS" ? "sms" : "channels"} source="settings-channels" className="inline-flex items-center justify-center h-8 px-3.5 rounded-full text-[13px] font-semibold border border-signal/30 text-signal-text bg-signal-soft/40 hover:bg-signal-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50 whitespace-nowrap">{model.limit.upgradePlan ? `Unlock with ${model.limit.upgradePlan}` : "See plans"}</PaywallTrigger>
+          <PaywallTrigger feature={model.provider === "SMS" ? "sms" : "channels"} source="settings-channels" className="inline-flex items-center justify-center h-8 px-3.5 rounded-lg text-13 font-semibold border border-border text-ink/75 bg-black/[0.03] hover:bg-black/[0.03] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 whitespace-nowrap">{model.limit.upgradePlan ? `Unlock with ${model.limit.upgradePlan}` : "See plans"}</PaywallTrigger>
         );
       }
       return null;
@@ -151,7 +151,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
       {connected && (
         <div className="flex flex-wrap items-center gap-1 sm:justify-end">
           {hasManage && (
-            <button type="button" onClick={() => setOpen("manage")} className="text-[13px] sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <button type="button" onClick={() => setOpen("manage")} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
               Manage
             </button>
           )}
@@ -159,20 +159,20 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
               permission the business later removed, or a webhook Meta never accepted. */}
           {!isCalendar && connect && model.status !== "needs_attention" && !confirm && (
             <form action={connect} onSubmit={() => setConnecting(true)}>
-              <button type="submit" disabled={connecting} className="text-[13px] sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-60">
+              <button type="submit" disabled={connecting} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-60">
                 {connecting ? "Opening…" : "Reconnect"}
               </button>
             </form>
           )}
           {!isCalendar && !confirm && (
-            <button type="button" onClick={() => setConfirm(true)} disabled={pending} className="text-[13px] sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05]">
+            <button type="button" onClick={() => setConfirm(true)} disabled={pending} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05]">
               Disconnect
             </button>
           )}
           {!isCalendar && confirm && (
             <span className="inline-flex items-center gap-1">
               <Button size="sm" variant="danger" onClick={disconnect} loading={pending} loadingLabel="Disconnecting">Disconnect</Button>
-              <button type="button" onClick={() => setConfirm(false)} className="text-[13px] sm:text-xs text-ink/65 px-3 py-2 sm:px-2.5 sm:py-1.5">Keep</button>
+              <button type="button" onClick={() => setConfirm(false)} className="text-13 sm:text-xs text-ink/65 px-3 py-2 sm:px-2.5 sm:py-1.5">Keep</button>
             </span>
           )}
         </div>
@@ -182,7 +182,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
 
   return (
     <>
-      <article aria-label={model.name} data-provider={model.provider} data-connection-state={model.configState} className="group relative rounded-[22px] border border-border bg-white transition-all duration-200 hover:border-ink/20 hover:shadow-[0_18px_44px_-30px_rgba(16,17,20,0.35)] hover:-translate-y-px">
+      <article aria-label={model.name} data-provider={model.provider} data-connection-state={model.configState} className="group relative rounded-xl border border-border bg-white transition-all duration-200 hover:border-ink/20 hover:shadow-[0_18px_44px_-30px_rgba(16,17,20,0.35)] hover:-translate-y-px">
         <div aria-hidden className="absolute inset-x-0 top-0 h-[3px] rounded-t-[22px] opacity-80" style={{ background: connected || model.status === "always_on" ? model.accent : "transparent" }} />
         <div className="px-4 sm:px-5 pt-5 pb-4">
           <div className="flex gap-3.5 sm:gap-4">
@@ -196,29 +196,29 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
             <p className="mt-1 text-sm text-ink/65 leading-snug">{model.description}</p>
             <ul className="mt-2.5 flex flex-wrap gap-1.5">
               {model.capabilities.map((c) => (
-                <li key={c} className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink/65 bg-black/[0.04] rounded-md px-1.5 py-0.5">{c}</li>
+                <li key={c} className="text-2xs font-semibold uppercase tracking-[0.08em] text-ink/65 bg-black/[0.04] rounded-md px-1.5 py-0.5">{c}</li>
               ))}
             </ul>
-            {model.status === "connected" && model.lastReceivedAt && <p className="mt-2 text-[11px] text-ink/65">Last message received {model.lastReceivedAt}</p>}
-            {model.status === "connected" && model.lastSyncedAt && <p className="mt-2 text-[11px] text-ink/65">Last synced {model.lastSyncedAt}</p>}
+            {model.status === "connected" && model.lastReceivedAt && <p className="mt-2 text-2xs text-ink/65">Last message received {model.lastReceivedAt}</p>}
+            {model.status === "connected" && model.lastSyncedAt && <p className="mt-2 text-2xs text-ink/65">Last synced {model.lastSyncedAt}</p>}
             {model.status === "sync_issue" && !model.lastError && (
-              <p className="mt-2 text-[11px] text-warning-text">
+              <p className="mt-2 text-2xs text-warning-text">
                 {isCalendar ? "Calendar sync temporarily failed. Daythread will retry automatically" : `The last sync with ${model.name} failed. Messages already received are unaffected`}
                 {model.lastSyncedAt ? ` · last good sync ${model.lastSyncedAt}` : ""}.
               </p>
             )}
-            {model.status === "needs_attention" && <p className="mt-2 text-[11px] text-accent-text">Your {model.name} connection needs to be renewed.</p>}
-            {model.status === "unavailable" && <p className="mt-2 text-[11px] text-ink/65">{model.detail}</p>}
-            {model.status !== "unavailable" && (model.maturity === "coming_soon" || model.access) && model.detail && <p className="mt-2 text-[11px] text-ink/65">{model.detail}</p>}
+            {model.status === "needs_attention" && <p className="mt-2 text-2xs text-accent-text">Your {model.name} connection needs to be renewed.</p>}
+            {model.status === "unavailable" && <p className="mt-2 text-2xs text-ink/65">{model.detail}</p>}
+            {model.status !== "unavailable" && (model.maturity === "coming_soon" || model.access) && model.detail && <p className="mt-2 text-2xs text-ink/65">{model.detail}</p>}
             {model.limit && (model.status === "disconnected" || model.status === "needs_attention") && (
-              <div className="mt-2.5 rounded-xl border border-signal/20 bg-signal-soft/40 px-3 py-2">
+              <div className="mt-2.5 rounded-xl border border-border bg-black/[0.03] px-3 py-2">
                 <p className="text-xs font-semibold text-ink">{/limit reached/i.test(model.limit.message) ? "Integration limit reached" : "Upgrade required"}</p>
-                <p className="mt-0.5 text-[11px] text-ink/70 leading-relaxed">{model.limit.message.replace(/^Integration limit reached\.\s*/i, "")}</p>
+                <p className="mt-0.5 text-2xs text-ink/70 leading-relaxed">{model.limit.message.replace(/^Integration limit reached\.\s*/i, "")}</p>
               </div>
             )}
-            {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && model.maturity === "ga" && !model.access && <p className="mt-2 text-[11px] text-ink/65">{model.detail}</p>}
-            {model.lastError && model.status !== "unavailable" && <p className="mt-2 text-[11px] text-warning-text leading-snug">{model.lastError}</p>}
-            {model.adminNote && <p className="mt-2 text-[11px] text-warning-text">{model.adminNote}</p>}
+            {model.status === "disconnected" && !model.entitled && !model.limit && model.detail && model.maturity === "ga" && !model.access && <p className="mt-2 text-2xs text-ink/65">{model.detail}</p>}
+            {model.lastError && model.status !== "unavailable" && <p className="mt-2 text-2xs text-warning-text leading-snug">{model.lastError}</p>}
+            {model.adminNote && <p className="mt-2 text-2xs text-warning-text">{model.adminNote}</p>}
           </div>
           <div className="hidden sm:flex shrink-0 flex-col items-end gap-2">{actions}</div>
           </div>
@@ -228,7 +228,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
         </div>
         {Children.toArray(children).some(Boolean) && <div className="border-t border-border bg-paper/60 px-4 sm:px-5 py-3 rounded-b-[22px]">{children}</div>}
         {model.approval && model.status !== "always_on" && model.maturity !== "coming_soon" && (
-          <details className="border-t border-border px-4 sm:px-5 py-2.5 text-[11px] text-ink/65">
+          <details className="border-t border-border px-4 sm:px-5 py-2.5 text-2xs text-ink/65">
             <summary className="cursor-pointer select-none hover:text-ink/70">What {model.name} requires</summary>
             <p className="mt-1 leading-relaxed">{model.approval}</p>
           </details>
@@ -239,12 +239,12 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
         <div className="fixed inset-0 z-[80] overflow-y-auto" role="presentation">
           <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={closeSheet} aria-hidden />
           <div className="relative min-h-full flex items-end sm:items-center justify-center p-0 sm:p-6">
-          <div role="dialog" aria-modal="true" aria-label={`${model.name} ${open === "manage" ? "settings" : "setup"}`} className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-[26px] bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] dt-land">
+          <div role="dialog" aria-modal="true" aria-label={`${model.name} ${open === "manage" ? "settings" : "setup"}`} className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-xl bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] dt-land">
             <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-border px-5 py-3.5 flex items-center gap-3">
               <span className="w-8 h-8 rounded-lg border border-border bg-paper flex items-center justify-center">{icon}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-ink">{model.name}</div>
-                <div className="text-[11px] text-ink/65">{open === "manage" ? "Manage connection" : open === "apple" ? "Connect with an app-specific password" : "Choose calendars"}</div>
+                <div className="text-2xs text-ink/65">{open === "manage" ? "Manage connection" : open === "apple" ? "Connect with an app-specific password" : "Choose calendars"}</div>
               </div>
               <button type="button" onClick={closeSheet} aria-label="Close" className="w-11 h-11 sm:w-8 sm:h-8 -mr-1.5 sm:mr-0 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-4 h-4" strokeWidth={2} /></button>
             </div>

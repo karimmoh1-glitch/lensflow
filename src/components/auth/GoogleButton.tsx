@@ -28,7 +28,7 @@ export function GoogleButton({ intent, className, personalization, divider = "or
         {pending ? "Opening Google…" : "Continue with Google"}
       </button>
       {divider && (
-        <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65" aria-hidden>
+        <div className="flex items-center gap-3 text-13 font-semibold text-ink/65" aria-hidden>
           <span className="h-px flex-1 bg-border" />
           {divider}
           <span className="h-px flex-1 bg-border" />

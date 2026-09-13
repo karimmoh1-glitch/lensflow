@@ -38,14 +38,14 @@ export function PricingSection({ trial = false, beta = false }: { trial?: boolea
     <section className="px-6 py-20 md:py-28 max-w-[1200px] mx-auto">
       <ValueLadder />
       <div className="max-w-2xl mb-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Pricing</p>
+        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Pricing</p>
         <h2 className="font-sans font-extrabold text-[clamp(2.4rem,5vw,4.25rem)] leading-[0.94] tracking-[-0.045em] text-ink">{beta ? <>Pro is free for a month.</> : <>Start free. Step up when it&rsquo;s obvious.</>}</h2>
         {beta && <p className="mt-4 text-base text-ink/70">Daythread is in beta, so every new account gets Pro free for {BETA_PRO_DAYS} days. No card.</p>}
       </div>
       <div role="group" aria-label="Billing interval" className="mb-8 inline-flex items-center h-10 rounded-full border border-border bg-white p-0.5">
         {(["month", "year"] as const).map((v) => (
           <button key={v} type="button" onClick={() => setInterval(v)} aria-pressed={interval === v} className={cn("inline-flex items-center h-9 px-4 rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", interval === v ? "bg-ink text-white" : "text-ink/70 hover:text-ink")}>
-            {v === "month" ? "Monthly" : "Yearly"}{v === "year" && <span className={cn("ml-2 text-[10px] font-extrabold uppercase tracking-wide rounded-full px-1.5 py-0.5", interval === v ? "bg-white/15 text-white" : "bg-success-soft text-success-text")}>2 months free</span>}
+            {v === "month" ? "Monthly" : "Yearly"}{v === "year" && <span className={cn("ml-2 text-2xs font-extrabold uppercase tracking-wide rounded-full px-1.5 py-0.5", interval === v ? "bg-white/15 text-white" : "bg-success-soft text-success-text")}>2 months free</span>}
           </button>
         ))}
       </div>
@@ -59,8 +59,8 @@ export function PricingSection({ trial = false, beta = false }: { trial?: boolea
           const badge = unavailable ? "Temporarily unavailable" : betaPro ? "Free for 1 month · beta" : l.badge;
           return (
             <RevealOnScroll key={key} delay={i * 90} className="h-full">
-              <div className={cn("relative h-full rounded-[22px] border p-6 md:p-7 flex flex-col transition-all duration-300", unavailable ? "border-border bg-paper" : "hover:-translate-y-1", pro ? "border-accent bg-white shadow-[0_24px_60px_-24px_rgba(240,82,77,0.45)]" : !unavailable && "border-border bg-white hover:shadow-popover")} aria-disabled={unavailable || undefined}>
-                {badge && <span className={cn("absolute -top-3 left-6 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white rounded-full px-2.5 py-1", pro ? "bg-accent-strong" : unavailable ? "bg-ink/55" : "bg-ink")}>{badge}</span>}
+              <div className={cn("relative h-full rounded-2xl border p-6 md:p-7 flex flex-col transition-all duration-300", unavailable ? "border-border bg-paper" : "hover:-translate-y-1", pro ? "border-accent bg-white shadow-[0_24px_60px_-24px_rgba(240,82,77,0.45)]" : !unavailable && "border-border bg-white hover:shadow-popover")} aria-disabled={unavailable || undefined}>
+                {badge && <span className={cn("absolute -top-3 left-6 text-2xs font-extrabold uppercase tracking-[0.12em] text-white rounded-full px-2.5 py-1", pro ? "bg-accent-strong" : unavailable ? "bg-ink/55" : "bg-ink")}>{badge}</span>}
                 <div className="text-sm font-semibold text-ink/70 leading-snug min-h-[2.5rem]">{l.who}</div>
                 <div className={cn("mt-3 flex items-baseline gap-1.5", unavailable && "opacity-60")}>
                   {betaPro ? (

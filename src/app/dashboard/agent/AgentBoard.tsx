@@ -17,7 +17,7 @@ type Activity = { at: string; kind: ProposalKind; title: string; result: string 
 const KIND: Record<ProposalKind, { icon: typeof MessageSquare; label: string; tone: string }> = {
   reply: { icon: MessageSquare, label: "Reply", tone: "bg-accent-soft text-accent-text" },
   confirm_booking: { icon: CalendarCheck, label: "Confirm", tone: "bg-success-soft text-success-text" },
-  follow_up: { icon: RotateCcw, label: "Follow up", tone: "bg-signal-soft text-signal-text" },
+  follow_up: { icon: RotateCcw, label: "Follow up", tone: "bg-black/[0.03] text-ink/75" },
   reconnect_calendar: { icon: CalendarX2, label: "Calendar", tone: "bg-danger-soft text-danger-text" },
 };
 
@@ -94,20 +94,20 @@ export function AgentBoard({ initial }: { initial: { generatedAt: string; propos
     const isOpen = open === p.id;
     const recommendationOnly = p.kind === "reconnect_calendar";
     return (
-      <li key={p.id} className={cn("rounded-[22px] border bg-white transition-colors", isOpen ? "border-ink/25 shadow-[0_18px_44px_-30px_rgba(16,17,20,0.35)]" : "border-border")}>
+      <li key={p.id} className={cn("rounded-xl border bg-white transition-colors", isOpen ? "border-ink/25 shadow-[0_18px_44px_-30px_rgba(16,17,20,0.35)]" : "border-border")}>
         <div className="px-4 md:px-5 py-4 flex gap-3.5">
           <span className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", k.tone)}><k.icon className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">{k.label}</span>
-              {p.valueCents ? <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">· {formatMoney(p.valueCents)}</span> : null}
-              <span className={cn("ml-auto text-[10px] font-bold uppercase tracking-[0.1em] rounded-full px-1.5 py-0.5", recommendationOnly ? "bg-black/[0.05] text-ink/70" : isOpen ? "bg-signal-soft text-signal-text" : "bg-success-soft text-success-text")}>{recommendationOnly ? "Recommendation" : isOpen ? "Preview · needs your approval" : "Ready with your approval"}</span>
+              <span className="text-13 font-semibold text-ink/65">{k.label}</span>
+              {p.valueCents ? <span className="text-13 font-semibold text-ink/65">· {formatMoney(p.valueCents)}</span> : null}
+              <span className={cn("ml-auto text-2xs font-bold uppercase tracking-[0.1em] rounded-md px-1.5 py-0.5", recommendationOnly ? "bg-black/[0.05] text-ink/70" : isOpen ? "bg-black/[0.03] text-ink/75" : "bg-success-soft text-success-text")}>{recommendationOnly ? "Recommendation" : isOpen ? "Preview · needs your approval" : "Ready with your approval"}</span>
             </div>
             <h3 className="mt-0.5 text-[15px] font-semibold text-ink leading-snug">{p.title}</h3>
             <p className="mt-0.5 text-sm text-ink/65 leading-snug">{p.why}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {recommendationOnly ? (
-                <Link href={p.href ?? "/dashboard/settings?tab=channels"} className="inline-flex items-center h-9 px-4 rounded-full bg-ink text-white text-sm font-semibold">Open calendar settings <ArrowRight className="w-3.5 h-3.5 ml-1.5" strokeWidth={2.5} aria-hidden /></Link>
+                <Link href={p.href ?? "/dashboard/settings?tab=channels"} className="inline-flex items-center h-9 px-4 rounded-lg bg-ink text-white text-sm font-semibold">Open calendar settings <ArrowRight className="w-3.5 h-3.5 ml-1.5" strokeWidth={2.5} aria-hidden /></Link>
               ) : isOpen ? null : (
                 <Button size="md" onClick={() => review(p)} loading={preparing === p.id} loadingLabel="Drafting">Review &amp; send</Button>
               )}
@@ -118,12 +118,12 @@ export function AgentBoard({ initial }: { initial: { generatedAt: string; propos
         </div>
         {isOpen && (
           <div className="border-t border-border px-4 md:px-5 py-4 bg-paper/60 rounded-b-[22px]">
-            <label htmlFor={`draft-${p.id}`} className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Message{p.channel ? ` · ${p.channel.toLowerCase()}` : ""}</label>
+            <label htmlFor={`draft-${p.id}`} className="text-13 font-semibold text-ink/65">Message{p.channel ? ` · ${p.channel.toLowerCase()}` : ""}</label>
             <div className="mt-1.5"><Textarea id={`draft-${p.id}`} value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} /></div>
             <div className="mt-3 flex items-center gap-2">
               <Button size="md" onClick={() => approve(p)} loading={pending} loadingLabel="Sending" disabled={!draft.trim()}>Approve &amp; send</Button>
               <button type="button" onClick={() => setOpen(null)} className="text-xs font-semibold text-ink/70 hover:text-ink px-2 py-1">Cancel</button>
-              <span className="ml-auto text-[11px] text-ink/65">Goes out as you. Lands in the thread.</span>
+              <span className="ml-auto text-2xs text-ink/65">Goes out as you. Lands in the thread.</span>
             </div>
           </div>
         )}
@@ -134,41 +134,41 @@ export function AgentBoard({ initial }: { initial: { generatedAt: string; propos
   return (
     <div className="space-y-8 dt-stagger">
       <AskAssistant />
-      <section aria-label="What I noticed" className="rounded-[22px] border border-border bg-white px-5 py-4">
-        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-signal-text">What I noticed</div>
+      <section aria-label="What I noticed" className="rounded-xl border border-border bg-white px-5 py-4">
+        <div className="text-13 font-semibold text-ink/75">What I noticed</div>
         {noticed.length === 0 ? (
           <p className="mt-1.5 text-sm text-ink/70">Everyone has a reply, upcoming bookings are confirmed and your calendars are syncing. I check again every time you open this page.</p>
         ) : (
           <p className="mt-1.5 text-sm text-ink/80 leading-relaxed">{noticed.map((n, i) => <span key={n}>{i > 0 ? (i === noticed.length - 1 ? " and " : ", ") : ""}<span className="font-semibold text-ink">{n}</span></span>)}.{total > 0 ? <span className="text-ink/65"> About {formatMoney(total)} of work is riding on it.</span> : null}</p>
         )}
         <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink/65">Ready to send</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{actionable.length}</dd></div>
-          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink/65">Recommendations</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{recommendations.length}</dd></div>
-          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-[10px] font-bold uppercase tracking-[0.1em] text-ink/65">Done this week</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{initial.activity.filter((a) => a.result === "sent").length}</dd></div>
+          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-13 font-semibold text-ink/65">Ready to send</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{actionable.length}</dd></div>
+          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-13 font-semibold text-ink/65">Recommendations</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{recommendations.length}</dd></div>
+          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-13 font-semibold text-ink/65">Done this week</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{initial.activity.filter((a) => a.result === "sent").length}</dd></div>
         </dl>
       </section>
 
       {actionable.length > 0 && (
         <section aria-label="What I recommend">
-          <div className="flex items-baseline gap-3 mb-2.5 px-1"><h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">What I&rsquo;d do next</h2><span className="text-[11px] text-ink/65">Review the message, then approve. Nothing goes out on its own.</span></div>
+          <div className="flex items-baseline gap-3 mb-2.5 px-1"><h2 className="text-13 font-semibold text-ink/65">What I&rsquo;d do next</h2><span className="text-2xs text-ink/65">Review the message, then approve. Nothing goes out on its own.</span></div>
           <ul className="space-y-3">{actionable.map(card)}</ul>
         </section>
       )}
       {recommendations.length > 0 && (
         <section aria-label="Needs you">
-          <div className="flex items-baseline gap-3 mb-2.5 px-1"><h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Needs you</h2><span className="text-[11px] text-ink/65">Things only you can fix.</span></div>
+          <div className="flex items-baseline gap-3 mb-2.5 px-1"><h2 className="text-13 font-semibold text-ink/65">Needs you</h2><span className="text-2xs text-ink/65">Things only you can fix.</span></div>
           <ul className="space-y-3">{recommendations.map(card)}</ul>
         </section>
       )}
       {proposals.length === 0 && (
-        <div className="rounded-[22px] border border-dashed border-border px-6 py-10 text-center">
+        <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
           <div className="mx-auto w-10 h-10 rounded-full bg-success-soft text-success-text flex items-center justify-center"><Check className="w-5 h-5" strokeWidth={2.5} aria-hidden /></div>
           <p className="mt-3 text-sm font-semibold text-ink">Nothing needs the agent right now.</p>
         </div>
       )}
 
-      <section aria-label="What I can handle" className="rounded-[22px] border border-border bg-paper/60 px-5 py-4">
-        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">What I can handle</div>
+      <section aria-label="What I can handle" className="rounded-xl border border-border bg-paper/60 px-5 py-4">
+        <div className="text-13 font-semibold text-ink/65">What I can handle</div>
         <ul className="mt-2 grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-ink/75">
           <li><span className="font-semibold text-ink">Replies</span> — drafted from the thread and your price list; you approve.</li>
           <li><span className="font-semibold text-ink">Confirmations</span> — sent to the client and the booking marked confirmed once delivered.</li>
@@ -179,8 +179,8 @@ export function AgentBoard({ initial }: { initial: { generatedAt: string; propos
 
       {initial.activity.length > 0 && (
         <section>
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65 mb-2.5 px-1">Assistant activity · last 7 days</h2>
-          <ul className="rounded-[22px] border border-border bg-white divide-y divide-border">
+          <h2 className="text-2xs font-bold uppercase tracking-[0.14em] text-ink/65 mb-2.5 px-1">Assistant activity · last 7 days</h2>
+          <ul className="rounded-xl border border-border bg-white divide-y divide-border">
             {initial.activity.map((a, i) => (
               <li key={i} className="px-4 py-3 flex items-center gap-3 text-sm">
                 <span className={cn("w-2 h-2 rounded-full shrink-0", a.result === "sent" ? "bg-success" : a.result === "dismissed" ? "bg-black/20" : "bg-warning")} aria-hidden />

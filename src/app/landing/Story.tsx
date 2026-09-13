@@ -115,7 +115,7 @@ export function Story() {
               const on = beat === i;
               return (
                 <div key={i} className="absolute inset-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ opacity: on ? 1 : 0, transform: `translateY(${on ? 0 : beat > i ? -10 : 10}px)` }} aria-hidden={!on}>
-                  <p className={cn("text-[11px] font-bold uppercase tracking-[0.16em] mb-2 lg:mb-4", b.tone)}>{b.eyebrow}</p>
+                  <p className={cn("text-2xs font-bold uppercase tracking-[0.16em] mb-2 lg:mb-4", b.tone)}>{b.eyebrow}</p>
                   <h2 className="font-sans font-extrabold text-[clamp(2rem,4.6vw,4rem)] leading-[0.94] tracking-[-0.045em] text-ink">{b.title}</h2>
                   <p className="mt-2 lg:mt-4 text-sm lg:text-base text-ink/70 max-w-xs">{b.sub}</p>
                 </div>
@@ -132,19 +132,19 @@ export function Story() {
             {/* the product frame, growing out of the thread */}
             <div
               aria-hidden={product === 0}
-              className="absolute inset-0 rounded-[22px] border border-border bg-white shadow-[0_40px_100px_-40px_rgba(16,17,20,0.4)] overflow-hidden"
+              className="absolute inset-0 rounded-2xl border border-border bg-white shadow-[0_40px_100px_-40px_rgba(16,17,20,0.4)] overflow-hidden"
               style={{ transformOrigin: `${LINE_X}% 50%`, transform: `scaleX(${mix(0.004, 1, product)})`, opacity: product > 0.02 ? 1 : 0 }}
             >
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-paper/70" style={{ opacity: settle }}>
                 <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
-                <span className="text-[13px] font-extrabold tracking-tight text-ink">Daythread</span>
-                <span className="text-[11px] text-ink/65">Inbox</span>
-                <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold rounded-full px-2 py-0.5 bg-success-soft text-success-text"><span className="text-ink/65 font-semibold">6 conversations</span><span aria-hidden>→</span>1 thing to do</span>
+                <span className="text-13 font-extrabold tracking-tight text-ink">Daythread</span>
+                <span className="text-2xs text-ink/65">Inbox</span>
+                <span className="ml-auto inline-flex items-center gap-1.5 text-2xs font-bold rounded-full px-2 py-0.5 bg-success-soft text-success-text"><span className="text-ink/65 font-semibold">6 conversations</span><span aria-hidden>→</span>1 thing to do</span>
               </div>
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] h-[calc(100%-42px)]">
                 {/* Inbox */}
                 <Panel k={0} t={settle} className="border-r border-border">
-                  <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">Inbox · sorted by what needs you</div>
+                  <div className="px-3 py-2 text-2xs font-bold uppercase tracking-[0.12em] text-ink/65">Inbox · sorted by what needs you</div>
                   <Row k="whatsapp" who="Sarah Kim" msg="Do you have anything Friday afternoon?" tag="Booked" tagTone="text-success-text" active />
                   <Row k="instagram" who="Maya Chen" msg="Loved the last shoot — can we do another?" tag="Needs reply" tagTone="text-accent-text" />
                   <Row k="gmail" who="Jordan Lee" msg="Re: a September date?" tag="Going cold" tagTone="text-warning-text" />
@@ -155,21 +155,21 @@ export function Story() {
                 {/* Client / booking / calendar / automation */}
                 <div className="flex flex-col divide-y divide-border bg-paper/40">
                   <Panel k={1} t={settle} className="px-3 py-2.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Client</div>
-                    <div className="flex items-center gap-2"><span className="w-7 h-7 rounded-full bg-success-soft text-success-text text-[10px] font-extrabold flex items-center justify-center">SK</span><div className="min-w-0"><div className="text-xs font-semibold text-ink truncate">Sarah Kim</div><div className="text-[10px] text-ink/70">Returning · 2 bookings</div></div></div>
+                    <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Client</div>
+                    <div className="flex items-center gap-2"><span className="w-7 h-7 rounded-full bg-success-soft text-success-text text-2xs font-extrabold flex items-center justify-center">SK</span><div className="min-w-0"><div className="text-xs font-semibold text-ink truncate">Sarah Kim</div><div className="text-2xs text-ink/70">Returning · 2 bookings</div></div></div>
                   </Panel>
                   <Panel k={2} t={settle} className="px-3 py-2.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Booking</div>
+                    <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Booking</div>
                     <div className="text-xs font-semibold text-ink">Brand session · Fri 2:30 PM</div>
-                    <div className="text-[10px] text-ink/70">$350 · questionnaire sent</div>
+                    <div className="text-2xs text-ink/70">$350 · questionnaire sent</div>
                   </Panel>
                   <Panel k={3} t={settle} className="px-3 py-2.5">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Calendar</div>
-                    <div className="flex items-center justify-between text-xs"><span className="font-semibold text-ink">Fri 2:30 – 4:00 PM</span><span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-success-soft text-success-text">On Google</span></div>
+                    <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Calendar</div>
+                    <div className="flex items-center justify-between text-xs"><span className="font-semibold text-ink">Fri 2:30 – 4:00 PM</span><span className="text-2xs font-bold rounded-full px-1.5 py-0.5 bg-success-soft text-success-text">On Google</span></div>
                   </Panel>
                   <Panel k={4} t={settle} className="px-3 py-2.5 flex-1">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Automation</div>
-                    <div className="text-[11px] text-ink/75 leading-snug"><span className="text-accent-text font-bold">When</span> a booking is coming up · <span className="text-signal-text font-bold">if</span> 1 day before · <span className="text-success-text font-bold">then</span> send a reminder</div>
+                    <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Automation</div>
+                    <div className="text-2xs text-ink/75 leading-snug"><span className="text-accent-text font-bold">When</span> a booking is coming up · <span className="text-signal-text font-bold">if</span> 1 day before · <span className="text-success-text font-bold">then</span> send a reminder</div>
                   </Panel>
                 </div>
               </div>
@@ -212,8 +212,8 @@ export function Story() {
                     <div className="flex items-center gap-2.5 px-3 py-2.5">
                       <ChannelIcon k={c.k} size={30} />
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline gap-1.5"><span className="text-xs font-semibold text-ink truncate">{c.who}</span><span className="text-[10px] text-ink/65 shrink-0">{c.when}</span></div>
-                        <div className="text-[11px] text-ink/70 truncate">{c.msg}</div>
+                        <div className="flex items-baseline gap-1.5"><span className="text-xs font-semibold text-ink truncate">{c.who}</span><span className="text-2xs text-ink/65 shrink-0">{c.when}</span></div>
+                        <div className="text-2xs text-ink/70 truncate">{c.msg}</div>
                       </div>
                     </div>
                     {isFocus && (
@@ -227,11 +227,11 @@ export function Story() {
                         {/* ACTION → OUTCOME: the same card, now the booking */}
                         <div className="px-3 overflow-hidden" style={{ opacity: action, maxHeight: action * 132, paddingBottom: action * 12, transform: `translateY(${(1 - action) * 6}px)` }}>
                           <div className={cn("rounded-xl border px-3 py-2.5 transition-colors duration-500", outcome > 0.5 ? "border-success/30 bg-success-soft/40" : "border-accent/30 bg-gradient-to-br from-accent-soft/70 to-white")}>
-                            <div className={cn("text-[10px] font-bold uppercase tracking-[0.12em] mb-0.5 transition-colors", outcome > 0.5 ? "text-success-text" : "text-accent-text")}>{outcome > 0.5 ? "Booked" : "Send booking"}</div>
+                            <div className={cn("text-2xs font-bold uppercase tracking-[0.12em] mb-0.5 transition-colors", outcome > 0.5 ? "text-success-text" : "text-accent-text")}>{outcome > 0.5 ? "Booked" : "Send booking"}</div>
                             <div className="text-sm font-extrabold text-ink tracking-tight">Brand session · Fri 2:30 PM</div>
                             <div className="flex items-center justify-between mt-1.5">
-                              <span className="text-[11px] text-ink/65">$350 · 60 min</span>
-                              <span className={cn("inline-flex items-center h-7 px-3 rounded-full text-[11px] font-extrabold transition-colors duration-500", outcome > 0.5 ? "bg-success text-white" : "bg-accent-strong text-white")}>{outcome > 0.5 ? "Confirmed" : "Send →"}</span>
+                              <span className="text-2xs text-ink/65">$350 · 60 min</span>
+                              <span className={cn("inline-flex items-center h-7 px-3 rounded-full text-2xs font-extrabold transition-colors duration-500", outcome > 0.5 ? "bg-success text-white" : "bg-accent-strong text-white")}>{outcome > 0.5 ? "Confirmed" : "Send →"}</span>
                             </div>
                           </div>
                         </div>
@@ -250,9 +250,9 @@ export function Story() {
 
 function Chip({ t, dot, label, value }: { t: number; dot: string; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-2 text-[11px]" style={{ opacity: t, transform: `translateX(${(1 - t) * -6}px)` }}>
+    <div className="flex items-center gap-2 text-2xs" style={{ opacity: t, transform: `translateX(${(1 - t) * -6}px)` }}>
       <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dot)} />
-      <span className="text-ink/65 font-bold uppercase tracking-[0.1em] text-[9px] w-10 shrink-0">{label}</span>
+      <span className="text-ink/65 font-bold uppercase tracking-[0.1em] text-2xs w-10 shrink-0">{label}</span>
       <span className="font-semibold text-ink truncate">{value}</span>
     </div>
   );
@@ -273,9 +273,9 @@ function Row({ k, who, msg, tag, tagTone, active }: { k: ChannelKey; who: string
       <ChannelIcon k={k} size={26} />
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-ink truncate">{who}</div>
-        <div className="text-[10px] text-ink/65 truncate">{msg}</div>
+        <div className="text-2xs text-ink/65 truncate">{msg}</div>
       </div>
-      <span className={cn("text-[9px] font-bold shrink-0", tagTone)}>{tag}</span>
+      <span className={cn("text-2xs font-bold shrink-0", tagTone)}>{tag}</span>
     </div>
   );
 }

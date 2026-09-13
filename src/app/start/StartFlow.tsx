@@ -231,7 +231,7 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
 
       <div className="flex-1 w-full max-w-2xl mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-6">
         <section key={step.key} className="dt-swap" aria-labelledby="start-title">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">{step.eyebrow}</p>
+          <p className="text-13 font-semibold text-ink/65">{step.eyebrow}</p>
           <h1 id="start-title" ref={titleRef} tabIndex={-1} className="mt-3 font-sans font-extrabold text-[1.9rem] md:text-[2.5rem] leading-[1.02] tracking-[-0.04em] text-ink text-balance focus:outline-none">{step.title}</h1>
           {step.hint && <p className="mt-3 text-[15px] text-ink/70 leading-relaxed max-w-lg">{step.hint}</p>}
 
@@ -301,13 +301,13 @@ function Summary({ p, name, billingLive, prices, beta, businessUnavailable, onCh
   const first = name.trim().split(/\s+/)[0];
   return (
     <div className="space-y-5">
-      <div className="rounded-[22px] border border-border bg-white px-5 py-5">
+      <div className="rounded-xl border border-border bg-white px-5 py-5">
         <p className="text-[15px] text-ink/80 leading-relaxed">
           {p.channelCount >= 2
             ? <>{first ? `${first}, you` : "You"} currently manage customers across <span className="font-extrabold text-ink">{p.channelCount} channels</span>{channelNames.length ? ` — ${channelNames.join(", ")}${p.answers.channels.includes("other") ? " and more" : ""}` : ""}. Daythread brings those conversations together on one thread.</>
             : <>{first ? `${first}, your` : "Your"} customers reach you on {channelNames[0] ?? "one channel"}. Daythread keeps that in one inbox, with the calendar, bookings and follow-ups beside it.</>}
         </p>
-        <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Your priorities</p>
+        <p className="mt-5 text-13 font-semibold text-ink/65">Your priorities</p>
         <ul className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {p.priorities.map((f, i) => (
             <li key={f} className={cn("rounded-2xl border px-4 py-3", i === 0 ? "border-accent/40 bg-accent-soft/40" : "border-border bg-paper")}>
@@ -318,8 +318,8 @@ function Summary({ p, name, billingLive, prices, beta, businessUnavailable, onCh
         </ul>
       </div>
 
-      <div className="rounded-[22px] border border-ink/15 bg-white px-5 py-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Our recommendation</p>
+      <div className="rounded-xl border border-ink/15 bg-white px-5 py-5">
+        <p className="text-13 font-semibold text-signal-text">Our recommendation</p>
         <h2 className="mt-2 font-sans font-extrabold text-[1.5rem] md:text-[1.8rem] leading-[1.05] tracking-[-0.035em] text-ink text-balance">Based on what you told us, we&rsquo;d recommend Daythread {planName(rec)}.</h2>
         <ul className="mt-4 space-y-2">
           {p.reasons.map((r) => (

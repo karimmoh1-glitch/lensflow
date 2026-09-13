@@ -60,7 +60,7 @@ export default async function StatusPage() {
         <h1 className="mt-8 font-sans font-extrabold text-3xl tracking-tight text-ink">Status</h1>
         <p className="mt-2 text-sm text-ink/70">Checked when you opened this page, at {checkedAt.toUTCString()}.</p>
 
-        <section aria-label="Daythread" className="mt-8 rounded-[20px] border border-border bg-white divide-y divide-border">
+        <section aria-label="Daythread" className="mt-8 rounded-2xl border border-border bg-white divide-y divide-border">
           {core.map((row) => (
             <div key={row.name} className="flex items-start gap-3 px-5 py-4">
               <span aria-hidden className={cn("mt-1.5 w-2.5 h-2.5 rounded-full shrink-0", row.ok ? "bg-success" : "bg-danger")} />
@@ -72,9 +72,9 @@ export default async function StatusPage() {
           ))}
         </section>
 
-        <h2 className="mt-10 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Channels and services</h2>
+        <h2 className="mt-10 text-2xs font-bold uppercase tracking-[0.14em] text-ink/65">Channels and services</h2>
         <p className="mt-2 text-sm text-ink/70">Daythread doesn&rsquo;t monitor these providers&rsquo; uptime. Each row says whether the connection is configured on this deployment, and links to the provider&rsquo;s own status page.</p>
-        <section aria-label="Providers" className="mt-4 rounded-[20px] border border-border bg-white divide-y divide-border">
+        <section aria-label="Providers" className="mt-4 rounded-2xl border border-border bg-white divide-y divide-border">
           {providers.map((p) => (
             <div key={p.name} className="flex items-start gap-3 px-5 py-4">
               <span aria-hidden className={cn("mt-1.5 w-2.5 h-2.5 rounded-full shrink-0", p.configured ? "bg-success" : "bg-ink/25")} />

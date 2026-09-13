@@ -69,7 +69,7 @@ export function MeetingPanel({ bookingId, joinUrl, zoom, canCreate }: { bookingI
   return (
     <Card>
       <CardBody>
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">
+        <div className="flex items-center gap-2 text-13 font-semibold text-ink/65 mb-3">
           <Video className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> Video meeting
         </div>
         {joinUrl ? (

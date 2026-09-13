@@ -30,8 +30,8 @@ export function MergeSuggestion({ clientId, name, candidates }: { clientId: stri
   }
 
   return (
-    <section aria-labelledby="merge-title" className="mb-6 rounded-2xl border border-signal/25 bg-signal-soft/30 px-4 py-3.5">
-      <h2 id="merge-title" className="text-[11px] font-bold uppercase tracking-[0.14em] text-signal-text">Might be the same person</h2>
+    <section aria-labelledby="merge-title" className="mb-6 rounded-xl border border-border bg-black/[0.03] px-4 py-3.5">
+      <h2 id="merge-title" className="text-13 font-semibold text-ink/75">Might be the same person</h2>
       <ul className="mt-2 space-y-2">
         {live.map((c) => (
           <li key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -40,8 +40,8 @@ export function MergeSuggestion({ clientId, name, candidates }: { clientId: stri
               <p className="text-xs text-ink/70">{c.why}</p>
             </div>
             <div className="flex gap-2 shrink-0">
-              <button type="button" disabled={pending} onClick={() => act(c, true)} className="h-9 px-3.5 rounded-full bg-ink text-white text-xs font-bold disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Merge into {name.split(" ")[0]}</button>
-              <button type="button" disabled={pending} onClick={() => act(c, false)} className="h-9 px-3.5 rounded-full border border-border bg-white text-xs font-semibold text-ink/80 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Not the same</button>
+              <button type="button" disabled={pending} onClick={() => act(c, true)} className="h-9 px-3.5 rounded-lg bg-ink text-white text-xs font-bold disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Merge into {name.split(" ")[0]}</button>
+              <button type="button" disabled={pending} onClick={() => act(c, false)} className="h-9 px-3.5 rounded-lg border border-border bg-white text-xs font-semibold text-ink/80 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Not the same</button>
             </div>
           </li>
         ))}

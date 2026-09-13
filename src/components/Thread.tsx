@@ -18,7 +18,7 @@ export type ThreadKind = "signal" | "thinking" | "state" | "outcome" | "note";
 
 const NODE: Record<ThreadKind, string> = {
   signal: "bg-accent",
-  thinking: "bg-signal",
+  thinking: "bg-ink",
   state: "bg-ink/70",
   outcome: "bg-success",
   note: "bg-ink/25",
@@ -56,7 +56,7 @@ export function ThreadNode({
           <div className="text-sm font-medium text-ink truncate">{title}</div>
           {meta && <div className="text-xs text-ink/70 mt-0.5 truncate">{meta}</div>}
         </div>
-        {when && <div className="text-[11px] text-ink/65 tabular-nums shrink-0 mt-0.5">{when}</div>}
+        {when && <div className="text-2xs text-ink/65 tabular-nums shrink-0 mt-0.5">{when}</div>}
       </div>
       {children}
     </>
@@ -79,7 +79,7 @@ export function NextAction({ title, why, href, cta }: { title: string; why?: str
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent-soft/60 to-transparent px-4 py-3.5 transition-colors hover:border-accent/40"
+      className="group flex items-center gap-3 rounded-xl border border-accent/25 bg-gradient-to-br from-accent-soft/60 to-transparent px-4 py-3.5 transition-colors hover:border-accent/40"
     >
       <span aria-hidden className="w-2 h-2 rounded-full bg-accent shrink-0" />
       <div className="min-w-0 flex-1">

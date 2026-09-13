@@ -7,7 +7,7 @@ import { getFirstLook } from "@/server/firstLook";
 import { businessAgentEntitled } from "@/lib/billing";
 import { buildAgentBrief } from "@/server/businessAgent";
 import { differenceInDays } from "date-fns";
-import { Users, Zap, Sparkles } from "lucide-react";
+import { Users, Zap, ListChecks } from "lucide-react";
 import { Card, Badge, EmptyState } from "@/components/ui";
 import { cn, initials, toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
@@ -55,7 +55,7 @@ export default async function TodayPage() {
       {gmailConnected && <AutoGmailSync immediate />}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2">{format(new Date(), "EEEE, MMMM d")}</p>
+          <p className="text-13 font-semibold text-ink/65 mb-2">{format(new Date(), "EEEE, MMMM d")}</p>
           <h1 className="font-sans font-extrabold text-[1.9rem] leading-none tracking-[-0.03em] text-ink">
             {greeting}, {firstName}.
           </h1>
@@ -68,9 +68,9 @@ export default async function TodayPage() {
       {showPriorities && <Priorities businessId={business.id} plan={effectivePlan(business)} />}
 
       {showFirstLook && (
-        <section aria-labelledby="first-look-label" className="mb-8 rounded-[22px] border border-signal/25 bg-white overflow-hidden dt-land">
+        <section aria-labelledby="first-look-label" className="mb-8 rounded-xl border border-border bg-white overflow-hidden dt-land">
           <div className="px-5 md:px-6 pt-5 pb-4">
-            <h2 id="first-look-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">What Daythread found</h2>
+            <h2 id="first-look-label" className="text-13 font-semibold text-ink/75">What Daythread found</h2>
             <p className="mt-1.5 font-sans font-extrabold text-[1.6rem] leading-tight tracking-[-0.03em] text-ink">
               {firstLook.total} conversation{firstLook.total === 1 ? "" : "s"}.{" "}
               <span className="text-ink/65">{firstLook.needsYou === 0 ? "None need you right now." : firstLook.needsYou === 1 ? "One needs you." : `${firstLook.needsYou} need you.`}</span>
@@ -83,10 +83,10 @@ export default async function TodayPage() {
               ["Vendors & internal", firstLook.vendor + firstLook.internal, "platforms, suppliers, your team"],
               ["People", firstLook.priority, "real conversations"],
             ].map(([k, v, hint], i) => (
-              <div key={String(k)} className={cn("rounded-2xl px-3.5 py-3", i === 3 ? "bg-accent-soft/60" : "bg-paper")}>
+              <div key={String(k)} className={cn("rounded-xl px-3.5 py-3", i === 3 ? "bg-accent-soft/60" : "bg-paper")}>
                 <div className={cn("font-sans font-extrabold text-2xl tracking-[-0.03em] tabular-nums", i === 3 ? "text-accent-text" : "text-ink")}>{String(v)}</div>
-                <div className="text-[11px] font-semibold text-ink/70">{String(k)}</div>
-                <div className="text-[11px] text-ink/65">{String(hint)}</div>
+                <div className="text-2xs font-semibold text-ink/70">{String(k)}</div>
+                <div className="text-2xs text-ink/65">{String(hint)}</div>
               </div>
             ))}
           </div>
@@ -103,7 +103,7 @@ export default async function TodayPage() {
       {/* TODAY + ASSISTANT */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 mt-10">
         <section aria-labelledby="today-label">
-          <h2 id="today-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-2.5">
+          <h2 id="today-label" className="text-13 font-semibold text-ink/65 mb-2.5">
             Today
           </h2>
           {brief.todaysBookings.length === 0 ? (
@@ -111,7 +111,7 @@ export default async function TodayPage() {
           ) : (
             <BookingList bookings={brief.todaysBookings} timeFormat="h:mm a" timezone={business.timezone} linked />
           )}
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mt-7 mb-2.5">Coming up</h2>
+          <h2 className="text-13 font-semibold text-ink/65 mt-7 mb-2.5">Coming up</h2>
           {brief.upcoming.length === 0 ? (
             <EmptyState title="No upcoming bookings yet" description="Confirmed bookings from your inbox or booking page line up here." />
           ) : (
@@ -120,11 +120,11 @@ export default async function TodayPage() {
         </section>
 
         <section aria-labelledby="assistant-label">
-          <h2 id="assistant-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text mb-2.5">
+          <h2 id="assistant-label" className="text-13 font-semibold text-ink/75 mb-2.5">
             Assistant
           </h2>
-          <Link href="/dashboard/agent" className="block rounded-2xl border border-signal/25 bg-signal-soft/30 px-4 py-3.5 transition-all duration-150 hover:bg-signal-soft/50 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/50">
-            <div className="flex items-center gap-2 text-[11px] text-signal-text font-semibold"><Sparkles className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />{agentOn ? (proposals.length === 0 ? "Nothing to propose right now" : `${proposals.length} ${proposals.length === 1 ? "action" : "actions"} ready for your approval`) : "Part of Pro"}</div>
+          <Link href="/dashboard/agent" className="block rounded-xl border border-border bg-black/[0.03] px-4 py-3.5 transition-all duration-150 hover:bg-black/[0.03] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40">
+            <div className="flex items-center gap-2 text-2xs text-ink/75 font-semibold"><ListChecks className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />{agentOn ? (proposals.length === 0 ? "Nothing to propose right now" : `${proposals.length} ${proposals.length === 1 ? "action" : "actions"} ready for your approval`) : "Part of Pro"}</div>
             <div className="mt-1.5 text-sm text-ink/80 leading-snug">
               {agentOn
                 ? proposals.length > 0
@@ -133,22 +133,22 @@ export default async function TodayPage() {
                 : "An assistant that reads your inbox and calendar and proposes the day's work — replies, confirmations, follow-ups — for you to approve."}
             </div>
           </Link>
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mt-7 mb-2.5">People</h2>
-          <Link href="/dashboard/clients" className="block rounded-2xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-ink/20 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
-            <div className="flex items-center gap-2 text-[11px] text-ink/70"><Users className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />People on the thread</div>
+          <h2 className="text-13 font-semibold text-ink/65 mt-7 mb-2.5">People</h2>
+          <Link href="/dashboard/clients" className="block rounded-xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-ink/20 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <div className="flex items-center gap-2 text-2xs text-ink/70"><Users className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />People on the thread</div>
             <div className="mt-2 grid grid-cols-3 gap-2">
-              {[["Customers", week.relationships.customers, "text-success-text"], ["Potential", week.relationships.leads, "text-signal-text"], ["Contacts", week.relationships.contacts, "text-ink/70"]].map(([k, v, c]) => (
+              {[["Customers", week.relationships.customers, "text-success-text"], ["Potential", week.relationships.leads, "text-ink/75"], ["Contacts", week.relationships.contacts, "text-ink/70"]].map(([k, v, c]) => (
                 <div key={String(k)}>
                   <div className={cn("font-sans font-extrabold text-xl tracking-[-0.03em] tabular-nums", String(c))}>{String(v)}</div>
-                  <div className="text-[11px] text-ink/70">{String(k)}</div>
+                  <div className="text-2xs text-ink/70">{String(k)}</div>
                 </div>
               ))}
             </div>
             {brief.leads.warm.length > 0 && <div className="mt-2 text-xs text-accent-text font-semibold">{brief.leads.warm.length} {brief.leads.warm.length === 1 ? "inquiry" : "inquiries"} with a service or date in mind</div>}
           </Link>
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mt-7 mb-2.5">Automation</h2>
-          <Link href="/dashboard/automations" className="block rounded-2xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-ink/20 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
-            <div className="flex items-center gap-2 text-[11px] text-ink/70"><Zap className="w-3.5 h-3.5 text-signal-text" strokeWidth={2} aria-hidden />{week.automationsOn === 0 ? "Nothing running yet" : `${week.automationsOn} running`}</div>
+          <h2 className="text-13 font-semibold text-ink/65 mt-7 mb-2.5">Automation</h2>
+          <Link href="/dashboard/automations" className="block rounded-xl border border-border bg-white px-4 py-3.5 transition-all duration-150 hover:border-ink/20 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <div className="flex items-center gap-2 text-2xs text-ink/70"><Zap className="w-3.5 h-3.5 text-ink/75" strokeWidth={2} aria-hidden />{week.automationsOn === 0 ? "Nothing running yet" : `${week.automationsOn} running`}</div>
             <div className="mt-1.5 text-sm text-ink/80">
               {week.automatedSent > 0 ? <><span className="font-extrabold text-ink">{week.automatedSent}</span> {week.automatedSent === 1 ? "message" : "messages"} sent for you this week</> : week.automationsOn > 0 ? "Watching bookings and quiet leads. Nothing was due this week." : "Turn one on and Daythread sends confirmations, reminders and follow-ups for you."}
             </div>
@@ -157,10 +157,10 @@ export default async function TodayPage() {
       </div>
 
       {/* THIS WEEK — real counts; minutes are an estimate and say so */}
-      <section aria-labelledby="week-label" className="mt-10 rounded-2xl border border-signal/20 bg-signal-soft/30 px-5 py-4">
+      <section aria-labelledby="week-label" className="mt-10 rounded-xl border border-border bg-black/[0.03] px-5 py-4">
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-          <h2 id="week-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Daythread handled, last 7 days</h2>
-          <p className="text-[11px] text-ink/65">≈{week.estimatedMinutes < 60 ? `${week.estimatedMinutes} min` : `${(week.estimatedMinutes / 60).toFixed(1)} h`} of your time · estimate</p>
+          <h2 id="week-label" className="text-13 font-semibold text-ink/75">Daythread handled, last 7 days</h2>
+          <p className="text-2xs text-ink/65">≈{week.estimatedMinutes < 60 ? `${week.estimatedMinutes} min` : `${(week.estimatedMinutes / 60).toFixed(1)} h`} of your time · estimate</p>
         </div>
         <dl className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
@@ -171,7 +171,7 @@ export default async function TodayPage() {
           ].map(([k, v]) => (
             <div key={String(k)}>
               <dd className="font-sans font-extrabold text-2xl tracking-[-0.03em] tabular-nums text-ink">{String(v)}</dd>
-              <dt className="text-[11px] text-ink/70">{String(k)}</dt>
+              <dt className="text-2xs text-ink/70">{String(k)}</dt>
             </div>
           ))}
         </dl>

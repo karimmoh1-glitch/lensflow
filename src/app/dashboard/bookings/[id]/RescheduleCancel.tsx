@@ -65,7 +65,7 @@ export function RescheduleCancel({ bookingId, canCancel, canReschedule, timezone
         <div className="space-y-4">
           <Field id="resched-date" label="Day"><Input id="resched-date" type="date" value={date} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className="text-[16px] md:text-sm" /></Field>
           <div>
-            <div className="text-[13px] font-semibold text-ink/80 mb-1.5">Free times</div>
+            <div className="text-13 font-semibold text-ink/80 mb-1.5">Free times</div>
             {slots === null ? (
               <p className="text-sm text-ink/65">Checking your calendar…</p>
             ) : slots.length === 0 ? (
@@ -89,7 +89,7 @@ export function RescheduleCancel({ bookingId, canCancel, canReschedule, timezone
         {error && <p role="alert" className="mt-3 text-xs font-medium text-danger-text">{error}</p>}
         <div className="mt-4 flex items-center gap-2"><Button variant="danger" onClick={cancel} loading={pending} loadingLabel="Canceling">Cancel booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-semibold text-ink/70 px-2 py-1">Keep it</button></div>
       </BottomSheet>
-      <p className="text-[10px] text-ink/65 mt-1">Current: {new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(currentStartISO))}</p>
+      <p className="text-2xs text-ink/65 mt-1">Current: {new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(currentStartISO))}</p>
     </div>
   );
 }

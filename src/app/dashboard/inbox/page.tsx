@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { InboxKeys } from "./InboxKeys";
 import Link from "next/link";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -167,54 +168,39 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
       {gmailConnected && <AutoGmailSync immediate />}
       {/* Below lg the list and the thread take turns (a tablet is a wide phone here); from lg they sit side by side. */}
       <div className={cn("w-full lg:w-[380px] xl:w-[400px] shrink-0 min-h-0 border-r border-border flex-col bg-white", selectedId ? "hidden lg:flex" : "flex")}>
-        <div className="px-4 md:px-5 pt-3 md:pt-4 pb-3 border-b border-border space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="font-sans font-extrabold text-[19px] tracking-[-0.02em] text-ink">Inbox</h1>
-            <CheckMessagesButton />
-            <div role="tablist" aria-label="Inbox view" className="inline-flex items-center rounded-full bg-black/[0.05] p-0.5 text-xs font-semibold">
-              <Link role="tab" aria-selected={view === "priority"} href={href({ view: "priority", cat: "all" })} className={cn("px-3 py-1 rounded-full transition-all", view === "priority" ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink")}>
+        <div className="px-3 md:px-4 pt-2.5 pb-2 border-b border-border space-y-2">
+          <div className="flex items-center gap-2 h-9">
+            <h1 className="text-[15px] font-semibold tracking-[-0.01em] text-ink pl-1">Inbox</h1>
+            <div role="tablist" aria-label="Inbox view" className="ml-1 inline-flex items-center rounded-lg bg-black/[0.045] p-0.5 text-xs font-medium">
+              <Link role="tab" aria-selected={view === "priority"} href={href({ view: "priority", cat: "all" })} className={cn("px-2.5 h-6 inline-flex items-center rounded-md transition-colors", view === "priority" ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink")}>
                 Priority
               </Link>
-              <Link role="tab" aria-selected={view === "all"} href={href({ view: "all", filter: "all" })} className={cn("px-3 py-1 rounded-full transition-all", view === "all" ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink")}>
+              <Link role="tab" aria-selected={view === "all"} href={href({ view: "all", filter: "all" })} className={cn("px-2.5 h-6 inline-flex items-center rounded-md transition-colors", view === "all" ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink")}>
                 All
               </Link>
             </div>
+            <div className="ml-auto flex items-center"><CheckMessagesButton /></div>
           </div>
 
           <SearchBox initial={q} />
 
-          <p className="text-sm text-ink" aria-live="polite">
-            {q || view === "all" ? <span className="font-extrabold">{headline}</span> : waiting.length === 0 ? <span className="text-ink/65">{headline}</span> : (
+          <div className="-mx-3 md:-mx-4 px-3 md:px-4 flex items-center gap-1 text-xs overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filter the inbox">
+            {view === "priority" ? (
               <>
-                <span className="font-extrabold">{headline}</span>
-                <span className="text-ink/70"> · {waiting.slice(0, 3).map((r) => firstName(nameOf(r.conv))).join(", ")}{waiting.length > 3 ? "…" : ""}</span>
+                <Chip href={href({ filter: "all" })} active={filter === "all"} label="Everyone" count={byChannel.length} />
+                <Chip href={href({ filter: "unanswered" })} active={filter === "unanswered"} label="Waiting" count={unansweredCount} dot={unansweredCount > 0} />
+                <Chip href={href({ filter: "unread" })} active={filter === "unread"} label="Unread" count={unreadCount} />
               </>
+            ) : (
+              (["all", "automated", "promotions", "vendors", "internal", "spam"] as Cat[]).map((c) => (
+                <Chip key={c} href={href({ cat: c })} active={cat === c} label={c === "all" ? "Everything" : c.charAt(0).toUpperCase() + c.slice(1)} count={catCounts[c]} />
+              ))
             )}
-            {view === "priority" && filteredOut > 0 && !q && (
-              <span className="block text-[11px] text-ink/65 mt-0.5">{filteredOut} automated or promotional {filteredOut === 1 ? "message" : "messages"} kept out of the way · <Link href={href({ view: "all", cat: "all" })} className="underline decoration-ink/20 hover:text-ink">see all</Link></span>
-            )}
-          </p>
-
-          <div className="-mx-4 md:-mx-5 px-4 md:px-5 flex items-center gap-1 text-xs overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filter by channel">
-            <Chip href={href({ channel: "all" })} active={channel === "all"} label="All channels" />
-            {CHANNELS.filter((c) => channelCounts[c] > 0 || channel === c).map((c) => (
-              <Chip key={c} href={href({ channel: c })} active={channel === c} label={CHANNEL_META[c].label} count={channelCounts[c]} icon={<ChannelBadge channel={c} className="w-3.5 h-3.5" />} />
+            {CHANNELS.filter((c) => channelCounts[c] > 0 || channel === c).length > 1 && <span aria-hidden className="mx-1 h-4 w-px bg-ink/10 shrink-0" />}
+            {CHANNELS.filter((c) => channelCounts[c] > 0 || channel === c).length > 1 && CHANNELS.filter((c) => channelCounts[c] > 0 || channel === c).map((c) => (
+              <Chip key={c} href={href({ channel: channel === c ? "all" : c })} active={channel === c} label={CHANNEL_META[c].label} count={channelCounts[c]} icon={<ChannelBadge channel={c} className="w-3.5 h-3.5 rounded-[4px]" />} />
             ))}
           </div>
-
-          {view === "priority" ? (
-            <div className="flex items-center gap-1 text-xs" role="group" aria-label="Filter by state">
-              <Chip href={href({ filter: "all" })} active={filter === "all"} label="Everyone" count={byChannel.length} />
-              <Chip href={href({ filter: "unanswered" })} active={filter === "unanswered"} label="Waiting on you" count={unansweredCount} tone="accent" />
-              <Chip href={href({ filter: "unread" })} active={filter === "unread"} label="Unread" count={unreadCount} />
-            </div>
-          ) : (
-            <div className="-mx-4 md:-mx-5 px-4 md:px-5 flex items-center gap-1 text-xs overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filter by kind">
-              {(["all", "automated", "promotions", "vendors", "internal", "spam"] as Cat[]).map((c) => (
-                <Chip key={c} href={href({ cat: c })} active={cat === c} label={c === "all" ? "Everything" : c.charAt(0).toUpperCase() + c.slice(1)} count={catCounts[c]} />
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin overscroll-contain">
@@ -231,12 +217,13 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                   : "Connect a channel under Settings and every message from it lands here — with who they are and what they need."
                 }
                 tone={view === "priority" && filter !== "all" && !q ? "success" : "neutral"}
-                action={view === "priority" && filter === "all" && channel === "all" && !q && enriched.length === 0 ? <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-4 rounded-full bg-ink text-white text-sm font-semibold">{personalEmpty?.cta ?? "Connect a channel"}</Link> : undefined}
+                action={view === "priority" && filter === "all" && channel === "all" && !q && enriched.length === 0 ? <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-4 rounded-lg bg-ink text-white text-sm font-semibold">{personalEmpty?.cta ?? "Connect a channel"}</Link> : undefined}
               />
             </div>
           )}
 
-          <ol className="dt-rows" aria-label="Conversations">
+          <InboxKeys />
+          <ol className="dt-rows divide-y divide-border/70" aria-label="Conversations">
             {rows.map(({ conv, last, isPerson, unread, unanswered, followUp, opportunity }) => (
               <ConversationRow
                 key={conv.id}
@@ -251,7 +238,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 unread={unread}
                 waiting={unanswered}
                 followUp={followUp}
-                reason={view === "priority" && !q && opportunity.rank > 0 ? opportunity.reason : null}
+                reason={view === "priority" && !q && opportunity.rank > 0 && !GENERIC_REASON.test(opportunity.reason) ? opportunity.reason : null}
                 kindLabel={view === "priority" && !q && opportunity.rank > 0 ? opportunity.label : null}
                 isPerson={isPerson}
                 categoryLabel={CATEGORY_LABEL[conv.category]}
@@ -261,6 +248,11 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
               />
             ))}
           </ol>
+          {view === "priority" && filteredOut > 0 && !q && rows.length > 0 && (
+            <p className="px-5 py-4 text-xs text-ink/55 border-t border-border/70">
+              {filteredOut} automated or promotional {filteredOut === 1 ? "message" : "messages"} kept out of the way. <Link href={href({ view: "all", cat: "all" })} className="font-medium text-ink/70 underline decoration-ink/20 underline-offset-2 hover:text-ink">See all</Link>
+            </p>
+          )}
         </div>
       </div>
 
@@ -268,15 +260,37 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         {active ? (
           <ThreadPanel conversationId={active.id} autoSummarize={sp.summarize === "1"} backHref={href({})} />
         ) : (
-          <div className="hidden lg:flex flex-1 items-center justify-center px-10">
-            <div className="max-w-xs text-center">
-              <div aria-hidden className="flex flex-col items-center mb-4">
-                <span className="w-px h-6 bg-ink/10" />
-                <span className="w-[11px] h-[11px] rounded-full bg-signal ring-[3px] ring-paper" />
-                <span className="w-px h-6 bg-gradient-to-b from-ink/10 to-transparent" />
-              </div>
-              <p className="text-sm font-semibold text-ink">Pick a conversation</p>
-              <p className="mt-1 text-sm text-ink/70 leading-relaxed">Who they are, what they mentioned and your history with them shows up beside it.</p>
+          <div className="hidden lg:flex flex-1 items-center justify-center px-10 bg-paper/40">
+            <div className="w-full max-w-sm">
+              {waiting.length > 0 && !q ? (
+                <>
+                  <p className="text-[15px] font-semibold text-ink tracking-[-0.005em]">{headline}</p>
+                  <p className="mt-1 text-sm text-ink/60">Oldest first. Answering first is how the booking is won.</p>
+                  <ul className="mt-4 rounded-xl border border-border bg-white shadow-surface divide-y divide-border/70 overflow-hidden">
+                    {[...waiting].sort((a, b) => a.conv.lastMessageAt.getTime() - b.conv.lastMessageAt.getTime()).slice(0, 4).map((r) => (
+                      <li key={r.conv.id}>
+                        <Link href={rowHref(r.conv.id)} className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-black/[0.025] focus-visible:outline-none focus-visible:bg-black/[0.035]">
+                          <ChannelBadge channel={r.conv.channel} className="w-3.5 h-3.5 rounded-[4px]" />
+                          <span className="text-13 font-medium text-ink truncate">{nameOf(r.conv)}</span>
+                          <span className="ml-auto text-xs text-ink/55 tabular-nums shrink-0">{shortAgo(r.conv.lastMessageAt)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <div className="text-center">
+                  <p className="text-[15px] font-semibold text-ink">{rows.length === 0 ? "Nothing to open yet" : "Nobody is waiting on you"}</p>
+                  <p className="mt-1 text-sm text-ink/60 leading-relaxed">Open a conversation to see who they are, what they asked for, and what to do next.</p>
+                </div>
+              )}
+              {rows.length > 0 && (
+                <p className="mt-5 text-xs text-ink/50 text-center">
+                  <kbd className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded border border-ink/10 bg-white font-medium text-ink/60">j</kbd>{" "}
+                  <kbd className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded border border-ink/10 bg-white font-medium text-ink/60">k</kbd> to move ·{" "}
+                  <kbd className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded border border-ink/10 bg-white font-medium text-ink/60">/</kbd> to search
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -284,6 +298,9 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     </div>
   );
 }
+
+/** A reason that says nothing the row doesn't already show; the real message is more useful there. */
+const GENERIC_REASON = /^an? (client|customer|contact|person) (is )?writing to you\.?$/i;
 
 function nameOf(conv: { client: { name: string } | null; lead: { extractedName: string | null } | null; externalHandle: string | null }): string {
   return conv.client?.name ?? conv.lead?.extractedName ?? conv.externalHandle ?? "Unknown";
@@ -305,12 +322,13 @@ function buildInboxHref(o: { view: View; filter: Filter; cat: Cat; channel: Chan
   return qs ? `/dashboard/inbox?${qs}` : "/dashboard/inbox";
 }
 
-function Chip({ href, active, label, count, icon, tone }: { href: string; active: boolean; label: string; count?: number; icon?: React.ReactNode; tone?: "accent" }) {
+function Chip({ href, active, label, count, icon, dot }: { href: string; active: boolean; label: string; count?: number; icon?: React.ReactNode; dot?: boolean }) {
   return (
-    <Link href={href} aria-current={active ? "page" : undefined} className={cn("inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full font-medium whitespace-nowrap transition-all duration-150 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", active ? "bg-ink text-white" : tone === "accent" && count ? "text-accent-text hover:bg-accent-soft" : "text-ink/70 hover:bg-black/[0.05]")}>
+    <Link href={href} aria-current={active ? "page" : undefined} className={cn("inline-flex items-center gap-1.5 h-7 px-2 rounded-md font-medium whitespace-nowrap transition-colors duration-100 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", active ? "bg-ink/[0.08] text-ink" : "text-ink/60 hover:text-ink hover:bg-black/[0.04]")}>
+      {dot && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-accent" />}
       {icon}
       {label}
-      {typeof count === "number" && count > 0 && <span className={cn("tabular-nums", active ? "text-white/60" : "text-ink/65")}>{count}</span>}
+      {typeof count === "number" && count > 0 && <span className={cn("tabular-nums", active ? "text-ink/60" : "text-ink/40")}>{count}</span>}
     </Link>
   );
 }

@@ -34,7 +34,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const memberships = await getUserMemberships(session.userId);
   // Tools the owner said they use during onboarding but hasn't connected yet.
-  const wantedRows = await prisma.integration.findMany({ where: { businessId: business.id, wanted: true, status: "NOT_CONNECTED" }, select: { provider: true } });
+  const [wantedRows, stripeConnected] = await Promise.all([
+    prisma.integration.findMany({ where: { businessId: business.id, wanted: true, status: "NOT_CONNECTED" }, select: { provider: true } }),
+    prisma.integration.count({ where: { businessId: business.id, provider: "STRIPE", status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } }),
+  ]);
   const wanted = wantedRows.map((r) => PROVIDERS[r.provider as keyof typeof PROVIDERS]?.name).filter((n): n is string => Boolean(n));
   const workspaces = memberships.map((m) => ({ businessId: m.businessId, name: m.business.name, role: m.role }));
   const personalization = await getPersonalization(business.id);
@@ -54,7 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <Toaster>
       <PaywallProvider config={paywall}>
-        <AppShell businessName={business.name} handle={business.handle} role={role} plan={PLANS[effectivePlan(business)].name as "Free" | "Pro" | "Business"} workspaces={workspaces} wantedIntegrations={wanted}>
+        <AppShell businessName={business.name} handle={business.handle} role={role} plan={PLANS[effectivePlan(business)].name as "Free" | "Pro" | "Business"} workspaces={workspaces} wantedIntegrations={wanted} showPayments={stripeConnected > 0}>
           {children}
         </AppShell>
         <InboxLive />

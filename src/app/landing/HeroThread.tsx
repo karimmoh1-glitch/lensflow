@@ -172,7 +172,7 @@ export function HeroThread() {
             <div
               key={travelKey}
               aria-hidden
-              className="dt-travel absolute left-0 top-0 max-w-[200px] rounded-xl bg-white border px-2.5 py-1.5 text-[11px] leading-tight text-ink shadow-popover whitespace-nowrap overflow-hidden text-ellipsis"
+              className="dt-travel absolute left-0 top-0 max-w-[200px] rounded-xl bg-white border px-2.5 py-1.5 text-2xs leading-tight text-ink shadow-popover whitespace-nowrap overflow-hidden text-ellipsis"
               style={{ offsetPath: `path("${gutterPath(idx)}")`, offsetRotate: "0deg", borderColor: `${brand}66` }}
             >
               {a.msg}
@@ -182,14 +182,14 @@ export function HeroThread() {
 
         {/* Daythread */}
         <div
-          className={cn("relative rounded-[22px] border border-border bg-white overflow-hidden shadow-[0_32px_80px_-32px_rgba(16,17,20,0.35),0_2px_6px_rgba(16,17,20,0.05)]", phase === 1 && !still && "dt-pulse")}
+          className={cn("relative rounded-2xl border border-border bg-white overflow-hidden shadow-[0_32px_80px_-32px_rgba(16,17,20,0.35),0_2px_6px_rgba(16,17,20,0.05)]", phase === 1 && !still && "dt-pulse")}
           style={{ ["--dt-pulse" as string]: `${brand}55` }}
         >
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-paper/70">
             <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
-            <span className="text-[13px] font-extrabold tracking-tight text-ink">Daythread</span>
-            <span className="text-[11px] text-ink/65">Inbox</span>
-            <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5 transition-colors", inFlight ? "bg-accent-soft text-accent-text" : phase < 4 ? "bg-signal-soft text-signal-text" : "bg-success-soft text-success-text")}>
+            <span className="text-13 font-extrabold tracking-tight text-ink">Daythread</span>
+            <span className="text-2xs text-ink/65">Inbox</span>
+            <span className={cn("ml-auto text-2xs font-bold rounded-full px-2 py-0.5 transition-colors", inFlight ? "bg-accent-soft text-accent-text" : phase < 4 ? "bg-signal-soft text-signal-text" : "bg-success-soft text-success-text")}>
               {inFlight ? "Incoming" : phase < 4 ? "Reading" : "Handled"}
             </span>
           </div>
@@ -205,7 +205,7 @@ export function HeroThread() {
                   {s.extracted.map(([k, v], i) => (
                     <span
                       key={k}
-                      className={cn("inline-flex items-center gap-1 rounded-md bg-signal-soft/70 px-1.5 py-0.5 text-[10px] font-semibold text-signal-text transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
+                      className={cn("inline-flex items-center gap-1 rounded-md bg-signal-soft/70 px-1.5 py-0.5 text-2xs font-semibold text-signal-text transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
                       style={{ transitionDelay: on(2) ? `${120 + i * 110}ms` : "0ms" }}
                     >
                       <span className="text-signal-text">{k}</span>
@@ -226,13 +226,13 @@ export function HeroThread() {
               </Node>
             </ol>
             <aside className="hidden md:flex lg:hidden xl:flex flex-col border-l border-border bg-paper/60 p-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">{s.who.split(" ")[0]}</div>
+              <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">{s.who.split(" ")[0]}</div>
               <div className="text-xs text-ink/70 leading-relaxed">{s.ctx}</div>
               <div className="mt-auto pt-4">
                 <div className={cn("rounded-2xl border px-3 py-2.5 transition-all duration-500", on(4) ? "border-accent/35 bg-gradient-to-br from-accent-soft/80 to-white opacity-100 translate-y-0" : "border-border opacity-0 translate-y-1")}>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-accent-text mb-0.5">Next</div>
-                  <div className="text-[13px] font-semibold text-ink leading-snug">{s.next}</div>
-                  <div className="text-[11px] text-ink/65 mt-0.5 leading-snug">{s.nextWhy}</div>
+                  <div className="text-2xs font-bold uppercase tracking-[0.12em] text-accent-text mb-0.5">Next</div>
+                  <div className="text-13 font-semibold text-ink leading-snug">{s.next}</div>
+                  <div className="text-2xs text-ink/65 mt-0.5 leading-snug">{s.nextWhy}</div>
                 </div>
               </div>
             </aside>
@@ -261,7 +261,7 @@ function Node({ on, dot, label, labelClass, children }: { on: boolean; dot: stri
   return (
     <li className={cn("relative py-2 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]", on ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
       <span aria-hidden className={cn("absolute -left-[26px] top-[13px] w-[15px] h-[15px] rounded-full border-[3px] border-white transition-transform duration-300", dot, on ? "scale-100" : "scale-0")} />
-      <div className={cn("text-[10px] font-bold uppercase tracking-[0.12em] mb-0.5", labelClass)}>{label}</div>
+      <div className={cn("text-2xs font-bold uppercase tracking-[0.12em] mb-0.5", labelClass)}>{label}</div>
       <div className="text-sm text-ink">{children}</div>
     </li>
   );

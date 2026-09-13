@@ -34,12 +34,12 @@ export function OneThing() {
     <div ref={ref} className="relative max-w-[1200px] mx-auto px-6">
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-10 lg:gap-20 items-center">
         {/* The drowning */}
-        <div className="relative h-[360px] lg:h-[440px] overflow-hidden rounded-[26px] border border-paper/10 bg-graphite [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]" style={{ opacity: noise * (1 - quiet * 0.55), transform: `translateY(${(1 - noise) * 16}px)` }}>
+        <div className="relative h-[360px] lg:h-[440px] overflow-hidden rounded-2xl border border-paper/10 bg-graphite [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]" style={{ opacity: noise * (1 - quiet * 0.55), transform: `translateY(${(1 - noise) * 16}px)` }}>
           <ul className={cn("px-5", inView && "dt-rise")}>
             {[...ACTIVITY, ...ACTIVITY].map(([src, text], i) => (
               <li key={i} className="flex items-center gap-3 py-3 border-b border-paper/[0.06] text-paper/65">
                 <span className="w-1.5 h-1.5 rounded-full bg-paper/25 shrink-0" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-paper/60 w-24 shrink-0">{src}</span>
+                <span className="text-2xs font-bold uppercase tracking-[0.12em] text-paper/60 w-24 shrink-0">{src}</span>
                 <span className="text-sm truncate">{text}</span>
               </li>
             ))}
@@ -48,12 +48,12 @@ export function OneThing() {
 
         {/* The one thing */}
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-accent mb-5">Out of all of it</p>
+          <p className="text-2xs font-bold uppercase tracking-[0.16em] text-accent mb-5">Out of all of it</p>
           <h2 className="font-sans font-extrabold text-[clamp(3rem,7vw,6.5rem)] leading-[0.9] tracking-[-0.05em] text-paper">
             One thing.
           </h2>
           <div className="mt-8 max-w-md" style={{ opacity: quiet, transform: `translateY(${(1 - quiet) * 22}px) scale(${0.96 + quiet * 0.04})` }}>
-            <div className="group relative flex items-center gap-4 rounded-[22px] border border-accent/50 px-5 py-4 bg-[linear-gradient(135deg,rgba(240,82,77,0.28),rgba(240,82,77,0.08))] shadow-[0_24px_60px_-24px_rgba(240,82,77,0.7)] transition-transform duration-200 hover:-translate-y-0.5">
+            <div className="group relative flex items-center gap-4 rounded-2xl border border-accent/50 px-5 py-4 bg-[linear-gradient(135deg,rgba(240,82,77,0.28),rgba(240,82,77,0.08))] shadow-[0_24px_60px_-24px_rgba(240,82,77,0.7)] transition-transform duration-200 hover:-translate-y-0.5">
               <span className="w-11 h-11 rounded-full bg-accent-strong text-white flex items-center justify-center text-sm font-extrabold shrink-0">MC</span>
               <div className="min-w-0 flex-1">
                 <div className="text-base sm:text-lg font-extrabold text-paper tracking-tight leading-tight">Reply to Maya. She wants Tuesday.</div>
@@ -68,7 +68,7 @@ export function OneThing() {
           <div className="mt-8 grid grid-cols-3 gap-3 max-w-md">
             {[["Today", "2 sessions"], ["Waiting on you", "1 person"], ["Sent for you", "11 messages"]].map(([k, v]) => (
               <div key={k} className="rounded-2xl border border-paper/10 bg-paper/[0.04] px-3.5 py-3">
-                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-paper/60">{k}</div>
+                <div className="text-2xs font-bold uppercase tracking-[0.12em] text-paper/60">{k}</div>
                 <div className="text-lg font-extrabold text-paper tracking-tight tabular-nums mt-0.5">{v}</div>
               </div>
             ))}

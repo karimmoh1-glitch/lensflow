@@ -70,19 +70,19 @@ export async function Priorities({ businessId, plan }: { businessId: string; pla
   });
 
   return (
-    <section aria-labelledby="priorities-label" className="mb-8 rounded-[22px] border border-border bg-white overflow-hidden">
+    <section aria-labelledby="priorities-label" className="mb-8 rounded-xl border border-border bg-white overflow-hidden">
       <div className="px-5 md:px-6 pt-5 pb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="priorities-label" className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Set up around the way you work</h2>
+        <h2 id="priorities-label" className="text-13 font-semibold text-ink/65">Set up around the way you work</h2>
         <Link href="/dashboard/settings?tab=profile" className="text-xs font-semibold text-ink/65 hover:text-ink">Change how you work →</Link>
       </div>
       <ul className="px-5 md:px-6 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
         {cards.map((c, i) => (
-          <li key={c.key} className={cn("rounded-2xl border px-4 py-3.5 flex flex-col gap-2", i === 0 && !c.done ? "border-accent/40 bg-accent-soft/40" : "border-border bg-paper")}>
+          <li key={c.key} className={cn("rounded-xl border px-4 py-3.5 flex flex-col gap-2", i === 0 && !c.done ? "border-accent/40 bg-accent-soft/40" : "border-border bg-paper")}>
             <div>
               <div className="text-sm font-extrabold text-ink">{c.title}</div>
               <div className="mt-0.5 text-xs text-ink/70 leading-relaxed">{c.blurb}</div>
             </div>
-            <Link href={c.href} className={cn("mt-auto inline-flex items-center gap-1 text-[13px] font-bold w-fit rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", c.done ? "text-success-text" : i === 0 ? "text-accent-text" : "text-ink")}>
+            <Link href={c.href} className={cn("mt-auto inline-flex items-center gap-1 text-13 font-bold w-fit rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", c.done ? "text-success-text" : i === 0 ? "text-accent-text" : "text-ink")}>
               {c.done && <span aria-hidden>✓</span>}{c.cta}{!c.done && <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden />}
             </Link>
           </li>

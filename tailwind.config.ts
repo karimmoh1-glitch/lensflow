@@ -40,10 +40,14 @@ const config: Config = {
         display: ["var(--font-display)", "serif"],
         sans: ["var(--font-sans)", "sans-serif"],
       },
+      // One type scale. App: page-title 24 · section-title 15 · body 14 (text-sm) · 13 (text-13)
+      // for dense rows and controls · 12 (text-xs) for meta · 11 (text-2xs) for the smallest
+      // labels. Nothing smaller than 11px ships. Marketing display sizes live with their sections.
       fontSize: {
-        // page title / section title / body / small / micro — the only sizes used in the app
-        "page-title": ["1.75rem", { lineHeight: "1.2", letterSpacing: "-0.01em" }],
-        "section-title": ["1.0625rem", { lineHeight: "1.3" }],
+        "2xs": ["0.6875rem", { lineHeight: "1rem" }],
+        "13": ["0.8125rem", { lineHeight: "1.25rem" }],
+        "page-title": ["1.5rem", { lineHeight: "1.25", letterSpacing: "-0.02em" }],
+        "section-title": ["0.9375rem", { lineHeight: "1.4", letterSpacing: "-0.005em" }],
       },
       boxShadow: {
         xs: "0 1px 2px rgba(16,17,20,0.05)",
@@ -52,6 +56,10 @@ const config: Config = {
         "elev-2": "0 1px 2px rgba(16,17,20,0.04), 0 12px 32px -24px rgba(16,17,20,0.35)",
         "elev-3": "0 24px 64px -32px rgba(16,17,20,0.45), 0 2px 6px rgba(16,17,20,0.06)",
         card: "0 1px 2px rgba(16,17,20,0.04), 0 1px 1px rgba(16,17,20,0.03)",
+        // Surfaces: a resting card is a hairline and the faintest lift; things that float
+        // above the page (menus, sheets, the palette) get the overlay shadow. Two levels.
+        surface: "0 1px 0 rgba(16,17,20,0.03), 0 1px 3px rgba(16,17,20,0.04)",
+        overlay: "0 16px 48px -12px rgba(16,17,20,0.22), 0 2px 8px rgba(16,17,20,0.06)",
         popover: "0 4px 16px rgba(16,17,20,0.10), 0 1px 2px rgba(16,17,20,0.06)",
       },
       borderRadius: {

@@ -49,7 +49,7 @@ export function SearchBox({ initial }: { initial: string }) {
 
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink/65 pointer-events-none" strokeWidth={2} aria-hidden />
+      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/50 pointer-events-none" strokeWidth={2.2} aria-hidden />
       <input
         ref={inputRef}
         type="search"
@@ -59,14 +59,14 @@ export function SearchBox({ initial }: { initial: string }) {
         placeholder="Search people and messages"
         aria-label="Search the inbox"
         enterKeyHint="search"
-        className="w-full h-10 md:h-9 rounded-xl border border-border bg-paper/70 pl-9 pr-9 text-[16px] md:text-sm text-ink placeholder:text-ink/65 outline-none transition-colors focus:border-ink/30 focus:bg-white focus-visible:ring-2 focus-visible:ring-accent/40 [&::-webkit-search-cancel-button]:hidden"
+        className="w-full h-10 md:h-8 rounded-lg border border-transparent bg-black/[0.04] pl-8 pr-9 text-[16px] md:text-13 text-ink placeholder:text-ink/55 outline-none transition-colors hover:bg-black/[0.055] focus:border-ink/20 focus:bg-white focus:ring-[3px] focus:ring-ink/[0.06] [&::-webkit-search-cancel-button]:hidden"
       />
       {value ? (
         <button type="button" onClick={() => setValue("")} aria-label="Clear search" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-lg flex items-center justify-center text-ink/65 hover:text-ink hover:bg-black/[0.05]">
           <X className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden />
         </button>
       ) : (
-        <kbd className="hidden md:inline-flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center rounded-md border border-border bg-white px-1.5 text-[10px] font-semibold text-ink/65">/</kbd>
+        <kbd className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 items-center rounded border border-ink/10 bg-white px-1 h-4 text-[10.5px] font-medium text-ink/50">/</kbd>
       )}
     </div>
   );

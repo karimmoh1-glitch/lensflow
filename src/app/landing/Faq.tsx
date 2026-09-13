@@ -41,7 +41,7 @@ export function Faq() {
   return (
     <div className="max-w-[880px] mx-auto px-6">
       <Reveal className="mb-10">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Questions</p>
+        <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65 mb-4">Questions</p>
         <h2 className="font-sans font-extrabold text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[0.94] tracking-[-0.045em] text-ink">Before you connect anything.</h2>
       </Reveal>
       <div className="divide-y divide-border border-y border-border">

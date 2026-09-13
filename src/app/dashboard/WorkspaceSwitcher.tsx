@@ -23,7 +23,7 @@ export function WorkspaceSwitcher({ current, workspaces }: { current: string; wo
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full left-3 right-3 mb-1 z-50 rounded-lg border border-border bg-white shadow-popover py-1">
+          <div className="absolute bottom-full left-3 right-3 mb-1 z-50 rounded-lg border border-border bg-white shadow-overlay py-1">
             {workspaces.map((w) => (
               <button
                 key={w.businessId}

@@ -12,7 +12,7 @@ export function Hero() {
     <PointerField className="relative px-6 pt-8 md:pt-12 lg:pt-16 pb-16 md:pb-24 lg:min-h-[calc(84vh-72px)] flex items-start">
       <div className="w-full max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-12 lg:gap-10 items-center">
         <div className="dt-hero-copy max-w-lg">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-6">For freelancers &amp; small businesses</p>
+          <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65 mb-6">For freelancers &amp; small businesses</p>
           <h1 className="font-sans font-extrabold text-[clamp(2.6rem,5.2vw,4.75rem)] leading-[0.92] tracking-[-0.05em] text-ink">
             Every conversation.<br /><span className="whitespace-nowrap">One inbox.</span>
           </h1>
@@ -27,7 +27,7 @@ export function Hero() {
               Build your Daythread <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
             </MagneticLink>
             {betaOfferOpen() ? (
-              <a href="#pricing" className="text-sm font-semibold text-ink/75 hover:text-ink"><span className="inline-block mr-1.5 rounded-full bg-success-soft text-success-text text-[10px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 align-[1px]">Beta</span>Pro free for 1 month</a>
+              <a href="#pricing" className="text-sm font-semibold text-ink/75 hover:text-ink"><span className="inline-block mr-1.5 rounded-full bg-success-soft text-success-text text-2xs font-extrabold uppercase tracking-wide px-1.5 py-0.5 align-[1px]">Beta</span>Pro free for 1 month</a>
             ) : (
               <span className="text-sm font-semibold text-ink/65">Free to start</span>
             )}

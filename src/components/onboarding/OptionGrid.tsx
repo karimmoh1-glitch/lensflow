@@ -39,7 +39,7 @@ export function OptionGrid<K extends string>({
             aria-pressed={multi ? on : undefined}
             onClick={() => onChange(k)}
             className={cn(
-              "group flex items-center gap-3 rounded-2xl border bg-white text-left transition-[border-color,background-color,transform,box-shadow] duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2",
+              "group flex items-center gap-3 rounded-xl border bg-white text-left transition-[border-color,background-color,transform,box-shadow] duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2",
               size === "md" ? "min-h-[56px] px-4 py-3" : "min-h-[44px] px-3.5 py-2.5",
               on ? "border-ink shadow-[0_0_0_1px_#101114]" : "border-border hover:border-ink/30"
             )}

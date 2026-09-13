@@ -25,7 +25,7 @@ export default async function PartnerLayout({ children }: { children: React.Reac
           </div>
           <div>
             <div className="font-display text-base leading-tight text-ink">{business.name}</div>
-            <div className="text-[11px] text-ink/65 leading-tight">Partner access</div>
+            <div className="text-2xs text-ink/65 leading-tight">Partner access</div>
           </div>
         </div>
         <nav className="hidden sm:flex items-center gap-5 text-sm">

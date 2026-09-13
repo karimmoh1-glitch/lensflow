@@ -59,6 +59,8 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "auth/slack/callback/route.ts": "OAuth callback: signed single-use state.",
   "auth/calendly/callback/route.ts": "OAuth callback: signed single-use state.",
   "auth/stripe/callback/route.ts": "OAuth callback: signed single-use state.",
+  "auth/zoom/callback/route.ts": "OAuth callback: signed single-use state, PKCE verified.",
+  "webhooks/zoom/route.ts": "Provider webhook: Zoom's HMAC over the timestamp and exact body with the app's secret token, five-minute window, checked before anything is parsed.",
   "webhooks/stripe/route.ts": "Provider webhook: authorized by Stripe's signature, which carries its own replay window.",
   "webhooks/stripe/connect/route.ts": "Provider webhook: Stripe signature.",
   "webhooks/email/route.ts": "Provider webhook: the inbound email provider's signature.",

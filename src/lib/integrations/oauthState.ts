@@ -11,10 +11,10 @@ import { randomBytes, createHash } from "crypto";
  * on first verification; (4) short-lived — ten minutes; (5) tied to a provider and a
  * purpose, so a Gmail state can never complete a Calendar callback.
  */
-export const OAUTH_PROVIDERS = ["google", "instagram", "whatsapp", "microsoft", "slack", "dropbox", "calendly", "stripe"] as const;
+export const OAUTH_PROVIDERS = ["google", "instagram", "whatsapp", "microsoft", "slack", "dropbox", "calendly", "stripe", "zoom"] as const;
 export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
 /** What a grant is for. A provider can serve several (Google: Gmail, Calendar, Drive, sign-in). */
-export const OAUTH_PURPOSES = ["gmail", "calendar", "messaging", "signin", "drive", "mail", "files", "notifications", "scheduling", "payments"] as const;
+export const OAUTH_PURPOSES = ["gmail", "calendar", "messaging", "signin", "drive", "mail", "files", "notifications", "scheduling", "payments", "meetings"] as const;
 export type OAuthPurpose = (typeof OAUTH_PURPOSES)[number];
 
 const COOKIE = Object.fromEntries(OAUTH_PROVIDERS.map((p) => [p, `${p}_oauth_nonce`])) as Record<OAuthProvider, string>;

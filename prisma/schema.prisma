@@ -649,6 +649,12 @@ model Booking {
   /// and its id for the event, so a re-import updates instead of duplicating.
   sourceProvider IntegrationProvider?
   sourceEventId  String?
+  /// A video meeting made for this booking on a connected provider (Zoom). The join link
+  /// is the customer's; the host's start link is never stored — it is fetched when the
+  /// owner presses Start, because it carries a credential.
+  meetingProvider   IntegrationProvider?
+  meetingExternalId String?
+  meetingJoinUrl    String?
 
   questionnaire         Questionnaire?
   createdAt DateTime @default(now())
@@ -881,6 +887,7 @@ enum IntegrationProvider {
   SLACK
   GOOGLE_DRIVE
   DROPBOX
+  ZOOM
 }
 
 /// A request to use an integration that is invite-only (Instagram while Meta's review is

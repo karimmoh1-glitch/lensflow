@@ -58,6 +58,9 @@ export default async function PortalHomePage() {
                   <div>
                     <div className="text-sm font-medium">{b.service.name}</div>
                     <div className="text-xs text-ink/70">{format(toZonedDisplayDate(b.startAt, business.timezone), "EEEE, MMMM d 'at' h:mm a")}</div>
+                    {b.meetingProvider === "ZOOM" && b.meetingJoinUrl && /^https:\/\/([a-z0-9-]+\.)*zoom\.us\//i.test(b.meetingJoinUrl) && (
+                      <a href={b.meetingJoinUrl} target="_blank" rel="noopener noreferrer" className="inline-block mt-1 text-xs font-semibold text-accent hover:underline">Join Zoom meeting</a>
+                    )}
                   </div>
                   <Badge tone={STATUS_TONE[b.status] ?? "neutral"}>{b.status.replaceAll("_", " ").toLowerCase()}</Badge>
                 </div>

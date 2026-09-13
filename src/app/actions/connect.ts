@@ -8,6 +8,7 @@ import { signOAuthState, beginPkce, type OAuthProvider, type OAuthPurpose } from
 import { microsoftConfigured, microsoftAuthUrl } from "@/lib/microsoft";
 import { slackConfigured, slackAuthUrl, revokeSlackToken, listSlackChannels, joinSlackChannel, type SlackChannel } from "@/lib/slack";
 import { dropboxConfigured, dropboxAuthUrl, revokeDropboxToken } from "@/lib/dropbox";
+import { zoomConfigured, zoomAuthUrl, revokeZoomToken } from "@/lib/zoom";
 import { calendlyConfigured, calendlyAuthUrl, revokeCalendlyToken, deleteCalendlyWebhook, calendlyToken } from "@/lib/calendly";
 import { stripeConnectConfigured, stripeConnectAuthUrl, deauthorizeStripeAccount } from "@/lib/stripeConnect";
 import { accessGranted } from "@/server/accessRequests";
@@ -106,6 +107,11 @@ export async function connectSlack(session?: SessionPayload | null) {
 
 export async function connectDropbox(session?: SessionPayload | null) {
   return startOAuth({ provider: "DROPBOX", oauthProvider: "dropbox", purpose: "files", configured: dropboxConfigured(), name: "Dropbox", pkce: true, url: (state, challenge) => dropboxAuthUrl(state, challenge!) }, session);
+}
+
+/** Zoom: user-managed OAuth with PKCE. Meetings are then made on this owner's Zoom account. */
+export async function connectZoom(session?: SessionPayload | null) {
+  return startOAuth({ provider: "ZOOM", oauthProvider: "zoom", purpose: "meetings", configured: zoomConfigured(), name: "Zoom", pkce: true, url: (state, challenge) => zoomAuthUrl(state, challenge!) }, session);
 }
 
 export async function connectCalendly(session?: SessionPayload | null) {
@@ -273,6 +279,9 @@ export async function disconnectIntegration(provider: IntegrationProvider, sessi
   // Best effort, like Meta below: a provider that refuses never blocks the local disconnect.
   const warn = (err: unknown) => reportFailure("oauth", `${provider} revoke failed on disconnect`, { businessId: ctx.business.id, provider, error: err, level: "warn" });
   if (provider === "SLACK" && row.accessToken) await revokeSlackToken(row.accessToken).catch(warn);
+  // Zoom: give the grant back. Meetings already made stay on the owner's Zoom account (they
+  // are theirs), and the bookings keep their join links, which still work.
+  if (provider === "ZOOM" && (row.accessToken || row.refreshToken)) await revokeZoomToken((row.accessToken ?? row.refreshToken)!).catch(warn);
   if (provider === "DROPBOX" && row.accessToken) await revokeDropboxToken(row.accessToken).catch(warn);
   if (provider === "STRIPE" && row.externalId) await deauthorizeStripeAccount(row.externalId).catch(warn);
   if (provider === "CALENDLY" && row.refreshToken) {

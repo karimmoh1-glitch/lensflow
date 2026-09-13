@@ -20,11 +20,20 @@ export class OAuthError extends Error {
 
 export type OAuthTokens = { accessToken: string; refreshToken?: string | null; expiresAt: Date | null; scope?: string | null; raw: Record<string, unknown> };
 
+export const TOKEN_TIMEOUT_MS = 15_000;
+
 /** POST x-www-form-urlencoded to a token endpoint and normalize the answer. */
 export async function tokenRequest(url: string, params: Record<string, string>, opts: { basicAuth?: { id: string; secret: string } } = {}): Promise<OAuthTokens> {
   const headers: Record<string, string> = { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" };
   if (opts.basicAuth) headers.Authorization = `Basic ${Buffer.from(`${opts.basicAuth.id}:${opts.basicAuth.secret}`).toString("base64")}`;
-  const res = await fetch(url, { method: "POST", headers, body: new URLSearchParams(params) });
+  // A token endpoint that hangs must not hold a callback, a sync, or the refresh lock below.
+  let res: Response;
+  try {
+    res = await fetch(url, { method: "POST", headers, body: new URLSearchParams(params), signal: AbortSignal.timeout(TOKEN_TIMEOUT_MS) });
+  } catch (err) {
+    const timedOut = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+    throw new OAuthError(`Token endpoint ${timedOut ? "did not answer in time" : "could not be reached"}`, 0, timedOut ? "timeout" : "network");
+  }
   const text = await res.text();
   let data: Record<string, unknown> = {};
   try { data = text ? (JSON.parse(text) as Record<string, unknown>) : {}; } catch { data = {}; }
@@ -48,17 +57,38 @@ export async function tokenRequest(url: string, params: Record<string, string>, 
  * has the new one saved too. Throws OAuthError when the grant is gone: the row needs a
  * reconnect, never a silent stand-in.
  */
+const fresh = (row: { accessToken: string | null; tokenExpiresAt: Date | null }) =>
+  Boolean(row.accessToken && row.tokenExpiresAt && row.tokenExpiresAt.getTime() >= Date.now() + 60_000);
+
+/**
+ * A usable access token for this connection, refreshing it when it is about to expire.
+ *
+ * Refreshes are serialised per connection. Zoom, Calendly and Microsoft rotate refresh
+ * tokens: the old one dies the moment it is used. Two requests arriving together used to
+ * both refresh with the same token — the first succeeded, the second was refused as a
+ * reused grant, and a connection that was perfectly healthy was reported as revoked. Now
+ * the second waits on the row, re-reads it, and uses the token the first one stored.
+ */
 export async function validAccessToken(integration: Integration, refresh: (refreshToken: string) => Promise<OAuthTokens>, opts: { label: string }): Promise<string> {
-  const expiringSoon = !integration.tokenExpiresAt || integration.tokenExpiresAt.getTime() < Date.now() + 60_000;
-  if (integration.accessToken && (!expiringSoon || !integration.refreshToken)) {
-    if (!expiringSoon) return integration.accessToken;
-    // No refresh token but a token without a known expiry (Slack bot tokens, Stripe): use it.
-    if (!integration.tokenExpiresAt) return integration.accessToken;
-  }
+  if (fresh(integration)) return integration.accessToken!;
+  // No refresh token but a token without a known expiry (Slack bot tokens, Stripe): use it.
+  if (integration.accessToken && !integration.refreshToken && !integration.tokenExpiresAt) return integration.accessToken;
   if (!integration.refreshToken) throw new OAuthError(`No refresh token on file — reconnect ${opts.label} from Settings → Channels.`, 401, "no_refresh_token");
-  const t = await refresh(integration.refreshToken);
-  await prisma.integration.update({ where: { id: integration.id }, data: { accessToken: t.accessToken, tokenExpiresAt: t.expiresAt, ...(t.refreshToken ? { refreshToken: t.refreshToken } : {}) } });
-  return t.accessToken;
+
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Integration" WHERE "id" = ${integration.id} FOR UPDATE`;
+      const current = await tx.integration.findUnique({ where: { id: integration.id }, select: { accessToken: true, refreshToken: true, tokenExpiresAt: true } });
+      if (!current) throw new OAuthError(`${opts.label} was disconnected.`, 401, "no_refresh_token");
+      // Somebody else refreshed while this request waited for the lock.
+      if (fresh(current)) return current.accessToken!;
+      if (!current.refreshToken) throw new OAuthError(`No refresh token on file — reconnect ${opts.label} from Settings → Channels.`, 401, "no_refresh_token");
+      const t = await refresh(current.refreshToken);
+      await tx.integration.update({ where: { id: integration.id }, data: { accessToken: t.accessToken, tokenExpiresAt: t.expiresAt, ...(t.refreshToken ? { refreshToken: t.refreshToken } : {}) } });
+      return t.accessToken;
+    },
+    { timeout: TOKEN_TIMEOUT_MS + 10_000, maxWait: TOKEN_TIMEOUT_MS + 10_000 },
+  );
 }
 
 /** JSON call against a provider API with a bearer token; errors carry the status. */

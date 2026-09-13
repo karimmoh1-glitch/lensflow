@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { fireAutomationEvent } from "@/server/automationRunner";
+import { moveMeetingForBooking, removeMeetingForBooking } from "@/server/zoomMeetings";
 import { pushBookingToCalendars } from "@/server/calendarSync";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -67,6 +68,7 @@ export async function advanceBookingStatus(bookingId: string, status: BookingSta
 
   // Mirror the change on connected calendars (cancellation removes the mirror).
   await pushBookingToCalendars(bookingId).catch(() => {});
+  if (status === "CANCELED") await removeMeetingForBooking(business.id, bookingId, { reason: "canceled" }).catch(() => {});
 
   revalidatePath(`/dashboard/bookings/${bookingId}`);
   revalidatePath("/dashboard/bookings");
@@ -177,6 +179,7 @@ export async function rescheduleBooking(bookingId: string, startISO: string, opt
 
   // Calendar mirrors move with it; a failure there is recorded on the integration, never hidden.
   await pushBookingToCalendars(bookingId).catch(() => {});
+  await moveMeetingForBooking(business.id, bookingId).catch(() => {});
 
   let notified: "sent" | "not_delivered" | "no_channel" | "skipped" = "skipped";
   if (opts.notify !== false) {
@@ -213,6 +216,7 @@ export async function cancelBooking(bookingId: string, session?: SessionPayload 
   if (!LEGAL_TRANSITIONS[current.status].includes("CANCELED")) return { ok: false, error: "This booking can't be canceled from its current state." };
   await prisma.booking.updateMany({ where: { id: bookingId, businessId: ctx.business.id }, data: { status: "CANCELED" } });
   await prisma.auditLog.create({ data: { businessId: ctx.business.id, action: "booking_canceled", targetType: "booking", targetId: bookingId } });
+  await removeMeetingForBooking(ctx.business.id, bookingId, { reason: "canceled" }).catch(() => {});
   await pushBookingToCalendars(bookingId).catch(() => {});
   revalidatePath(`/dashboard/bookings/${bookingId}`);
   revalidatePath("/dashboard/bookings");

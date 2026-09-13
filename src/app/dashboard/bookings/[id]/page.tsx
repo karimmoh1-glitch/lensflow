@@ -11,6 +11,7 @@ import { BookingActions } from "./BookingActions";
 import { RescheduleCancel } from "./RescheduleCancel";
 import { AssignPartner } from "./AssignPartner";
 import { DeliveryPanel } from "./DeliveryPanel";
+import { MeetingPanel } from "./MeetingPanel";
 
 const LIFECYCLE: { status: string; label: string }[] = [
   { status: "INQUIRY", label: "Inquiry" },
@@ -43,7 +44,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   // partner could otherwise reach any booking by guessing its URL.
   if (role === "PARTNER" && booking.assignedMembershipId !== membership.id) notFound();
 
-  const [partners, fileStores] = await Promise.all([
+  const [partners, fileStores, zoomRow] = await Promise.all([
     prisma.orgMembership.findMany({ where: { businessId: business.id, role: "PARTNER" }, include: { user: true } }),
     // Daythread already knows how to make this person's folder, let them into it and send
     // it. Until now the booking asked the owner to paste a link by hand instead, so the
@@ -52,9 +53,15 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
       where: { businessId: business.id, provider: { in: ["GOOGLE_DRIVE", "DROPBOX"] }, status: { in: ["CONNECTED", "SYNC_ERROR"] } },
       select: { provider: true },
     }),
+    prisma.integration.findUnique({ where: { businessId_provider: { businessId: business.id, provider: "ZOOM" } }, select: { status: true, refreshToken: true } }),
   ]);
   const fileStore = fileStores.find((r) => r.provider === "GOOGLE_DRIVE") ?? fileStores[0] ?? null;
 
+  const zoom: "connected" | "needs_attention" | "not_connected" = !zoomRow || zoomRow.status === "NOT_CONNECTED" ? "not_connected" : zoomRow.status === "NEEDS_ATTENTION" || !zoomRow.refreshToken ? "needs_attention" : "connected";
+  // Staff only, and only where there is something to show: a meeting that exists, or a
+  // connected Zoom account. Partners see the join link but cannot act on the account.
+  const meetingJoinUrl = booking.meetingProvider === "ZOOM" ? booking.meetingJoinUrl : null;
+  const showMeeting = meetingJoinUrl !== null || (zoom !== "not_connected" && role !== "PARTNER");
   const currentIndex = LIFECYCLE.findIndex((s) => s.status === booking.status);
 
   return (
@@ -96,6 +103,17 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               <div className="mt-4 pt-4 border-t border-border"><ConversationLink bookingId={booking.id} conversationId={booking.conversationId} clientId={booking.clientId} /></div>
             </CardBody>
           </Card>
+
+          {showMeeting && (role === "PARTNER" ? (
+            <Card>
+              <CardBody>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">Video meeting</div>
+                <a href={meetingJoinUrl!} target="_blank" rel="noopener noreferrer" className="text-sm font-medium break-all hover:underline">{meetingJoinUrl}</a>
+              </CardBody>
+            </Card>
+          ) : (
+            <MeetingPanel bookingId={booking.id} joinUrl={meetingJoinUrl} zoom={zoom} canCreate={booking.status !== "CANCELED" && booking.endAt > new Date()} />
+          ))}
 
           <Card>
             <CardBody>

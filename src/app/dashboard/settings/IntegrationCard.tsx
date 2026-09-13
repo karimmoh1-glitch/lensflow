@@ -2,8 +2,9 @@
 
 import { PaywallTrigger } from "@/components/Paywall";
 
-import { Children, useEffect, useState, useTransition } from "react";
+import { Children, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import { useModalFocus } from "@/components/useModalFocus";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { X, Check, ArrowRight, RefreshCw, Lock } from "lucide-react";
@@ -74,16 +75,9 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
     if (p.get("setup") === model.provider && isCalendar) setOpen("setup");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  // Focus in, Tab kept inside, Escape, scroll lock and focus back to the button that opened it.
+  const sheet = useRef<HTMLDivElement>(null);
+  useModalFocus(sheet, Boolean(open), () => setOpen(null));
 
   function disconnect() {
     setConfirm(false);
@@ -239,7 +233,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
         <div className="fixed inset-0 z-[80] overflow-y-auto" role="presentation">
           <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={closeSheet} aria-hidden />
           <div className="relative min-h-full flex items-end sm:items-center justify-center p-0 sm:p-6">
-          <div role="dialog" aria-modal="true" aria-label={`${model.name} ${open === "manage" ? "settings" : "setup"}`} className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-xl bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] dt-land">
+          <div ref={sheet} role="dialog" aria-modal="true" aria-label={`${model.name} ${open === "manage" ? "settings" : "setup"}`} className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-[26px] sm:rounded-xl bg-white shadow-[0_40px_100px_-30px_rgba(16,17,20,0.5)] dt-land">
             <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-border px-5 py-3.5 flex items-center gap-3">
               <span className="w-8 h-8 rounded-lg border border-border bg-paper flex items-center justify-center">{icon}</span>
               <div className="min-w-0 flex-1">

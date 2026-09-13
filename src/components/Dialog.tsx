@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconButton } from "@/components/ui";
+import { useModalFocus } from "@/components/useModalFocus";
 
 /**
  * The one modal. A real dialog: `role="dialog"`, `aria-modal`, named by its title, focus
@@ -12,51 +13,10 @@ import { IconButton } from "@/components/ui";
  * used to be a bare fixed overlay uses this, so every modal behaves the same way for a
  * keyboard and a screen reader.
  */
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 export function Dialog({ open, onClose, title, description, children, className, size = "sm" }: { open: boolean; onClose: () => void; title: string; description?: string; children: ReactNode; className?: string; size?: "sm" | "md" | "lg" }) {
   const id = useId();
   const panel = useRef<HTMLDivElement>(null);
-  const opener = useRef<Element | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    opener.current = document.activeElement;
-    const el = panel.current;
-    const first = el?.querySelector<HTMLElement>("[data-autofocus]") ?? el?.querySelector<HTMLElement>(FOCUSABLE);
-    (first ?? el)?.focus();
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key !== "Tab" || !el) return;
-      const items = [...el.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((n) => n.offsetParent !== null);
-      if (items.length === 0) {
-        e.preventDefault();
-        el.focus();
-        return;
-      }
-      const firstItem = items[0];
-      const lastItem = items[items.length - 1];
-      if (e.shiftKey && document.activeElement === firstItem) {
-        e.preventDefault();
-        lastItem.focus();
-      } else if (!e.shiftKey && document.activeElement === lastItem) {
-        e.preventDefault();
-        firstItem.focus();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-      if (opener.current instanceof HTMLElement) opener.current.focus();
-    };
-  }, [open, onClose]);
+  useModalFocus(panel, open, onClose);
 
   if (!open) return null;
   return (

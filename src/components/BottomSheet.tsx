@@ -1,31 +1,20 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModalFocus } from "@/components/useModalFocus";
 
 /**
  * The app's one sheet primitive. On a phone it rises from the bottom with a grab handle and
- * sits above the tab bar; from tablet up it is a centered dialog. Focus moves in on open,
- * Escape and the backdrop close it, and the page behind stops scrolling — the contract a
- * modal owes keyboard and screen-reader users, not just a visual overlay.
+ * sits above the tab bar; from tablet up it is a centered dialog. Focus, Tab, Escape, scroll
+ * lock and focus return come from useModalFocus, the same as every other modal; the
+ * backdrop closes it too.
  */
 export function BottomSheet({ open, onClose, title, subtitle, icon, children, size = "md", className }: { open: boolean; onClose: () => void; title: string; subtitle?: string; icon?: ReactNode; children: ReactNode; size?: "md" | "lg"; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    ref.current?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])')?.focus();
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-      previous?.focus?.();
-    };
-  }, [open, onClose]);
+  useModalFocus(ref, open, onClose);
   if (!open || typeof document === "undefined") return null;
   return createPortal(
     <div className="fixed inset-0 z-[80] overflow-y-auto" role="presentation">

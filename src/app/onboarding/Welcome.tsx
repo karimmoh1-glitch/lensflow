@@ -218,7 +218,7 @@ export function Welcome({
               <Button size="lg" onClick={finish} loading={pending} loadingLabel="Opening Today">{connectedCount > 0 ? "Open Today" : "Continue to Today"} <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden /></Button>
               <Button size="lg" variant="ghost" onClick={() => setView("automate")} disabled={pending}>Back</Button>
             </div>
-            <p className="mt-4 text-xs text-ink/60 max-w-md">Today keeps a short setup list — services and hours, your calendar, anything you skip here — until it&rsquo;s done.</p>
+            <p className="mt-4 text-xs text-ink/60 max-w-md">Nothing to connect yet? Today has the other way in: add your first client by name, or send your booking link. It keeps a short setup list — services and hours, your calendar, anything you skip here — until it&rsquo;s done.</p>
           </section>
         )}
       </div>

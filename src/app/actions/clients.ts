@@ -6,6 +6,39 @@ import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { track } from "@/lib/analytics";
+import { z } from "zod";
+
+const newClientSchema = z
+  .object({
+    name: z.string().trim().min(1, "Enter their name.").max(80),
+    email: z.string().trim().toLowerCase().max(254).optional().or(z.literal("")),
+    phone: z.string().trim().max(32).optional().or(z.literal("")),
+  })
+  .refine((v) => (v.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email)) || (v.phone && v.phone.replace(/\D/g, "").length >= 6), { message: "Add an email or a phone number so you can reach them." });
+
+/**
+ * The first client, before any channel has brought one in: the same Client record a
+ * message would create, scoped to this workspace. An address already on file returns
+ * that person rather than a second copy.
+ */
+export async function createClient(input: { name: string; email?: string; phone?: string }, actingSession?: SessionPayload | null): Promise<{ ok: true; id: string; existed: boolean } | { ok: false; error: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], actingSession);
+  if (!ctx) return { ok: false, error: "unauthorized" };
+  const parsed = newClientSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
+  const { business, session } = ctx;
+  const email = parsed.data.email || null;
+  const phone = parsed.data.phone || null;
+  const existing = email ? await prisma.client.findFirst({ where: { businessId: business.id, email }, select: { id: true } }) : null;
+  if (existing) return { ok: true, id: existing.id, existed: true };
+  const client = await prisma.client.create({ data: { businessId: business.id, name: parsed.data.name, email, phone } });
+  await prisma.auditLog.create({ data: { businessId: business.id, actorId: session.userId, action: "client.created", targetType: "client", targetId: client.id } });
+  await track("client_created", { businessId: business.id, properties: { via: "manual" } });
+  if ((await prisma.client.count({ where: { businessId: business.id } })) === 1) await track("first_client_created", { businessId: business.id, properties: { via: "manual" } });
+  revalidatePath("/dashboard/clients");
+  revalidatePath("/dashboard");
+  return { ok: true, id: client.id, existed: false };
+}
 
 export async function addClientNote(clientId: string, body: string, actingSession?: SessionPayload | null) {
   assertIds(clientId);

@@ -25,7 +25,7 @@ describe("launch fixes", () => {
   it("Sign in with Google: the state the sign-in signs is the state the callback accepts", async () => {
     const { state, nonce } = await signOAuthStateRaw({ provider: "google", purpose: "signin", businessId: "signin", userId: "signin" });
     const r = await verifyOAuthStateWithNonce("google", state, nonce);
-    expect(r).toEqual({ ok: true, state: { businessId: "signin", userId: "signin", purpose: "signin" } });
+    expect(r).toEqual({ ok: true, state: { businessId: "signin", userId: "signin", purpose: "signin", returnTo: "settings" } });
   });
 
   it("a complimentary Business workspace connects a third channel; the quota reads compedPlan, not just the tier", async () => {

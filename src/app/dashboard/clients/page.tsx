@@ -6,15 +6,18 @@ import { isAcknowledgement, splitMessage } from "@/lib/cleanMessage";
 import { PageHeader, EmptyState, Card, Badge } from "@/components/ui";
 import { initials } from "@/lib/utils";
 import { InviteClientButton } from "./InviteClientButton";
+import { NewClientButton } from "./NewClientButton";
 import { PromotePartnerButton } from "./PromotePartnerButton";
 import { readOpportunity } from "@/lib/opportunity";
 import { cn } from "@/lib/utils";
 
-export default async function ClientsPage() {
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
   if (!STAFF_ROLES.includes(ctx.role)) redirect(homeRouteFor(ctx.role, ctx.business));
   const { business } = ctx;
+  const sp = await searchParams;
+  const bookingUrl = `${(process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "")}/book/${business.handle}`;
 
   const [clients, clientMemberships] = await Promise.all([
     prisma.client.findMany({
@@ -63,13 +66,22 @@ export default async function ClientsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <PageHeader title="People" description={`${listed.filter((r) => r.c.relationship === "CUSTOMER").length} customers · ${listed.filter((r) => r.c.relationship !== "CUSTOMER").length} potential`} action={<InviteClientButton />} />
+      <PageHeader
+        title="People"
+        description={`${listed.filter((r) => r.c.relationship === "CUSTOMER").length} customers · ${listed.filter((r) => r.c.relationship !== "CUSTOMER").length} potential`}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <InviteClientButton />
+            <NewClientButton bookingUrl={bookingUrl} autoOpen={sp.new === "1"} />
+          </div>
+        }
+      />
 
       {listed.length === 0 ? (
         <EmptyState
           title="Nobody yet"
-          description="Everyone who writes to you on a connected channel shows up here, with their conversations and bookings."
-          action={<InviteClientButton />}
+          description="Everyone who writes to you on a connected channel shows up here. Until then, add your first client yourself or send them your booking link."
+          action={<NewClientButton bookingUrl={bookingUrl} />}
         />
       ) : (
         <Card>

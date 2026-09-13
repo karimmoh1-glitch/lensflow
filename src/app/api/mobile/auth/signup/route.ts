@@ -14,7 +14,7 @@ import { savePersonalization } from "@/server/personalization";
 const signupSchema = z.object({
   name: z.string().trim().min(1, "Your name is required").max(80),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(200),
+  password: z.string().min(8, "Password must be at least 8 characters").max(200).refine((p) => Buffer.byteLength(p, "utf8") <= 72, "Use a password of 72 characters or fewer."),
   /** The /start questions, answered in the app. Optional; invalid answers are ignored, never fatal. */
   answers: answersSchema.optional(),
   selectedPlan: planSchema.optional(),

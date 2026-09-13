@@ -43,7 +43,8 @@ const nextConfig = {
     // website, so it alone may be framed; everything else refuses framing entirely.
     const embedCsp = cspHeader.replace("frame-ancestors 'none'", "frame-ancestors *");
     return [
-      { source: "/:path((?!embed).*)", headers: securityHeaders },
+      // Only /embed/… is exempt: the old pattern also left any path merely starting with "embed" bare.
+      { source: "/:path((?!embed/).*)", headers: securityHeaders },
       { source: "/embed/:path*", headers: securityHeaders.filter((h) => h.key !== "X-Frame-Options" && h.key !== "Content-Security-Policy").concat([{ key: "Content-Security-Policy", value: embedCsp }]) },
     ];
   },

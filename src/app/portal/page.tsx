@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { requireClientRecord } from "@/app/actions/portal";
 import { prisma } from "@/lib/db";
 import { PageHeader, Card, Badge, EmptyState } from "@/components/ui";
-import { toZonedDisplayDate } from "@/lib/utils";
+import { toZonedDisplayDate, isSafeHttpsUrl } from "@/lib/utils";
 import { format } from "date-fns";
 import { PortalMessages } from "./PortalMessages";
 import { portalDeliveries } from "@/server/portalDeliveries";
@@ -84,7 +84,7 @@ export default async function PortalHomePage() {
                     </div>
                     <Badge tone={STATUS_TONE[b.status] ?? "neutral"}>{b.status.replaceAll("_", " ").toLowerCase()}</Badge>
                   </div>
-                  {b.deliveryUrl && (
+                  {isSafeHttpsUrl(b.deliveryUrl) && (
                     <a
                       href={b.deliveryUrl}
                       target="_blank"

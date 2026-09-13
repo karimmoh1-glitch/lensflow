@@ -22,7 +22,7 @@ const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try 
 const signupSchema = z.object({
   name: z.string().trim().min(1, "Your name is required").max(80),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(200),
+  password: z.string().min(8, "Password must be at least 8 characters").max(200).refine((p) => Buffer.byteLength(p, "utf8") <= 72, "Use a password of 72 characters or fewer."),
 });
 
 /** A person's own workspace, named after them. Nothing about a business is asked. */
@@ -214,7 +214,7 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
 }
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").refine((p) => Buffer.byteLength(p, "utf8") <= 72, "Use a password of 72 characters or fewer."),
 });
 
 export type ResetPasswordState = { error?: string } | undefined;

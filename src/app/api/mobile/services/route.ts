@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError, publicMessage } from "@/lib/mobileApi";
 import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -17,5 +17,5 @@ export async function PUT(req: Request) {
   const session = await getSessionFromRequest(req);
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError("Each service needs a name, a price and a duration.", 400);
-  try { await saveServices(parsed.data.services, session); return NextResponse.json({ ok: true }); } catch (e) { return jsonError(e instanceof Error && e.message !== "unauthorized" ? e.message : "Only an owner or admin can change services.", 403); }
+  try { await saveServices(parsed.data.services, session); return NextResponse.json({ ok: true }); } catch (e) { return jsonError(publicMessage(e, "Only an owner or admin can change services."), 403); }
 }

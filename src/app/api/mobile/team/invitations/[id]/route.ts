@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError, publicMessage } from "@/lib/mobileApi";
 import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { revokeInvitation, resendInvitation } from "@/app/actions/invitations";
@@ -14,5 +14,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     if (parsed.data.action === "revoke") { await revokeInvitation(id, session); return NextResponse.json({ ok: true }); }
     const r = await resendInvitation(id, session); return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, link: r.link, emailed: r.delivery?.emailed ?? false, deliveryNote: r.delivery?.note ?? "" });
-  } catch (e) { return jsonError(e instanceof Error && e.message !== "unauthorized" ? e.message : "Not allowed", 403); }
+  } catch (e) { return jsonError(publicMessage(e, "Not allowed"), 403); }
 }

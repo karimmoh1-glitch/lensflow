@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError, publicMessage } from "@/lib/mobileApi";
 import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { setMembershipStatus, setPartnerConversationAccess } from "@/app/actions/team";
@@ -15,5 +15,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (parsed.data.action === "status") await setMembershipStatus(id, parsed.data.active, session);
     else await setPartnerConversationAccess(id, parsed.data.canViewAll, session);
     return NextResponse.json({ ok: true });
-  } catch (e) { return jsonError(e instanceof Error && e.message !== "unauthorized" ? e.message : "Not allowed", 403); }
+  } catch (e) { return jsonError(publicMessage(e, "Not allowed"), 403); }
 }

@@ -10,6 +10,17 @@ import { tokenRequest, validAccessToken, bearerJson, appUrl, OAuthError, type OA
 const AUTHORITY = "https://login.microsoftonline.com/common/oauth2/v2.0";
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
+/**
+ * Paging and delta links come back from Graph and one is stored as the sync cursor; the
+ * bearer token is sent to whatever they name. Only graph.microsoft.com over https qualifies.
+ */
+export function graphLink(link: string): string {
+  let url: URL;
+  try { url = new URL(link); } catch { throw new OAuthError("Graph returned a link that is not a URL", 0, "malformed"); }
+  if (url.protocol !== "https:" || url.hostname !== "graph.microsoft.com") throw new OAuthError("Graph returned a link outside graph.microsoft.com", 0, "malformed");
+  return url.toString();
+}
+
 const MAIL_SCOPES = ["openid", "email", "offline_access", "User.Read", "Mail.Read", "Mail.Send"];
 const CALENDAR_SCOPES = ["openid", "email", "offline_access", "User.Read", "Calendars.ReadWrite"];
 export const MICROSOFT_SCOPES = { mail: MAIL_SCOPES.join(" "), calendar: CALENDAR_SCOPES.join(" ") } as const;
@@ -87,15 +98,15 @@ const MESSAGE_SELECT = "id,internetMessageId,conversationId,subject,receivedDate
  */
 export async function listInboxDelta(accessToken: string, opts: { deltaLink?: string | null; since?: Date | null; max?: number }): Promise<{ messages: GraphMessage[]; deltaLink: string | null }> {
   const max = opts.max ?? 200;
-  let url = opts.deltaLink ?? `${GRAPH}/me/mailFolders/inbox/messages/delta?$select=${MESSAGE_SELECT}&$top=50${opts.since ? `&$filter=${encodeURIComponent(`receivedDateTime ge ${opts.since.toISOString()}`)}` : ""}`;
+  let url = opts.deltaLink ? graphLink(opts.deltaLink) : `${GRAPH}/me/mailFolders/inbox/messages/delta?$select=${MESSAGE_SELECT}&$top=50${opts.since ? `&$filter=${encodeURIComponent(`receivedDateTime ge ${opts.since.toISOString()}`)}` : ""}`;
   const messages: GraphMessage[] = [];
   let deltaLink: string | null = null;
   for (let i = 0; i < 40; i++) {
     const page: DeltaPage = await bearerJson<DeltaPage>(url, accessToken, { headers: { Prefer: 'outlook.body-content-type="text"' } });
     for (const m of page.value ?? []) if (messages.length < max) messages.push(m);
-    if (page["@odata.deltaLink"]) { deltaLink = page["@odata.deltaLink"]; break; }
+    if (page["@odata.deltaLink"]) { deltaLink = graphLink(page["@odata.deltaLink"]); break; }
     if (!page["@odata.nextLink"]) break;
-    url = page["@odata.nextLink"];
+    url = graphLink(page["@odata.nextLink"]);
   }
   return { messages, deltaLink };
 }
@@ -154,15 +165,15 @@ export async function listGraphEventsDelta(accessToken: string, calendarId: stri
   const now = Date.now();
   const start = new Date(now - 7 * 86_400_000).toISOString();
   const end = new Date(now + 183 * 86_400_000).toISOString();
-  let url = deltaLink ?? `${GRAPH}/me/calendars/${encodeURIComponent(calendarId)}/calendarView/delta?startDateTime=${encodeURIComponent(start)}&endDateTime=${encodeURIComponent(end)}`;
+  let url = deltaLink ? graphLink(deltaLink) : `${GRAPH}/me/calendars/${encodeURIComponent(calendarId)}/calendarView/delta?startDateTime=${encodeURIComponent(start)}&endDateTime=${encodeURIComponent(end)}`;
   const events: GraphEvent[] = [];
   let next: string | null = null;
   for (let i = 0; i < 40; i++) {
     const page = await bearerJson<{ value: GraphEvent[]; "@odata.nextLink"?: string; "@odata.deltaLink"?: string }>(url, accessToken, { headers: { Prefer: 'outlook.timezone="UTC"', "odata.maxpagesize": "50" } });
     events.push(...(page.value ?? []));
-    if (page["@odata.deltaLink"]) { next = page["@odata.deltaLink"]; break; }
+    if (page["@odata.deltaLink"]) { next = graphLink(page["@odata.deltaLink"]); break; }
     if (!page["@odata.nextLink"]) break;
-    url = page["@odata.nextLink"];
+    url = graphLink(page["@odata.nextLink"]);
   }
   return { events, deltaLink: next };
 }

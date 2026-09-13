@@ -31,7 +31,11 @@ export type ClientFile = { id: string; name: string; url: string | null; modifie
 const ROOT_NAME = "Daythread";
 const CLIENTS = "Clients";
 
-const safeName = (name: string) => name.replace(/[\\/:*?"<>|]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Client";
+const safeName = (name: string) => {
+  const cleaned = name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  // "." and ".." are not names, they are directions.
+  return cleaned && !/^\.+$/.test(cleaned) ? cleaned : "Client";
+};
 
 async function markFailure(row: Integration, err: unknown) {
   const revoked = err instanceof OAuthError ? err.revoked : /invalid_grant|401/i.test(err instanceof Error ? err.message : "");
@@ -87,7 +91,10 @@ export async function ensureClientFolder(businessId: string, clientId: string, p
       folder = { id: f.id, url: f.webViewLink ?? driveFolderUrl(f.id), createdAt: new Date().toISOString() };
     } else {
       const token = await dropboxToken(row);
-      const path = folders.DROPBOX?.path ?? `/${CLIENTS}/${safeName(client.name)}`;
+      // The client's id is part of the folder name. Names are not unique — two customers can
+      // both be "Jane Doe", and anyone can email in under any display name — so a folder found
+      // by name alone could be another client's, and its link would go to the wrong person.
+      const path = folders.DROPBOX?.path ?? `/${CLIENTS}/${safeName(client.name)} (${client.id.slice(-8)})`;
       const f = await ensureDropboxFolder(token, path);
       const existing = folders.DROPBOX;
       const link = existing?.url ? null : await dropboxFolderLink(token, f.path);

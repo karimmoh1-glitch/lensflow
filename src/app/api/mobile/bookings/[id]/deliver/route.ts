@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isSafeHttpsUrl } from "@/lib/utils";
 import { prisma } from "@/lib/db";
 import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
 
 const deliverSchema = z.object({
-  url: z.string().url("Enter a valid gallery URL"),
-  note: z.string().optional(),
+  url: z.string().refine(isSafeHttpsUrl, "Use a full https:// gallery link"),
+  note: z.string().max(2000).optional(),
 });
 
 /**

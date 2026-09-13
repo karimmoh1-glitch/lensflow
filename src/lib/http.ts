@@ -12,7 +12,21 @@ export class PayloadTooLarge extends Error {
 export async function readBoundedText(req: Request, maxBytes = 256 * 1024): Promise<string> {
   const declared = Number(req.headers.get("content-length") ?? 0);
   if (declared > maxBytes) throw new PayloadTooLarge(maxBytes);
-  const text = await req.text();
-  if (Buffer.byteLength(text, "utf8") > maxBytes) throw new PayloadTooLarge(maxBytes);
-  return text;
+  if (!req.body) return "";
+  // Counted as it arrives, so a chunked body with no length header is cut off at the
+  // ceiling instead of being buffered whole first.
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw new PayloadTooLarge(maxBytes);
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks.map((c) => Buffer.from(c))).toString("utf8");
 }

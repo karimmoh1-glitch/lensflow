@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError, publicMessage } from "@/lib/mobileApi";
 import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { markConversationRead, reclassifyConversation, removeConversationForMe, assignConversation, setClientRelationship } from "@/app/actions/conversations";
@@ -30,5 +30,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (a.action === "relationship") { const r = await setClientRelationship(a.clientId, a.relationship, session); return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true }); }
     await deleteConversation(id, session);
     return NextResponse.json({ ok: true });
-  } catch (e) { return jsonError(e instanceof Error && e.message !== "unauthorized" ? e.message : "Not allowed", 403); }
+  } catch (e) { return jsonError(publicMessage(e, "Not allowed"), 403); }
 }

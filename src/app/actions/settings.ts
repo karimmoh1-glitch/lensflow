@@ -159,7 +159,7 @@ import { verifyPassword, hashPassword, setSessionCookie, getSession } from "@/li
 
 const PasswordChangeSchema = z.object({
   current: z.string().min(1, "Enter your current password."),
-  next: z.string().min(8, "Use at least 8 characters.").max(200),
+  next: z.string().min(8, "Use at least 8 characters.").max(200).refine((p) => Buffer.byteLength(p, "utf8") <= 72, "Use a password of 72 characters or fewer."),
 });
 
 /**

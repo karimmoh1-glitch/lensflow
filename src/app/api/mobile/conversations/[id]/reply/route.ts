@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse, jsonError, publicMessage } from "@/lib/mobileApi";
 import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { sendReplyAction } from "@/app/actions/inbox";
@@ -19,6 +19,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!result.ok) return jsonError(result.error, 502);
     return NextResponse.json({ ok: true, delivered: !result.simulated });
   } catch (err) {
-    return jsonError(err instanceof Error && err.message !== "unauthorized" ? err.message : "This reply couldn't be sent.", 403);
+    return jsonError(publicMessage(err, "This reply couldn't be sent."), 403);
   }
 }

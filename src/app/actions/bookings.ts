@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { isSafeHttpsUrl } from "@/lib/utils";
 import { fireAutomationEvent } from "@/server/automationRunner";
 import { moveMeetingForBooking, removeMeetingForBooking } from "@/server/zoomMeetings";
 import { pushBookingToCalendars } from "@/server/calendarSync";
@@ -85,6 +86,11 @@ export async function advanceBookingStatus(bookingId: string, status: BookingSta
 export async function markDelivered(bookingId: string, url: string, note: string | undefined) {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (!ctx) throw new Error("unauthorized");
+
+  // A client clicks this link from their portal: only a real https address is accepted, never
+  // javascript:, data: or anything else a browser might execute.
+  if (!isSafeHttpsUrl(url)) throw new Error("Use a full https:// link.");
+  if (note !== undefined && (typeof note !== "string" || note.length > 2000)) throw new Error("Keep the note under 2,000 characters.");
 
   const booking = await prisma.booking.findFirst({ where: { id: bookingId, businessId: ctx.business.id } });
   if (!booking) throw new Error("not found");

@@ -18,6 +18,19 @@ export type CalDavItem = { href: string; etag: string | null; summary: string | 
 
 const ICLOUD = "https://caldav.icloud.com";
 
+/**
+ * Every CalDAV request carries the Apple ID and app password, so it may only ever go to
+ * Apple: https, on icloud.com. A server-supplied href, redirect or stored base URL naming
+ * anything else is refused rather than sent the credentials.
+ */
+export function caldavTarget(baseUrl: string, path: string): string {
+  const url = new URL(path, path.startsWith("http") ? undefined : baseUrl);
+  if (url.protocol !== "https:" || !(url.hostname === "icloud.com" || url.hostname.endsWith(".icloud.com")) || url.username || url.password) {
+    throw new CalDavError(400, "Refused to send Apple Calendar credentials outside icloud.com.");
+  }
+  return url.toString();
+}
+
 export class CalDavError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -35,7 +48,7 @@ export async function caldavClientFor(integration: Integration): Promise<CalDavC
 }
 
 async function dav(client: CalDavClient, method: string, path: string, body?: string, headers: Record<string, string> = {}): Promise<{ status: number; text: string; headers: Headers }> {
-  const url = path.startsWith("http") ? path : `${client.baseUrl}${path}`;
+  const url = caldavTarget(client.baseUrl, path);
   const res = await fetch(url, { method, headers: { Authorization: client.auth, "Content-Type": "application/xml; charset=utf-8", ...headers }, body, redirect: "manual" });
   const text = await res.text();
   if (res.status === 401 || res.status === 403) throw new CalDavError(res.status, "Apple rejected the sign-in. Check the Apple ID and generate a fresh app-specific password.");
@@ -81,7 +94,7 @@ export async function discover(client: CalDavClient): Promise<{ principal: strin
   // iCloud answers with the shard to use (p12-caldav.icloud.com…) via a redirect on some paths.
   const location = res.headers.get("location");
   if ((res.status === 301 || res.status === 302 || res.status === 307) && location) {
-    baseUrl = new URL(location).origin;
+    baseUrl = new URL(caldavTarget(baseUrl, location)).origin;
     res = await dav({ ...client, baseUrl }, "PROPFIND", "/", propfind, { Depth: "0" });
   }
   const principal = innerHref(parseMultistatus(res.text)[0]?.props["current-user-principal"]);
@@ -145,7 +158,7 @@ export async function syncCollection(client: CalDavClient, calendarHref: string,
 }
 
 export async function putEvent(client: CalDavClient, href: string, ics: string, etag?: string | null): Promise<{ etag: string | null }> {
-  const res = await fetch(href.startsWith("http") ? href : `${client.baseUrl}${href}`, { method: "PUT", headers: { Authorization: client.auth, "Content-Type": "text/calendar; charset=utf-8", ...(etag ? { "If-Match": `"${etag}"` } : {}) }, body: ics });
+  const res = await fetch(caldavTarget(client.baseUrl, href), { method: "PUT", redirect: "manual", headers: { Authorization: client.auth, "Content-Type": "text/calendar; charset=utf-8", ...(etag ? { "If-Match": `"${etag}"` } : {}) }, body: ics });
   if (res.status === 412) throw new CalDavError(412, "The event changed on the calendar since we last saw it.");
   if (res.status === 401 || res.status === 403) throw new CalDavError(res.status, "Apple rejected the sign-in. Reconnect Apple Calendar.");
   if (!res.ok) throw new CalDavError(res.status, `CalDAV PUT ${res.status}`);
@@ -153,7 +166,7 @@ export async function putEvent(client: CalDavClient, href: string, ics: string, 
 }
 
 export async function deleteEvent(client: CalDavClient, href: string): Promise<void> {
-  const res = await fetch(href.startsWith("http") ? href : `${client.baseUrl}${href}`, { method: "DELETE", headers: { Authorization: client.auth } });
+  const res = await fetch(caldavTarget(client.baseUrl, href), { method: "DELETE", redirect: "manual", headers: { Authorization: client.auth } });
   if (res.status === 404) return;
   if (res.status === 401 || res.status === 403) throw new CalDavError(res.status, "Apple rejected the sign-in. Reconnect Apple Calendar.");
   if (!res.ok) throw new CalDavError(res.status, `CalDAV DELETE ${res.status}`);

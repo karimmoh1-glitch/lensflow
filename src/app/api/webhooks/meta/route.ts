@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import { readBoundedText } from "@/lib/http";
 import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
 import { verifyMetaSignature, safeEqual } from "@/lib/meta/common";
 import { processMetaEnvelope, type MetaEnvelope } from "@/server/metaInbound";
 import { reportFailure } from "@/lib/observe";
-import { rateLimit } from "@/lib/rateLimit";
+import { rateLimit, clientIpFrom } from "@/lib/rateLimit";
 import { STALE_CLAIM_MS } from "@/server/webhookInbox";
 
 /**
@@ -33,10 +34,8 @@ export const runtime = "nodejs";
 /** Meta's own limit is 8 MB per delivery; anything larger is not from Meta. */
 const MAX_BODY_BYTES = 1_000_000;
 
-function clientIp(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  return (fwd ? fwd.split(",")[0].trim() : req.headers.get("x-real-ip")) || "unknown";
-}
+// The caller-appendable leftmost x-forwarded-for entry would give every forger a fresh bucket.
+const clientIp = (req: Request) => clientIpFrom(req.headers);
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -57,7 +56,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Meta webhooks aren't configured on this deployment." }, { status: 501 });
   }
 
-  const raw = await req.text();
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  let raw: string;
+  try {
+    raw = await readBoundedText(req, MAX_BODY_BYTES);
+  } catch {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  }
   // String length counts UTF-16 units, so a body of non-ASCII text measured that way passed
   // at up to three times the real byte ceiling. Measure the bytes.
   if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return NextResponse.json({ error: "Payload too large" }, { status: 413 });

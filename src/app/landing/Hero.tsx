@@ -1,5 +1,6 @@
 import { HeroThread } from "./HeroThread";
 import { PointerField, MagneticLink } from "./Pointer";
+import { betaOfferOpen } from "@/lib/billing";
 
 /**
  * The first viewport, painted from the server. Three seconds, no scrolling: who it's for,
@@ -25,7 +26,11 @@ export function Hero() {
             >
               Build your Daythread <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
             </MagneticLink>
-            <span className="text-sm font-semibold text-ink/65">Free to start</span>
+            {betaOfferOpen() ? (
+              <a href="#pricing" className="text-sm font-semibold text-ink/75 hover:text-ink"><span className="inline-block mr-1.5 rounded-full bg-success-soft text-success-text text-[10px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 align-[1px]">Beta</span>Pro free for 1 month</a>
+            ) : (
+              <span className="text-sm font-semibold text-ink/65">Free to start</span>
+            )}
           </div>
         </div>
 

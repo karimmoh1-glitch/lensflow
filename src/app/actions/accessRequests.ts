@@ -28,8 +28,8 @@ export async function requestIntegrationAccess(provider: IntegrationProvider, no
 export async function decideIntegrationAccess(id: string, decision: "APPROVED" | "REJECTED" | "REVOKED", note?: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const session = await getSession();
   if (!session) return { ok: false, error: "unauthorized" };
-  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true } });
-  if (!isFounder(user?.email)) return { ok: false, error: "unauthorized" };
+  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, emailVerifiedAt: true, createdAt: true } });
+  if (!isFounder(user)) return { ok: false, error: "unauthorized" };
   if (!["APPROVED", "REJECTED", "REVOKED"].includes(decision)) return { ok: false, error: "Unknown decision." };
   const r = await decideAccess(id.slice(0, 40), decision, session.userId, (note ?? "").trim().slice(0, 300) || null);
   revalidatePath("/admin/growth");

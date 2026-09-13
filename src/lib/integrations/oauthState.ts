@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import { oauthStateKey } from "@/lib/env";
 import { cookies } from "next/headers";
 import { randomBytes, createHash } from "crypto";
 
@@ -11,21 +12,18 @@ import { randomBytes, createHash } from "crypto";
  * on first verification; (4) short-lived — ten minutes; (5) tied to a provider and a
  * purpose, so a Gmail state can never complete a Calendar callback.
  */
-export const OAUTH_PROVIDERS = ["google", "instagram", "whatsapp", "microsoft", "slack", "dropbox", "calendly", "stripe"] as const;
+export const OAUTH_PROVIDERS = ["google", "instagram", "whatsapp", "microsoft", "slack", "dropbox", "calendly", "stripe", "zoom"] as const;
 export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
 /** What a grant is for. A provider can serve several (Google: Gmail, Calendar, Drive, sign-in). */
-export const OAUTH_PURPOSES = ["gmail", "calendar", "messaging", "signin", "drive", "mail", "files", "notifications", "scheduling", "payments"] as const;
+export const OAUTH_PURPOSES = ["gmail", "calendar", "messaging", "signin", "drive", "mail", "files", "notifications", "scheduling", "payments", "meetings"] as const;
 export type OAuthPurpose = (typeof OAUTH_PURPOSES)[number];
 
 const COOKIE = Object.fromEntries(OAUTH_PROVIDERS.map((p) => [p, `${p}_oauth_nonce`])) as Record<OAuthProvider, string>;
 const PKCE_COOKIE = Object.fromEntries(OAUTH_PROVIDERS.map((p) => [p, `${p}_oauth_pkce`])) as Record<OAuthProvider, string>;
 const isPurpose = (v: unknown): v is OAuthPurpose => typeof v === "string" && (OAUTH_PURPOSES as readonly string[]).includes(v);
 
-function secret(): Uint8Array {
-  const s = process.env.JWT_SECRET;
-  if (!s && process.env.NODE_ENV === "production") throw new Error("JWT_SECRET is not configured.");
-  return new TextEncoder().encode(s || "dev-only-insecure-secret");
-}
+// Its own key, derived from JWT_SECRET: a state can never be replayed as a session.
+const secret = () => oauthStateKey();
 
 export async function signOAuthState(input: { provider: OAuthProvider; purpose: OAuthPurpose; businessId: string; userId: string }): Promise<string> {
   const nonce = randomBytes(24).toString("hex");
@@ -45,7 +43,7 @@ export async function verifyOAuthState(provider: OAuthProvider, state: string | 
   if (!state) return { ok: false, reason: "missing" };
   let payload: Record<string, unknown>;
   try {
-    ({ payload } = await jwtVerify(state, secret()));
+    ({ payload } = await jwtVerify(state, secret(), { algorithms: ["HS256"] }));
   } catch (err) {
     const code = (err as { code?: string })?.code;
     return { ok: false, reason: code === "ERR_JWT_EXPIRED" ? "expired" : "invalid" };
@@ -87,7 +85,7 @@ export async function verifyOAuthStateWithNonce(provider: OAuthProvider, state: 
   if (!state) return { ok: false, reason: "missing" };
   let payload: Record<string, unknown>;
   try {
-    ({ payload } = await jwtVerify(state, secret()));
+    ({ payload } = await jwtVerify(state, secret(), { algorithms: ["HS256"] }));
   } catch (err) {
     const code = (err as { code?: string })?.code;
     return { ok: false, reason: code === "ERR_JWT_EXPIRED" ? "expired" : "invalid" };

@@ -39,6 +39,6 @@ export async function askCopilot(question: string, session?: SessionPayload | nu
   // With a model configured the answer is written from the facts; without one (or if the
   // model fails) the question is answered from the same records by rules, never by dumping
   // the raw fact sheet on the owner.
-  const written = await summarizeCopilotAnswer(question, facts.text, { businessId: ctx.business.id, feature: "assistant" });
+  const written = await summarizeCopilotAnswer(question, facts.text, { businessId: ctx.business.id, feature: "assistant", userId: ctx.user.id });
   return written ?? answerFromRecords(question, facts.data);
 }

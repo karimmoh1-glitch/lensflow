@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { googleOAuthConfigured } from "@/lib/google";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
-import { PLANS } from "@/lib/billing";
+import { PLANS, betaOfferOpen, planPurchasable } from "@/lib/billing";
 import { StartFlow } from "./StartFlow";
 
 export const metadata: Metadata = {
@@ -18,5 +18,5 @@ export const metadata: Metadata = {
  * sign-in, whether upgrades are open) so the flow never promises what it can't deliver.
  */
 export default function StartPage() {
-  return <StartFlow google={googleOAuthConfigured()} billingLive={subscriptionBillingIsLive} prices={{ PRO: PLANS.PRO.priceCents, BUSINESS: PLANS.BUSINESS.priceCents }} />;
+  return <StartFlow google={googleOAuthConfigured()} billingLive={subscriptionBillingIsLive} prices={{ PRO: PLANS.PRO.priceCents, BUSINESS: PLANS.BUSINESS.priceCents }} beta={betaOfferOpen()} businessUnavailable={!planPurchasable("BUSINESS")} />;
 }

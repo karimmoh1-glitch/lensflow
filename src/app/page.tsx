@@ -13,7 +13,7 @@ import { Faq, FAQ } from "./landing/Faq";
 import { Why } from "./landing/Why";
 import { Trust } from "./landing/Trust";
 import { LandingBeacon } from "./landing/LandingBeacon";
-import { PLANS } from "@/lib/billing";
+import { PLANS, betaOfferOpen, planPurchasable } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { PricingSection } from "./PricingSection";
 import { FinalCta } from "./landing/FinalCta";
@@ -52,7 +52,7 @@ function structuredData() {
         operatingSystem: "Web",
         description: "One inbox for every customer conversation — Instagram, Gmail, WhatsApp, SMS and your contact form — with the calendar, bookings, automations and an assistant built around it.",
         publisher: { "@id": `${SITE}/#org` },
-        offers: (["FREE", "PRO", "BUSINESS"] as const).map((k) => ({ "@type": "Offer", name: `Daythread ${PLANS[k].name}`, price: (PLANS[k].priceCents / 100).toFixed(0), priceCurrency: "USD", url: `${SITE}/#pricing` })),
+        offers: (["FREE", "PRO", "BUSINESS"] as const).map((k) => ({ "@type": "Offer", name: `Daythread ${PLANS[k].name}`, price: (PLANS[k].priceCents / 100).toFixed(0), priceCurrency: "USD", url: `${SITE}/#pricing`, availability: k === "FREE" || planPurchasable(k) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" })),
       },
       { "@type": "FAQPage", mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) },
     ],
@@ -106,7 +106,7 @@ export default function LandingPage() {
       </section>
 
       <div id="pricing" className="bg-white border-t border-border scroll-mt-16">
-        <PricingSection trial={subscriptionBillingIsLive} />
+        <PricingSection trial={subscriptionBillingIsLive} beta={betaOfferOpen()} />
       </div>
 
       <section id="faq" className="relative py-20 md:py-24 bg-paper border-t border-border scroll-mt-16">

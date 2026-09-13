@@ -106,7 +106,32 @@ export const PLAN_ORDER: PlanKey[] = ["FREE", "PRO", "BUSINESS"];
 // keeping access through PAST_DUE means one failed card never locks someone out.
 const ENTITLED_STATUSES = new Set(["ACTIVE", "TRIALING", "PAST_DUE"]);
 
-type BillingFields = Pick<Business, "planTier" | "billingStatus"> & { compedPlan?: Business["compedPlan"] };
+type BillingFields = Pick<Business, "planTier" | "billingStatus"> & { compedPlan?: Business["compedPlan"]; betaProEndsAt?: Date | null };
+
+/**
+ * Plans that cannot be bought right now. Existing Business subscriptions and complimentary
+ * Business access keep working; nobody new can start one. Enforced in the checkout action
+ * and the mobile billing route, and reflected (never decided) in the UI.
+ */
+export const UNAVAILABLE_PLANS: readonly PlanKey[] = ["BUSINESS"];
+export function planPurchasable(key: PlanKey): boolean {
+  return key !== "FREE" && !UNAVAILABLE_PLANS.includes(key);
+}
+
+/**
+ * The beta offer: one month of Pro, free, for every workspace, once. It stands beside
+ * Stripe rather than inside it — no card, no subscription, nothing counted as revenue —
+ * and simply ends: afterwards the workspace is on whatever it pays for, or Free.
+ * The operator can close it to new claims with BETA_PRO_OFFER=off; grants already made run
+ * their course.
+ */
+export const BETA_PRO_DAYS = 30;
+export function betaOfferOpen(): boolean {
+  return (process.env.BETA_PRO_OFFER ?? "on").trim().toLowerCase() !== "off";
+}
+export function betaProActive(business: { betaProEndsAt?: Date | null }, now = new Date()): boolean {
+  return Boolean(business.betaProEndsAt && business.betaProEndsAt.getTime() > now.getTime());
+}
 
 /** The plan a workspace actually has right now — never planTier alone. A lapsed paid
  * subscription falls back to Free. */
@@ -117,6 +142,13 @@ export function trialEligible(business: { stripeSubscriptionId: string | null; t
 }
 
 export function effectivePlan(business: BillingFields): PlanKey {
+  const base = basePlan(business);
+  // The beta month lifts anything below Pro to Pro, and never lowers a higher plan.
+  if (betaProActive(business) && PLAN_ORDER.indexOf(base) < PLAN_ORDER.indexOf("PRO")) return "PRO";
+  return base;
+}
+
+function basePlan(business: BillingFields): PlanKey {
   // Complimentary access stands on its own: no Stripe subscription, and the higher of the
   // two if a comped workspace also subscribes later.
   const comped = business.compedPlan && business.compedPlan !== "FREE" ? (business.compedPlan as PlanKey) : null;
@@ -142,7 +174,8 @@ export function planForIntegrations(needed: number): PlanKey {
 /** The next plan up, for upgrade prompts. */
 export function nextPlan(plan: PlanKey): PlanKey | null {
   const i = PLAN_ORDER.indexOf(plan);
-  return PLAN_ORDER[i + 1] ?? null;
+  const next = PLAN_ORDER[i + 1] ?? null;
+  return next && planPurchasable(next) ? next : null;
 }
 
 export function canAddTeamSeat(business: BillingFields, currentSeatCount: number): boolean {

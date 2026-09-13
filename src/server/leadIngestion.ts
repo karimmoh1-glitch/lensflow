@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { pushToBusiness } from "@/server/push";
 import { withLock } from "@/lib/dbLock";
 import { track } from "@/lib/analytics";
-import { extractLeadInfo } from "@/lib/ai";
+import { extractLeadInfo, extractLeadInfoByRules } from "@/lib/ai";
 import { cleanEmailBody } from "@/lib/emailText";
 import { isAcknowledgement, splitMessage } from "@/lib/cleanMessage";
 import { FREEMAIL, classifyMessage } from "@/lib/classifyMessage";
@@ -150,10 +150,12 @@ async function ingestUnlocked(params: {
 
   const services = await prisma.service.findMany({ where: { businessId, active: true } });
   // What they wrote now, not the chain underneath it: a date in a quoted reply is not their ask.
-  const extracted = await extractLeadInfo(splitMessage(body).text, { businessId, serviceNames: services.map((s) => s.name) });
-  const matchedService = extracted.serviceHint
-    ? services.find((s) => s.name.toLowerCase().includes(extracted.serviceHint!.toLowerCase()))
-    : null;
+  // Reading the message must never cost the message: if extraction fails for any reason the
+  // rules read it instead, and the message is still stored and the owner still told.
+  const serviceNames = services.map((s) => s.name);
+  const extracted = await extractLeadInfo(splitMessage(body).text, { businessId, serviceNames }).catch(() => extractLeadInfoByRules(splitMessage(body).text, serviceNames));
+  const hint = typeof extracted.serviceHint === "string" ? extracted.serviceHint.toLowerCase() : null;
+  const matchedService = hint ? services.find((s) => s.name.toLowerCase().includes(hint)) : null;
 
   if (existingConversation) {
     await prisma.message.create({

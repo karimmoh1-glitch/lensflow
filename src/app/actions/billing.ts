@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { createSubscriptionCheckout, createBillingPortalSession, changeSubscriptionPlan, subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
-import { PLANS, effectivePlan, type PlanKey, trialEligible, TRIAL_DAYS } from "@/lib/billing";
+import { PLANS, effectivePlan, type PlanKey, trialEligible, TRIAL_DAYS, planPurchasable } from "@/lib/billing";
+import { claimBetaPro } from "@/server/betaOffer";
+import { rateLimit } from "@/lib/rateLimit";
 import { track } from "@/lib/analytics";
 
 const LIVE_SUBSCRIPTION_STATUSES = new Set(["ACTIVE", "TRIALING", "PAST_DUE"]);
@@ -29,6 +31,9 @@ export async function startUpgradeCheckout(
 ): Promise<{ url?: string; changed?: boolean; error?: string }> {
   if (planKey !== "PRO" && planKey !== "BUSINESS") return { error: "Unknown plan." };
   if (interval !== "month" && interval !== "year") return { error: "Unknown billing interval." };
+  // Checked before anything else about the workspace: no path starts or switches to a plan
+  // that is not on sale, whatever the request says.
+  if (!planPurchasable(planKey)) return { error: `${PLANS[planKey].name} is temporarily unavailable.` };
   if (!subscriptionBillingIsLive) {
     return { error: "Upgrades aren't open on this deployment yet." };
   }
@@ -86,4 +91,26 @@ export async function openBillingPortal(flow?: "payment_method", session?: Sessi
     console.error("[billing] portal failed", err instanceof Error ? err.message : err);
     return { error: "Couldn't open the billing portal. Please try again." };
   }
+}
+
+/**
+ * Claim the beta month of Pro. Owner or admin of the active workspace; the workspace comes
+ * from the session and every rule (once per workspace, once per person, fixed length) is
+ * applied in `claimBetaPro`. Nothing in the request can lengthen it or pick another plan.
+ */
+export async function claimBetaProOffer(session?: SessionPayload | null): Promise<{ ok: true; endsAt: string } | { ok: false; error: string }> {
+  const ctx = await requireRole(["OWNER", "ADMIN"], session);
+  if (!ctx) return { ok: false, error: "Only an owner or admin can claim this for the workspace." };
+  if (!rateLimit(`beta-claim:${ctx.user.id}`, { limit: 10, windowMs: 60 * 60 * 1000 }).ok) return { ok: false, error: "Too many attempts. Try again in a few minutes." };
+  const r = await claimBetaPro(ctx.business.id, ctx.user.id);
+  revalidatePath("/dashboard", "layout");
+  if (r.ok) return { ok: true, endsAt: r.endsAt.toISOString() };
+  const error = {
+    closed: "The beta offer has ended.",
+    already_claimed: "This workspace has already had its free month of Pro.",
+    claimed_elsewhere: "You've already had a free month of Pro on another workspace.",
+    already_pro: "This workspace already has Pro or better.",
+    not_found: "Workspace not found.",
+  }[r.reason];
+  return { ok: false, error };
 }

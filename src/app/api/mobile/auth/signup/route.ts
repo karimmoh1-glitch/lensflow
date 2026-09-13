@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { betaGrantForNewWorkspace } from "@/server/betaOffer";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashPassword, createSessionToken, homeRouteFor } from "@/lib/auth";
 import { uniqueHandle, personalWorkspaceName } from "@/app/actions/auth";
 import { jsonError } from "@/lib/mobileApi";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { sharedRateLimit } from "@/lib/sharedRateLimit";
 import { track } from "@/lib/analytics";
 import { answersSchema, planSchema } from "@/lib/personalization";
 import { savePersonalization } from "@/server/personalization";
@@ -12,7 +14,7 @@ import { savePersonalization } from "@/server/personalization";
 const signupSchema = z.object({
   name: z.string().trim().min(1, "Your name is required").max(80),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(200),
+  password: z.string().min(8, "Password must be at least 8 characters").max(200).refine((p) => Buffer.byteLength(p, "utf8") <= 72, "Use a password of 72 characters or fewer."),
   /** The /start questions, answered in the app. Optional; invalid answers are ignored, never fatal. */
   answers: answersSchema.optional(),
   selectedPlan: planSchema.optional(),
@@ -30,7 +32,7 @@ export async function POST(req: Request) {
   const { name, email, password, answers, selectedPlan } = parsed.data;
 
   const ip = await getClientIp();
-  if (!rateLimit(`mobile-signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok) {
+  if (!rateLimit(`mobile-signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok || !(await sharedRateLimit(`signup:${ip}`, { limit: 20, windowMs: 60 * 60 * 1000 })).ok) {
     return jsonError(TOO_MANY_ATTEMPTS, 429);
   }
 
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
     const passwordHash = await hashPassword(password);
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { name, email, passwordHash } });
-      const business = await tx.business.create({ data: { name: workspaceName, handle } });
+      const business = await tx.business.create({ data: { name: workspaceName, handle, ...betaGrantForNewWorkspace() } });
       await tx.orgMembership.create({ data: { userId: user.id, businessId: business.id, role: "OWNER" } });
       return { user, business };
     });

@@ -34,7 +34,7 @@ export async function createSessionToken(payload: SessionPayload) {
   // Stamp the token with the user's current session version so a later password change
   // or account deletion invalidates it — without keeping a server-side session table.
   const sv = payload.sv ?? (await prisma.user.findUnique({ where: { id: payload.userId }, select: { sessionVersion: true } }))?.sessionVersion ?? 0;
-  return new SignJWT({ ...payload, sv })
+  return new SignJWT({ userId: payload.userId, ...(payload.activeBusinessId ? { activeBusinessId: payload.activeBusinessId } : {}), sv, typ: "session" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
@@ -61,18 +61,56 @@ export async function clearSessionCookie() {
 /** Verifies a raw session token (cookie or bearer) and extracts the payload. Shared by
  * both the web cookie session and the mobile bearer-token session — one auth system,
  * two transports. */
+/**
+ * Sessions this process produced by verifying a signed token. Server actions are public
+ * POST endpoints whose arguments an attacker can shape freely, so an action that takes an
+ * optional `session` would otherwise run as whatever plain object was posted to it. Only an
+ * object in this set — one `verifySessionToken` returned in this process — is honoured; a
+ * posted object can never be a member, whatever fields it has.
+ */
+const VERIFIED_SESSIONS = new WeakSet<object>();
+
+/**
+ * Whether an explicitly passed session may be used. In the test runner, suites construct
+ * sessions directly to exercise actions; nowhere else is an unverified object accepted.
+ */
+export function isTrustedSession(session: SessionPayload): boolean {
+  if (VERIFIED_SESSIONS.has(session)) return true;
+  return process.env.NODE_ENV === "test" && process.env.DAYTHREAD_STRICT_SESSIONS !== "1";
+}
+
 export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
+  let payload: Record<string, unknown>;
   try {
-    const { payload } = await jwtVerify(token, secret());
-    if (typeof payload.userId !== "string") return null;
-    return {
-      userId: payload.userId,
-      activeBusinessId: typeof payload.activeBusinessId === "string" ? payload.activeBusinessId : undefined,
-      sv: typeof payload.sv === "number" ? payload.sv : 0,
-    };
+    ({ payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] }));
   } catch {
     return null;
   }
+  if (!isSessionClaims(payload)) return null;
+  const sv = typeof payload.sv === "number" ? payload.sv : 0;
+  // Revocation is checked on every read, not only in requireBusiness: a token issued before
+  // a password change, reset or sign-out is dead everywhere, including paths that re-issue
+  // a cookie (switching workspace) or read the session directly.
+  const user = await prisma.user.findUnique({ where: { id: payload.userId as string }, select: { sessionVersion: true } }).catch(() => null);
+  if (!user || (user.sessionVersion ?? 0) !== sv) return null;
+  const verified: SessionPayload = {
+    userId: payload.userId as string,
+    activeBusinessId: typeof payload.activeBusinessId === "string" ? payload.activeBusinessId : undefined,
+    sv,
+  };
+  VERIFIED_SESSIONS.add(verified);
+  return verified;
+}
+
+/**
+ * A session token and nothing else. Tokens issued now carry `typ: "session"`; older ones
+ * have no `typ` and are accepted only if they carry none of the claims other signed tokens
+ * use (an OAuth state's nonce, provider or purpose).
+ */
+export function isSessionClaims(payload: Record<string, unknown>): boolean {
+  if (typeof payload.userId !== "string") return false;
+  if (payload.typ !== undefined) return payload.typ === "session";
+  return payload.nonce === undefined && payload.provider === undefined && payload.purpose === undefined && payload.businessId === undefined;
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
@@ -105,7 +143,7 @@ export async function setActiveBusiness(businessId: string) {
     where: { userId_businessId: { userId: session.userId, businessId } },
   });
   if (!membership || membership.status !== "ACTIVE") throw new Error("not a member of this organization");
-  await setSessionCookie({ userId: session.userId, activeBusinessId: businessId });
+  await setSessionCookie({ userId: session.userId, activeBusinessId: businessId, sv: session.sv });
 }
 
 export async function getUserMemberships(userId: string) {
@@ -126,6 +164,8 @@ export async function getUserMemberships(userId: string) {
 export async function requireBusiness(session?: SessionPayload | null) {
   session = session === undefined ? await getSession() : session;
   if (!session) return null;
+  // A session handed in as an argument must be one this server verified (see VERIFIED_SESSIONS).
+  if (typeof session !== "object" || !isTrustedSession(session)) return null;
 
   const memberships = await getUserMemberships(session.userId);
   if (memberships.length === 0) return null;

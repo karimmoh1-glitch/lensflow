@@ -33,12 +33,18 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
+  // No framework fingerprint in responses.
+  poweredByHeader: false,
+  // Nothing uses next/image. Leaving the optimizer unconfigured-but-reachable only adds
+  // attack surface (several Next.js 14 advisories live in it), so it is switched off.
+  images: { unoptimized: true },
   async headers() {
     // The embeddable lead form (/embed/:handle) is meant to live inside a customer's own
     // website, so it alone may be framed; everything else refuses framing entirely.
     const embedCsp = cspHeader.replace("frame-ancestors 'none'", "frame-ancestors *");
     return [
-      { source: "/:path((?!embed).*)", headers: securityHeaders },
+      // Only /embed/… is exempt: the old pattern also left any path merely starting with "embed" bare.
+      { source: "/:path((?!embed/).*)", headers: securityHeaders },
       { source: "/embed/:path*", headers: securityHeaders.filter((h) => h.key !== "X-Frame-Options" && h.key !== "Content-Security-Policy").concat([{ key: "Content-Security-Policy", value: embedCsp }]) },
     ];
   },

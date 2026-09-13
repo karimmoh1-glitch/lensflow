@@ -2,7 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui";
 import { formatMoney, cn } from "@/lib/utils";
-import { PLANS, effectivePlan, VISIBLE_PLANS, PLAN_ORDER, limitLabel, type PlanKey, trialEligible, TRIAL_DAYS } from "@/lib/billing";
+import { PLANS, effectivePlan, VISIBLE_PLANS, PLAN_ORDER, limitLabel, type PlanKey, trialEligible, TRIAL_DAYS, betaOfferOpen, betaProActive, planPurchasable, BETA_PRO_DAYS } from "@/lib/billing";
+import { BetaClaimButton } from "@/components/BetaClaimButton";
 import { usageFor } from "@/server/integrationQuota";
 import { getPersonalization } from "@/server/personalization";
 import { priceCentsFor, subscriptionBillingIsLive, getBillingSnapshot } from "@/lib/subscriptionBilling";
@@ -53,7 +54,12 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
   const lapsed = business.planTier !== "FREE" && current === "FREE";
   const paid = current !== "FREE";
   const currentRank = PLAN_ORDER.indexOf(current);
-  const next = PLAN_ORDER[currentRank + 1] ?? null;
+  const nextRaw = PLAN_ORDER[currentRank + 1] ?? null;
+  const next = nextRaw && planPurchasable(nextRaw) ? nextRaw : null;
+  const betaActive = betaProActive(business);
+  // Pro that comes only from the beta month: no subscription behind it, so no price and no charge.
+  const betaOnly = betaActive && current === "PRO" && !(business.billingStatus && ["ACTIVE", "TRIALING", "PAST_DUE"].includes(business.billingStatus)) && !(business.compedPlan && business.compedPlan !== "FREE");
+  const betaClaimable = betaOfferOpen() && !business.betaProClaimedAt && current === "FREE";
 
   return (
     <div className="dt-stagger">
@@ -62,6 +68,17 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
       {!subscriptionBillingIsLive && (
         <div className="text-sm text-ink/70 bg-signal-soft/50 border border-signal/15 rounded-2xl px-4 py-3 mb-6">
           Upgrades aren&apos;t open on this deployment yet — plans are shown for reference and nothing is charged.
+        </div>
+      )}
+      {betaActive && current === "PRO" && business.planTier === "FREE" && (
+        <div className="mb-6 rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-3.5 text-sm text-ink/80">
+          <span className="font-semibold text-ink">Pro is free on this workspace until {format(business.betaProEndsAt!, "MMMM d, yyyy")}, while Daythread is in beta.</span> No card and nothing to cancel. When it ends the workspace goes back to Free and nothing is deleted.
+        </div>
+      )}
+      {betaClaimable && (
+        <div className="mb-6 rounded-2xl border border-accent/30 bg-white px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 text-sm text-ink/80"><span className="font-semibold text-ink">Pro is free for {BETA_PRO_DAYS} days while Daythread is in beta.</span> Every channel, AI on every thread, the assistant and up to five people. No card.</div>
+          {canBill ? <BetaClaimButton /> : <p className="text-xs text-ink/70">Ask the workspace owner to claim it.</p>}
         </div>
       )}
       {business.compedPlan && business.compedPlan !== "FREE" && (
@@ -107,15 +124,16 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
           </div>
           <div className="text-left sm:text-right shrink-0">
             <div className="font-sans font-extrabold text-2xl tracking-[-0.03em] text-ink tabular-nums">
-              {plan.priceCents === 0 ? "Free" : formatMoney(plan.priceCents)}
-              {plan.priceCents > 0 && <span className="text-sm font-medium text-ink/65"> / month</span>}
+              {plan.priceCents === 0 || betaOnly ? "Free" : formatMoney(plan.priceCents)}
+              {plan.priceCents > 0 && !betaOnly && <span className="text-sm font-medium text-ink/65"> / month</span>}
+              {betaOnly && <span className="block text-xs font-semibold text-success-text">until {format(business.betaProEndsAt!, "MMM d")} · beta</span>}
             </div>
             {paid && business.stripeCustomerId && subscriptionBillingIsLive && canBill && <div className="mt-2"><ManageBillingButton /></div>}
           </div>
         </div>
         {paid ? (
           <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border border-t border-border">
-            <Fact label={onTrial ? (business.cancelAtPeriodEnd ? "Trial ends" : "First charge") : business.cancelAtPeriodEnd ? "Ends" : "Next charge"} value={onTrial ? format(business.trialEndsAt!, "MMM d, yyyy") : live && business.currentPeriodEnd ? format(business.currentPeriodEnd, "MMM d, yyyy") : "—"} sub={live && business.stripeCustomerId && !business.cancelAtPeriodEnd ? formatMoney(snapshot?.nextInvoice?.amountCents ?? plan.priceCents) : undefined} />
+            <Fact label={betaOnly ? "Free until" : onTrial ? (business.cancelAtPeriodEnd ? "Trial ends" : "First charge") : business.cancelAtPeriodEnd ? "Ends" : "Next charge"} value={betaOnly ? format(business.betaProEndsAt!, "MMM d, yyyy") : onTrial ? format(business.trialEndsAt!, "MMM d, yyyy") : live && business.currentPeriodEnd ? format(business.currentPeriodEnd, "MMM d, yyyy") : "—"} sub={live && business.stripeCustomerId && !business.cancelAtPeriodEnd ? formatMoney(snapshot?.nextInvoice?.amountCents ?? plan.priceCents) : undefined} />
             <Fact label="Payment method" value={snapshot?.paymentMethod ? `${cap(snapshot.paymentMethod.brand)} ···· ${snapshot.paymentMethod.last4}` : business.stripeCustomerId ? "None on file" : "—"} sub={snapshot?.paymentMethod ? `Expires ${String(snapshot.paymentMethod.expMonth).padStart(2, "0")}/${String(snapshot.paymentMethod.expYear).slice(-2)}` : undefined} tone={pastDue ? "warning" : undefined} />
             <Fact label="Connected" value={Number.isFinite(usage.limit) ? `${usage.active} of ${usage.limit}` : `${usage.active} · unlimited`} tone={usage.overQuota ? "warning" : undefined} />
             <Fact label="People" value={plan.maxTeamSeats === Infinity ? `${seatCount} · unlimited` : `${seatCount} of ${plan.maxTeamSeats}`} tone={seatsOver ? "warning" : undefined} />
@@ -140,12 +158,14 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
             const p = PLANS[key];
             const isCurrent = key === current;
             const rank = PLAN_ORDER.indexOf(key);
-            const label = isCurrent ? null : key === "FREE" ? null : rank > currentRank ? `Upgrade to ${p.name}` : `Switch to ${p.name}`;
+            const unavailable = !isCurrent && key !== "FREE" && !planPurchasable(key);
+            const label = isCurrent || unavailable ? null : key === "FREE" ? null : rank > currentRank ? `Upgrade to ${p.name}` : `Switch to ${p.name}`;
             return (
               <div key={key} className={cn("rounded-[22px] border bg-white p-5 flex flex-col transition-colors", isCurrent ? "border-ink shadow-[0_18px_44px_-28px_rgba(16,17,20,0.5)]" : "border-border")}>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-sans font-extrabold text-lg tracking-tight text-ink">{p.name}</h3>
                   {isCurrent && <Badge tone="accent">Current</Badge>}
+                  {unavailable && <Badge tone="neutral">Temporarily unavailable</Badge>}
                 </div>
                 <div className="mt-2 font-sans font-extrabold text-2xl tracking-[-0.03em] text-ink tabular-nums">
                   {p.priceCents === 0 ? "Free" : formatMoney(priceFor(key as "PRO" | "BUSINESS"))}
@@ -164,7 +184,8 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
                   {label && key === "PRO" && trialOffered && canBill && <p className="mt-2 text-xs text-ink/70 leading-relaxed">Card required. Nothing is charged for {TRIAL_DAYS} days; the first charge of {formatMoney(priceFor("PRO"))} is on {trialFirstCharge}. Cancel before then from Manage subscription and you pay nothing.</p>}
                   {label && key !== "FREE" && !subscriptionBillingIsLive && <p className="text-xs text-ink/65">Available once billing opens.</p>}
                   {label && key !== "FREE" && subscriptionBillingIsLive && !canBill && <p className="text-xs text-ink/65">Ask the workspace owner to change the plan.</p>}
-                  {isCurrent && <p className="text-xs text-ink/65">{key === "FREE" ? "No card on file." : business.cancelAtPeriodEnd ? "Cancels at the end of the period." : "Renews monthly."}</p>}
+                  {unavailable && <p className="text-xs text-ink/65">Not open to new workspaces during the beta.</p>}
+                  {isCurrent && <p className="text-xs text-ink/65">{key === "FREE" ? "No card on file." : betaActive && business.planTier === "FREE" && key === "PRO" ? `Free until ${format(business.betaProEndsAt!, "MMM d")} (beta).` : business.cancelAtPeriodEnd ? "Cancels at the end of the period." : "Renews monthly."}</p>}
                   {!isCurrent && key === "FREE" && business.stripeCustomerId && live && <p className="text-xs text-ink/65">To go back to Free, cancel from Manage subscription. You keep your plan until the period ends.</p>}
                 </div>
               </div>

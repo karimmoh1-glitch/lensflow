@@ -11,11 +11,16 @@ import { sendTransactional, type TransactionalDelivery } from "@/lib/messaging";
 import { invitationEmail, linkTo } from "@/lib/emails";
 import { canAddTeamSeat, planLimits, teamEntitled } from "@/lib/billing";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { sharedRateLimit, accountPasswordBucket } from "@/lib/sharedRateLimit";
+
+/** Invitation emails a workspace may send in a day: well above real use, far below a spam run. */
+const inviteQuota = (businessId: string) => sharedRateLimit(`invites:${businessId}`, { limit: 50, windowMs: 24 * 60 * 60 * 1000 });
+const QUOTA_ERROR = "That's a lot of invitations today. Try again tomorrow, or write to support@daythread.org.";
 
 const inviteSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Enter a valid email"),
-  phone: z.string().optional(),
+  name: z.string().trim().min(1, "Name is required").max(80),
+  email: z.string().trim().toLowerCase().email("Enter a valid email").max(254),
+  phone: z.string().max(32).optional(),
 });
 
 export async function inviteClient(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string; delivery?: TransactionalDelivery }> {
@@ -30,6 +35,7 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, email, phone } = parsed.data;
+  if (!(await inviteQuota(business.id)).ok) return { error: QUOTA_ERROR };
 
   // Look up the person, retire any outstanding invitation, and issue the new one as one
   // step. Two clicks used to race here: both found no client, both created one, and the
@@ -72,8 +78,8 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
 }
 
 const partnerInviteSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Enter a valid email"),
+  name: z.string().trim().min(1, "Name is required").max(80),
+  email: z.string().trim().toLowerCase().email("Enter a valid email").max(254),
 });
 
 export async function invitePartner(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string; delivery?: TransactionalDelivery }> {
@@ -85,6 +91,7 @@ export async function invitePartner(formData: FormData, actingSession?: SessionP
   const parsed = partnerInviteSchema.safeParse({ name: formData.get("name"), email: formData.get("email") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, email } = parsed.data;
+  if (!(await inviteQuota(business.id)).ok) return { error: QUOTA_ERROR };
 
 // Seats are counted and taken under one lock per workspace, so a burst of invitations
   // can't all pass the check before any of them is recorded.
@@ -143,6 +150,7 @@ export async function inviteTeammate(formData: FormData, actingSession?: Session
   const parsed = partnerInviteSchema.safeParse({ name: formData.get("name"), email: String(formData.get("email") ?? "").trim().toLowerCase() });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { name, email } = parsed.data;
+  if (!(await inviteQuota(business.id)).ok) return { error: QUOTA_ERROR };
 
 // Seats are counted and taken under one lock per workspace, so a burst of invitations
   // can't all pass the check before any of them is recorded.
@@ -198,6 +206,7 @@ export async function resendInvitation(id: string, actingSession?: SessionPayloa
   // forwarded, archived, sitting in a support ticket — would grant membership again.
   const invitation = await prisma.invitation.findFirst({ where: { id, businessId: ctx.business.id, status: { in: ["PENDING", "EXPIRED"] } } });
   if (!invitation) return { error: "That invitation can no longer be resent. Send a new one instead." };
+  if (!(await inviteQuota(ctx.business.id)).ok) return { error: QUOTA_ERROR };
 
   // A fresh token as well: resending replaces the old link rather than extending it.
   const updated = await prisma.invitation.update({
@@ -236,14 +245,14 @@ export async function previewInvitation(token: string): Promise<InvitationPrevie
     status = "EXPIRED";
   }
 
-  const existingAccount = Boolean(await prisma.user.findUnique({ where: { email: invitation.email }, select: { id: true } }));
+  const existingAccount = Boolean(await prisma.user.findUnique({ where: { email: invitation.email.toLowerCase() }, select: { id: true } }));
 
   return { businessName: invitation.business.name, role: invitation.role, email: invitation.email, existingAccount, status };
 }
 
 const acceptNewSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").refine((p) => Buffer.byteLength(p, "utf8") <= 72, "Use a password of 72 characters or fewer."),
 });
 const acceptExistingSchema = z.object({ password: z.string().min(1, "Password is required") });
 
@@ -264,13 +273,18 @@ export async function acceptInvitation(token: string, formData: FormData): Promi
   if (invitation.status === "ACCEPTED") return { error: "This invitation has already been used." };
   if (invitation.status === "EXPIRED" || invitation.expiresAt < new Date()) return { error: "This invitation has expired." };
 
-  const existingUser = await prisma.user.findUnique({ where: { email: invitation.email } });
+  // Addresses are stored lower-case; an invitation written before that is matched the same way,
+  // so accepting it can never mint a second, differently-cased account for one person.
+  const inviteEmail = invitation.email.trim().toLowerCase();
+  const existingUser = await prisma.user.findUnique({ where: { email: inviteEmail } });
 
   let userId: string;
 
   if (existingUser) {
     const parsed = acceptExistingSchema.safeParse({ password: formData.get("password") });
     if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    // The same per-account guess budget as login, so invitations can't be minted to guess a password.
+    if (!(await accountPasswordBucket(inviteEmail)).ok) return { error: "Too many attempts. Wait a few minutes and try again." };
     if (!(await verifyPassword(parsed.data.password, existingUser.passwordHash))) {
       return { error: "Incorrect password." };
     }
@@ -284,7 +298,7 @@ export async function acceptInvitation(token: string, formData: FormData): Promi
     const parsed = acceptNewSchema.safeParse({ name: formData.get("name"), password: formData.get("password") });
     if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
     const passwordHash = await hashPassword(parsed.data.password);
-    const user = await prisma.user.create({ data: { name: parsed.data.name, email: invitation.email, passwordHash } });
+    const user = await prisma.user.create({ data: { name: parsed.data.name, email: inviteEmail, passwordHash } });
     userId = user.id;
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { isSafeHttpsUrl } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Card, CardBody, Button, Input, Label, Badge } from "@/components/ui";
 import { ExternalLink, CheckCircle2 } from "lucide-react";
@@ -85,7 +86,7 @@ export function DeliveryPanel({
             </div>
             {deliveryNote && <p className="text-sm text-ink/70">{deliveryNote}</p>}
             <a
-              href={deliveryUrl}
+              href={isSafeHttpsUrl(deliveryUrl) ? deliveryUrl : undefined}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-2 text-sm text-accent-text hover:underline bg-black/[0.03] rounded-lg px-3 py-2.5 break-all"

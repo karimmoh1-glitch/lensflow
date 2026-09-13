@@ -71,3 +71,14 @@ export function initials(name: string) {
     .join("")
     .toUpperCase();
 }
+
+/** An absolute https URL with a host and nothing a browser would execute. For links people click. */
+export function isSafeHttpsUrl(value: unknown): value is string {
+  if (typeof value !== "string" || value.length > 2048) return false;
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" && Boolean(u.hostname) && !u.username && !u.password;
+  } catch {
+    return false;
+  }
+}

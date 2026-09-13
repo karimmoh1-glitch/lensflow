@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { requiredSecret } from "@/lib/env";
+import { oauthStateKey } from "@/lib/env";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
@@ -39,7 +39,7 @@ export function googleOAuthConfigured() {
 // callback route, so it has to be self-verifying (not a DB lookup keyed by something
 // guessable) — a short-lived signed token is the standard way to carry the initiating
 // business's id through the redirect without an extra table.
-const stateSecret = () => new TextEncoder().encode(requiredSecret("JWT_SECRET"));
+const stateSecret = () => oauthStateKey();
 
 const NONCE_COOKIE = "google_oauth_nonce";
 
@@ -68,7 +68,7 @@ export async function signGoogleState(businessId: string) {
 
 export async function verifyGoogleState(state: string): Promise<{ businessId: string } | null> {
   try {
-    const { payload } = await jwtVerify(state, stateSecret());
+    const { payload } = await jwtVerify(state, stateSecret(), { algorithms: ["HS256"] });
     if (typeof payload.businessId !== "string" || typeof payload.nonce !== "string") return null;
 
     const store = await cookies();

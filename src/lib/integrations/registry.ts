@@ -26,7 +26,7 @@ export type Capability =
   | "DELIVERY_STATUS";
 
 export type AuthKind = "oauth" | "app_password" | "platform" | "none";
-export type ProviderKind = "channel" | "calendar" | "site" | "payments" | "files" | "notifications" | "scheduling";
+export type ProviderKind = "channel" | "calendar" | "site" | "payments" | "files" | "notifications" | "scheduling" | "meetings";
 export type Group = "communication" | "scheduling" | "payments" | "files" | "meetings" | "business";
 
 export type ProviderSpec = {
@@ -197,6 +197,18 @@ export const PROVIDERS: Record<RegisteredProvider, ProviderSpec> = {
     env: [],
     summary: "Your public booking page and contact form. Always on.",
   },
+  ZOOM: {
+    key: "ZOOM",
+    name: "Zoom",
+    kind: "meetings",
+    group: "meetings",
+    auth: "oauth",
+    capabilities: ["CREATE_EVENTS", "UPDATE_EVENTS", "DELETE_EVENTS", "WEBHOOKS"],
+    env: ["ZOOM_CLIENT_ID", "ZOOM_CLIENT_SECRET"],
+    approval: "A Zoom user-managed OAuth app (marketplace.zoom.us) with the meeting and user scopes, its redirect URL set to /api/auth/zoom/callback and, for deauthorization notices, its event notification URL set to /api/webhooks/zoom on this deployment.",
+    summary: "A Zoom meeting on any booking, made with your account. The join link goes to the client; you start it from the booking.",
+    docs: "docs/integrations/zoom.md",
+  },
   SLACK: {
     key: "SLACK",
     name: "Slack",
@@ -224,7 +236,6 @@ export const CALENDAR_PROVIDERS: IntegrationProvider[] = ["GOOGLE_CALENDAR", "MI
 export type ComingSoonSpec = { key: string; name: string; group: Group; summary: string };
 
 export const COMING_SOON: ComingSoonSpec[] = [
-  { key: "ZOOM", name: "Zoom", group: "meetings", summary: "Put a Zoom link on every booking, and keep the recording with the client." },
   { key: "GOOGLE_MEET", name: "Google Meet", group: "meetings", summary: "A Meet link created with the booking, on the calendar you already use." },
   { key: "MICROSOFT_TEAMS", name: "Microsoft Teams", group: "meetings", summary: "A Teams link on every booking for businesses that run on Microsoft." },
   { key: "QUICKBOOKS", name: "QuickBooks", group: "payments", summary: "Send what you were paid to your books without typing it twice." },
@@ -235,7 +246,7 @@ export const GROUPS: Array<{ key: Group; title: string; hint: string; providers:
   { key: "scheduling", title: "Scheduling", hint: "Bookings go out; busy time comes in", providers: ["GOOGLE_CALENDAR", "MICROSOFT_CALENDAR", "APPLE_CALENDAR", "CALENDLY"] },
   { key: "payments", title: "Payments", hint: "Money in, matched to the person who paid", providers: ["STRIPE"] },
   { key: "files", title: "Files", hint: "A folder per client, where your files already live", providers: ["GOOGLE_DRIVE", "DROPBOX"] },
-  { key: "meetings", title: "Meetings", hint: "Where the call happens", providers: [] },
+  { key: "meetings", title: "Meetings", hint: "Where the call happens", providers: ["ZOOM"] },
   { key: "business", title: "Business", hint: "Forms and alerts", providers: ["WEBSITE", "SLACK"] },
 ];
 

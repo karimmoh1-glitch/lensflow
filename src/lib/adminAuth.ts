@@ -1,5 +1,5 @@
 import { timingSafeEqual, createHash } from "crypto";
-import { rateLimit } from "@/lib/rateLimit";
+import { rateLimit, clientIpFrom } from "@/lib/rateLimit";
 
 /**
  * Constant-time comparison for the shared admin secret. Hashing both sides to a fixed
@@ -24,7 +24,7 @@ export function verifySeedSecret(req: Request): "ok" | "unauthorized" | "unconfi
   const secret = process.env.SEED_SECRET;
   if (!secret) return "unconfigured";
 
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? "unknown";
+  const ip = clientIpFrom(req.headers);
   if (!rateLimit(`admin-auth:${ip}`, { limit: 10, windowMs: 10 * 60 * 1000 }).ok) return "rate-limited";
 
   const provided = req.headers.get("x-seed-secret");

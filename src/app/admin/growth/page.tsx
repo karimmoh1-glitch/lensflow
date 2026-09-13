@@ -23,8 +23,8 @@ export const dynamic = "force-dynamic";
 export default async function GrowthPage({ searchParams }: { searchParams: Promise<{ days?: string; b?: string }> }) {
   const session = await getSession();
   if (!session) redirect("/login");
-  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true } });
-  if (!isFounder(user?.email)) notFound();
+  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, emailVerifiedAt: true, createdAt: true } });
+  if (!isFounder(user)) notFound();
   const sp = await searchParams;
   const days = [7, 30, 90].includes(Number(sp.days)) ? Number(sp.days) : 30;
   const detail = sp.b ? await getBusinessDetail(sp.b.slice(0, 60)) : null;

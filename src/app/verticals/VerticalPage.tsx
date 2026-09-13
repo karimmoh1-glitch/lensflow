@@ -4,6 +4,7 @@ import { Footer } from "@/app/landing/Footer";
 import { Trust } from "@/app/landing/Trust";
 import { PricingSection } from "@/app/PricingSection";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
+import { betaOfferOpen } from "@/lib/billing";
 import { ChannelIcon, type ChannelKey } from "@/app/landing/ChannelIcon";
 import { RevealOnScroll } from "@/app/RevealOnScroll";
 
@@ -101,7 +102,7 @@ export function VerticalPage({ v }: { v: Vertical }) {
 
       <section className="bg-white border-t border-border py-16 md:py-24"><Trust /></section>
 
-      <div id="pricing" className="bg-white border-t border-border scroll-mt-16"><PricingSection trial={subscriptionBillingIsLive} /></div>
+      <div id="pricing" className="bg-white border-t border-border scroll-mt-16"><PricingSection trial={subscriptionBillingIsLive} beta={betaOfferOpen()} /></div>
 
       <section className="bg-paper border-t border-border py-16 md:py-24" aria-labelledby="faq-title">
         <div className="max-w-[840px] mx-auto px-6">

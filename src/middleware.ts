@@ -9,8 +9,12 @@ async function hasValidSession(req: NextRequest) {
   const token = req.cookies.get("lf_session")?.value;
   if (!token) return false;
   try {
-    await jwtVerify(token, secret());
-    return true;
+    const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
+    // Only a session token opens the app (see isSessionClaims in lib/auth; duplicated here
+    // because middleware runs on the edge without Prisma). Revocation is re-checked on the server.
+    if (typeof payload.userId !== "string") return false;
+    if (payload.typ !== undefined) return payload.typ === "session";
+    return payload.nonce === undefined && payload.provider === undefined && payload.purpose === undefined && payload.businessId === undefined;
   } catch {
     return false;
   }

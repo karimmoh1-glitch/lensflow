@@ -114,6 +114,9 @@ describe("complimentary access", () => {
     expect(isCompedEmail(email)).toBe(true);
     expect(isCompedEmail("nobody@example.com")).toBe(false);
 
+    // An address nobody has proven gets nothing: anyone can register an unclaimed address.
+    expect(await applyCompedAccess(user.id, email)).toBe(0);
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
     expect(await applyCompedAccess(user.id, email)).toBe(1);
     const after = await prisma.business.findUniqueOrThrow({ where: { id: workspace.id } });
     expect(after.compedPlan).toBe("BUSINESS");

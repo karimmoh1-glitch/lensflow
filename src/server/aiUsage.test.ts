@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import { prisma } from "@/lib/db";
-import { AI_CALL_EVENT, aiDisabledByFlag, aiOperationalState, checkAiLimit, getAiSpend, getAiUsageForBusiness, modelKeyConfigured, recordAiBlocked, recordAiCall } from "./aiUsage";
+import { AI_CALL_EVENT, aiDisabledByFlag, aiOperationalState, checkAiLimit, getAiSpend, getAiUsageForBusiness, modelKeyConfigured, recordAiBlocked, recordAiCall, resetAiBudgetCache, reserveAiCall, completeAiCall, AI_MAX_IN_FLIGHT } from "./aiUsage";
 import { AI_MODEL, DAILY_CALL_CEILING, estimateCostMicros, type AiFeature } from "@/lib/aiPolicy";
 
 let a: string, b: string;
@@ -23,9 +23,12 @@ afterAll(async () => {
   if (KEY === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = KEY;
   if (FLAG === undefined) delete process.env.AI_DISABLED; else process.env.AI_DISABLED = FLAG;
 });
+const BUDGET_ENV = ["AI_ENABLED", "AI_GLOBAL_DAILY_BUDGET_USD", "AI_GLOBAL_MONTHLY_BUDGET_USD", "AI_WORKSPACE_MONTHLY_BUDGET_FREE_USD", "AI_WORKSPACE_MONTHLY_BUDGET_PRO_USD"];
 beforeEach(async () => {
   process.env.OPENAI_API_KEY = "test-key-not-used-for-any-request";
   delete process.env.AI_DISABLED;
+  for (const k of BUDGET_ENV) delete process.env[k];
+  resetAiBudgetCache();
   await prisma.analyticsEvent.deleteMany({ where: { businessId: { in: [a, b] } } });
 });
 afterEach(() => {
@@ -200,5 +203,103 @@ describe("what a call records", () => {
     expect(rowA?.usage.callsToday).toBe(2);
     expect(rowB?.usage.callsToday).toBe(1);
     expect(spend.overall.callsToday).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("cost ceilings, the per-person limit and the AI_ENABLED switch", () => {
+  afterEach(() => {
+    for (const k of BUDGET_ENV) delete process.env[k];
+    resetAiBudgetCache();
+  });
+
+  it("AI_ENABLED=false is a server-side kill switch; any other value leaves AI on", async () => {
+    for (const value of ["false", "0", "no", "off", "FALSE"]) {
+      process.env.AI_ENABLED = value;
+      expect(aiDisabledByFlag()).toBe(true);
+      const gate = await checkAiLimit(a, "draft");
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.reason).toBe("disabled");
+    }
+    for (const value of ["true", "", "1"]) {
+      process.env.AI_ENABLED = value;
+      expect(aiDisabledByFlag()).toBe(false);
+    }
+  });
+
+  it("the global daily budget stops every workspace once Daythread as a whole has spent it", async () => {
+    await seedCalls(a, "draft", 1);
+    process.env.AI_GLOBAL_DAILY_BUDGET_USD = "0.000001"; // one micro-dollar: already exceeded
+    resetAiBudgetCache();
+    for (const id of [a, b]) {
+      const gate = await checkAiLimit(id, "draft");
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) {
+        expect(gate.reason).toBe("global_budget");
+        expect(gate.message).not.toMatch(/openai|budget|\$/i);
+      }
+    }
+  });
+
+  it("a workspace's monthly allowance follows its plan", async () => {
+    // Twenty calls at ~27 micro-dollars each is ~540: over a $0.0005 Free allowance, under a $1 Pro one.
+    await seedCalls(a, "summary", 20);
+    process.env.AI_WORKSPACE_MONTHLY_BUDGET_FREE_USD = "0.0005";
+    process.env.AI_WORKSPACE_MONTHLY_BUDGET_PRO_USD = "1";
+    const gate = await checkAiLimit(a, "summary");
+    expect(gate.ok).toBe(false);
+    if (!gate.ok) expect(gate.reason).toBe("workspace_budget");
+    expect((await checkAiLimit(b, "summary")).ok).toBe(true);
+    await prisma.business.update({ where: { id: a }, data: { betaProEndsAt: new Date(Date.now() + 86400_000) } });
+    expect((await checkAiLimit(a, "summary")).ok).toBe(true);
+    await prisma.business.update({ where: { id: a }, data: { betaProEndsAt: null } });
+  });
+
+  it("one person is limited across workspaces, and another person in the same workspace is not", async () => {
+    const userId = `user-${Date.now()}`;
+    for (let i = 0; i < 80; i++) {
+      await recordAiCall({ businessId: i % 2 ? a : b, userId, feature: "summary", model: AI_MODEL, inputTokens: 1, outputTokens: 1, totalTokens: 2, ms: 1, ok: true });
+    }
+    const gate = await checkAiLimit(a, "summary", userId);
+    expect(gate.ok).toBe(false);
+    if (!gate.ok) expect(gate.reason).toBe("user_limit");
+    expect((await checkAiLimit(a, "summary", `${userId}-other`)).ok).toBe(true);
+  });
+
+  it("an unknown workspace is refused rather than allowed unmetered", async () => {
+    const gate = await checkAiLimit("no-such-business", "draft");
+    expect(gate.ok).toBe(false);
+    if (!gate.ok) expect(gate.reason).toBe("check_failed");
+  });
+
+  it("a recorded call carries who caused it, and still no customer text", async () => {
+    await recordAiCall({ businessId: a, userId: "u-123", feature: "draft", model: AI_MODEL, inputTokens: 10, outputTokens: 5, totalTokens: 15, ms: 3, ok: true });
+    const row = await prisma.analyticsEvent.findFirst({ where: { businessId: a, name: AI_CALL_EVENT }, orderBy: { createdAt: "desc" } });
+    expect(row?.properties).toMatchObject({ userId: "u-123", feature: "draft" });
+    expect(Object.keys(row?.properties as object).sort()).toEqual(["costMicros", "feature", "inputTokens", "model", "ms", "ok", "outputTokens", "totalTokens", "userId"]);
+  });
+});
+
+describe("reservation: simultaneous requests can't all slip past the limits", () => {
+  it("a burst gets at most the in-flight allowance, and a completed call frees its slot", async () => {
+    const results = await Promise.all(Array.from({ length: 12 }, () => reserveAiCall({ businessId: a, feature: "draft", model: AI_MODEL })));
+    const granted = results.filter((r): r is { ok: true; id: string } => r.ok);
+    expect(granted).toHaveLength(AI_MAX_IN_FLIGHT);
+    for (const r of results) if (!r.ok) expect(r.reason).toBe("feature_limit");
+    await completeAiCall(granted[0].id, { businessId: a, feature: "draft", model: AI_MODEL, inputTokens: 10, outputTokens: 5, ms: 10, ok: true });
+    const again = await reserveAiCall({ businessId: a, feature: "draft", model: AI_MODEL });
+    expect(again.ok).toBe(true);
+    const row = await prisma.analyticsEvent.findUniqueOrThrow({ where: { id: granted[0].id } });
+    expect(row.properties).toMatchObject({ ok: true, inputTokens: 10 });
+    expect((row.properties as { pending?: boolean }).pending).toBeUndefined();
+  });
+
+  it("the hourly draft cap holds exactly under a burst, because every reservation counts at once", async () => {
+    await seedCalls(a, "draft", 58);
+    const results = await Promise.all(Array.from({ length: 10 }, () => reserveAiCall({ businessId: a, feature: "draft", model: AI_MODEL })));
+    expect(results.filter((r) => r.ok)).toHaveLength(2);
+  });
+
+  it("the provider's dated model name is priced, not recorded as free", () => {
+    expect(estimateCostMicros("gpt-4o-mini-2024-07-18", 1_000_000, 0)).toBe(150_000);
   });
 });

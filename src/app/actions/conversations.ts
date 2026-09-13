@@ -110,7 +110,9 @@ export async function summarizeConversation(conversationId: string, opts: { forc
   const conv = await prisma.conversation.findFirst({
     where: { id: conversationId, businessId: business.id },
     include: {
-      messages: { orderBy: { createdAt: "asc" } },
+      // Bounded: the model reads the last twelve and the rules need the latest inbound, so a
+      // thread of thousands of messages is never loaded whole.
+      messages: { orderBy: { createdAt: "desc" }, take: 60 },
       client: { include: { bookings: { where: { startAt: { gte: new Date() }, status: { not: "CANCELED" } }, orderBy: { startAt: "asc" }, take: 1, include: { service: true } } } },
       lead: { include: { service: true } },
     },
@@ -126,7 +128,7 @@ export async function summarizeConversation(conversationId: string, opts: { forc
   const personName = conv.client?.name ?? conv.lead?.extractedName ?? guessName(conv.externalHandle) ?? "They";
   const upcoming = conv.client?.bookings[0];
   const upcomingLabel = upcoming ? `${upcoming.service.name} · ${format(toZonedDisplayDate(upcoming.startAt, business.timezone), "EEE, MMM d · h:mm a")}` : null;
-  const cleaned = conv.messages.map((m) => ({ direction: m.direction, body: splitMessage(m.body).text, createdAt: m.createdAt, status: m.status }));
+  const cleaned = [...conv.messages].reverse().map((m) => ({ direction: m.direction, body: splitMessage(m.body).text, createdAt: m.createdAt, status: m.status }));
 
   const base = summarizeDeterministically({
     personName,
@@ -142,10 +144,10 @@ export async function summarizeConversation(conversationId: string, opts: { forc
   if (aiEntitled(business)) {
     // A forced re-summary is a deliberate model call; the cached path above never reaches here.
     if (opts.force) {
-      const gate = await checkAiLimit(business.id, "summary_forced");
+      const gate = await checkAiLimit(business.id, "summary_forced", ctx.user.id);
       if (!gate.ok && isSpendLimit(gate.reason)) return { error: gate.message };
     }
-    const sentence = await summarizeConversationSentence({ personName, businessName: business.name, messages: cleaned }, { businessId: business.id, feature: opts.force ? "summary_forced" : "summary" });
+    const sentence = await summarizeConversationSentence({ personName, businessName: business.name, messages: cleaned }, { businessId: business.id, feature: opts.force ? "summary_forced" : "summary", userId: ctx.user.id });
     if (sentence) summary = { ...base, summary: sentence, source: "ai" };
   }
 

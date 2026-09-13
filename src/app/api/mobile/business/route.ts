@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileBusiness, requireMobileRole, isErrorResponse, jsonError, publicMessage } from "@/lib/mobileApi";
 import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { updateBusinessProfile } from "@/app/actions/settings";
@@ -16,5 +16,5 @@ export async function PUT(req: Request) {
   const session = await getSessionFromRequest(req);
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError(parsed.error.issues[0]?.message ?? "Check the fields.", 400);
-  try { await updateBusinessProfile(parsed.data, session); return NextResponse.json({ ok: true }); } catch (e) { return jsonError(e instanceof Error && e.message !== "unauthorized" ? e.message : "Only an owner or admin can change this.", 403); }
+  try { await updateBusinessProfile(parsed.data, session); return NextResponse.json({ ok: true }); } catch (e) { return jsonError(publicMessage(e, "Only an owner or admin can change this."), 403); }
 }

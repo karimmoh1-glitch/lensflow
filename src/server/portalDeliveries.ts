@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { isSafeHttpsUrl } from "@/lib/utils";
 import type { ExternalFolders, FileProvider } from "@/server/clientFiles";
 
 /**
@@ -38,7 +39,7 @@ export async function portalDeliveries(businessId: string, clientId: string): Pr
     }),
   ]);
 
-  const out: PortalDelivery[] = bookings.map((b) => ({
+  const out: PortalDelivery[] = bookings.filter((b) => isSafeHttpsUrl(b.deliveryUrl)).map((b) => ({
     id: b.id,
     title: b.service.name,
     url: b.deliveryUrl!,

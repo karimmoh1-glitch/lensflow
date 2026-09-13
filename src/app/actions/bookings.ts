@@ -1,7 +1,9 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { isSafeHttpsUrl } from "@/lib/utils";
 import { fireAutomationEvent } from "@/server/automationRunner";
+import { moveMeetingForBooking, removeMeetingForBooking } from "@/server/zoomMeetings";
 import { pushBookingToCalendars } from "@/server/calendarSync";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -67,6 +69,7 @@ export async function advanceBookingStatus(bookingId: string, status: BookingSta
 
   // Mirror the change on connected calendars (cancellation removes the mirror).
   await pushBookingToCalendars(bookingId).catch(() => {});
+  if (status === "CANCELED") await removeMeetingForBooking(business.id, bookingId, { reason: "canceled" }).catch(() => {});
 
   revalidatePath(`/dashboard/bookings/${bookingId}`);
   revalidatePath("/dashboard/bookings");
@@ -83,6 +86,11 @@ export async function advanceBookingStatus(bookingId: string, status: BookingSta
 export async function markDelivered(bookingId: string, url: string, note: string | undefined) {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (!ctx) throw new Error("unauthorized");
+
+  // A client clicks this link from their portal: only a real https address is accepted, never
+  // javascript:, data: or anything else a browser might execute.
+  if (!isSafeHttpsUrl(url)) throw new Error("Use a full https:// link.");
+  if (note !== undefined && (typeof note !== "string" || note.length > 2000)) throw new Error("Keep the note under 2,000 characters.");
 
   const booking = await prisma.booking.findFirst({ where: { id: bookingId, businessId: ctx.business.id } });
   if (!booking) throw new Error("not found");
@@ -177,6 +185,7 @@ export async function rescheduleBooking(bookingId: string, startISO: string, opt
 
   // Calendar mirrors move with it; a failure there is recorded on the integration, never hidden.
   await pushBookingToCalendars(bookingId).catch(() => {});
+  await moveMeetingForBooking(business.id, bookingId).catch(() => {});
 
   let notified: "sent" | "not_delivered" | "no_channel" | "skipped" = "skipped";
   if (opts.notify !== false) {
@@ -213,6 +222,7 @@ export async function cancelBooking(bookingId: string, session?: SessionPayload 
   if (!LEGAL_TRANSITIONS[current.status].includes("CANCELED")) return { ok: false, error: "This booking can't be canceled from its current state." };
   await prisma.booking.updateMany({ where: { id: bookingId, businessId: ctx.business.id }, data: { status: "CANCELED" } });
   await prisma.auditLog.create({ data: { businessId: ctx.business.id, action: "booking_canceled", targetType: "booking", targetId: bookingId } });
+  await removeMeetingForBooking(ctx.business.id, bookingId, { reason: "canceled" }).catch(() => {});
   await pushBookingToCalendars(bookingId).catch(() => {});
   revalidatePath(`/dashboard/bookings/${bookingId}`);
   revalidatePath("/dashboard/bookings");

@@ -1,12 +1,15 @@
 "use server";
 
 import { z } from "zod";
+import { betaGrantForNewWorkspace } from "@/server/betaOffer";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, getUserMemberships, homeRouteFor } from "@/lib/auth";
+import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, getUserMemberships, homeRouteFor, getSession } from "@/lib/auth";
 import { generatePasswordResetToken, passwordResetExpiry } from "@/lib/passwordReset";
 import { sendOnChannel, messagingIsLive } from "@/lib/messaging";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { sharedRateLimit, accountPasswordBucket } from "@/lib/sharedRateLimit";
+import { hashResetToken } from "@/lib/passwordReset";
 import { track } from "@/lib/analytics";
 import { parseAnswers, savePersonalization } from "@/server/personalization";
 import { planSchema } from "@/lib/personalization";
@@ -19,7 +22,7 @@ const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try 
 const signupSchema = z.object({
   name: z.string().trim().min(1, "Your name is required").max(80),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(200),
+  password: z.string().min(8, "Password must be at least 8 characters").max(200).refine((p) => Buffer.byteLength(p, "utf8") <= 72, "Use a password of 72 characters or fewer."),
 });
 
 /** A person's own workspace, named after them. Nothing about a business is asked. */
@@ -50,7 +53,7 @@ export type FormState = { error?: string; duplicateEmail?: boolean } | undefined
 
 export async function signup(formData: FormData): Promise<FormState> {
   const ip = await getClientIp();
-  if (!rateLimit(`signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok) {
+  if (!rateLimit(`signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok || !(await sharedRateLimit(`signup:${ip}`, { limit: 20, windowMs: 60 * 60 * 1000 })).ok) {
     return { error: TOO_MANY_ATTEMPTS };
   }
 
@@ -82,7 +85,7 @@ export async function signup(formData: FormData): Promise<FormState> {
 
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({ data: { name, email, passwordHash } });
-      const business = await tx.business.create({ data: { name: workspaceName, handle } });
+      const business = await tx.business.create({ data: { name: workspaceName, handle, ...betaGrantForNewWorkspace() } });
       await tx.orgMembership.create({ data: { userId: user.id, businessId: business.id, role: "OWNER" } });
       return { user, business };
     });
@@ -102,7 +105,7 @@ export async function signup(formData: FormData): Promise<FormState> {
 }
 
 const loginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -115,10 +118,12 @@ export async function login(formData: FormData): Promise<FormState> {
   // guards a specific account against brute force spread across rotating IPs.
   const ipOk = rateLimit(`login:ip:${ip}`, { limit: 20, windowMs: 10 * 60 * 1000 }).ok;
   const emailOk = rateLimit(`login:email:${parsed.data.email}`, { limit: 8, windowMs: 10 * 60 * 1000 }).ok;
-  if (!ipOk || !emailOk) return { error: TOO_MANY_ATTEMPTS };
+  if (!ipOk || !emailOk || !(await accountPasswordBucket(parsed.data.email)).ok) return { error: TOO_MANY_ATTEMPTS };
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
+  // Compare against a real hash either way, so the response time doesn't say whether the account exists.
+  const passwordOk = await verifyPassword(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
+  if (!user || !passwordOk) {
     return { error: "Incorrect email or password" };
   }
 
@@ -143,13 +148,21 @@ export async function login(formData: FormData): Promise<FormState> {
   redirect(homeRouteFor(membership.role, membership.business));
 }
 
+// A valid bcrypt hash of a random string, for timing-equal comparisons when there is no account.
+const DUMMY_HASH = "$2a$10$BaCUUcjgNeUlpal/7DIz..VKv4XaiGJTWtiDla40HVzXvfm.tU0Cm";
+
 export async function logout() {
+  // Signing out revokes the token rather than only forgetting it in this browser: a copied
+  // cookie or bearer token stops working too. That signs out every device, which is the
+  // safe reading of "sign out".
+  const session = await getSession();
+  if (session) await prisma.user.update({ where: { id: session.userId }, data: { sessionVersion: { increment: 1 } } }).catch(() => {});
   await clearSessionCookie();
   redirect("/login");
 }
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email("Enter a valid email"),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
 });
 
 export type ForgotPasswordState = { sent: boolean; error?: string; devLink?: string };
@@ -171,7 +184,8 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
   if (!parsed.success) return { sent: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
   const ip = await getClientIp();
-  if (!rateLimit(`forgot-password:${ip}`, { limit: 6, windowMs: 60 * 60 * 1000 }).ok) {
+  // Per network, and per address across every instance, so nobody can flood one inbox with resets.
+  if (!rateLimit(`forgot-password:${ip}`, { limit: 6, windowMs: 60 * 60 * 1000 }).ok || !(await sharedRateLimit(`forgot-password:${parsed.data.email}`, { limit: 5, windowMs: 60 * 60 * 1000 })).ok) {
     return { sent: false, error: TOO_MANY_ATTEMPTS };
   }
 
@@ -186,8 +200,9 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
   let devLink: string | undefined;
   if (user) {
     const token = generatePasswordResetToken();
+    // Only the hash is stored: a copy of the database cannot reset anyone's password.
     await prisma.passwordResetToken.create({
-      data: { userId: user.id, token, expiresAt: passwordResetExpiry() },
+      data: { userId: user.id, token: hashResetToken(token), expiresAt: passwordResetExpiry() },
     });
     const mail = passwordResetEmail({ name: user.name, token });
     const link = linkTo(`/reset-password/${token}`);
@@ -199,7 +214,7 @@ export async function forgotPassword(formData: FormData): Promise<ForgotPassword
 }
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").refine((p) => Buffer.byteLength(p, "utf8") <= 72, "Use a password of 72 characters or fewer."),
 });
 
 export type ResetPasswordState = { error?: string } | undefined;
@@ -213,7 +228,9 @@ export async function resetPassword(token: string, formData: FormData): Promise<
     return { error: TOO_MANY_ATTEMPTS };
   }
 
-  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+  if (typeof token !== "string" || token.length > 200) return { error: "This reset link is invalid or has expired. Request a new one." };
+  // Hashed at rest; a link issued before hashing (valid for an hour at most) still matches raw.
+  const resetToken = (await prisma.passwordResetToken.findUnique({ where: { token: hashResetToken(token) } })) ?? (await prisma.passwordResetToken.findUnique({ where: { token } }));
   if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
     return { error: "This reset link is invalid or has expired. Request a new one." };
   }
@@ -223,7 +240,8 @@ export async function resetPassword(token: string, formData: FormData): Promise<
   await prisma.$transaction([
     // New password, and every existing session — including whoever might have been using a
     // stolen one — is signed out.
-    prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash, sessionVersion: { increment: 1 } } }),
+    // Following a link sent to the address proves the address.
+    prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash, sessionVersion: { increment: 1 }, emailVerifiedAt: new Date() } }),
     prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
     prisma.passwordResetToken.updateMany({ where: { userId: resetToken.userId, usedAt: null, id: { not: resetToken.id } }, data: { usedAt: new Date() } }),
   ]);

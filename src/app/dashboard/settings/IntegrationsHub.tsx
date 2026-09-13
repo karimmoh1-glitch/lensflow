@@ -16,14 +16,14 @@ import { SlackManage } from "./SlackManage";
 import { templatesEnabled } from "@/lib/meta/whatsapp";
 import { connectionState } from "@/lib/meta/config";
 import { connectGoogle } from "@/app/actions/googleAuth";
-import { connectInstagram, connectWhatsApp, connectMicrosoft, connectSlack, connectDropbox, connectCalendly, connectStripe } from "@/app/actions/connect";
+import { connectInstagram, connectWhatsApp, connectMicrosoft, connectSlack, connectDropbox, connectCalendly, connectStripe, connectZoom } from "@/app/actions/connect";
 import { accessRequestFor } from "@/server/accessRequests";
 import type { CalendlySettings } from "@/server/calendlySync";
 import type { DeliveryCheck } from "@/server/instagramDelivery";
 import type { FileProviderCheck } from "@/server/fileProviderCheck";
 import { FileConnectionCheck } from "./FileConnectionCheck";
 import type { SlackSettings } from "@/server/notify";
-import { CalendarDays, Apple, Mail, CalendarClock, CreditCard, HardDrive, Box, Hash } from "lucide-react";
+import { CalendarDays, Apple, Mail, CalendarClock, CreditCard, HardDrive, Box, Hash, Video } from "lucide-react";
 import type { Business, IntegrationProvider } from "@prisma/client";
 import Link from "next/link";
 
@@ -34,7 +34,7 @@ import Link from "next/link";
  * not offered yet says so without a button that pretends.
  */
 const ICON: Partial<Record<IntegrationProvider, ChannelKey>> = { EMAIL: "gmail", SMS: "sms", INSTAGRAM: "instagram", WHATSAPP: "whatsapp", WEBSITE: "website" };
-const ACCENT: Partial<Record<IntegrationProvider, string>> = { EMAIL: "linear-gradient(90deg,#4285F4,#34A853,#FBBC04,#EA4335)", MICROSOFT_OUTLOOK: "#0F6CBD", INSTAGRAM: "linear-gradient(90deg,#F58529,#DD2A7B,#8134AF)", WHATSAPP: "#25D366", SMS: "#34C759", WEBSITE: "#101114", GOOGLE_CALENDAR: "linear-gradient(90deg,#4285F4,#34A853)", MICROSOFT_CALENDAR: "#0F6CBD", APPLE_CALENDAR: "#101114", CALENDLY: "#006BFF", STRIPE: "#635BFF", GOOGLE_DRIVE: "linear-gradient(90deg,#4285F4,#FBBC04,#34A853)", DROPBOX: "#0061FF", SLACK: "linear-gradient(90deg,#E01E5A,#36C5F0,#2EB67D,#ECB22E)" };
+const ACCENT: Partial<Record<IntegrationProvider, string>> = { EMAIL: "linear-gradient(90deg,#4285F4,#34A853,#FBBC04,#EA4335)", MICROSOFT_OUTLOOK: "#0F6CBD", INSTAGRAM: "linear-gradient(90deg,#F58529,#DD2A7B,#8134AF)", WHATSAPP: "#25D366", SMS: "#34C759", WEBSITE: "#101114", GOOGLE_CALENDAR: "linear-gradient(90deg,#4285F4,#34A853)", MICROSOFT_CALENDAR: "#0F6CBD", APPLE_CALENDAR: "#101114", CALENDLY: "#006BFF", STRIPE: "#635BFF", GOOGLE_DRIVE: "linear-gradient(90deg,#4285F4,#FBBC04,#34A853)", DROPBOX: "#0061FF", SLACK: "linear-gradient(90deg,#E01E5A,#36C5F0,#2EB67D,#ECB22E)", ZOOM: "#0B5CFF" };
 const DESCRIPTION: Partial<Record<IntegrationProvider, string>> = {
   EMAIL: "Read your inbox and reply from your own address. Daythread sorts what needs you from what doesn't.",
   MICROSOFT_OUTLOOK: "Read your Outlook inbox and reply from your own address, sorted the same way.",
@@ -50,6 +50,7 @@ const DESCRIPTION: Partial<Record<IntegrationProvider, string>> = {
   DROPBOX: "A Daythread app folder in your Dropbox with a folder per client. Files stay in Dropbox.",
   WEBSITE: "Your public booking page and contact form. Inquiries and bookings arrive as conversations.",
   SLACK: "New inquiries and bookings posted to a channel you choose. Names and times, never the message.",
+  ZOOM: "A Zoom meeting on any booking, made with your own account. The client gets the join link; you start it from the booking.",
 };
 const CAPS: Partial<Record<IntegrationProvider, string[]>> = {
   EMAIL: ["Inbox sync", "Send replies", "Threads"],
@@ -66,6 +67,7 @@ const CAPS: Partial<Record<IntegrationProvider, string[]>> = {
   DROPBOX: ["Folder per client", "File list"],
   WEBSITE: ["Inquiries", "Bookings"],
   SLACK: ["New inquiry", "New booking", "Connection alerts"],
+  ZOOM: ["Meeting per booking", "Moves with the booking", "Removed when canceled"],
 };
 const ERRORS: Record<string, string> = {
   denied: "could not be connected. The authorization was canceled before it finished — try connecting again.",
@@ -203,6 +205,7 @@ export async function IntegrationsHub({ business, role, connected, connectError,
 
   const slackRow = byProvider.get("SLACK");
   const slackSettings = (slackRow?.settings ?? {}) as SlackSettings;
+  const zoomRow = byProvider.get("ZOOM");
   const calendlyRow = byProvider.get("CALENDLY");
   const calendlySettings = (calendlyRow?.settings ?? {}) as CalendlySettings;
   const stripeRow = byProvider.get("STRIPE");
@@ -213,6 +216,12 @@ export async function IntegrationsHub({ business, role, connected, connectError,
     if (provider === "WHATSAPP" && waManage) return <WhatsAppManage model={waManage} />;
     if (provider === "INSTAGRAM" && igManage) return <InstagramManage model={igManage} />;
     if (provider === "SLACK" && slackRow) return <SlackManage model={{ teamName: slackSettings.teamName ?? slackRow.externalAccount ?? null, channelName: slackSettings.channelName ?? null, lastPostAt: slackSettings.lastPostAt ?? null, lastPostError: slackSettings.lastPostError ?? null }} />;
+    if (provider === "ZOOM" && zoomRow) return (
+      <Details rows={[
+        ["Account", zoomRow.externalAccount ?? ((zoomRow.settings ?? {}) as { name?: string }).name ?? "—"],
+        ["Last changed", zoomRow.updatedAt ? `${formatDistanceToNowStrict(zoomRow.updatedAt)} ago` : "—"],
+      ]} note="Open a booking and press Create Zoom meeting. The join link goes to your client and your calendars; your own start link is fetched from Zoom only when you press Start. Rescheduling moves the meeting and canceling the booking removes it." />
+    );
     if (provider === "CALENDLY" && calendlyRow) return (
       <Details rows={[
         ["Account", calendlyRow.externalAccount ?? "—"],
@@ -263,6 +272,7 @@ export async function IntegrationsHub({ business, role, connected, connectError,
     : provider === "GOOGLE_DRIVE" ? <HardDrive className="w-5 h-5 text-[#34A853]" strokeWidth={2} aria-hidden />
     : provider === "DROPBOX" ? <Box className="w-5 h-5 text-[#0061FF]" strokeWidth={2} aria-hidden />
     : provider === "SLACK" ? <Hash className="w-5 h-5 text-[#4A154B]" strokeWidth={2} aria-hidden />
+    : provider === "ZOOM" ? <Video className="w-5 h-5 text-[#0B5CFF]" strokeWidth={2} aria-hidden />
     : ICON[provider] ? <ChannelIcon k={ICON[provider]!} size={24} /> : null;
   const connectFor = (provider: RegisteredProvider) =>
     provider === "EMAIL" ? connectGoogleGmail
@@ -273,6 +283,7 @@ export async function IntegrationsHub({ business, role, connected, connectError,
     : provider === "INSTAGRAM" ? connectInstagramAction
     : provider === "WHATSAPP" ? connectWhatsAppAction
     : provider === "SLACK" ? connectSlackAction
+    : provider === "ZOOM" ? connectZoomAction
     : provider === "DROPBOX" ? connectDropboxAction
     : provider === "CALENDLY" ? connectCalendlyAction
     : provider === "STRIPE" ? connectStripeAction
@@ -425,6 +436,10 @@ async function connectWhatsAppAction() {
 async function connectSlackAction() {
   "use server";
   await connectSlack();
+}
+async function connectZoomAction() {
+  "use server";
+  await connectZoom();
 }
 async function connectDropboxAction() {
   "use server";

@@ -37,7 +37,8 @@ export async function generateDraftAction(
 
   const conversation = await prisma.conversation.findFirst({
     where: { id: conversationId, businessId: business.id },
-    include: { messages: { orderBy: { createdAt: "desc" }, take: 1 }, client: true },
+    // The message being answered is the customer's latest, never the business's own reply.
+    include: { messages: { where: { direction: "INBOUND" }, orderBy: { createdAt: "desc" }, take: 1 }, client: true },
   });
   if (!conversation) throw new Error("not found");
 
@@ -45,7 +46,7 @@ export async function generateDraftAction(
   // Checked here as well as inside the model call, so a throttled person gets a real
   // answer instead of a template that looks like the model wrote it. A missing key or a
   // deliberate switch-off falls through to that template on purpose, unchanged.
-  const gate = await checkAiLimit(business.id, "draft");
+  const gate = await checkAiLimit(business.id, "draft", ctx.user.id);
   if (!gate.ok && isSpendLimit(gate.reason)) return { error: gate.message };
 
   const lastInbound = conversation.messages[0];
@@ -60,7 +61,7 @@ export async function generateDraftAction(
     mode,
     memoryLines: memoryPromptLines(memory),
     tone: memory.tone,
-  }, { businessId: business.id, feature: "draft" });
+  }, { businessId: business.id, feature: "draft", userId: ctx.user.id });
   await track("draft_requested", { businessId: business.id, properties: { mode } });
   if ((await prisma.analyticsEvent.count({ where: { businessId: business.id, name: "first_ai_action" } })) === 0) await track("first_ai_action", { businessId: business.id, properties: { via: "draft" } });
   return { text };

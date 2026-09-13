@@ -96,7 +96,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                 <div className="flex justify-between"><dt className="text-ink/75">Price</dt><dd className="font-medium">{formatMoney(booking.totalCents)}</dd></div>
                 {booking.externalCalendarProvider && <div className="flex justify-between"><dt className="text-ink/75">On your calendar</dt><dd className="font-medium">{booking.externalCalendarProvider === "GOOGLE_CALENDAR" ? "Google Calendar" : "Apple Calendar"}</dd></div>}
               </dl>
-              <div className="mt-4 pt-4 border-t border-border"><ConversationLink bookingId={booking.id} conversationId={booking.conversationId} clientId={booking.clientId} /></div>
+              <div className="mt-4 pt-4 border-t border-border"><ConversationLink businessId={booking.businessId} bookingId={booking.id} conversationId={booking.conversationId} clientId={booking.clientId} /></div>
             </CardBody>
           </Card>
 

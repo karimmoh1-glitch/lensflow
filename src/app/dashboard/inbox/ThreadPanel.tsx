@@ -164,7 +164,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
         )}
         {!isPerson && conversation.categoryReason && <p className="mt-2.5 text-xs text-ink/65">{conversation.categoryReason}</p>}
         {client && (
-          <Link href={`/dashboard/clients/${client.id}`} className="inline-flex items-center mt-3 text-xs font-medium text-ink/70 hover:text-ink underline decoration-ink/20 underline-offset-2">Open their history</Link>
+          <Link href={`/dashboard/clients/${client.id}`} className="inline-flex items-center min-h-[32px] mt-2 text-xs font-medium text-ink/70 hover:text-ink underline decoration-ink/20 underline-offset-2">Open their history</Link>
         )}
       </div>
 

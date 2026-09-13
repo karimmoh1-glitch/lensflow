@@ -3,6 +3,7 @@
  * Accessibility and viewport checks against a running Daythread, in a real browser.
  *
  *   node scripts/qa/a11y.mjs --base http://localhost:3100 [--token <session>] [--onboarding-token <session>]
+ *                            [--booking <id>] [--conversation <id>] [--client <id>]
  *                            [--routes routes.json] [--out qa-report.json]
  *
  * For every route: axe-core (WCAG 2.0/2.1/2.2 A and AA rules) at a phone and a desktop width,
@@ -44,6 +45,10 @@ const DEFAULT_ROUTES = [
   { name: "settings", path: "/dashboard/settings?tab=business", auth: "app" },
   { name: "integrations", path: "/dashboard/settings?tab=channels", auth: "app" },
 ];
+// Detail pages need a real id from the deployment under test: pass them, or they are skipped.
+if (args.booking) DEFAULT_ROUTES.push({ name: "booking detail", path: `/dashboard/bookings/${args.booking}`, auth: "app" });
+if (args.conversation) DEFAULT_ROUTES.push({ name: "thread", path: `/dashboard/inbox?c=${args.conversation}`, auth: "app" });
+if (args.client) DEFAULT_ROUTES.push({ name: "person", path: `/dashboard/clients/${args.client}`, auth: "app" });
 const routes = args.routes ? JSON.parse(readFileSync(args.routes, "utf8")) : DEFAULT_ROUTES;
 const axeSource = readFileSync(path.join(process.cwd(), "node_modules/axe-core/axe.min.js"), "utf8");
 

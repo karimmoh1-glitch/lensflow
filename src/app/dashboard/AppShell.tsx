@@ -278,10 +278,10 @@ export function AppShell({
         </button>
         <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-ink"><DaythreadMark className="w-[18px] h-[18px] text-ink" />{current?.label ?? "Daythread"}</span>
         <div className="flex items-center">
-          <button type="button" aria-label="Find anything" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
+          <button type="button" aria-label="Find anything" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-11 h-11 shrink-0 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
             <Search className="w-5 h-5" strokeWidth={2} />
           </button>
-          <button type="button" aria-label="Account and more" onClick={() => setMoreOpen(true)} className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
+          <button type="button" aria-label="Account and more" onClick={() => setMoreOpen(true)} className="w-11 h-11 shrink-0 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
             <span className="w-8 h-8 rounded-full bg-ink/[0.06] text-ink/70 flex items-center justify-center text-2xs font-semibold">{initials(businessName)}</span>
           </button>
         </div>

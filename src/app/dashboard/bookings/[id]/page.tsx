@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { MapPin } from "lucide-react";
-import { Badge, Card, CardBody, PageHeader } from "@/components/ui";
+import { Card, CardBody, PageHeader } from "@/components/ui";
 import { ConversationLink } from "./ConversationLink";
 import { formatMoney, toZonedDisplayDate } from "@/lib/utils";
 import { format } from "date-fns";
@@ -35,7 +35,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
   const booking = await prisma.booking.findFirst({
     where: { id, businessId: business.id },
-    include: { client: true, service: true, questionnaire: true },
+    include: { client: true, service: true },
   });
   if (!booking) notFound();
 
@@ -111,18 +111,6 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
             <MeetingPanel bookingId={booking.id} joinUrl={meetingJoinUrl} zoom={zoom} canCreate={booking.status !== "CANCELED" && booking.endAt > new Date()} />
           ))}
 
-          <Card>
-            <CardBody>
-              <div className="text-13 font-semibold text-ink/65 mb-3">Questionnaire</div>
-              {booking.questionnaire?.completedAt ? (
-                <Badge tone="success">Completed</Badge>
-              ) : booking.questionnaire?.sentAt ? (
-                <Badge tone="warning">Sent — awaiting response</Badge>
-              ) : (
-                <Badge tone="neutral">Not sent</Badge>
-              )}
-            </CardBody>
-          </Card>
 
           {(["COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"].includes(booking.status) || booking.deliveryUrl) && (
             <DeliveryPanel
@@ -167,7 +155,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           )}
 
           <div className="mt-4">
-            <BookingActions bookingId={booking.id} status={booking.status} hasQuestionnaire={Boolean(booking.questionnaire)} />
+            <BookingActions bookingId={booking.id} status={booking.status} />
             {role !== "PARTNER" && !["CANCELED", "COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"].includes(booking.status) && (
               <div className="mt-4 rounded-xl border border-border bg-white px-5 py-4"><RescheduleCancel bookingId={booking.id} canCancel canReschedule timezone={business.timezone} currentStartISO={booking.startAt.toISOString()} /></div>
             )}

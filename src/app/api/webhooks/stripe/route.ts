@@ -9,7 +9,8 @@ import { runWebhook } from "@/server/webhookInbox";
  * Stripe → Daythread (Daythread's own billing). Configure this URL (…/api/webhooks/stripe)
  * in the Stripe Dashboard subscribed to: checkout.session.completed,
  * checkout.session.async_payment_succeeded, checkout.session.async_payment_failed,
- * customer.subscription.created / updated / deleted, invoice.paid, invoice.payment_failed.
+ * customer.subscription.created / updated / deleted, invoice.paid, invoice.payment_failed,
+ * charge.dispute.created, charge.refunded.
  * Copy the signing secret into STRIPE_WEBHOOK_SECRET.
  *
  * Signature-verified, then through the shared webhook inbox: the event id is claimed
@@ -40,6 +41,14 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
+  // A Connect event (one from a business's own Stripe account) has its own endpoint and
+  // secret. Were the platform endpoint ever subscribed to Connect events, a business could
+  // create a subscription in its own account carrying our metadata and be granted a plan.
+  if (event.account) return NextResponse.json({ ok: true, ignored: "connect_event" });
+  // Test-mode events must never grant real plans, and live events must never reach a test
+  // deployment: the event's mode has to match the key this deployment runs with.
+  const liveKey = (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_live_");
+  if (event.livemode !== liveKey) return NextResponse.json({ error: "Event mode does not match this deployment" }, { status: 400 });
 
   let result: Awaited<ReturnType<typeof handleStripeEvent>> | undefined;
   const run = await runWebhook("stripe", event.id, event, async (e) => { result = await handleStripeEvent(e); });

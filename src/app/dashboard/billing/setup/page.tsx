@@ -34,7 +34,7 @@ export default async function BillingSetupPage() {
   ];
   const ready = keyStatus === "connected" && webhookStatus !== "missing" && urlStatus === "connected";
 
-  const events = ["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted", "invoice.paid", "invoice.payment_failed"];
+  const events = ["checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted", "invoice.paid", "invoice.payment_failed", "charge.dispute.created", "charge.refunded"];
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">

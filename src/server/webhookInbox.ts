@@ -39,6 +39,10 @@ export async function runWebhook<T>(provider: string, eventId: string, payload: 
     const stale = existing.status === "received" && Date.now() - existing.receivedAt.getTime() > STALE_CLAIM_MS;
     const retryable = existing.status === "failed" || stale;
     if (!retryable || existing.attempts >= MAX_ATTEMPTS) return { status: existing.status === "dead" ? "dead" : "duplicate" };
+    // Take the row back atomically: the daily run and a provider redelivery can both see the
+    // same failed row, and only one of them may run the handler.
+    const claimed = await prisma.webhookEvent.updateMany({ where: { id: existing.id, status: existing.status, attempts: existing.attempts }, data: { status: "received", receivedAt: new Date() } });
+    if (claimed.count === 0) return { status: "duplicate" };
     id = existing.id;
     attempts = existing.attempts;
   }

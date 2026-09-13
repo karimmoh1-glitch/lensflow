@@ -47,7 +47,7 @@ export function VerticalPage({ v }: { v: Vertical }) {
         <h1 className="mt-4 font-sans font-extrabold text-[clamp(2.4rem,5vw,4.5rem)] leading-[0.95] tracking-[-0.05em] text-ink max-w-4xl text-balance">{v.title}</h1>
         <p className="mt-6 text-base md:text-lg text-ink/70 leading-relaxed max-w-xl">{v.lede}</p>
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <Link href="/start" className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent-strong text-white text-[15px] font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] hover:scale-[1.03] active:scale-[0.97] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2">Start free <span aria-hidden>→</span></Link>
+          <Link href="/start" className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent-strong text-white text-[15px] font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] hover:scale-[1.03] active:scale-[0.97] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2">Start free <span aria-hidden>→</span></Link>
           <span className="text-sm font-semibold text-ink/65">Free to start. No card.</span>
         </div>
         <ul className="mt-10 flex flex-wrap items-center gap-3" aria-label="Channels Daythread brings together">
@@ -122,7 +122,7 @@ export function VerticalPage({ v }: { v: Vertical }) {
         <div className="max-w-[1200px] mx-auto px-6 text-center">
           <p className="font-sans font-extrabold text-[2rem] md:text-[3rem] leading-[1] tracking-[-0.04em] text-balance">Don&rsquo;t lose the next one.</p>
           <div className="mt-8 flex flex-col items-center gap-3">
-            <Link href="/start" className="inline-flex items-center gap-2 h-14 px-8 rounded-full bg-accent-strong text-white text-base font-extrabold shadow-[0_16px_40px_-12px_rgba(240,82,77,0.85)] hover:scale-[1.03] active:scale-[0.97] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight">Start free <span aria-hidden>→</span></Link>
+            <Link href="/start" className="inline-flex items-center gap-2 h-14 px-8 rounded-full bg-accent-strong text-white text-base font-extrabold shadow-[0_16px_40px_-12px_rgba(240,82,77,0.85)] hover:scale-[1.03] active:scale-[0.97] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight">Start free <span aria-hidden>→</span></Link>
             <span className="text-sm text-paper/60">Free to start. Pro is $20 a month when you need it.</span>
           </div>
         </div>

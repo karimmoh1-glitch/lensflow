@@ -45,7 +45,7 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
           "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/msg:opacity-100 [@media(hover:hover)]:group-focus-within/msg:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100",
           summary && open && "[@media(hover:hover)]:opacity-100",
           tone,
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-60"
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 disabled:opacity-60"
         )}
       >
         <AlignLeft className="w-3 h-3" strokeWidth={2.2} aria-hidden />

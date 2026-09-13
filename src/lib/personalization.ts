@@ -131,6 +131,44 @@ export type AnswersDraft = Partial<OnboardingAnswers> & { displayName?: string }
 
 export const planSchema = z.enum(["FREE", "PRO", "BUSINESS"]);
 
+/**
+ * The four things /start still asks — what the work is, what to take off their plate, where
+ * clients write, whether anyone else is involved — in the words the business would use.
+ * Each option is a pain point the engine already scores, so nothing new is invented here.
+ */
+export const HELP_OPTIONS = [
+  ["messages", "Answering every message"],
+  ["follow_ups", "Following up before leads go cold"],
+  ["bookings", "Booking clients in"],
+  ["repetitive", "Sending the same messages again and again"],
+  ["customer_info", "Keeping client details together"],
+  ["delivery", "Getting finished work to clients"],
+] as const satisfies readonly (readonly [PainPoint, string])[];
+
+/**
+ * Fills the answers /start no longer asks for, from the ones it does. An answer already in
+ * the draft (an older draft, or Settings → Profile) always wins over the inference.
+ */
+export function completeAnswers(d: AnswersDraft): AnswersDraft {
+  const pains = d.painPoints ?? [];
+  const team = d.teamUsage;
+  const solo = team === undefined || team === "no";
+  const features: Feature[] = ["inbox"];
+  if (pains.includes("bookings") || pains.includes("scheduling")) features.push("bookings");
+  if (pains.includes("follow_ups") || pains.includes("repetitive")) features.push("automations");
+  if (pains.includes("customer_info")) features.push("people");
+  if (pains.includes("delivery")) features.push("files");
+  if (!solo) features.push("team");
+  return {
+    ...d,
+    userType: d.userType ?? (solo ? "freelancer" : "business_owner"),
+    businessStatus: d.businessStatus ?? (solo ? "solo" : "team"),
+    desiredFeatures: d.desiredFeatures ?? features,
+    currentTools: d.currentTools ?? [],
+    bookings: d.bookings ?? (pains.includes("bookings") || pains.includes("scheduling") ? "yes" : "sometimes"),
+  };
+}
+
 /** Whether the team-size question applies: only when someone else is involved at all. */
 export function asksTeamSize(a: Pick<AnswersDraft, "businessStatus" | "teamUsage">): boolean {
   if (a.teamUsage === "occasionally" || a.teamUsage === "regularly") return true;
@@ -243,18 +281,6 @@ export const PRIORITY_COPY: Record<Feature, { title: string; blurb: string; href
   people: { title: "People", blurb: "Everyone's details and history in one place.", href: "/dashboard/clients" },
   files: { title: "Files", blurb: "Send finished work from the folder it already lives in.", href: "/dashboard/clients" },
 };
-
-/**
- * What "Building your Daythread" shows — one line per thing the server actually writes
- * when the profile is saved (see src/server/personalization.ts). Nothing decorative.
- */
-export function buildSteps(p: Personalization): string[] {
-  const steps = ["Saving how you work"];
-  steps.push(`Ordering your workspace: ${list(p.priorities.map((f) => PRIORITY_COPY[f].title))}`);
-  if (p.connectProviders.length) steps.push(`Marking ${list(p.connectProviders.map((x) => PROVIDER_LABEL[x]))} to connect`);
-  steps.push(`Noting the plan that fits: ${p.recommendedPlan === "PRO" ? "Pro" : p.recommendedPlan === "BUSINESS" ? "Business" : "Free"}`);
-  return steps;
-}
 
 /**
  * The paywall, made specific. Returns copy only when the person actually asked for the

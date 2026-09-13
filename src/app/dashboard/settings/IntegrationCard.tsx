@@ -151,7 +151,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
       {connected && (
         <div className="flex flex-wrap items-center gap-1 sm:justify-end">
           {hasManage && (
-            <button type="button" onClick={() => setOpen("manage")} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <button type="button" onClick={() => setOpen("manage")} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
               Manage
             </button>
           )}
@@ -159,7 +159,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
               permission the business later removed, or a webhook Meta never accepted. */}
           {!isCalendar && connect && model.status !== "needs_attention" && !confirm && (
             <form action={connect} onSubmit={() => setConnecting(true)}>
-              <button type="submit" disabled={connecting} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-60">
+              <button type="submit" disabled={connecting} className="text-13 sm:text-xs font-semibold text-ink/65 hover:text-ink px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 disabled:opacity-60">
                 {connecting ? "Opening…" : "Reconnect"}
               </button>
             </form>
@@ -246,7 +246,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
                 <div className="text-sm font-semibold text-ink">{model.name}</div>
                 <div className="text-2xs text-ink/65">{open === "manage" ? "Manage connection" : open === "apple" ? "Connect with an app-specific password" : "Choose calendars"}</div>
               </div>
-              <button type="button" onClick={closeSheet} aria-label="Close" className="w-11 h-11 sm:w-8 sm:h-8 -mr-1.5 sm:mr-0 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-4 h-4" strokeWidth={2} /></button>
+              <button type="button" onClick={closeSheet} aria-label="Close" className="w-11 h-11 sm:w-8 sm:h-8 -mr-1.5 sm:mr-0 rounded-lg flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"><X className="w-4 h-4" strokeWidth={2} /></button>
             </div>
             {/* Bottom sheet on a phone: the home-indicator inset is part of the padding so
                 the last control is never under it. */}

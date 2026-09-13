@@ -49,7 +49,7 @@ export function AssignMenu({ conversationId, members, current }: { conversationI
         aria-expanded={open}
         aria-label={owner ? `Assigned to ${owner.name}` : "Assign to a teammate"}
         title={owner ? `Assigned to ${owner.name}` : "Assign"}
-        className={cn("h-7 rounded-lg flex items-center gap-1.5 px-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", owner ? "bg-black/[0.03] text-ink/75 hover:bg-black/[0.03]" : "text-ink/70 hover:text-ink hover:bg-black/[0.05]")}
+        className={cn("h-7 rounded-lg flex items-center gap-1.5 px-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", owner ? "bg-black/[0.03] text-ink/75 hover:bg-black/[0.03]" : "text-ink/70 hover:text-ink hover:bg-black/[0.05]")}
       >
         {owner ? (
           <>

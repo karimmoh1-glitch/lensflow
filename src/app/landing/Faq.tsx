@@ -38,7 +38,7 @@ export function Faq() {
       <div className="divide-y divide-border border-y border-border">
         {FAQ.map((item) => (
           <details key={item.q} className="group py-1">
-            <summary className="flex items-center justify-between gap-6 cursor-pointer list-none py-4 text-[15px] md:text-base font-semibold text-ink rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 [&::-webkit-details-marker]:hidden">
+            <summary className="flex items-center justify-between gap-6 cursor-pointer list-none py-4 text-[15px] md:text-base font-semibold text-ink rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 [&::-webkit-details-marker]:hidden">
               <span>{item.q}</span>
               <span aria-hidden className="relative w-5 h-5 shrink-0 text-ink/65">
                 <span className="absolute inset-x-0 top-1/2 h-[1.5px] -translate-y-1/2 bg-current" />

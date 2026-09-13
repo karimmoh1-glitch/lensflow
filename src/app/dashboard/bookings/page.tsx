@@ -88,8 +88,8 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
           description={personalization?.usesBookings ? "You said customers book with you. Add your services and hours once; then book anyone from their conversation, or share your booking page and let them pick a time. The confirmation is sent for you." : "Bookings made from a conversation or your public booking page show up here — on the calendar, with the confirmation sent for you."}
           action={
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <Link href="/dashboard/settings?tab=business" className="inline-flex items-center h-9 px-3.5 rounded-lg bg-ink text-white text-sm font-semibold hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Set your services and hours</Link>
-              <Link href="/dashboard/inbox" className="inline-flex items-center h-9 px-3.5 rounded-lg border border-border bg-white text-sm font-semibold text-ink hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Book from a conversation</Link>
+              <Link href="/dashboard/settings?tab=business" className="inline-flex items-center h-9 px-3.5 rounded-lg bg-ink text-white text-sm font-semibold hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Set your services and hours</Link>
+              <Link href="/dashboard/inbox" className="inline-flex items-center h-9 px-3.5 rounded-lg border border-border bg-white text-sm font-semibold text-ink hover:bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Book from a conversation</Link>
             </div>
           }
         />

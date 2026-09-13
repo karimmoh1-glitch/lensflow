@@ -41,7 +41,7 @@ export function AskAssistant() {
         >
           <Search className="w-4 h-4 text-ink/50 shrink-0" strokeWidth={2} aria-hidden />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about your inbox, calendar or customers…" aria-label="Ask the assistant" maxLength={500} className="flex-1 bg-transparent text-[16px] md:text-sm text-ink placeholder:text-ink/65 outline-none min-w-0" />
-          <button type="submit" disabled={!q.trim() || pending} aria-label="Ask" className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", q.trim() && !pending ? "bg-ink hover:bg-black" : "bg-ink/25")}>
+          <button type="submit" disabled={!q.trim() || pending} aria-label="Ask" className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", q.trim() && !pending ? "bg-ink hover:bg-black" : "bg-ink/25")}>
             {pending ? <WorkingDots /> : <ArrowUp className="w-4 h-4" strokeWidth={2.5} aria-hidden />}
           </button>
         </form>

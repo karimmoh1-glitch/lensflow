@@ -131,7 +131,7 @@ export function HeroThread() {
                 aria-label={`Show ${CHANNEL[st.k].name}`}
                 onMouseEnter={() => pick(st.k)}
                 onClick={() => pick(st.k)}
-                className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2"
+                className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2"
               >
                 <ChannelIcon k={st.k} size={56} active={st.k === active} className={st.k === active ? "" : "opacity-75 hover:opacity-100"} />
               </button>

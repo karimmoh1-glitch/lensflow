@@ -97,7 +97,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             const count = byDay.get(dayKey(d))?.length ?? 0;
             return (
               <li key={d.toISOString()}>
-                <Link href={`?view=${view}&day=${dayKey(d)}`} aria-current={sel ? "date" : undefined} className={cn("flex flex-col items-center rounded-xl py-2 min-h-[3.75rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", sel ? "bg-ink text-white" : "bg-white border border-border text-ink hover:bg-black/[0.03]")}>
+                <Link href={`?view=${view}&day=${dayKey(d)}`} aria-current={sel ? "date" : undefined} className={cn("flex flex-col items-center rounded-xl py-2 min-h-[3.75rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", sel ? "bg-ink text-white" : "bg-white border border-border text-ink hover:bg-black/[0.03]")}>
                   <span className={cn("text-2xs font-bold uppercase tracking-[0.1em]", sel ? "text-white/70" : "text-ink/65")}>{format(d, "EEE")}</span>
                   <span className={cn("text-lg font-extrabold tabular-nums leading-tight", !sel && isSameDay(d, today) && "text-accent-text")}>{format(d, "d")}</span>
                   <span className="h-1.5 flex items-center gap-0.5" aria-hidden>{Array.from({ length: Math.min(3, count) }).map((_, i) => <span key={i} className={cn("w-1 h-1 rounded-full", sel ? "bg-white/80" : "bg-accent")} />)}</span>
@@ -211,7 +211,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             const inMonth = isSameMonth(day, anchor);
             const sel = isSameDay(day, selected);
             return (
-              <Link key={key} href={`?view=${view}&day=${key}`} aria-label={`${format(day, "EEEE, MMMM d")}${dayBookings.length ? `, ${dayBookings.length} booking${dayBookings.length === 1 ? "" : "s"}` : ""}`} className={cn("min-h-[3.25rem] md:min-h-28 rounded-lg md:rounded-xl border p-1.5 md:p-2 bg-white transition-colors hover:bg-black/[0.02]", !inMonth && "bg-black/[0.02] text-ink/65", isSameDay(day, today) && "border-accent ring-1 ring-accent/30", sel ? "border-ink" : "border-border")}>
+              <Link key={key} href={`?view=${view}&day=${key}`} aria-label={`${format(day, "EEEE, MMMM d")}${dayBookings.length ? `, ${dayBookings.length} booking${dayBookings.length === 1 ? "" : "s"}` : ""}`} className={cn("min-h-[3.25rem] md:min-h-28 rounded-lg md:rounded-xl border p-1.5 md:p-2 bg-white transition-colors hover:bg-black/[0.02]", !inMonth && "bg-black/[0.02] text-ink/65", isSameDay(day, today) && "ring-1 ring-inset ring-ink/20", sel ? "border-ink" : "border-border")}>
                 <div className={cn("text-xs font-medium mb-1 text-center md:text-left", isSameDay(day, today) && "text-accent-text")}>{format(day, "d")}</div>
                 <div className="hidden md:block space-y-1">
                   {dayBookings.slice(0, 3).map((b) => (

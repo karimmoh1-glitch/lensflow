@@ -109,7 +109,7 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
             </div>
             <div className="mt-4 sm:mt-0 flex flex-col items-stretch gap-2 shrink-0 sm:w-56">
               {config.canBill ? <BetaClaimButton onClaimed={onClose} /> : <p className="text-xs text-ink/70">Ask the workspace owner to claim it.</p>}
-              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-full">Not now</button>
+              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded-full">Not now</button>
             </div>
           </div>
         ) : plan === "BUSINESS" && config.businessUnavailable ? (
@@ -119,7 +119,7 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
               <p className="mt-1 text-xs text-ink/70 leading-relaxed">It isn&rsquo;t open to new workspaces during the beta. Everything else in Daythread keeps working.</p>
             </div>
             <div className="mt-4 sm:mt-0 flex flex-col items-stretch gap-2 shrink-0 sm:w-56">
-              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Got it</button>
+              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Got it</button>
             </div>
           </div>
         ) : (
@@ -134,15 +134,15 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
           </div>
           <div className="mt-4 sm:mt-0 flex flex-col items-stretch gap-2 shrink-0 sm:w-56">
             {config.billingLive && config.canBill ? (
-              <button type="button" onClick={go} disabled={pending || redirecting} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-accent-strong text-white text-sm font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] hover:brightness-95 active:scale-[0.98] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <button type="button" onClick={go} disabled={pending || redirecting} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-accent-strong text-white text-sm font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] hover:brightness-95 active:scale-[0.98] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
                 {redirecting ? "Taking you to Stripe…" : pending ? "One moment…" : trial ? "Start your 7-day Pro trial" : `Upgrade to ${plan === "PRO" ? "Pro" : "Business"}`}
               </button>
             ) : (
-              <Link href="/dashboard/settings?tab=subscription" onClick={() => void recordPaywallEvent("paywall_cta", feature, source)} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <Link href="/dashboard/settings?tab=subscription" onClick={() => void recordPaywallEvent("paywall_cta", feature, source)} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
                 See {plan === "PRO" ? "Pro" : "Business"}
               </Link>
             )}
-            <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-full">Not now</button>
+            <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded-full">Not now</button>
           </div>
         </div>
         )}
@@ -158,8 +158,8 @@ export function PaywallTrigger({ feature, source, children, className, variant =
   const href = "/dashboard/settings?tab=subscription";
   const cls = cn(
     variant === "primary"
-      ? "inline-flex items-center justify-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-      : "inline-block text-xs font-bold text-ink/75 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded",
+      ? "inline-flex items-center justify-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
+      : "inline-block text-xs font-bold text-ink/75 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded",
     className
   );
   if (!ctx) return <Link href={href} className={cls}>{children}</Link>;

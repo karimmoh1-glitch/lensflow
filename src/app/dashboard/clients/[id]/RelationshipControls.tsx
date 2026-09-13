@@ -38,7 +38,7 @@ export function RelationshipControls({ clientId, relationship, name }: { clientI
                   router.refresh();
                 })
               }
-              className={cn("px-3 py-1 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", on ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink disabled:opacity-60")}
+              className={cn("px-3 py-1 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", on ? "bg-white text-ink shadow-xs" : "text-ink/70 hover:text-ink disabled:opacity-60")}
             >
               {o.label}
             </button>

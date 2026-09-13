@@ -4,39 +4,40 @@ import { track } from "@/lib/analytics";
 import { prisma } from "@/lib/db";
 import { PROVIDERS, providerConfigured, displayStatus } from "@/lib/integrations/registry";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
-import { Welcome, type ChannelOption, type PersonalWelcome } from "./Welcome";
+import { Welcome, type ChannelOption, type PersonalWelcome, type StarterRecipe } from "./Welcome";
 import { connectGoogle } from "@/app/actions/googleAuth";
-import { connectInstagram, connectWhatsApp } from "@/app/actions/connect";
+import { connectInstagram, connectMicrosoft, connectWhatsApp } from "@/app/actions/connect";
+import { markOnboardingDone } from "@/app/actions/onboarding";
+import { AUTOMATION_RECIPES, STARTER_RECIPES } from "@/lib/automationRecipes";
 import { smsEntitled, trialEligible, betaProActive, planPurchasable } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
 import { getPersonalization } from "@/server/personalization";
-import { buildSteps } from "@/lib/personalization";
 import type { IntegrationProvider } from "@prisma/client";
 
 /**
- * After the account exists. With a profile from /start: a short, honest "building" moment
- * (each line is a write that already happened), a welcome built from their answers, the
- * plan they chose or were recommended, then the connect step with their channels first.
- * Without one (mobile signup, an invite): the plain welcome and connect step. Every
- * connect button is the same real provider sign-in as Settings → Channels.
+ * After the account exists: switch on the follow-through, then connect the channels clients
+ * use (theirs first, from /start). Both steps end on Today, where the setup checklist
+ * continues from the database. Without a /start profile (mobile signup, an invite) the same
+ * two steps run with no channel marked as theirs.
  */
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ step?: string; connected?: string; connect_error?: string }> }) {
   const ctx = await requireBusiness();
   if (!ctx) redirect("/login");
   if (ctx.role === "CLIENT") redirect("/workspaces");
-  if (ctx.business.onboardingComplete) redirect("/dashboard/inbox");
+  if (ctx.business.onboardingComplete) redirect("/dashboard");
   const sp = await searchParams;
 
-  const [started, rows, personalization] = await Promise.all([
+  const [started, rows, personalization, automations] = await Promise.all([
     prisma.analyticsEvent.count({ where: { businessId: ctx.business.id, name: "onboarding_started" } }),
     prisma.integration.findMany({ where: { businessId: ctx.business.id } }),
     getPersonalization(ctx.business.id),
+    prisma.automation.findMany({ where: { businessId: ctx.business.id }, select: { trigger: true, action: true, offsetHours: true } }),
   ]);
   if (started === 0) await track("onboarding_started", { businessId: ctx.business.id, properties: { personalized: Boolean(personalization) } });
 
   const byProvider = new Map(rows.map((r) => [r.provider, r]));
   const encryptionOk = process.env.NODE_ENV !== "production" || tokenCryptoConfigured();
-  const order: IntegrationProvider[] = ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS"];
+  const order: IntegrationProvider[] = ["EMAIL", "MICROSOFT_OUTLOOK", "INSTAGRAM", "WHATSAPP", "SMS"];
   // This step is about where customers reach them. A calendar and a file store are named in
   // onboarding too, but they belong to the Files and Calendar cards on Today, not here.
   const notAChannel = ["GOOGLE_CALENDAR", "GOOGLE_DRIVE", "DROPBOX"] as const;
@@ -62,14 +63,18 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   });
   const connected = channels.filter((c) => c.connected).length;
 
+  const WHEN: Record<string, string> = { confirm: "As soon as you book someone", remind: "The day before their booking", thanks: "A day after a booking is marked done" };
+  const recipes: StarterRecipe[] = STARTER_RECIPES.map((key) => {
+    const r = AUTOMATION_RECIPES.find((x) => x.key === key)!;
+    const on = automations.some((a) => a.trigger === r.input.trigger && a.action === r.input.action && a.offsetHours === r.input.offsetHours);
+    return { key, label: r.label, when: WHEN[key], template: r.input.messageTemplate, on };
+  });
+
   const personal: PersonalWelcome | null = personalization
     ? {
-        priorities: personalization.priorities,
         recommendedPlan: personalization.recommendedPlan,
         selectedPlan: personalization.selectedPlan,
         reasons: personalization.reasons,
-        buildSteps: buildSteps(personalization),
-        channelCount: personalization.channelCount,
         wantsCalendar: personalization.connectProviders.includes("GOOGLE_CALENDAR"),
         billingLive: subscriptionBillingIsLive,
         trialOffered: subscriptionBillingIsLive && trialEligible(ctx.business),
@@ -82,29 +87,44 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   return (
     <Welcome
       firstName={ctx.user.name.split(" ")[0] || "there"}
-      workspaceKey={ctx.business.handle}
-      step={sp.step === "connect" || sp.connected || sp.connect_error ? "connect" : "welcome"}
+      businessName={ctx.business.name}
+      step={sp.step === "connect" || sp.connected || sp.connect_error ? "connect" : "automate"}
       channels={channels}
       connectedCount={connected}
       justConnected={sp.connected ?? null}
       connectError={sp.connect_error ?? null}
+      recipes={recipes}
       personal={personal}
-      connectGmail={connectGmailAction}
-      connectInstagram={connectInstagramAction}
-      connectWhatsApp={connectWhatsAppAction}
+      connect={{ EMAIL: connectGmailAction, MICROSOFT_OUTLOOK: connectOutlookAction, INSTAGRAM: connectInstagramAction, WHATSAPP: connectWhatsAppAction }}
     />
   );
 }
 
-async function connectGmailAction() {
+/**
+ * A connect leaves for the provider and comes back to Settings, so onboarding is marked done
+ * first — otherwise the next sign-in would put a connected workspace back through it.
+ */
+async function leaving(formData: FormData) {
+  const tz = formData.get("timezone");
+  await markOnboardingDone({ timezone: typeof tz === "string" && tz ? tz : undefined, via: "connect" });
+}
+async function connectGmailAction(formData: FormData) {
   "use server";
+  await leaving(formData);
   await connectGoogle("gmail");
 }
-async function connectInstagramAction() {
+async function connectOutlookAction(formData: FormData) {
   "use server";
+  await leaving(formData);
+  await connectMicrosoft("mail");
+}
+async function connectInstagramAction(formData: FormData) {
+  "use server";
+  await leaving(formData);
   await connectInstagram();
 }
-async function connectWhatsAppAction() {
+async function connectWhatsAppAction(formData: FormData) {
   "use server";
+  await leaving(formData);
   await connectWhatsApp();
 }

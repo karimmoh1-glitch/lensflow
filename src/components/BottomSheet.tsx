@@ -39,7 +39,7 @@ export function BottomSheet({ open, onClose, title, subtitle, icon, children, si
               <div className="text-sm font-semibold text-ink truncate">{title}</div>
               {subtitle && <div className="text-2xs text-ink/65 truncate">{subtitle}</div>}
             </div>
-            <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-md flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"><X className="w-4 h-4" strokeWidth={2} /></button>
+            <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-md flex items-center justify-center text-ink/70 hover:text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"><X className="w-4 h-4" strokeWidth={2} /></button>
           </div>
           <div className="px-5 py-5">{children}</div>
         </div>

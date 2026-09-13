@@ -1,93 +1,56 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { prisma } from "@/lib/db";
-import { getPersonalization } from "@/server/personalization";
-import { PRIORITY_COPY, PROVIDER_LABEL, list, type Feature, type PlanKey } from "@/lib/personalization";
+import { Check } from "lucide-react";
+import { setupSteps } from "@/server/setupSteps";
 import { cn } from "@/lib/utils";
 
-const ACTIVE = ["CONNECTED", "NEEDS_ATTENTION", "SYNC_ERROR"] as const;
-
-/**
- * The first weeks' setup card on Today: the two to four things the owner said matter,
- * each with the one real next step for it — connect the channels they named, set services
- * and hours if they take bookings, write the first automation, meet the assistant. Every
- * state comes from the database; a step that's done says so.
- */
-export async function Priorities({ businessId, plan }: { businessId: string; plan: PlanKey }) {
-  const p = await getPersonalization(businessId);
-  if (!p) return null;
-  const [integrations, services, automations, seats, deliveries] = await Promise.all([
-    prisma.integration.findMany({ where: { businessId }, select: { provider: true, status: true } }),
-    prisma.service.count({ where: { businessId } }),
-    prisma.automation.count({ where: { businessId } }),
-    prisma.orgMembership.count({ where: { businessId, status: "ACTIVE", role: { not: "CLIENT" } } }),
-    prisma.booking.count({ where: { businessId, deliveredAt: { not: null } } }),
-  ]);
-  const connected = integrations.filter((r) => (ACTIVE as readonly string[]).includes(r.status)).map((r) => r.provider as string);
-  const toConnect = p.connectProviders.filter((x) => x !== "GOOGLE_CALENDAR" && !connected.includes(x));
-  const calendarWanted = p.connectProviders.includes("GOOGLE_CALENDAR") && !connected.includes("GOOGLE_CALENDAR");
-  const fileStore = connected.includes("GOOGLE_DRIVE") || connected.includes("DROPBOX");
-
-  const cards = p.priorities.map((f: Feature) => {
-    const base = PRIORITY_COPY[f];
-    let cta = "Open"; let href = base.href; let done = false;
-    switch (f) {
-      case "inbox":
-        if (toConnect.length) { cta = `Connect ${list(toConnect.map((x) => PROVIDER_LABEL[x]))}`; href = "/dashboard/settings?tab=channels"; }
-        else { cta = "Open your inbox"; done = connected.length > 0; }
-        break;
-      case "bookings":
-        if (services === 0) { cta = "Set your services and hours"; href = "/dashboard/settings?tab=business"; }
-        else { cta = "Open bookings"; done = true; }
-        break;
-      case "calendar":
-        if (calendarWanted) { cta = "Connect Google Calendar"; href = "/dashboard/settings?tab=channels"; }
-        else { cta = "Open your calendar"; done = connected.includes("GOOGLE_CALENDAR") || connected.includes("APPLE_CALENDAR"); }
-        break;
-      case "automations":
-        if (automations === 0) cta = "Create your first automation";
-        else { cta = `${automations} written`; done = true; }
-        break;
-      case "agent":
-        cta = plan === "FREE" ? "Meet your Business Agent" : "Open the assistant";
-        break;
-      case "team":
-        if (seats <= 1) { cta = "Invite someone"; href = "/dashboard/settings?tab=team"; }
-        else { cta = `${seats} people on this inbox`; href = "/dashboard/settings?tab=team"; done = true; }
-        break;
-      case "people":
-        cta = "Open People";
-        break;
-      case "files":
-        // Three real states, read from the database: no file store connected, connected but
-        // nothing sent yet, and work already delivered to somebody.
-        if (!fileStore) { cta = "Connect Google Drive or Dropbox"; href = "/dashboard/settings?tab=channels"; }
-        else if (deliveries === 0) { cta = "Send a client their files"; href = "/dashboard/clients"; }
-        else { cta = `${deliveries} ${deliveries === 1 ? "delivery" : "deliveries"} sent`; href = "/dashboard/clients"; done = true; }
-        break;
-    }
-    return { key: f, title: base.title, blurb: base.blurb, cta, href, done };
-  });
+/** Today's setup checklist. Gone the moment every step is done. */
+export async function Priorities({ businessId }: { businessId: string }) {
+  const steps = await setupSteps(businessId);
+  const done = steps.filter((s) => s.done).length;
+  if (done === steps.length) return null;
+  const next = steps.find((s) => !s.done)!;
 
   return (
-    <section aria-labelledby="priorities-label" className="mb-8 rounded-xl border border-border bg-white overflow-hidden">
-      <div className="px-5 md:px-6 pt-5 pb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="priorities-label" className="text-13 font-semibold text-ink/65">Set up around the way you work</h2>
-        <Link href="/dashboard/settings?tab=profile" className="text-xs font-semibold text-ink/65 hover:text-ink">Change how you work →</Link>
+    <section aria-labelledby="setup-label" className="mb-8 rounded-xl border border-border bg-white shadow-surface overflow-hidden">
+      <div className="px-4 md:px-5 pt-4 pb-3 flex items-center justify-between gap-4">
+        <h2 id="setup-label" className="text-13 font-semibold text-ink">Finish setting up</h2>
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs text-ink/55 tabular-nums">{done} of {steps.length} done</span>
+          <span aria-hidden className="hidden sm:flex gap-0.5">
+            {steps.map((s) => <span key={s.key} className={cn("h-1 w-4 rounded-full", s.done ? "bg-ink" : "bg-ink/10")} />)}
+          </span>
+        </div>
       </div>
-      <ul className="px-5 md:px-6 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {cards.map((c, i) => (
-          <li key={c.key} className={cn("rounded-xl border px-4 py-3.5 flex flex-col gap-2", i === 0 && !c.done ? "border-accent/40 bg-accent-soft/40" : "border-border bg-paper")}>
-            <div>
-              <div className="text-sm font-extrabold text-ink">{c.title}</div>
-              <div className="mt-0.5 text-xs text-ink/70 leading-relaxed">{c.blurb}</div>
-            </div>
-            <Link href={c.href} className={cn("mt-auto inline-flex items-center gap-1 text-13 font-bold w-fit rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", c.done ? "text-success-text" : i === 0 ? "text-accent-text" : "text-ink")}>
-              {c.done && <span aria-hidden>✓</span>}{c.cta}{!c.done && <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden />}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <ol className="border-t border-border divide-y divide-border">
+        {steps.map((s, i) => {
+          const isNext = s.key === next.key;
+          return (
+            <li key={s.key} className="flex items-center gap-3 px-4 md:px-5 py-3">
+              <span aria-hidden className={cn("w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-2xs font-semibold tabular-nums", s.done ? "bg-ink text-white" : isNext ? "border border-ink/40 text-ink" : "border border-ink/15 text-ink/50")}>
+                {s.done ? <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> : i + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={cn("text-13 font-semibold leading-5", s.done ? "text-ink/50" : "text-ink")}>
+                  {s.title}
+                  {s.done && <span className="sr-only"> (done)</span>}
+                </p>
+                {isNext && <p className="text-13 text-ink/55 leading-snug">{s.detail}</p>}
+              </div>
+              {!s.done && (
+                <Link
+                  href={s.href}
+                  className={cn(
+                    "shrink-0 inline-flex items-center h-8 px-3 rounded-lg text-13 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2",
+                    isNext ? "bg-ink text-white hover:bg-black" : "text-ink/70 hover:text-ink hover:bg-black/[0.04]"
+                  )}
+                >
+                  {s.cta}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }

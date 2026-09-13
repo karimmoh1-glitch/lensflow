@@ -43,7 +43,7 @@ export function SlackManage({ model }: { model: SlackManageModel }) {
       <div>
         <label htmlFor="slack-channel" className="block text-13 font-semibold text-ink/65 mb-1.5">Post to</label>
         {loadError ? <p className="text-[12px] text-warning-text">{loadError}</p> : channels === null ? <p className="text-[12px] text-ink/60">Loading channels…</p> : channels.length === 0 ? <p className="text-[12px] text-ink/60">No public channels the app can see. Create one in Slack, then reopen this.</p> : (
-          <select id="slack-channel" value={current} onChange={(e) => setCurrent(e.target.value)} className="w-full h-10 rounded-xl border border-border bg-white px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/40">
+          <select id="slack-channel" value={current} onChange={(e) => setCurrent(e.target.value)} className="w-full h-10 rounded-xl border border-border bg-white px-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ink/70">
             <option value="">Choose a channel</option>
             {channels.map((c) => <option key={c.id} value={c.id}>#{c.name}{c.isMember ? "" : " (app will join)"}</option>)}
           </select>

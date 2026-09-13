@@ -19,7 +19,7 @@ export function AwayDigest({ digest }: { digest: Digest }) {
       <ul className="px-5 md:px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
         {digest.items.map((it) => (
           <li key={it.key}>
-            <Link href={it.href} className="group flex items-center gap-3 rounded-xl border border-border bg-paper px-3.5 py-2.5 text-sm text-ink hover:border-ink/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+            <Link href={it.href} className="group flex items-center gap-3 rounded-xl border border-border bg-paper px-3.5 py-2.5 text-sm text-ink hover:border-ink/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
               <span aria-hidden className={cn("w-2 h-2 rounded-full shrink-0", TONE[it.tone])} />
               <span className="flex-1 min-w-0 truncate"><span className="font-extrabold tabular-nums">{it.count}</span>{it.label.replace(/^\d+ /, " ")}</span>
               <ArrowRight className="w-3.5 h-3.5 text-ink/30 shrink-0 group-hover:text-ink" strokeWidth={2.5} aria-hidden />

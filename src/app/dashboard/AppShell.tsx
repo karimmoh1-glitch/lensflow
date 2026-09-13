@@ -248,7 +248,7 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-[#FCFCFB] flex-col">
         <div className="px-5 pt-5 pb-3">
-          <Link href="/dashboard" className="inline-flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-md">
+          <Link href="/dashboard" className="inline-flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded-md">
             <DaythreadLogo />
           </Link>
           <div className="text-xs text-ink/70 mt-1 truncate">{businessName}</div>
@@ -272,16 +272,16 @@ export function AppShell({
           ref={menuButtonRef}
           aria-label="Open navigation"
           onClick={() => setMobileOpen(true)}
-          className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+          className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
         >
           <Menu className="w-5 h-5" strokeWidth={2} />
         </button>
         <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-ink"><DaythreadMark className="w-[18px] h-[18px] text-ink" />{current?.label ?? "Daythread"}</span>
         <div className="flex items-center">
-          <button type="button" aria-label="Find anything" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+          <button type="button" aria-label="Find anything" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
             <Search className="w-5 h-5" strokeWidth={2} />
           </button>
-          <button type="button" aria-label="Account and more" onClick={() => setMoreOpen(true)} className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+          <button type="button" aria-label="Account and more" onClick={() => setMoreOpen(true)} className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
             <span className="w-8 h-8 rounded-full bg-ink/[0.06] text-ink/70 flex items-center justify-center text-2xs font-semibold">{initials(businessName)}</span>
           </button>
         </div>
@@ -303,7 +303,7 @@ export function AppShell({
               <button
                 aria-label="Close navigation"
                 onClick={() => setMobileOpen(false)}
-                className="w-11 h-11 flex items-center justify-center rounded-md text-ink/70 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                className="w-11 h-11 flex items-center justify-center rounded-md text-ink/70 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
               >
                 <X className="w-[18px] h-[18px]" strokeWidth={2} />
               </button>
@@ -315,7 +315,8 @@ export function AppShell({
       )}
 
       <main id="dt-main" tabIndex={-1} className="flex-1 min-w-0 min-h-0 overflow-y-auto overscroll-contain focus:outline-none">
-        {wantedIntegrations.length > 0 && !pathname.startsWith("/dashboard/settings") && (
+        {/* Today has the setup checklist, which already leads with this. */}
+        {wantedIntegrations.length > 0 && !pathname.startsWith("/dashboard/settings") && pathname !== "/dashboard" && (
           <Link href="/dashboard/settings?tab=channels" className="mx-4 md:mx-8 mt-3 md:mt-4 rounded-xl border border-border bg-white shadow-surface px-3.5 md:px-4 py-2.5 flex items-center gap-3 text-13 text-ink/75 hover:border-ink/20 transition-colors">
             <span className="min-w-0 flex-1 truncate md:whitespace-normal"><span className="font-semibold text-ink">Connect {wantedIntegrations.join(", ")}</span><span className="hidden md:inline"> and your first real conversations arrive here.</span></span>
             <span className="text-ink font-semibold shrink-0">Connect →</span>
@@ -336,7 +337,7 @@ export function AppShell({
             const active = isActive(pathname, item.href);
             return (
               <li key={item.href}>
-                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", active ? "text-ink" : "text-ink/65 active:text-ink")}>
+                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink/70", active ? "text-ink" : "text-ink/65 active:text-ink")}>
                   <span className={cn("w-10 h-7 rounded-lg flex items-center justify-center transition-colors", active && "bg-ink/[0.07]")}><item.icon className="w-[19px] h-[19px]" strokeWidth={active ? 2.2 : 1.9} aria-hidden /></span>
                   {item.label}
                 </Link>
@@ -344,7 +345,7 @@ export function AppShell({
             );
           })}
           <li>
-            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "text-ink" : "text-ink/65")}>
+            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink/70", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "text-ink" : "text-ink/65")}>
               <span className={cn("w-10 h-7 rounded-lg flex items-center justify-center transition-colors", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "bg-ink/[0.07]" : "")}><LayoutGrid className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
               More
             </button>
@@ -362,7 +363,7 @@ export function AppShell({
               const active = isActive(pathname, item.href, search);
               return (
                 <li key={item.href}>
-                  <Link href={item.href} onClick={() => setMoreOpen(false)} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", active ? "border-ink/20 bg-ink/[0.05] text-ink" : "border-border bg-white text-ink/80 hover:bg-black/[0.03] active:bg-black/[0.05]")}>
+                  <Link href={item.href} onClick={() => setMoreOpen(false)} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", active ? "border-ink/20 bg-ink/[0.05] text-ink" : "border-border bg-white text-ink/80 hover:bg-black/[0.03] active:bg-black/[0.05]")}>
                     <item.icon className="w-5 h-5 text-ink/70" strokeWidth={1.9} aria-hidden />
                     <span className="text-center leading-tight">{item.label}</span>
                   </Link>

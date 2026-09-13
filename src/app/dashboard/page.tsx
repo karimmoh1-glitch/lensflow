@@ -18,7 +18,6 @@ import { getAwayDigest, touchLastActive } from "@/server/awayDigest";
 import { getNextActions } from "@/server/nextActions";
 import { AutoGmailSync } from "./inbox/AutoGmailSync";
 import { prisma } from "@/lib/db";
-import { effectivePlan } from "@/lib/billing";
 
 /**
  * Home answers, in order: what happened while you were away, what to do now (one list —
@@ -40,8 +39,8 @@ export default async function TodayPage() {
   const proposals = agent?.proposals.filter((p) => p.kind !== "reconnect_calendar") ?? [];
   // The first minute: show what Daythread found until the owner has replied to something.
   const showFirstLook = firstLook.total > 0 && !firstLook.hasReplied && differenceInDays(new Date(), business.createdAt) <= 30;
-  // The setup card built from their /start answers, for the first weeks — until they've replied to someone.
-  const showPriorities = !firstLook.hasReplied && differenceInDays(new Date(), business.createdAt) <= 30;
+  // The setup checklist, for owners and admins in the first month; it hides itself once every step is done.
+  const showSetup = (ctx.role === "OWNER" || ctx.role === "ADMIN") && differenceInDays(new Date(), business.createdAt) <= 30;
   const briefText = buildBriefText(brief, business.name);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -66,7 +65,7 @@ export default async function TodayPage() {
 
       {digest && <AwayDigest digest={digest} />}
 
-      {showPriorities && <Priorities businessId={business.id} plan={effectivePlan(business)} />}
+      {showSetup && <Priorities businessId={business.id} />}
 
       {showFirstLook && (
         <section aria-labelledby="first-look-label" className="mb-8 rounded-xl border border-border bg-white overflow-hidden dt-land">

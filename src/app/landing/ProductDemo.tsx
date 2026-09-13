@@ -82,7 +82,7 @@ export function ProductDemo() {
               aria-selected={on}
               onClick={() => setTab(t.key)}
               className={cn(
-                "inline-flex items-center gap-2 h-10 px-4 rounded-full text-sm font-bold transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+                "inline-flex items-center gap-2 h-10 px-4 rounded-full text-sm font-bold transition-all duration-200 ease-[cubic-bezier(0.22,1.2,0.36,1)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70",
                 on ? "bg-ink text-white shadow-sm scale-[1.03]" : "bg-white text-ink/70 border border-border hover:text-ink hover:border-ink/20 hover:-translate-y-px"
               )}
             >

@@ -44,7 +44,7 @@ export default async function WorkspacesPage() {
             <form action={switchWorkspace.bind(null, m.businessId)}>
               <button
                 type="submit"
-                className="group w-full flex items-center gap-3 px-4 py-3.5 text-left rounded-xl border border-border bg-white transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-ink/25 hover:-translate-y-0.5 hover:shadow-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                className="group w-full flex items-center gap-3 px-4 py-3.5 text-left rounded-xl border border-border bg-white transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-ink/25 hover:-translate-y-0.5 hover:shadow-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
               >
                 <span className="w-10 h-10 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-extrabold shrink-0">{initials(m.business.name)}</span>
                 <span className="min-w-0 flex-1">

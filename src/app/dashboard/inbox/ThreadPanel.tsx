@@ -282,7 +282,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
       <MarkReadOnOpen conversationId={conversation.id} unread={unread} />
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <div className="px-3 md:px-6 py-2.5 md:py-3 border-b border-border bg-white flex items-center gap-2 md:gap-3 pt-[max(0.625rem,env(safe-area-inset-top))] md:pt-3">
-          <Link href={backHref} className="lg:hidden -ml-1 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50" aria-label="Back to inbox">
+          <Link href={backHref} className="lg:hidden -ml-1 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70" aria-label="Back to inbox">
             <ChevronLeft className="w-5 h-5 text-ink/65" strokeWidth={2} />
           </Link>
           <div className="flex-1 min-w-0">

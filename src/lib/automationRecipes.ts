@@ -8,4 +8,7 @@ export const AUTOMATION_RECIPES: Array<{ key: string; label: string; input: Auto
   { key: "quiet", label: "Follow up when a lead goes quiet", input: { name: "Quiet-lead follow-up", trigger: "LEAD_INACTIVE", action: "SEND_FOLLOW_UP", offsetHours: 72, messageTemplate: "Hi {{name}} — just checking in from {{business}}. Happy to hold a date or answer anything. Is this still on your mind?" } },
 ];
 
+/** The recipes onboarding offers, in the order a booking lives through them. */
+export const STARTER_RECIPES = ["confirm", "remind", "thanks"] as const;
+
 export const AUTOMATION_VARIABLES = ["name", "service", "date", "time", "business"];

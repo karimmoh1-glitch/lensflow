@@ -16,7 +16,7 @@ export function GoogleButton({ intent, className, personalization, divider = "or
         type="button"
         onClick={() => startTransition(() => startGoogleSignIn(intent, personalization))}
         disabled={pending}
-        className="w-full inline-flex items-center justify-center gap-2.5 h-12 rounded-full border border-border bg-white text-[15px] font-semibold text-ink hover:bg-black/[0.03] active:scale-[0.99] transition-[background-color,transform] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+        className="w-full inline-flex items-center justify-center gap-2.5 h-12 rounded-full border border-border bg-white text-[15px] font-semibold text-ink hover:bg-black/[0.03] active:scale-[0.99] transition-[background-color,transform] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
         aria-busy={pending}
       >
         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>

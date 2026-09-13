@@ -129,7 +129,7 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
               disabled={drafting || pending}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-13 font-semibold text-ink/75 hover:bg-black/[0.03] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-13 font-semibold text-ink/75 hover:bg-black/[0.03] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
             >
               {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> : <PenLine className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />}
               {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}

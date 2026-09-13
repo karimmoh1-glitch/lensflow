@@ -26,7 +26,7 @@ export function CopyField({ label, value }: { label: string; value: string }) {
           onClick={copy}
           disabled={!value}
           aria-label={`Copy ${label}`}
-          className="shrink-0 inline-flex items-center gap-1 h-7 px-2 rounded-lg border border-border text-2xs font-semibold text-ink/70 hover:text-ink hover:border-ink/25 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+          className="shrink-0 inline-flex items-center gap-1 h-7 px-2 rounded-lg border border-border text-2xs font-semibold text-ink/70 hover:text-ink hover:border-ink/25 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
         >
           {copied ? <Check className="w-3 h-3" strokeWidth={3} aria-hidden /> : <Copy className="w-3 h-3" strokeWidth={2} aria-hidden />}
           {copied ? "Copied" : "Copy"}

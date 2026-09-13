@@ -153,7 +153,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </p>
             )}
             {standing.nextAction && standingHref && (
-              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-strong text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-strong text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
                 {standing.nextAction.label}
                 <span className="text-white/60 font-medium text-xs">· {standing.nextAction.why}</span>
               </Link>

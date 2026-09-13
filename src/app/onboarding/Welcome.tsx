@@ -28,7 +28,7 @@ export type PersonalWelcome = {
   betaProEndsAt: string | null;
   businessUnavailable: boolean;
 };
-type ConnectAction = (formData: FormData) => Promise<void>;
+type ConnectAction = () => Promise<void>;
 
 const ICON: Partial<Record<IntegrationProvider, ChannelKey>> = { EMAIL: "gmail", INSTAGRAM: "instagram", WHATSAPP: "whatsapp", SMS: "sms" };
 const BLURB: Partial<Record<IntegrationProvider, string>> = {
@@ -204,10 +204,9 @@ export function Welcome({
                     {c.connected ? (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-success-text"><Check className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden />Connected</span>
                     ) : c.provider === "SMS" ? (
-                      c.available ? <Link href="/dashboard/settings?tab=channels" onClick={() => void markOnboardingDone({ timezone: tz || undefined, via: "connect" })} className="text-13 font-medium text-ink/70 hover:text-ink whitespace-nowrap">Pick a number</Link> : null
+                      c.available ? <Link href="/dashboard/settings?tab=channels" className="text-13 font-medium text-ink/70 hover:text-ink whitespace-nowrap">Pick a number</Link> : null
                     ) : action && c.available ? (
                       <form action={action} onSubmit={() => setOpening(c.provider)}>
-                        <input type="hidden" name="timezone" value={tz} />
                         <Button type="submit" size="sm" variant={c.wanted ? "primary" : "secondary"} loading={opening === c.provider} loadingLabel="Opening">Connect</Button>
                       </form>
                     ) : null}

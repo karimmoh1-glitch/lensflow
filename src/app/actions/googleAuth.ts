@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { googleOAuthConfigured, getGoogleAuthUrl, getValidAccessToken, listRecentGmailMessages, revokeGoogleToken } from "@/lib/google";
-import { signOAuthState } from "@/lib/integrations/oauthState";
+import { signOAuthState, type OAuthReturn } from "@/lib/integrations/oauthState";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { syncGmailForBusiness } from "@/server/gmailSync";
 import { reportFailure } from "@/lib/observe";
@@ -16,7 +16,7 @@ import { recordAudit } from "@/server/audit";
 /** Kicks off Google's real consent screen for Gmail (default) or Google Calendar. Never a
  * toggle. Only reachable when Daythread's Google OAuth client is configured, and only when
  * tokens can be stored encrypted. */
-export async function connectGoogle(purpose: "gmail" | "calendar" | "drive" = "gmail", session?: SessionPayload | null) {
+export async function connectGoogle(purpose: "gmail" | "calendar" | "drive" = "gmail", session?: SessionPayload | null, opts: { returnTo?: OAuthReturn } = {}) {
   const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
   if (!googleOAuthConfigured()) throw new Error("Google sign-in isn't configured on this deployment.");
@@ -30,7 +30,7 @@ export async function connectGoogle(purpose: "gmail" | "calendar" | "drive" = "g
     redirect(`/dashboard/settings?tab=connections&connect_error=limit&provider=${provider}`);
   }
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider } });
-  const state = await signOAuthState({ provider: "google", purpose, businessId: ctx.business.id, userId: ctx.session.userId });
+  const state = await signOAuthState({ provider: "google", purpose, businessId: ctx.business.id, userId: ctx.session.userId, returnTo: opts.returnTo });
   redirect(await getGoogleAuthUrl(state, purpose));
 }
 

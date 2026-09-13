@@ -7,7 +7,6 @@ import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { Welcome, type ChannelOption, type PersonalWelcome, type StarterRecipe } from "./Welcome";
 import { connectGoogle } from "@/app/actions/googleAuth";
 import { connectInstagram, connectMicrosoft, connectWhatsApp } from "@/app/actions/connect";
-import { markOnboardingDone } from "@/app/actions/onboarding";
 import { AUTOMATION_RECIPES, STARTER_RECIPES } from "@/lib/automationRecipes";
 import { smsEntitled, trialEligible, betaProActive, planPurchasable } from "@/lib/billing";
 import { subscriptionBillingIsLive } from "@/lib/subscriptionBilling";
@@ -101,30 +100,23 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
 }
 
 /**
- * A connect leaves for the provider and comes back to Settings, so onboarding is marked done
- * first — otherwise the next sign-in would put a connected workspace back through it.
+ * A connect leaves for the provider's sign-in and comes back to this step (the signed OAuth
+ * state carries `returnTo: "onboarding"`), so onboarding is only ever marked done by the
+ * person finishing it — never by leaving, and never by a connect that failed.
  */
-async function leaving(formData: FormData) {
-  const tz = formData.get("timezone");
-  await markOnboardingDone({ timezone: typeof tz === "string" && tz ? tz : undefined, via: "connect" });
-}
-async function connectGmailAction(formData: FormData) {
+async function connectGmailAction() {
   "use server";
-  await leaving(formData);
-  await connectGoogle("gmail");
+  await connectGoogle("gmail", undefined, { returnTo: "onboarding" });
 }
-async function connectOutlookAction(formData: FormData) {
+async function connectOutlookAction() {
   "use server";
-  await leaving(formData);
-  await connectMicrosoft("mail");
+  await connectMicrosoft("mail", undefined, { returnTo: "onboarding" });
 }
-async function connectInstagramAction(formData: FormData) {
+async function connectInstagramAction() {
   "use server";
-  await leaving(formData);
-  await connectInstagram();
+  await connectInstagram(undefined, { returnTo: "onboarding" });
 }
-async function connectWhatsAppAction(formData: FormData) {
+async function connectWhatsAppAction() {
   "use server";
-  await leaving(formData);
-  await connectWhatsApp();
+  await connectWhatsApp(undefined, { returnTo: "onboarding" });
 }

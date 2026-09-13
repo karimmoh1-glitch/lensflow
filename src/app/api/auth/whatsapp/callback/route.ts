@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { verifyOAuthState } from "@/lib/integrations/oauthState";
+import { oauthLanding } from "@/lib/integrations/oauthReturn";
 import { exchangeWhatsAppCode, discoverWabas, listPhoneNumbers, subscribeWabaWebhooks, wabaDetail, type WaPhone } from "@/lib/meta/whatsapp";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
-import { appBaseUrl, metaCredentialsPresent } from "@/lib/meta/config";
+import { metaCredentialsPresent } from "@/lib/meta/config";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { activateIntegration } from "@/server/integrationQuota";
@@ -41,20 +42,23 @@ function rank(p: WaPhone): number {
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const back = new URL("/dashboard/settings", appBaseUrl() || url.origin);
-  back.searchParams.set("tab", "connections");
+  // The hub until the state has verified: only a verified state may choose the landing page.
+  let back = oauthLanding(url.origin, null);
   const fail = (reason: string) => {
     back.searchParams.set("connect_error", reason);
     back.searchParams.set("provider", "WHATSAPP");
     return NextResponse.redirect(back);
   };
 
+  // The state is verified first: a verified state decides where the browser lands, whether
+  // the provider then reports success or a refusal.
+  const verified = await verifyOAuthState("whatsapp", url.searchParams.get("state"));
+  if (verified.ok) back = oauthLanding(url.origin, verified.state.returnTo);
   const error = url.searchParams.get("error");
   if (error) return fail(error === "access_denied" ? "denied" : "provider");
   if (!metaCredentialsPresent("whatsapp")) return fail("configuration");
-
-  const verified = await verifyOAuthState("whatsapp", url.searchParams.get("state"));
   if (!verified.ok) return fail(verified.reason === "expired" ? "expired" : "state");
+
   const code = url.searchParams.get("code");
   if (!code) return fail("provider");
 

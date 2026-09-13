@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { verifyOAuthState, consumePkce, type OAuthProvider, type OAuthPurpose } from "@/lib/integrations/oauthState";
+import { oauthLanding } from "@/lib/integrations/oauthReturn";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
@@ -57,8 +58,8 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
-  const back = new URL("/dashboard/settings", url.origin);
-  back.searchParams.set("tab", "connections");
+  // The hub until the state has verified: only a verified state may choose the landing page.
+  let back = oauthLanding(url.origin, null);
   let providerKey: IntegrationProvider = spec.providerFor(spec.purposes[0]);
   const fail = (reason: string) => {
     back.searchParams.set("connect_error", reason);
@@ -68,6 +69,7 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
 
   const verified = await verifyOAuthState(spec.oauthProvider, state);
   const codeVerifier = spec.pkce ? await consumePkce(spec.oauthProvider) : null;
+  if (verified.ok) back = oauthLanding(url.origin, verified.state.returnTo);
   if (verified.ok && spec.purposes.includes(verified.state.purpose)) providerKey = spec.providerFor(verified.state.purpose);
   if (error) return fail(error === "access_denied" || error === "user_denied" ? "denied" : "provider");
   if (!verified.ok) return fail(verified.reason === "expired" ? "expired" : "state");
@@ -134,7 +136,10 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
     let extra: Record<string, string> = { connected: providerKey };
     if (spec.afterActivate) {
       try {
-        const r = await spec.afterActivate(activation.row, tokens, identity, previous, flow);
+        // Re-read: the upsert returns the row as stored, with the tokens still encrypted, and
+        // the post-connect step (a calendar discovery, a first sync) needs them usable.
+        const stored = (await prisma.integration.findUnique({ where: { id: activation.row.id } })) ?? activation.row;
+        const r = await spec.afterActivate(stored, tokens, identity, previous, flow);
         if (r?.redirect) extra = r.redirect;
       } catch (err) {
         await reportFailure("oauth", `${providerKey} post-connect step failed`, { businessId, provider: providerKey, error: err, level: "warn" });

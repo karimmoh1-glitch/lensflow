@@ -7,7 +7,17 @@ describe("OAuth state", () => {
   it("verifies a fresh state bound to its nonce and provider", async () => {
     const { state, nonce } = await signOAuthStateRaw({ provider: "google", purpose: "calendar", ...base });
     const r = await verifyOAuthStateWithNonce("google", state, nonce);
-    expect(r).toEqual({ ok: true, state: { businessId: "biz_a", userId: "user_a", purpose: "calendar" } });
+    expect(r).toEqual({ ok: true, state: { businessId: "biz_a", userId: "user_a", purpose: "calendar", returnTo: "settings" } });
+  });
+  it("carries a return destination only from the closed set; anything else lands on the hub", async () => {
+    const onboarding = await signOAuthStateRaw({ provider: "google", purpose: "gmail", ...base, returnTo: "onboarding" });
+    expect(await verifyOAuthStateWithNonce("google", onboarding.state, onboarding.nonce)).toMatchObject({ ok: true, state: { returnTo: "onboarding" } });
+    // A signed state can only be minted by this server, but the claim is still validated on
+    // the way out so a future caller can never smuggle a URL through it.
+    const foreign = await signOAuthStateRaw({ provider: "google", purpose: "gmail", ...base, returnTo: "https://evil.example/phish" });
+    expect(await verifyOAuthStateWithNonce("google", foreign.state, foreign.nonce)).toMatchObject({ ok: true, state: { returnTo: "settings" } });
+    const path = await signOAuthStateRaw({ provider: "google", purpose: "gmail", ...base, returnTo: "/dashboard/billing" });
+    expect(await verifyOAuthStateWithNonce("google", path.state, path.nonce)).toMatchObject({ ok: true, state: { returnTo: "settings" } });
   });
   it("rejects a missing, tampered, or foreign-signed state", async () => {
     expect((await verifyOAuthStateWithNonce("google", null, "x")).ok).toBe(false);

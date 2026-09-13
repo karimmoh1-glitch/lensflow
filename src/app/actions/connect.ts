@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
-import { signOAuthState, beginPkce, type OAuthProvider, type OAuthPurpose } from "@/lib/integrations/oauthState";
+import { signOAuthState, beginPkce, type OAuthProvider, type OAuthPurpose, type OAuthReturn } from "@/lib/integrations/oauthState";
 import { microsoftConfigured, microsoftAuthUrl } from "@/lib/microsoft";
 import { slackConfigured, slackAuthUrl, revokeSlackToken, listSlackChannels, joinSlackChannel, type SlackChannel } from "@/lib/slack";
 import { dropboxConfigured, dropboxAuthUrl, revokeDropboxToken } from "@/lib/dropbox";
@@ -55,7 +55,9 @@ async function guardQuotaOrRedirect(businessId: string, provider: IntegrationPro
 /** Instagram: Meta's own authorization screen. Professional accounts only. Invite-only while
  * Meta's review is pending: a workspace without an approved access request is sent back
  * with the reason instead of to Meta. */
-export async function connectInstagram(session?: SessionPayload | null) {
+type ConnectOptions = { returnTo?: OAuthReturn };
+
+export async function connectInstagram(session?: SessionPayload | null, opts: ConnectOptions = {}) {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!instagramConfigured()) throw new Error("Instagram isn't configured on this deployment.");
@@ -63,12 +65,12 @@ export async function connectInstagram(session?: SessionPayload | null) {
   guardEncryption();
   await guardQuotaOrRedirect(ctx.business.id, "INSTAGRAM");
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "INSTAGRAM" } });
-  const state = await signOAuthState({ provider: "instagram", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId });
+  const state = await signOAuthState({ provider: "instagram", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId, returnTo: opts.returnTo });
   redirect(instagramAuthUrl(state));
 }
 
 /** WhatsApp: Meta's Embedded Signup (Facebook Login for Business). */
-export async function connectWhatsApp(session?: SessionPayload | null) {
+export async function connectWhatsApp(session?: SessionPayload | null, opts: ConnectOptions = {}) {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!whatsappConfigured()) throw new Error("WhatsApp isn't configured on this deployment.");
@@ -76,7 +78,7 @@ export async function connectWhatsApp(session?: SessionPayload | null) {
   guardEncryption();
   await guardQuotaOrRedirect(ctx.business.id, "WHATSAPP");
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "WHATSAPP" } });
-  const state = await signOAuthState({ provider: "whatsapp", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId });
+  const state = await signOAuthState({ provider: "whatsapp", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId, returnTo: opts.returnTo });
   redirect(whatsappAuthUrl(state));
 }
 
@@ -85,22 +87,22 @@ export async function connectWhatsApp(session?: SessionPayload | null) {
  * slot, a signed state (and a PKCE challenge when the provider uses one), then the
  * provider's own authorization screen. Never a toggle.
  */
-async function startOAuth(opts: { provider: IntegrationProvider; oauthProvider: OAuthProvider; purpose: OAuthPurpose; configured: boolean; name: string; pkce?: boolean; url: (state: string, codeChallenge: string | null) => string }, session?: SessionPayload | null): Promise<never> {
+async function startOAuth(opts: { provider: IntegrationProvider; oauthProvider: OAuthProvider; purpose: OAuthPurpose; configured: boolean; name: string; pkce?: boolean; returnTo?: OAuthReturn; url: (state: string, codeChallenge: string | null) => string }, session?: SessionPayload | null): Promise<never> {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!opts.configured) throw new Error(`${opts.name} isn't configured on this deployment.`);
   guardEncryption();
   await guardQuotaOrRedirect(ctx.business.id, opts.provider);
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: opts.provider } });
-  const state = await signOAuthState({ provider: opts.oauthProvider, purpose: opts.purpose, businessId: ctx.business.id, userId: ctx.session.userId });
+  const state = await signOAuthState({ provider: opts.oauthProvider, purpose: opts.purpose, businessId: ctx.business.id, userId: ctx.session.userId, returnTo: opts.returnTo });
   const challenge = opts.pkce ? (await beginPkce(opts.oauthProvider)).codeChallenge : null;
   redirect(opts.url(state, challenge));
 }
 
 /** Microsoft: Outlook mail or Outlook calendar, one Entra app, the purpose picks the scopes. */
-export async function connectMicrosoft(purpose: "mail" | "calendar", session?: SessionPayload | null) {
+export async function connectMicrosoft(purpose: "mail" | "calendar", session?: SessionPayload | null, opts: ConnectOptions = {}) {
   const calendar = purpose === "calendar";
-  return startOAuth({ provider: calendar ? "MICROSOFT_CALENDAR" : "MICROSOFT_OUTLOOK", oauthProvider: "microsoft", purpose: calendar ? "calendar" : "mail", configured: microsoftConfigured(), name: calendar ? "Microsoft Calendar" : "Microsoft Outlook", pkce: true, url: (state, challenge) => microsoftAuthUrl(state, purpose, challenge!) }, session);
+  return startOAuth({ provider: calendar ? "MICROSOFT_CALENDAR" : "MICROSOFT_OUTLOOK", oauthProvider: "microsoft", purpose: calendar ? "calendar" : "mail", configured: microsoftConfigured(), name: calendar ? "Microsoft Calendar" : "Microsoft Outlook", pkce: true, returnTo: opts.returnTo, url: (state, challenge) => microsoftAuthUrl(state, purpose, challenge!) }, session);
 }
 
 export async function connectSlack(session?: SessionPayload | null) {

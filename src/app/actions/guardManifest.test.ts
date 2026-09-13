@@ -62,6 +62,7 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "webhooks/stripe/route.ts": "Provider webhook: authorized by Stripe's signature, which carries its own replay window.",
   "webhooks/stripe/connect/route.ts": "Provider webhook: Stripe signature.",
   "webhooks/email/route.ts": "Provider webhook: the inbound email provider's signature.",
+  "webhooks/slack/events/route.ts": "Provider webhook: Slack's HMAC over the timestamp and exact body with the app's signing secret, five-minute window, checked before anything is parsed.",
   "cron/automations/route.ts": "Scheduled job: authorized by CRON_SECRET.",
 };
 

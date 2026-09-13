@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { pushToBusiness } from "@/server/push";
 import { postSlackMessage } from "@/lib/slack";
 import { reportFailure } from "@/lib/observe";
-import { appUrl } from "@/lib/integrations/oauth";
+import { appUrl, OAuthError } from "@/lib/integrations/oauth";
 
 /**
  * One notice, every place the business asked to hear it: the in-app list, the phone, and
@@ -68,6 +68,13 @@ export async function postToSlack(businessId: string, notice: Notice): Promise<b
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Slack refused the message";
+    if (err instanceof OAuthError && err.status === 429) {
+      // Slack is asking us to slow down. The connection is fine; the in-app copy of the
+      // notice is already written, and the next notice will go through.
+      await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, lastPostError: "rate_limited" } } });
+      await reportFailure("delivery", "Slack rate limited a post", { businessId, provider: "SLACK", level: "warn" });
+      return false;
+    }
     const revoked = /invalid_auth|token_revoked|account_inactive|not_authed|401/i.test(msg);
     const gone = /channel_not_found|not_in_channel|is_archived/i.test(msg);
     await prisma.integration.update({ where: { id: row.id }, data: { lastSyncStatus: "failed", lastError: revoked ? "Slack revoked access — reconnect" : gone ? "The Slack channel is gone — choose another" : "Slack didn't accept the last message. Daythread will try again on the next notice.", lastErrorAt: new Date(), status: revoked ? "NEEDS_ATTENTION" : "SYNC_ERROR", settings: { ...settings, lastPostError: gone ? "channel" : revoked ? "auth" : "other" } } });

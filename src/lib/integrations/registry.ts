@@ -205,7 +205,7 @@ export const PROVIDERS: Record<RegisteredProvider, ProviderSpec> = {
     auth: "oauth",
     capabilities: ["NOTIFY"],
     env: ["SLACK_CLIENT_ID", "SLACK_CLIENT_SECRET"],
-    approval: "A Slack app with the chat:write and channels:read bot scopes, installed to the workspace by a member who can add apps.",
+    approval: "A Slack app with the chat:write, channels:read and channels:join bot scopes, its redirect URL set to /api/auth/slack/callback and its Events request URL to /api/webhooks/slack/events on this deployment, installed by a member who can add apps.",
     summary: "New inquiries and bookings posted to a channel you choose. Names and channels only, never the message itself.",
     docs: "docs/integrations/slack.md",
   },

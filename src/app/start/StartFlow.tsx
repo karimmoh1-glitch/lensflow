@@ -265,7 +265,7 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
       <footer className="w-full max-w-2xl mx-auto px-5 md:px-8 py-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-ink/65">
         <span>Already on Daythread? <Link href="/login" className="font-semibold text-ink hover:text-accent-text">Log in</Link></span>
         {step.kind !== "account" && step.kind !== "summary" && (
-          <button type="button" onClick={skip} className="font-semibold text-ink/65 hover:text-ink underline-offset-2 hover:underline">Skip the questions</button>
+          <button type="button" onClick={skip} className="inline-flex items-center min-h-[32px] font-semibold text-ink/65 hover:text-ink underline-offset-2 hover:underline">Skip the questions</button>
         )}
       </footer>
     </main>

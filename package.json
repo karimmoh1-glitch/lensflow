@@ -16,7 +16,8 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "qa:a11y": "node scripts/qa/a11y.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

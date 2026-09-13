@@ -153,7 +153,7 @@ function AccountFooter({
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium truncate">{businessName}</div>
           <form action={logout}>
-            <button className="flex items-center gap-1 text-xs text-ink/65 hover:text-ink/70">
+            <button className="flex items-center gap-1 min-h-[28px] text-xs text-ink/65 hover:text-ink">
               <LogOut className="w-3 h-3" strokeWidth={2} aria-hidden />
               Log out
             </button>

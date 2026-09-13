@@ -187,7 +187,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             {agenda.calendars.length > 0 && (
               <p className="mt-4 text-2xs text-ink/65">{agenda.calendars.map((c) => `${c.provider === "GOOGLE_CALENDAR" ? "Google" : "Apple"}${c.lastSyncedAt ? ` synced ${format(c.lastSyncedAt, "h:mm a")}` : c.status === "CONNECTED" ? " connected" : " needs attention"}`).join(" · ")}</p>
             )}
-            {agenda.calendars.length === 0 && <Link href="/dashboard/settings?tab=channels" className="mt-4 inline-block text-2xs font-semibold text-ink/75 hover:underline">Connect Google or Apple Calendar so busy time counts →</Link>}
+            {agenda.calendars.length === 0 && <Link href="/dashboard/settings?tab=channels" className="mt-3 inline-flex items-center min-h-[32px] text-xs font-semibold text-ink/75 hover:underline">Connect Google or Apple Calendar so busy time counts →</Link>}
           </div>
         </aside>
       </div>

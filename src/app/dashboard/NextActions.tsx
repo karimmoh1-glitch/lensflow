@@ -115,17 +115,18 @@ export function NextActions({ rows, atRisk, caughtUp }: { rows: Row[]; atRisk: M
           {rest.length > 0 && (
             <ol className="border-t border-border divide-y divide-border" aria-label="Also needs you">
               {rest.slice(0, 8).map((r) => (
-                <li key={r.id} className="group flex items-center gap-3 px-4 sm:px-5 py-2.5 hover:bg-black/[0.02] transition-colors">
+                <li key={r.id} className="group relative flex items-center gap-3 px-4 sm:px-5 py-2.5 hover:bg-black/[0.02] focus-within:bg-black/[0.03] transition-colors">
                   <span className={cn("w-16 text-xs font-medium shrink-0", r.rule === "waiting_reply" ? "text-ink" : "text-ink/60")}>
                     {r.rule === "waiting_reply" && <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-1.5 align-middle" />}
                     {CHIP_LABEL[r.rule]}
                   </span>
-                  <Link href={r.href} className="min-w-0 flex-1 focus-visible:outline-none">
+                  {/* The whole row opens the person; the actions beside it sit above the stretched link. */}
+                  <Link href={r.href} className="min-w-0 flex-1 focus-visible:outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ink/70">
                     <span className="block text-13 text-ink truncate"><span className="font-semibold group-hover:underline">{r.person.name}</span><span className="text-ink/60"> · {withoutName(r.why, r.person.name)}{r.detail ? ` ${r.detail}.` : ""}</span></span>
                   </Link>
                   {r.value && <span className="hidden md:block text-xs text-ink/60 tabular-nums shrink-0">{r.value.label}</span>}
                   {r.kind !== "confirm_booking" && (
-                    <span className="hidden sm:flex items-center gap-1 shrink-0">
+                    <span className="relative z-10 hidden sm:flex items-center gap-1 shrink-0">
                       <Link href={draftHref(r)} className="h-7 px-2.5 inline-flex items-center rounded-md text-xs font-semibold text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">{r.kind === "reply" ? "Draft reply" : "Draft follow-up"}</Link>
                       {r.kind === "reply" ? (
                         <button type="button" disabled={pending} onClick={() => run(r, "handled")} className="h-7 px-2.5 rounded-md text-xs font-medium text-ink/60 hover:text-ink hover:bg-black/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Handled</button>

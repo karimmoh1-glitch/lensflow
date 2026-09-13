@@ -36,7 +36,7 @@ export function Story({ instagram }: { instagram: ChannelStatus }) {
         <div className="sticky top-0 h-[100svh] flex items-center overflow-hidden">
           <div className="w-full max-w-[1200px] mx-auto px-6 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-16 items-center">
             <div>
-              <ol className="flex items-center gap-x-4 gap-y-1 flex-wrap text-13 font-medium text-ink/40 mb-8">
+              <ol className="flex items-center gap-x-4 gap-y-1 flex-wrap text-13 font-medium text-ink/60 mb-8">
                 {BEATS.map((b) => (
                   <li key={b.key} className="relative">
                     {b.label}
@@ -125,7 +125,7 @@ function Stage({ instagram }: { instagram: ChannelStatus }) {
       <div className="relative min-w-0 bg-paper/60 p-4">
         <Step a={0.1} b={0.15} c={0.23} d={0.27} dy="0px" className="absolute inset-4">
           <p className="text-xs font-medium text-ink/60">Next step</p>
-          <p className="mt-1 text-[15px] font-semibold text-ink/40">Reading the message…</p>
+          <p className="mt-1 text-[15px] font-semibold text-ink/60">Reading the message…</p>
         </Step>
         <Step a={0.25} b={0.32} c={0.41} d={0.46} dy="16px" className="absolute inset-4">
           <NextStep />
@@ -212,7 +212,7 @@ function ThreadHeader({ instagram, live }: { instagram: ChannelStatus; live?: bo
         <p className="text-sm font-semibold text-ink leading-5">Maya Chen</p>
         <p className="text-xs text-ink/60 flex items-center gap-1.5">
           <ChannelIcon k="instagram" size={14} /> Instagram · @maya.makes
-          {instagram !== "Live" && <span className="text-2xs font-medium text-ink/50 rounded-md bg-black/[0.04] px-1.5">{instagram}</span>}
+          {instagram !== "Live" && <span className="text-2xs font-medium text-ink/60 rounded-md bg-black/[0.04] px-1.5">{instagram}</span>}
         </p>
       </div>
       {live ? (
@@ -240,7 +240,7 @@ function Inbound({ highlightAt }: { highlightAt?: number }) {
         )}{" "}
         for a portrait session?
       </p>
-      <p className="mt-1 text-2xs text-ink/50">Just now</p>
+      <p className="mt-1 text-2xs text-ink/60">Just now</p>
     </div>
   );
 }
@@ -248,10 +248,10 @@ function Inbound({ highlightAt }: { highlightAt?: number }) {
 function ReadChips() {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-2xs font-medium text-ink/55 mr-1">Daythread read</span>
+      <span className="text-2xs font-medium text-ink/60 mr-1">Daythread read</span>
       {[["Intent", "Wants to book"], ["Date", "Friday"], ["Time", "2:00 PM"], ["Service", "Portrait session"], ["Context", "Returning client"]].map(([k, v]) => (
         <span key={k} className="inline-flex items-center gap-1 rounded-md bg-black/[0.045] px-1.5 py-0.5 text-2xs font-medium text-ink/75">
-          <span className="text-ink/55">{k}</span>
+          <span className="text-ink/60">{k}</span>
           {v}
         </span>
       ))}
@@ -308,7 +308,7 @@ function Outbound({ instagram }: { instagram: ChannelStatus }) {
           Hi Maya — you&rsquo;re booked for Portrait session on Friday, Sep 18 at 2:00 PM with Alex Rivera Photography. Reply here if anything changes. See you then!
         </p>
       </div>
-      <p className="mt-1.5 text-right text-2xs text-ink/55 flex items-center justify-end gap-1.5">
+      <p className="mt-1.5 text-right text-2xs text-ink/60 flex items-center justify-end gap-1.5">
         <Check className="w-3 h-3 text-success" strokeWidth={2.5} aria-hidden />
         Sent on Instagram{instagram !== "Live" ? ` (${instagram.toLowerCase()})` : ""} by your confirmation automation
       </p>
@@ -322,7 +322,7 @@ function ThankYou() {
       <div className="flex justify-end">
         <p className="max-w-[88%] rounded-2xl rounded-tr-md bg-ink text-white px-3.5 py-2.5 text-13 leading-relaxed">Thank you, Maya — it was a pleasure. I&rsquo;ll be in touch as soon as everything is ready.</p>
       </div>
-      <p className="mt-1.5 text-right text-2xs text-ink/55 flex items-center justify-end gap-1.5">
+      <p className="mt-1.5 text-right text-2xs text-ink/60 flex items-center justify-end gap-1.5">
         <Check className="w-3 h-3 text-success" strokeWidth={2.5} aria-hidden />
         Sent a day after the session by your thank-you automation
       </p>

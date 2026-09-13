@@ -142,10 +142,10 @@ export async function summarizeConversation(conversationId: string, opts: { forc
   if (aiEntitled(business)) {
     // A forced re-summary is a deliberate model call; the cached path above never reaches here.
     if (opts.force) {
-      const gate = await checkAiLimit(business.id, "summary_forced");
+      const gate = await checkAiLimit(business.id, "summary_forced", ctx.user.id);
       if (!gate.ok && isSpendLimit(gate.reason)) return { error: gate.message };
     }
-    const sentence = await summarizeConversationSentence({ personName, businessName: business.name, messages: cleaned }, { businessId: business.id, feature: opts.force ? "summary_forced" : "summary" });
+    const sentence = await summarizeConversationSentence({ personName, businessName: business.name, messages: cleaned }, { businessId: business.id, feature: opts.force ? "summary_forced" : "summary", userId: ctx.user.id });
     if (sentence) summary = { ...base, summary: sentence, source: "ai" };
   }
 

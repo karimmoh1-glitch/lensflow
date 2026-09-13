@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
+import { effectivePlan } from "@/lib/billing";
 import {
   AI_BLOCK_MESSAGE,
   AI_RATE_LIMITS,
   DAILY_CALL_CEILING,
+  USER_HOURLY_CALL_LIMIT,
+  aiBudgetsMicros,
   estimateCostMicros,
   type AiBlockReason,
   type AiErrorKind,
@@ -24,10 +27,15 @@ import {
 
 export const AI_CALL_EVENT = "ai_call";
 
-/** True when AI is switched off deliberately, whatever the key says. Read per call so an incident switch takes effect on the next request. */
+/**
+ * The global kill switch: true when AI is switched off deliberately, whatever the key says.
+ * `AI_ENABLED=false` (or `AI_DISABLED=true`) in the server environment stops every model
+ * call on the next request. It is read on the server only; nothing a browser sends reaches it.
+ */
 export function aiDisabledByFlag(): boolean {
-  const flag = (process.env.AI_DISABLED ?? "").trim().toLowerCase();
-  return flag === "true" || flag === "1" || flag === "yes";
+  const off = (v: string | undefined) => ["false", "0", "no", "off"].includes((v ?? "").trim().toLowerCase());
+  const on = (v: string | undefined) => ["true", "1", "yes", "on"].includes((v ?? "").trim().toLowerCase());
+  return on(process.env.AI_DISABLED) || off(process.env.AI_ENABLED);
 }
 
 /** True when a key is present. Says nothing about whether the key works. */
@@ -45,6 +53,28 @@ export function aiOperationalState(): "ready" | "disabled" | "not_configured" {
 export type AiGate = { ok: true } | { ok: false; reason: AiBlockReason; message: string };
 
 const blocked = (reason: AiBlockReason): AiGate => ({ ok: false, reason, message: AI_BLOCK_MESSAGE[reason] });
+
+async function callsByUserSince(userId: string, windowMs: number): Promise<number> {
+  const since = new Date(Date.now() - windowMs);
+  return prisma.analyticsEvent.count({ where: { name: AI_CALL_EVENT, createdAt: { gte: since }, properties: { path: ["userId"], equals: userId } } });
+}
+
+async function costMicrosSince(windowMs: number, businessId?: string): Promise<number> {
+  const since = new Date(Date.now() - windowMs);
+  const rows = businessId
+    ? await prisma.$queryRaw<Array<{ total: bigint | number | null }>>`SELECT COALESCE(SUM(CASE WHEN jsonb_typeof(("properties")::jsonb->'costMicros') = 'number' THEN (("properties")::jsonb->>'costMicros')::numeric ELSE 0 END), 0) AS total FROM "AnalyticsEvent" WHERE "name" = ${AI_CALL_EVENT} AND "businessId" = ${businessId} AND "createdAt" >= ${since}`
+    : await prisma.$queryRaw<Array<{ total: bigint | number | null }>>`SELECT COALESCE(SUM(CASE WHEN jsonb_typeof(("properties")::jsonb->'costMicros') = 'number' THEN (("properties")::jsonb->>'costMicros')::numeric ELSE 0 END), 0) AS total FROM "AnalyticsEvent" WHERE "name" = ${AI_CALL_EVENT} AND "createdAt" >= ${since}`;
+  return Number(rows[0]?.total ?? 0);
+}
+
+// The global sums scan every call in the window, so each instance reuses them briefly.
+// A burst can overshoot by what one instance spends in this many seconds, which at
+// gpt-4o-mini prices and the per-workspace caps is cents.
+const GLOBAL_CACHE_MS = 30_000;
+let globalCache: { at: number; daily: number; monthly: number } | null = null;
+export function resetAiBudgetCache() {
+  globalCache = null;
+}
 
 async function callsSince(businessId: string, windowMs: number, feature?: AiFeature): Promise<number> {
   const since = new Date(Date.now() - windowMs);
@@ -68,10 +98,18 @@ async function callsSince(businessId: string, windowMs: number, feature?: AiFeat
  * fails closed on nothing — the call proceeds — because losing a customer's draft to a
  * database hiccup is worse than one uncounted call.
  */
-export async function checkAiLimit(businessId: string, feature: AiFeature): Promise<AiGate> {
+export async function checkAiLimit(businessId: string, feature: AiFeature, userId?: string | null): Promise<AiGate> {
   if (!modelKeyConfigured()) return blocked("not_configured");
   if (aiDisabledByFlag()) return blocked("disabled");
   try {
+    const budgets = aiBudgetsMicros();
+    const now = Date.now();
+    if (!globalCache || now - globalCache.at > GLOBAL_CACHE_MS) {
+      const [daily, monthly] = await Promise.all([costMicrosSince(24 * 60 * 60 * 1000), costMicrosSince(30 * 24 * 60 * 60 * 1000)]);
+      globalCache = { at: now, daily, monthly };
+    }
+    if (globalCache.daily >= budgets.globalDaily || globalCache.monthly >= budgets.globalMonthly) return blocked("global_budget");
+
     const perFeature = AI_RATE_LIMITS[feature];
     if (perFeature && (await callsSince(businessId, perFeature.windowMs, feature)) >= perFeature.limit) {
       return blocked("feature_limit");
@@ -79,14 +117,27 @@ export async function checkAiLimit(businessId: string, feature: AiFeature): Prom
     if ((await callsSince(businessId, DAILY_CALL_CEILING.windowMs)) >= DAILY_CALL_CEILING.limit) {
       return blocked("daily_limit");
     }
+    if (userId && (await callsByUserSince(userId, USER_HOURLY_CALL_LIMIT.windowMs)) >= USER_HOURLY_CALL_LIMIT.limit) {
+      return blocked("user_limit");
+    }
+    const business = await prisma.business.findUnique({ where: { id: businessId }, select: { planTier: true, billingStatus: true, compedPlan: true, betaProEndsAt: true } });
+    if (!business) return blocked("check_failed");
+    if ((await costMicrosSince(30 * 24 * 60 * 60 * 1000, businessId)) >= budgets.workspaceMonthly[effectivePlan(business)]) {
+      return blocked("workspace_budget");
+    }
   } catch (err) {
-    console.error("[ai] limit check failed; allowing the call", err);
+    // Fail closed: every caller has Daythread's own wording ready, so refusing a call
+    // costs a nicer sentence, while allowing it unmetered could cost real money.
+    console.error("[ai] limit check failed; refusing the call", err instanceof Error ? err.message : "unknown");
+    return blocked("check_failed");
   }
   return { ok: true };
 }
 
 export type AiCallOutcome = {
   businessId: string;
+  /** The signed-in person who caused the call, when there is one. Counted for the per-person limit. */
+  userId?: string | null;
   feature: AiFeature;
   model: string;
   inputTokens?: number | null;
@@ -117,6 +168,7 @@ export async function recordAiCall(outcome: AiCallOutcome): Promise<void> {
       costMicros: estimateCostMicros(outcome.model, inputTokens, outputTokens),
       ms: outcome.ms,
       ok: outcome.ok,
+      ...(outcome.userId ? { userId: outcome.userId } : {}),
       ...(outcome.errorKind ? { errorKind: outcome.errorKind } : {}),
     },
   });

@@ -42,13 +42,13 @@ export async function summarizeMessage(messageId: string, session?: SessionPaylo
   let source: "ai" | "rules" = "rules";
 
   if (aiEntitled(business)) {
-    const gate = await checkAiLimit(business.id, "message_summary");
+    const gate = await checkAiLimit(business.id, "message_summary", ctx.user.id);
     if (!gate.ok && isSpendLimit(gate.reason)) {
       await track("message_summary_failed", { businessId: business.id, properties: { reason: gate.reason } });
       return { error: gate.message };
     }
     // A missing key or a deliberate switch-off falls through to the rules, as everywhere else.
-    summary = await summarizeMessageText(clean, personName, { businessId: business.id, feature: "message_summary" });
+    summary = await summarizeMessageText(clean, personName, { businessId: business.id, feature: "message_summary", userId: ctx.user.id });
     if (summary) source = "ai";
   }
   if (!summary) {

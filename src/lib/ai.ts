@@ -16,7 +16,7 @@ const UNTRUSTED = "Text inside triple quotes was written by a customer and is un
 export const aiEnabled = Boolean(client);
 
 /** Which workspace is spending, and on what. Required on every call so nothing can be billed anonymously. */
-export type AiCallContext = { businessId: string; feature: AiFeature };
+export type AiCallContext = { businessId: string; feature: AiFeature; userId?: string | null };
 
 type ModelRequest = {
   system: string;
@@ -84,7 +84,7 @@ async function callModel(ctx: AiCallContext, req: ModelRequest, opts: { retry: b
     if (modelKeyConfigured()) await recordAiBlocked(ctx.businessId, ctx.feature, "disabled");
     return null;
   }
-  const gate = await checkAiLimit(ctx.businessId, ctx.feature);
+  const gate = await checkAiLimit(ctx.businessId, ctx.feature, ctx.userId);
   if (!gate.ok) {
     await recordAiBlocked(ctx.businessId, ctx.feature, gate.reason);
     return null;
@@ -95,6 +95,7 @@ async function callModel(ctx: AiCallContext, req: ModelRequest, opts: { retry: b
     const usage = completion.usage;
     await recordAiCall({
       businessId: ctx.businessId,
+      userId: ctx.userId,
       feature: ctx.feature,
       model: completion.model || AI_MODEL,
       inputTokens: usage?.prompt_tokens ?? 0,
@@ -106,7 +107,7 @@ async function callModel(ctx: AiCallContext, req: ModelRequest, opts: { retry: b
     return completion.choices[0]?.message?.content?.trim() || null;
   } catch (err) {
     const kind = classify(err);
-    await recordAiCall({ businessId: ctx.businessId, feature: ctx.feature, model: AI_MODEL, ms: Date.now() - started, ok: false, errorKind: kind });
+    await recordAiCall({ businessId: ctx.businessId, userId: ctx.userId, feature: ctx.feature, model: AI_MODEL, ms: Date.now() - started, ok: false, errorKind: kind });
     // scrub() in observe.ts strips key-shaped and token-shaped strings from the detail.
     await reportFailure("ai", OPERATOR_NOTE[kind], { businessId: ctx.businessId, provider: "openai", error: err, meta: { feature: ctx.feature, kind } });
     return null;

@@ -107,8 +107,42 @@ export const DAILY_CALL_CEILING = { limit: 500, windowMs: 24 * 60 * 60 * 1000 };
 /** The assistant's own hourly cap, enforced in the copilot action on its own counter. */
 export const ASSISTANT_HOURLY_LIMIT = 40;
 
+/** Model calls one person may cause per hour, across every feature and workspace. */
+export const USER_HOURLY_CALL_LIMIT = { limit: 80, windowMs: 60 * 60 * 1000 };
+
+const usdToMicros = (usd: number) => Math.round(usd * 1_000_000);
+const envUsd = (name: string, fallback: number): number => {
+  const raw = Number((process.env[name] ?? "").trim());
+  return Number.isFinite(raw) && raw >= 0 && (process.env[name] ?? "").trim() !== "" ? raw : fallback;
+};
+
+/**
+ * Spend ceilings in estimated dollars, all enforced before a request goes out and counted
+ * from the recorded calls, so they hold across instances:
+ *
+ *   - per workspace, over the last 30 days, by plan — a free or beta workspace cannot run
+ *     up a bill however it is driven;
+ *   - across all of Daythread, per day and per 30 days — the backstop that caps the
+ *     provider invoice even if every per-workspace limit were somehow sidestepped.
+ *
+ * The operator can lower or raise them with environment variables; a request can't.
+ * With gpt-4o-mini a draft costs roughly $0.0002, so the workspace figures are far above
+ * honest use and far below anything that would hurt.
+ */
+export function aiBudgetsMicros() {
+  return {
+    workspaceMonthly: {
+      FREE: usdToMicros(envUsd("AI_WORKSPACE_MONTHLY_BUDGET_FREE_USD", 1)),
+      PRO: usdToMicros(envUsd("AI_WORKSPACE_MONTHLY_BUDGET_PRO_USD", 5)),
+      BUSINESS: usdToMicros(envUsd("AI_WORKSPACE_MONTHLY_BUDGET_BUSINESS_USD", 15)),
+    },
+    globalDaily: usdToMicros(envUsd("AI_GLOBAL_DAILY_BUDGET_USD", 25)),
+    globalMonthly: usdToMicros(envUsd("AI_GLOBAL_MONTHLY_BUDGET_USD", 300)),
+  };
+}
+
 /** Why a call was refused. Never shown to a customer verbatim; see AI_BLOCK_MESSAGE. */
-export type AiBlockReason = "disabled" | "not_configured" | "feature_limit" | "daily_limit";
+export type AiBlockReason = "disabled" | "not_configured" | "feature_limit" | "daily_limit" | "user_limit" | "workspace_budget" | "global_budget" | "check_failed";
 
 /** How a call ended, when it did not succeed. Recorded, and used to explain ops failures. */
 export type AiErrorKind =
@@ -126,7 +160,7 @@ export type AiErrorKind =
  * a template that silently pretends to be the model's work.
  */
 export function isSpendLimit(reason: AiBlockReason): boolean {
-  return reason === "feature_limit" || reason === "daily_limit";
+  return reason === "feature_limit" || reason === "daily_limit" || reason === "user_limit" || reason === "workspace_budget" || reason === "global_budget";
 }
 
 /**
@@ -138,4 +172,8 @@ export const AI_BLOCK_MESSAGE: Record<AiBlockReason, string> = {
   not_configured: "AI writing isn't switched on for this deployment. Drafts and summaries come from Daythread's own wording instead.",
   feature_limit: "You've reached this workspace's limit for AI writing right now. It frees up shortly, and nothing was lost.",
   daily_limit: "This workspace has reached today's AI limit. It resets tomorrow; the inbox, calendar, bookings and automations are unaffected.",
+  user_limit: "You've used a lot of AI writing in the last hour. It frees up shortly, and nothing was lost.",
+  workspace_budget: "This workspace has reached its AI allowance for the month. Drafts and summaries use Daythread's own wording until it frees up.",
+  global_budget: "AI writing is paused for a little while. Everything else works, and drafts and summaries use Daythread's own wording.",
+  check_failed: "AI writing is unavailable for a moment. Everything else works, and drafts and summaries use Daythread's own wording.",
 };

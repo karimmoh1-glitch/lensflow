@@ -176,6 +176,11 @@ model User {
   // Bumped on password reset/change and account deletion: every session token carries the
   // version it was issued for, and a stale one is refused on the next request.
   sessionVersion Int @default(0)
+  /// When this person proved they control `email` (Google sign-in with a verified address, or
+  /// completing a password reset sent to it). Null means unproven: an account made with a
+  /// password or from an invitation link. Trust tied to an address (founder access,
+  /// complimentary plans, linking a Google sign-in) requires this.
+  emailVerifiedAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -1090,4 +1095,16 @@ model AnalyticsEvent {
 
   @@index([name, createdAt])
   @@index([businessId, name])
+}
+
+/// One attempt against a rate limit that must hold across every serverless instance
+/// (password guesses per account, signups per network). The key is a SHA-256 hash, so no
+/// email address or IP is stored here. Rows older than a day are swept as new ones arrive.
+model RateLimitHit {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+  @@index([createdAt])
 }

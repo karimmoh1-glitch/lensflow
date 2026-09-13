@@ -4,10 +4,11 @@ import { prisma } from "@/lib/db";
 import { verifyPassword, createSessionToken, getUserMemberships, homeRouteFor } from "@/lib/auth";
 import { jsonError } from "@/lib/mobileApi";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { accountPasswordBucket } from "@/lib/sharedRateLimit";
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string().min(1).max(200),
 });
 
 const TOO_MANY_ATTEMPTS = "Too many attempts. Please wait a few minutes and try again.";
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
   const ip = await getClientIp();
   const ipOk = rateLimit(`mobile-login:ip:${ip}`, { limit: 20, windowMs: 10 * 60 * 1000 }).ok;
   const emailOk = rateLimit(`mobile-login:email:${parsed.data.email}`, { limit: 8, windowMs: 10 * 60 * 1000 }).ok;
-  if (!ipOk || !emailOk) return jsonError(TOO_MANY_ATTEMPTS, 429);
+  if (!ipOk || !emailOk || !(await accountPasswordBucket(parsed.data.email)).ok) return jsonError(TOO_MANY_ATTEMPTS, 429);
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {

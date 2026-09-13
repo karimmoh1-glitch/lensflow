@@ -43,12 +43,21 @@ export async function completeGoogleSignIn(code: string): Promise<{ ok: true; re
 
     const user = await withLock(`google-signin:${email}`, async () => {
       const existing = await prisma.user.findUnique({ where: { email } });
-      if (existing) return { row: existing, created: false };
+      if (existing) {
+        if (existing.emailVerifiedAt) return { row: existing, created: false };
+        // Google has just proven this person owns the address; the existing account never
+        // did. Someone may have registered it first to wait for the owner (a password they
+        // know, sessions they hold). Linking keeps the account and its workspaces but voids
+        // that password and signs every other session out. The owner can set a password
+        // again with a reset sent to their address.
+        const row = await prisma.user.update({ where: { id: existing.id }, data: { emailVerifiedAt: new Date(), passwordHash: await hashPassword(randomBytes(32).toString("hex")), sessionVersion: { increment: 1 } } });
+        return { row, created: false };
+      }
       const workspaceName = await personalWorkspaceName(name);
       const handle = await uniqueHandle(name);
       const passwordHash = await hashPassword(randomBytes(32).toString("hex"));
       const row = await prisma.$transaction(async (tx) => {
-        const created = await tx.user.create({ data: { name: name.slice(0, 80), email, passwordHash } });
+        const created = await tx.user.create({ data: { name: name.slice(0, 80), email, passwordHash, emailVerifiedAt: new Date() } });
         const business = await tx.business.create({ data: { name: workspaceName, handle, ...betaGrantForNewWorkspace() } });
         await tx.orgMembership.create({ data: { userId: created.id, businessId: business.id, role: "OWNER" } });
         return created;

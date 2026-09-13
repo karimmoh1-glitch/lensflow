@@ -30,14 +30,38 @@ export async function updateBusinessProfile(data: {
 }, session?: SessionPayload | null) {
   const ctx = await requireRole([...ADMIN_ROLES], session);
   if (!ctx) throw new Error("unauthorized");
-  await prisma.business.update({ where: { id: ctx.business.id }, data });
+  // The argument arrives from the browser: only these five fields, validated, are written.
+  // Passing it straight to Prisma let a caller set its own plan, rewrite memberships, or
+  // connect another workspace's rows through nested writes.
+  const parsed = BUSINESS_PROFILE.safeParse(data);
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Check the fields.");
+  const { name, bio, timezone, bufferMinutes, bookingLeadHours } = parsed.data;
+  await prisma.business.update({ where: { id: ctx.business.id }, data: { name, bio, timezone, bufferMinutes, bookingLeadHours } });
   revalidatePath("/dashboard/settings");
 }
+
+const BUSINESS_PROFILE = zod.object({
+  name: zod.string().trim().min(1, "Your business needs a name.").max(80),
+  bio: zod.string().trim().max(600),
+  timezone: zod.string().min(1).max(64).refine((tz) => { try { new Intl.DateTimeFormat("en-US", { timeZone: tz }); return true; } catch { return false; } }, "Choose a valid timezone."),
+  bufferMinutes: zod.number().int().min(0).max(240),
+  bookingLeadHours: zod.number().int().min(0).max(24 * 30),
+}).strict();
+
+const SERVICES = zod.array(zod.object({
+  id: zod.string().max(40).optional(),
+  name: zod.string().trim().min(1, "Every service needs a name.").max(80),
+  priceCents: zod.number().finite().min(0).max(100_000_000),
+  durationMins: zod.number().finite().min(1).max(24 * 60),
+})).max(100, "That's more services than a booking page can show.");
 
 export async function saveServices(services: { id?: string; name: string; priceCents: number; durationMins: number }[], session?: SessionPayload | null) {
   const ctx = await requireRole([...ADMIN_ROLES], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
+  const checked = SERVICES.safeParse(services);
+  if (!checked.success) throw new Error(checked.error.issues[0]?.message ?? "Check the services.");
+  services = checked.data;
 
   // Services are referenced by bookings, so they are never deleted from here: existing rows
   // are updated in place (ids stay stable), new rows are created, and anything the owner

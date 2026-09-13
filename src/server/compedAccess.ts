@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { addressProven } from "@/lib/founder";
 import { track } from "@/lib/analytics";
 import type { PlanTier } from "@prisma/client";
 
@@ -34,6 +35,9 @@ export function isCompedEmail(email: string | null | undefined): boolean {
 export async function applyCompedAccess(userId: string, email: string | null | undefined, tier: PlanTier = "BUSINESS"): Promise<number> {
   if (!isCompedEmail(email)) return 0;
   try {
+    // Complimentary access follows an address, so the address must be proven (see addressProven).
+    const person = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, emailVerifiedAt: true, createdAt: true } });
+    if (!person || person.email !== (email ?? "").trim().toLowerCase() || !addressProven(person)) return 0;
     const owned = await prisma.orgMembership.findMany({
       where: { userId, role: "OWNER", status: "ACTIVE" },
       select: { businessId: true, business: { select: { compedPlan: true } } },

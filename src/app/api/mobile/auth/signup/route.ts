@@ -6,6 +6,7 @@ import { hashPassword, createSessionToken, homeRouteFor } from "@/lib/auth";
 import { uniqueHandle, personalWorkspaceName } from "@/app/actions/auth";
 import { jsonError } from "@/lib/mobileApi";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { sharedRateLimit } from "@/lib/sharedRateLimit";
 import { track } from "@/lib/analytics";
 import { answersSchema, planSchema } from "@/lib/personalization";
 import { savePersonalization } from "@/server/personalization";
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
   const { name, email, password, answers, selectedPlan } = parsed.data;
 
   const ip = await getClientIp();
-  if (!rateLimit(`mobile-signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok) {
+  if (!rateLimit(`mobile-signup:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 }).ok || !(await sharedRateLimit(`signup:${ip}`, { limit: 20, windowMs: 60 * 60 * 1000 })).ok) {
     return jsonError(TOO_MANY_ATTEMPTS, 429);
   }
 

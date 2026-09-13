@@ -55,7 +55,8 @@ function candidateKeys(): Buffer[] {
   const prev = process.env.INTEGRATION_TOKEN_ENCRYPTION_KEY_PREVIOUS;
   if (cur) keys.push(derive(cur));
   if (prev) keys.push(derive(prev));
-  keys.push(derive(FALLBACK_KEY_MATERIAL));
+  // The public development key is never trusted in production, even for reading.
+  if (process.env.NODE_ENV !== "production") keys.push(derive(FALLBACK_KEY_MATERIAL));
   return keys;
 }
 

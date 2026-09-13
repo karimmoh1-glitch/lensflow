@@ -70,7 +70,18 @@ describe("Google sign-in", () => {
     const r = await completeGoogleSignIn("code-3");
     expect(r).toMatchObject({ ok: true, redirectTo: "/dashboard" });
     expect(await prisma.user.count({ where: { email: google.email } })).toBe(1);
-    expect((await prisma.user.findUniqueOrThrow({ where: { email: google.email } })).name).toBe("Existing Person");
+    const linked = await prisma.user.findUniqueOrThrow({ where: { email: google.email } });
+    expect(linked.name).toBe("Existing Person");
+    // The address was never proven before: whoever registered it first loses the password
+    // and every session they held; Google's proof is recorded.
+    expect(linked.passwordHash).not.toBe("x");
+    expect(linked.sessionVersion).toBe(user.sessionVersion + 1);
+    expect(linked.emailVerifiedAt).not.toBeNull();
+    // A second Google sign-in to the now-proven account changes nothing more.
+    await completeGoogleSignIn("code-3b");
+    const again = await prisma.user.findUniqueOrThrow({ where: { email: google.email } });
+    expect(again.passwordHash).toBe(linked.passwordHash);
+    expect(again.sessionVersion).toBe(linked.sessionVersion);
   });
 
   it("refuses an unverified email and creates nothing", async () => {

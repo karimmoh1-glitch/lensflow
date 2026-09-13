@@ -1,3 +1,4 @@
+import { createHmac } from "crypto";
 /**
  * Secrets the product cannot run safely without. In development a stable placeholder keeps
  * local work moving; in production a missing value throws at first use, so the deployment
@@ -14,3 +15,12 @@ export function requiredSecret(name: "JWT_SECRET"): string {
 
 /** Names of variables production needs for the core product, checked by the setup page. */
 export const CORE_PRODUCTION_VARS = ["DATABASE_URL", "JWT_SECRET", "NEXT_PUBLIC_APP_URL", "INTEGRATION_TOKEN_ENCRYPTION_KEY", "CRON_SECRET"] as const;
+
+/**
+ * The key OAuth `state` values are signed with. Derived from JWT_SECRET under its own label,
+ * so a state token — which travels through provider URLs and browser history — can never
+ * verify as a session token, and a session token can never pass as a state.
+ */
+export function oauthStateKey(): Uint8Array {
+  return new Uint8Array(createHmac("sha256", requiredSecret("JWT_SECRET")).update("daythread:oauth-state:v1").digest());
+}

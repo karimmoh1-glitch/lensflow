@@ -29,7 +29,7 @@ export function Navbar() {
         <Link href="/" aria-label="Daythread home" className={cn("transition-transform duration-300 origin-left", scrolled && "scale-90")}>
           <Logo />
         </Link>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6 whitespace-nowrap">
           <Link href="#flow" className="hidden sm:block text-13 font-medium text-ink/65 hover:text-ink transition-colors">
             How it works
           </Link>
@@ -41,7 +41,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/start"
-            className="text-13 font-semibold text-paper bg-ink hover:bg-black rounded-lg px-3.5 h-9 inline-flex items-center transition-[background-color,transform] duration-150 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2"
+            className="text-13 font-semibold text-paper bg-ink hover:bg-black rounded-lg px-3 sm:px-3.5 h-9 inline-flex items-center transition-[background-color,transform] duration-150 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2"
           >
             Start free
           </Link>

@@ -229,6 +229,37 @@ body {
   }
 }
 
+/* ── Landing: scroll-linked scenes ───────────────────────────────────────────
+   A scene root carries --p (0→1, written by Scroll.tsx as the scene travels the viewport).
+   A .dt-step inside it appears between --a and --b of that travel and, when --c/--d are
+   set, leaves between those. Opacity and transform only, and no transitions: the picture is
+   wherever the scroll is. Reduced motion: every step at rest, the pinned stage swapped for
+   the stacked one. */
+.dt-step {
+  --t: clamp(0, calc((var(--p, 1) - var(--a, 0)) / (var(--b, 1) - var(--a, 0))), 1);
+  --u: clamp(0, calc((var(--p, 1) - var(--c, 5)) / (var(--d, 6) - var(--c, 5))), 1);
+  opacity: calc(var(--t) * (1 - var(--u)));
+  transform: translate3d(0, calc(var(--dy, 20px) * (1 - var(--t)) - var(--dy, 20px) * 0.5 * var(--u)), 0) scale(calc(1 - var(--ds, 0) * (1 - var(--t))));
+}
+/* A line drawn by the scroll. */
+.dt-draw-x { transform-origin: 0 50%; transform: scaleX(var(--p, 1)); }
+.dt-draw-y { transform-origin: 50% 0; transform: scaleY(var(--p, 1)); }
+/* Channels gathering into one row: each item slides toward the centre column, down to the
+   row, and shrinks; --i is its column, --n the count. */
+.dt-converge-stage { container-type: inline-size; }
+.dt-converge {
+  --t: clamp(0, calc((var(--p, 1) - 0.1) / 0.5), 1);
+  transform: translate3d(calc(var(--t) * ((var(--n) - 1) / 2 - var(--i)) * (100cqw / var(--n)) * 0.82), calc(var(--t) * 58px), 0) scale(calc(1 - var(--t) * 0.5));
+}
+.dt-converge-label { opacity: calc(1 - var(--t)); }
+@media (prefers-reduced-motion: reduce) {
+  .dt-step { opacity: 1; transform: none; }
+  .dt-draw-x, .dt-draw-y, .dt-converge { transform: none; opacity: 1; }
+  .dt-converge-label { opacity: 1; }
+  .dt-pinned { display: none !important; }
+  .dt-stacked { display: block !important; }
+}
+
 /* Scene copy rising into place as it comes into view (landing). The Reveal component flips
    .is-in once; each child staggers by its order. Reduced motion: final state, no motion. */
 .dt-reveal > * { opacity: 0; transform: translateY(14px); transition: opacity 640ms cubic-bezier(0.16, 1, 0.3, 1), transform 640ms cubic-bezier(0.16, 1, 0.3, 1); }

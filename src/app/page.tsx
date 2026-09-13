@@ -1,6 +1,8 @@
 import { Navbar } from "./Navbar";
 import { Hero } from "./landing/Hero";
-import { Flow } from "./landing/Flow";
+import { Story } from "./landing/Story";
+import { Automations } from "./landing/Automations";
+import { channelStatus } from "./landing/channelStatus";
 import { ProductDemo } from "./landing/ProductDemo";
 import { Channels } from "./landing/Channels";
 import { Faq, FAQ } from "./landing/Faq";
@@ -13,10 +15,11 @@ import { FinalCta } from "./landing/FinalCta";
 import { Footer } from "./landing/Footer";
 
 /**
- * The page in order: what it is (hero), how one conversation becomes a booking (flow), try
- * the inbox (demo), where it works (channels, with this deployment's real status), trust,
- * pricing, questions, and one closing line. Visible on the first paint; motion is a settle,
- * never a wait.
+ * The page in order: what it is (hero), one client from inquiry to booked to client (the
+ * story, driven by the scroll), try the inbox (demo), where it works (channels drawn into
+ * one list, with this deployment's real status), what runs by itself (automations), trust,
+ * pricing, questions, and one closing line. Everything is visible on the first paint and
+ * readable without motion; the scroll only plays what is already on the page.
  */
 const SITE = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
 
@@ -51,8 +54,8 @@ export default function LandingPage() {
         <Hero />
       </div>
 
-      <section id="flow" aria-label="From message to booked" className="relative py-20 md:py-28 bg-white border-y border-border scroll-mt-16">
-        <Flow />
+      <section id="flow" aria-label="From message to booked" className="relative bg-white border-y border-border scroll-mt-16 py-20 lg:py-0">
+        <Story instagram={channelStatus("INSTAGRAM")} />
       </section>
 
       <section id="demo" aria-label="Try the inbox" className="relative py-20 md:py-28 bg-paper overflow-hidden scroll-mt-16">
@@ -63,11 +66,15 @@ export default function LandingPage() {
         <Channels />
       </section>
 
-      <section id="trust" aria-label="Trust" className="relative py-20 md:py-24 bg-paper scroll-mt-16">
+      <section id="automations" aria-label="What runs by itself" className="relative py-20 md:py-28 bg-paper scroll-mt-16">
+        <Automations />
+      </section>
+
+      <section id="trust" aria-label="Trust" className="relative py-20 md:py-24 bg-white border-y border-border scroll-mt-16">
         <Trust />
       </section>
 
-      <div id="pricing" className="bg-white border-y border-border scroll-mt-16">
+      <div id="pricing" className="bg-paper scroll-mt-16">
         <PricingSection trial={subscriptionBillingIsLive} beta={betaOfferOpen()} />
       </div>
 

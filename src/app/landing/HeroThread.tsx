@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChannelIcon, CHANNEL, type ChannelKey } from "./ChannelIcon";
+import type { ChannelStatus } from "./channelStatus";
 
 /**
  * The hero: many inputs → one system → one result, told by the information itself.
@@ -62,7 +63,7 @@ const STORIES: Story[] = [
 const PANEL_IN_Y = 150;
 const gutterPath = (i: number) => `M 0 ${30 + i * 60} C 60 ${30 + i * 60}, 60 ${PANEL_IN_Y}, 120 ${PANEL_IN_Y}`;
 
-export function HeroThread() {
+export function HeroThread({ status }: { status: Record<ChannelKey, ChannelStatus> }) {
   const [active, setActive] = useState<ChannelKey>("instagram");
   const [shown, setShown] = useState<ChannelKey>("instagram");
   const [phase, setPhase] = useState<0 | 1 | 2 | 3 | 4>(4); // 0 in flight · 1 read · 2 acted · 3 outcome · 4 next
@@ -122,18 +123,23 @@ export function HeroThread() {
 
       <div className="relative grid grid-cols-1 sm:grid-cols-[64px_120px_minmax(0,1fr)] items-center gap-y-5">
         {/* Channels */}
-        <ul className="flex sm:flex-col justify-center gap-3 sm:gap-[4px]" aria-label="Channels" style={{ transform: "translate(calc(var(--mx) * 5px), calc(var(--my) * 4px))", transition: "transform 700ms cubic-bezier(0.16,1,0.3,1)" }}>
+        <ul className="flex sm:flex-col justify-center gap-2.5 sm:gap-[4px]" aria-label="Channels" style={{ transform: "translate(calc(var(--mx) * 5px), calc(var(--my) * 4px))", transition: "transform 700ms cubic-bezier(0.16,1,0.3,1)" }}>
           {STORIES.map((st) => (
             <li key={st.k} className="sm:h-[60px] flex items-center justify-center">
               <button
                 type="button"
                 aria-pressed={st.k === active}
-                aria-label={`Show ${CHANNEL[st.k].name}`}
+                aria-label={`Show ${CHANNEL[st.k].name}${status[st.k] !== "Live" ? ` (${status[st.k].toLowerCase()})` : ""}`}
                 onMouseEnter={() => pick(st.k)}
                 onClick={() => pick(st.k)}
-                className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2"
+                className="relative rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2"
               >
-                <ChannelIcon k={st.k} size={56} active={st.k === active} className={st.k === active ? "" : "opacity-75 hover:opacity-100"} />
+                <ChannelIcon k={st.k} size={56} active={st.k === active} className={cn("max-[359px]:!w-11 max-[359px]:!h-11", st.k === active ? "" : "opacity-75 hover:opacity-100")} />
+                {status[st.k] !== "Live" && (
+                  <span aria-hidden className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-white px-1.5 py-px text-2xs leading-none font-medium text-ink/70 shadow-surface">
+                    {status[st.k] === "Beta" ? "Beta" : "Soon"}
+                  </span>
+                )}
               </button>
             </li>
           ))}
@@ -198,7 +204,7 @@ export function HeroThread() {
             <ol className="relative pl-9 pr-4 py-4 min-h-[300px]">
               <span aria-hidden className="absolute left-[19px] top-4 bottom-4 w-px bg-border" />
               <span aria-hidden className="absolute left-[19px] top-4 w-px bg-gradient-to-b from-accent via-ink/40 to-success origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 4})` }} />
-              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}`} labelClass="text-ink/60">
+              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}${status[shown] !== "Live" ? ` · ${status[shown]}` : ""}`} labelClass="text-ink/60">
                 <span className="font-semibold">{s.who}</span>{" "}
                 <span className="text-ink/70">“<Highlight text={s.msg} part={s.highlight} on={on(2)} />”</span>
                 <span className="mt-1.5 flex flex-wrap gap-1.5">

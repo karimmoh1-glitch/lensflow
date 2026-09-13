@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Inbox, Users, CalendarClock, Zap, Home, CalendarDays, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Reveal } from "./Reveal";
+import { useScrollScene } from "./Scroll";
 import { ChannelIcon, type ChannelKey } from "./ChannelIcon";
 
 /**
@@ -25,21 +26,42 @@ const TABS: { key: Tab; label: string; icon: typeof Inbox; hint: string; tint: s
   { key: "ai", label: "Assistant", icon: ListChecks, hint: "Ask it what needs you today.", tint: "#101114" },
 ];
 
-const CONVOS: { id: string; name: string; ch: ChannelKey; msg: string; when: string; tag: string; tagTone: string; score: number; status: string; ltv: string; mention: [string, string][]; history: string[] }[] = [
-  { id: "maya", name: "Maya Chen", ch: "instagram", msg: "Hey! Are you free Tuesday afternoon?", when: "2h", tag: "Needs reply", tagTone: "text-accent-text", score: 82, status: "Returning client", ltv: "2 bookings", mention: [["Service", "Brand session"], ["Date", "Tuesday PM"]], history: ["Brand session · Mar · completed", "Headshots · Nov · completed"] },
-  { id: "jordan", name: "Jordan Lee", ch: "gmail", msg: "Following up on pricing for a September date.", when: "9d", tag: "Going cold", tagTone: "text-warning-text", score: 61, status: "Warm lead", ltv: "—", mention: [["Service", "Full package"], ["Date", "September"]], history: ["First inquiry · 9 days ago"] },
-  { id: "sam", name: "Sam Okafor", ch: "whatsapp", msg: "Can we move Thursday to 4pm?", when: "1d", tag: "Booked", tagTone: "text-success-text", score: 88, status: "Client · booked Thu", ltv: "1 booking", mention: [["Service", "Consult"], ["Date", "Thu 4:00 PM"]], history: ["Consult · Thu · confirmed"] },
-  { id: "priya", name: "Priya Patel", ch: "website", msg: "Booked the Full package for Sep 18.", when: "2d", tag: "Confirmed", tagTone: "text-success-text", score: 91, status: "New client · booking page", ltv: "1 booking", mention: [["Service", "Full package"], ["Date", "Sep 18"]], history: ["Full package · Sep 18 · confirmed"] },
-  { id: "lead", name: "(512) 555-0148", ch: "sms", msg: "Do you have anything open next week?", when: "3d", tag: "Link sent", tagTone: "text-signal-text", score: 54, status: "New lead", ltv: "—", mention: [["Date", "Next week"]], history: ["Booking link sent · viewed"] },
+const CONVOS: { id: string; name: string; ch: ChannelKey; msg: string; when: string; tag: string; tagTone: string; waiting: boolean; status: string; ltv: string; next: string; nextWhy: string; mention: [string, string][]; history: string[] }[] = [
+  { id: "maya", name: "Maya Chen", ch: "instagram", msg: "Hey! Are you free Tuesday afternoon?", when: "2h", tag: "Needs reply", tagTone: "text-ink", waiting: true, status: "Returning client", ltv: "2 bookings", next: "Book them on Tuesday afternoon", nextWhy: "Asked about Brand session. Returning client.", mention: [["Service", "Brand session"], ["Date", "Tuesday PM"]], history: ["Brand session · Mar · completed", "Headshots · Nov · completed"] },
+  { id: "jordan", name: "Jordan Lee", ch: "gmail", msg: "Following up on pricing for a September date.", when: "9d", tag: "Going cold", tagTone: "text-warning-text", waiting: true, status: "Potential client", ltv: "—", next: "Send pricing and propose a date", nextWhy: "Asked twice. First wrote 9 days ago.", mention: [["Service", "Full package"], ["Date", "September"]], history: ["First inquiry · 9 days ago"] },
+  { id: "sam", name: "Sam Okafor", ch: "whatsapp", msg: "Can we move Thursday to 4pm?", when: "1d", tag: "Booked", tagTone: "text-success-text", waiting: true, status: "Client · booked Thu", ltv: "1 booking", next: "Move it to Thursday at 4:00 PM", nextWhy: "Their consult is booked for Thursday at 2:00 PM.", mention: [["Service", "Consult"], ["Date", "Thu 4:00 PM"]], history: ["Consult · Thu · confirmed"] },
+  { id: "priya", name: "Priya Patel", ch: "website", msg: "Booked the Full package for Sep 18.", when: "2d", tag: "Confirmed", tagTone: "text-success-text", waiting: false, status: "New client · booking page", ltv: "1 booking", next: "Nothing needed — booked and confirmed", nextWhy: "Arrived through your booking page with everything filled in.", mention: [["Service", "Full package"], ["Date", "Sep 18"]], history: ["Full package · Sep 18 · confirmed"] },
+  { id: "lead", name: "(512) 555-0148", ch: "sms", msg: "Do you have anything open next week?", when: "3d", tag: "Link sent", tagTone: "text-ink/60", waiting: false, status: "New lead", ltv: "—", next: "Send times next week and your booking link", nextWhy: "A booking link went out 3 days ago and was opened.", mention: [["Date", "Next week"]], history: ["Booking link sent · viewed"] },
 ];
+
+/** As the demo scrolls into view the selection walks the first three conversations, until the visitor clicks one. */
+const WALK = ["maya", "jordan", "sam"];
 
 export function ProductDemo() {
   const [tab, setTab] = useState<Tab>("inbox");
   const [convo, setConvo] = useState("maya");
   const [autos, setAutos] = useState<Record<string, boolean>>({ confirm: true, remind: true, thanks: false });
   const [asked, setAsked] = useState<string | null>(null);
+  const touched = useRef(false);
+  const windowRef = useRef<HTMLDivElement>(null);
   const active = TABS.find((t) => t.key === tab)!;
   const c = CONVOS.find((x) => x.id === convo)!;
+
+  // The window rises in with the scroll and the rows settle one by one (CSS, from --p); the
+  // selection moves down the list at three points of the travel until the visitor takes over.
+  useScrollScene(windowRef, {
+    span: "enter",
+    settle: 0.55,
+    steps: [0.55, 0.75, 0.95],
+    onStep: (i) => {
+      if (touched.current || i === 0) return;
+      setConvo(WALK[Math.min(i, WALK.length) - 1]);
+    },
+  });
+  const pick = (id: string) => {
+    touched.current = true;
+    setConvo(id);
+  };
 
   // Arrow keys move through the inbox while it's in view — the demo behaves like the app.
   useEffect(() => {
@@ -53,6 +75,7 @@ export function ProductDemo() {
       // Only when the demo itself has focus: arrow keys scroll the page everywhere else.
       if (!el.contains(document.activeElement)) return;
       e.preventDefault();
+      touched.current = true;
       setConvo((cur) => {
         const i = CONVOS.findIndex((x) => x.id === cur);
         const n = e.key === "ArrowDown" ? Math.min(CONVOS.length - 1, i + 1) : Math.max(0, i - 1);
@@ -95,7 +118,7 @@ export function ProductDemo() {
       <p className="relative text-center text-sm text-ink/70 mb-6 h-5" aria-live="polite">{active.hint}</p>
 
       {/* The window */}
-      <div className="relative rounded-[24px] border border-border bg-white shadow-[0_40px_100px_-40px_rgba(16,17,20,0.4),0_2px_6px_rgba(16,17,20,0.05)] overflow-hidden grid grid-cols-1 md:grid-cols-[176px_minmax(0,1fr)] min-h-[460px] transition-shadow duration-700" style={{ boxShadow: `0 40px 100px -40px ${active.tint}66, 0 2px 6px rgba(16,17,20,0.05)` }}>
+      <div ref={windowRef} className="dt-step relative rounded-[24px] border border-border bg-white shadow-[0_40px_100px_-40px_rgba(16,17,20,0.4),0_2px_6px_rgba(16,17,20,0.05)] overflow-hidden grid grid-cols-1 md:grid-cols-[176px_minmax(0,1fr)] min-h-[460px] transition-shadow duration-700" style={{ boxShadow: `0 40px 100px -40px ${active.tint}66, 0 2px 6px rgba(16,17,20,0.05)`, "--p": 1, "--a": 0, "--b": 0.35, "--dy": "40px", "--ds": 0.03 } as CSSProperties}>
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col border-r border-border bg-paper/70 py-4 px-3 gap-0.5">
           <div className="flex items-center gap-2 px-2 pb-4">
@@ -139,13 +162,13 @@ export function ProductDemo() {
                   <span className="text-2xs text-ink/65">Sorted by what needs you</span>
                   <span className="ml-auto hidden lg:inline-flex items-center gap-1 text-2xs text-ink/65"><kbd className="rounded border border-border bg-paper px-1 font-sans">↑</kbd><kbd className="rounded border border-border bg-paper px-1 font-sans">↓</kbd> to move</span>
                 </div>
-                {CONVOS.map((x) => {
+                {CONVOS.map((x, i) => {
                   const on = x.id === convo;
                   return (
-                    <button key={x.id} type="button" onClick={() => setConvo(x.id)} className={cn("w-full text-left px-5 py-3.5 flex gap-3 transition-all duration-200", on ? "bg-accent-soft/40" : "hover:bg-black/[0.02] hover:translate-x-0.5")}>
+                    <button key={x.id} type="button" onClick={() => pick(x.id)} aria-current={on ? "true" : undefined} className={cn("dt-step w-full text-left px-5 py-3.5 flex gap-3 transition-colors duration-200", on ? "bg-black/[0.04]" : "hover:bg-black/[0.02]")} style={{ "--a": 0.2 + i * 0.07, "--b": 0.38 + i * 0.07, "--dy": "10px" } as CSSProperties}>
                       <span className="relative shrink-0">
                         <ChannelIcon k={x.ch} size={36} />
-                        {x.tag === "Needs reply" && <span aria-hidden className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-white" />}
+                        {x.waiting && <span aria-hidden className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-white" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2"><span className="text-sm font-semibold text-ink truncate">{x.name}</span><span className="text-2xs text-ink/65">· {x.when}</span></span>
@@ -157,14 +180,18 @@ export function ProductDemo() {
                 })}
               </div>
               <div key={convo} className="dt-swap border-t lg:border-t-0 lg:border-l border-border bg-paper/60 p-5">
-                <div className="flex items-center gap-3">
-                  <span className="w-10 h-10 rounded-full bg-black/[0.05] text-ink/70 flex items-center justify-center text-xs font-extrabold">{c.name.split(" ").map((p) => p[0]).join("")}</span>
-                  <div><div className="text-sm font-extrabold text-ink">{c.name}</div><div className="text-2xs text-ink/65">{c.status}</div></div>
+                <div className="rounded-xl border border-border bg-white shadow-surface p-3.5">
+                  <div className="text-xs font-medium text-ink/60">Next step</div>
+                  <div className="mt-0.5 text-[15px] font-semibold text-ink leading-snug">{c.next}</div>
+                  <div className="mt-0.5 text-13 text-ink/60 leading-snug">{c.nextWhy}</div>
                 </div>
-                <div className="mt-3 flex items-center gap-2 text-2xs"><span className="rounded-full bg-success-soft text-success-text font-bold px-2 py-0.5">{c.tag}</span><span className="text-ink/70">{c.ltv}</span></div>
-                <div className="mt-4 text-2xs font-bold uppercase tracking-[0.12em] text-ink/65">They mentioned</div>
-                <dl className="mt-1.5 space-y-1 text-xs">{c.mention.map(([k, v]) => <div key={k} className="flex justify-between"><dt className="text-ink/70">{k}</dt><dd className="font-semibold text-ink">{v}</dd></div>)}</dl>
-                <div className="mt-4 text-2xs font-bold uppercase tracking-[0.12em] text-ink/65">History</div>
+                <div className="mt-4 flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-full bg-black/[0.05] text-ink/70 flex items-center justify-center text-2xs font-semibold">{c.name.split(" ").map((p) => p[0]).join("")}</span>
+                  <div><div className="text-sm font-semibold text-ink">{c.name}</div><div className="text-2xs text-ink/60">{c.status} · {c.ltv}</div></div>
+                </div>
+                <div className="mt-4 text-2xs font-medium text-ink/60">They mentioned</div>
+                <dl className="mt-1.5 space-y-1 text-xs">{c.mention.map(([k, v]) => <div key={k} className="flex justify-between"><dt className="text-ink/60">{k}</dt><dd className="font-semibold text-ink">{v}</dd></div>)}</dl>
+                <div className="mt-4 text-2xs font-medium text-ink/60">History</div>
                 <ol className="relative mt-1.5 pl-5 space-y-2 text-xs text-ink/75"><span aria-hidden className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-border" />{c.history.map((h) => <li key={h} className="relative"><span aria-hidden className="absolute -left-5 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-paper bg-success" />{h}</li>)}</ol>
               </div>
             </div>
@@ -173,19 +200,19 @@ export function ProductDemo() {
           {tab === "client" && (
             <div className="p-5 md:p-6">
               <div className="flex items-center gap-4 mb-5">
-                <span className="w-12 h-12 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-sm font-extrabold">MC</span>
+                <span className="w-12 h-12 rounded-full bg-ink/[0.06] text-ink/75 flex items-center justify-center text-sm font-semibold">MC</span>
                 <div className="min-w-0"><div className="text-lg font-extrabold text-ink tracking-tight">Maya Chen</div><div className="text-xs text-ink/65">maya@hey.com · @maya.makes</div></div>
                 <div className="ml-auto text-right"><div className="text-2xs text-ink/70">Bookings</div><div className="text-xl font-extrabold text-ink tabular-nums">2</div></div>
               </div>
-              <div className="group flex items-center gap-3 rounded-2xl border border-accent/30 bg-gradient-to-br from-accent-soft/70 to-white px-4 py-3 mb-5 transition-all hover:-translate-y-px hover:border-accent/50">
-                <span className="w-2 h-2 rounded-full bg-accent shrink-0" /><div className="min-w-0 flex-1"><div className="text-sm font-semibold text-ink">Reply to Maya</div><div className="text-xs text-ink/70">Waiting 2 hours · asked for Tuesday</div></div><span className="text-xs font-bold text-accent-text transition-transform group-hover:translate-x-0.5">Reply →</span>
+              <div className="group flex items-center gap-3 rounded-xl border border-border bg-white shadow-surface px-4 py-3 mb-5">
+                <span className="w-2 h-2 rounded-full bg-accent shrink-0" /><div className="min-w-0 flex-1"><div className="text-sm font-semibold text-ink">Reply to Maya</div><div className="text-xs text-ink/70">Waiting 2 hours · asked for Tuesday</div></div><span className="text-xs font-semibold text-ink">Reply →</span>
               </div>
-              <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">Relationship</div>
+              <div className="text-2xs font-medium text-ink/60 mb-2">Relationship</div>
               <ol className="relative pl-7">
                 <span aria-hidden className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
                 {[
                   ["bg-accent", "Conversation on Instagram", "“Are you free Tuesday afternoon?”", "Today"],
-                  ["bg-signal", "Note · you", "Prefers afternoons. Mentioned a fall launch.", "Mar 14"],
+                  ["bg-ink/50", "Note · you", "Prefers afternoons. Mentioned a fall launch.", "Mar 14"],
                   ["bg-success", "Brand session", "completed · Wed, Mar 12 · 2:00 PM", "Mar 12"],
                   ["bg-ink/70", "Headshots", "completed · Nov 4", "Nov 4"],
                 ].map(([dot, title, meta, when]) => (
@@ -201,32 +228,32 @@ export function ProductDemo() {
           {tab === "booking" && (
             <div className="p-5 md:p-6">
               <div className="flex items-start justify-between gap-4 mb-5">
-                <div><div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65">Booking</div><div className="text-lg font-extrabold text-ink tracking-tight mt-1">Brand session · Maya Chen</div><div className="text-sm text-ink/70">Tue, Sep 9 · 2:00 – 4:00 PM · Studio</div></div>
+                <div><div className="text-2xs font-medium text-ink/60">Booking</div><div className="text-lg font-extrabold text-ink tracking-tight mt-1">Brand session · Maya Chen</div><div className="text-sm text-ink/70">Tue, Sep 9 · 2:00 – 4:00 PM · Studio</div></div>
                 <span className="text-2xs font-bold rounded-full bg-success-soft text-success-text px-2.5 py-1">Confirmed</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-5">
                 <div>
-                  <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-3">Where it is</div>
+                  <div className="text-2xs font-medium text-ink/60 mb-3">Where it is</div>
                   <ol className="flex items-center gap-1">
                     {["New lead", "Follow-up", "Booked", "Confirmed", "Complete"].map((s, i) => (
                       <li key={s} className="flex items-center gap-1 flex-1 min-w-0 last:flex-none">
-                        <span className={cn("flex items-center gap-1.5 text-2xs font-bold whitespace-nowrap", i <= 2 ? "text-ink" : i === 3 ? "text-signal-text" : "text-ink/65")}>
-                          <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", i <= 2 ? "bg-success" : i === 3 ? "bg-signal" : "bg-black/10")} />{s}
+                        <span className={cn("flex items-center gap-1.5 text-2xs font-bold whitespace-nowrap", i <= 2 ? "text-ink" : "text-ink/60")}>
+                          <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", i <= 2 ? "bg-success" : i === 3 ? "bg-ink/40" : "bg-black/10")} />{s}
                         </span>
                         {i < 4 && <span className={cn("h-px flex-1 mx-1", i < 2 ? "bg-success" : "bg-border")} />}
                       </li>
                     ))}
                   </ol>
-                  <div className="mt-5 text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">On this booking</div>
+                  <div className="mt-5 text-2xs font-medium text-ink/60 mb-2">On this booking</div>
                   <ol className="relative pl-6 space-y-2 text-sm">
                     <span aria-hidden className="absolute left-[5px] top-2 bottom-2 w-px bg-border" />
                     <li className="relative"><span aria-hidden className="absolute -left-6 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-white bg-accent" />Maya: “Running 10 late!!” <span className="text-ink/65 text-xs">· Messages</span></li>
-                    <li className="relative"><span aria-hidden className="absolute -left-6 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-white bg-signal" />Reminder sent · 1 day before</li>
+                    <li className="relative"><span aria-hidden className="absolute -left-6 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-white bg-ink/50" />Reminder sent · 1 day before</li>
                     <li className="relative"><span aria-hidden className="absolute -left-6 top-[5px] w-[11px] h-[11px] rounded-full border-2 border-white bg-success" />Questionnaire completed</li>
                   </ol>
                 </div>
                 <div className="rounded-2xl border border-border bg-paper/60 p-4">
-                  <div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65 mb-2">On your calendar</div>
+                  <div className="text-2xs font-medium text-ink/60 mb-2">On your calendar</div>
                   <div className="flex justify-between text-sm py-1.5 border-b border-border"><span className="text-ink/70">Google Calendar</span><span className="font-bold text-success-text">Mirrored</span></div>
                   <div className="flex justify-between text-sm py-1.5 border-b border-border"><span className="text-ink/70">Busy before</span><span className="font-bold text-ink tabular-nums">12:00 – 1:30</span></div>
                   <div className="flex justify-between text-sm py-1.5"><span className="text-ink/70">Reminder</span><span className="font-bold text-ink">1 day before</span></div>
@@ -239,7 +266,7 @@ export function ProductDemo() {
           {tab === "calendar" && (
             <div className="p-5 md:p-6">
               <div className="flex items-center justify-between gap-3 mb-4">
-                <div><div className="text-2xs font-bold uppercase tracking-[0.12em] text-ink/65">Today</div><div className="text-lg font-extrabold text-ink tracking-tight mt-0.5">Tuesday, Sep 9</div></div>
+                <div><div className="text-2xs font-medium text-ink/60">Today</div><div className="text-lg font-extrabold text-ink tracking-tight mt-0.5">Tuesday, Sep 9</div></div>
                 <span className="text-2xs font-bold rounded-full bg-success-soft text-success-text px-2.5 py-1">Free 3:00 – 5:30</span>
               </div>
               <ol className="rounded-2xl border border-border divide-y divide-border overflow-hidden">
@@ -270,7 +297,7 @@ export function ProductDemo() {
               ].map((a) => {
                 const on = autos[a.k];
                 return (
-                  <div key={a.k} className={cn("rounded-2xl border border-border p-4 transition-all duration-300", !on && "opacity-60", on && "shadow-[0_8px_24px_-16px_rgba(109,90,230,0.5)]")}>
+                  <div key={a.k} className={cn("rounded-2xl border border-border p-4 transition-all duration-300", !on && "opacity-60", on && "shadow-surface")}>
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <span className="text-sm font-semibold text-ink">{a.name}</span>
                       <button type="button" role="switch" aria-checked={on} aria-label={`${a.name} ${on ? "on" : "off"}`} onClick={() => setAutos((s) => ({ ...s, [a.k]: !s[a.k] }))} className={cn("relative w-10 h-6 rounded-full transition-colors", on ? "bg-success" : "bg-black/15")}>
@@ -299,7 +326,7 @@ export function ProductDemo() {
                   <div className="ml-auto w-fit rounded-2xl bg-ink text-white text-sm px-3.5 py-2.5">{asked}</div>
                   <div className="flex items-start gap-2">
                     <span className="w-6 h-6 rounded-full bg-black/[0.05] text-ink/70 flex items-center justify-center shrink-0 mt-0.5"><ListChecks className="w-3 h-3" strokeWidth={2} /></span>
-                    <div className="rounded-2xl bg-signal-soft/50 border border-signal/15 text-sm text-ink px-3.5 py-2.5 leading-relaxed">
+                    <div className="rounded-2xl bg-white border border-border text-sm text-ink px-3.5 py-2.5 leading-relaxed">
                       {asked.startsWith("What do") && <>Three things. <span className="font-semibold">Reply to Maya</span> — she asked about Tuesday 2 hours ago. <span className="font-semibold">Confirm Jordan&rsquo;s 10:00</span> consult. <span className="font-semibold">Follow up with Leo</span> — 5 hours, no reply yet.</>}
                       {asked.startsWith("What's") && <><span className="font-semibold">Four bookings.</span> Priya today at 10:00, Sam Thursday at 4:00, Maya Tuesday at 2:00, and Jordan&rsquo;s consult Friday at 10:00. Wednesday afternoon is free.</>}
                       {asked.startsWith("Which") && <><span className="font-semibold">Jordan Lee</span> — 9 days without a reply, asked about a September date. <span className="font-semibold">(512) 555-0148</span> — sent a booking link 3 days ago, no booking yet.</>}
@@ -318,7 +345,7 @@ export function ProductDemo() {
 
 const BEAT = {
   signal: { dot: "bg-accent", label: "text-accent-text", bg: "bg-accent-soft/50" },
-  thinking: { dot: "bg-signal", label: "text-signal-text", bg: "bg-signal-soft/60" },
+  thinking: { dot: "bg-ink/50", label: "text-ink/70", bg: "bg-black/[0.03]" },
   outcome: { dot: "bg-success", label: "text-success-text", bg: "bg-success-soft/60" },
 } as const;
 
@@ -326,7 +353,7 @@ export function Beat({ label, tone, text }: { label: string; tone: keyof typeof 
   const t = BEAT[tone];
   return (
     <div className={cn("rounded-xl px-3 py-2 min-w-0", t.bg)}>
-      <div className={cn("flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide mb-0.5", t.label)}><span className={cn("w-1.5 h-1.5 rounded-full", t.dot)} />{label}</div>
+      <div className={cn("flex items-center gap-1.5 text-2xs font-medium mb-0.5", t.label)}><span className={cn("w-1.5 h-1.5 rounded-full", t.dot)} />{label}</div>
       <div className="text-13 text-ink truncate">{text}</div>
     </div>
   );

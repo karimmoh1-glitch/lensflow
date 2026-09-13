@@ -273,6 +273,7 @@ model PasswordResetToken {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
+  @@index([userId])
   @@index([userId, purpose])
 }
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionFromRequest } from "@/lib/auth";
 import { advanceBookingStatus } from "@/app/actions/bookings";
-import { jsonError } from "@/lib/mobileApi";
+import { jsonError, publicMessage } from "@/lib/mobileApi";
 
 const schema = z.object({
   status: z.enum([
@@ -30,8 +30,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   try {
     await advanceBookingStatus(id, parsed.data.status, session);
-  } catch {
-    return jsonError("Unable to update this booking", 403);
+  } catch (err) {
+    const message = publicMessage(err, "Unable to update this booking");
+    return jsonError(message, message === "Unable to update this booking" ? 403 : 400);
   }
 
   return NextResponse.json({ ok: true });

@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireRole, hashPassword, verifyPassword, setSessionCookie, homeRouteFor, type SessionPayload } from "@/lib/auth";
 import { withLock } from "@/lib/dbLock";
-import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
+import { generateInvitationToken, hashInvitationToken, isLegacyInvitationToken, invitationExpiry } from "@/lib/invitations";
 import { revalidatePath } from "next/cache";
 import { sendTransactional, messagingIsLive, type TransactionalDelivery } from "@/lib/messaging";
 import { addressProven } from "@/lib/founder";
@@ -53,6 +53,7 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
   // step. Two clicks used to race here: both found no client, both created one, and the
   // business ended up with the same customer twice and two live invitation links. The
   // workspace row is the lock, which is the same way a booking holds its slot.
+  const rawToken = generateInvitationToken();
   const { client, invitation } = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT "id" FROM "Business" WHERE "id" = ${business.id} FOR UPDATE`;
     const person =
@@ -67,7 +68,7 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
         businessId: business.id,
         email,
         role: "CLIENT",
-        token: generateInvitationToken(),
+        token: hashInvitationToken(rawToken),
         clientId: person.id,
         invitedByUserId: session.userId,
         expiresAt: invitationExpiry(),
@@ -80,8 +81,8 @@ export async function inviteClient(formData: FormData, actingSession?: SessionPa
     data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "client", targetId: client.id },
   });
 
-  const link = linkTo(`/invite/${invitation.token}`);
-  const mail = invitationEmail({ businessName: business.name, recipientName: name, token: invitation.token, role: "client" });
+  const link = linkTo(`/invite/${rawToken}`);
+  const mail = invitationEmail({ businessName: business.name, recipientName: name, token: rawToken, role: "client" });
   const delivery = await sendTransactional({ channel: "EMAIL", to: email, fromName: business.name, subject: mail.subject, body: mail.text, html: mail.html });
 
   revalidatePath("/dashboard/clients");
@@ -125,12 +126,13 @@ export async function invitePartner(formData: FormData, actingSession?: SessionP
       data: { status: "REVOKED" },
     });
 
+    const rawToken = generateInvitationToken();
     const invitation = await prisma.invitation.create({
       data: {
         businessId: business.id,
         email,
         role: "PARTNER",
-        token: generateInvitationToken(),
+        token: hashInvitationToken(rawToken),
         invitedByUserId: session.userId,
         expiresAt: invitationExpiry(),
       },
@@ -140,8 +142,8 @@ export async function invitePartner(formData: FormData, actingSession?: SessionP
       data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "partner", targetId: invitation.id },
     });
 
-    const link = linkTo(`/invite/${invitation.token}`);
-    const mail = invitationEmail({ businessName: business.name, recipientName: name, token: invitation.token, role: "partner" });
+    const link = linkTo(`/invite/${rawToken}`);
+    const mail = invitationEmail({ businessName: business.name, recipientName: name, token: rawToken, role: "partner" });
     const delivery = await sendTransactional({ channel: "EMAIL", to: email, fromName: business.name, subject: mail.subject, body: mail.text, html: mail.html });
 
     revalidatePath("/dashboard/team");
@@ -182,13 +184,14 @@ export async function inviteTeammate(formData: FormData, actingSession?: Session
     }
 
     await prisma.invitation.updateMany({ where: { businessId: business.id, email, status: "PENDING" }, data: { status: "REVOKED" } });
+    const rawToken = generateInvitationToken();
     const invitation = await prisma.invitation.create({
-      data: { businessId: business.id, email, role: "PHOTOGRAPHER", token: generateInvitationToken(), invitedByUserId: session.userId, expiresAt: invitationExpiry() },
+      data: { businessId: business.id, email, role: "PHOTOGRAPHER", token: hashInvitationToken(rawToken), invitedByUserId: session.userId, expiresAt: invitationExpiry() },
     });
     await prisma.auditLog.create({ data: { businessId: business.id, actorId: session.userId, action: "invitation.created", targetType: "teammate", targetId: invitation.id } });
 
-    const link = linkTo(`/invite/${invitation.token}`);
-    const mail = invitationEmail({ businessName: business.name, recipientName: name, token: invitation.token, role: "teammate" });
+    const link = linkTo(`/invite/${rawToken}`);
+    const mail = invitationEmail({ businessName: business.name, recipientName: name, token: rawToken, role: "teammate" });
     const delivery = await sendTransactional({ channel: "EMAIL", to: email, fromName: business.name, subject: mail.subject, body: mail.text, html: mail.html });
 
     revalidatePath("/dashboard/settings");
@@ -226,13 +229,14 @@ export async function resendInvitation(id: string, actingSession?: SessionPayloa
   if (!(await inviteQuota(ctx.business.id)).ok) return { error: QUOTA_ERROR };
 
   // A fresh token as well: resending replaces the old link rather than extending it.
+  const rawToken = generateInvitationToken();
   const updated = await prisma.invitation.update({
     where: { id },
-    data: { token: generateInvitationToken(), expiresAt: invitationExpiry(), status: "PENDING" },
+    data: { token: hashInvitationToken(rawToken), expiresAt: invitationExpiry(), status: "PENDING" },
   });
 
-  const link = linkTo(`/invite/${updated.token}`);
-  const mail = invitationEmail({ businessName: ctx.business.name, recipientName: updated.email.split("@")[0], token: updated.token, role: updated.role === "CLIENT" ? "client" : updated.role === "PARTNER" ? "partner" : "teammate", reminder: true });
+  const link = linkTo(`/invite/${rawToken}`);
+  const mail = invitationEmail({ businessName: ctx.business.name, recipientName: updated.email.split("@")[0], token: rawToken, role: updated.role === "CLIENT" ? "client" : updated.role === "PARTNER" ? "partner" : "teammate", reminder: true });
   const delivery = await sendTransactional({ channel: "EMAIL", to: updated.email, fromName: ctx.business.name, subject: mail.subject, body: mail.text, html: mail.html });
 
   revalidatePath("/dashboard/team");
@@ -253,7 +257,8 @@ export async function previewInvitation(token: string): Promise<InvitationPrevie
   // Whether an account already exists is the one fact this returns that is worth harvesting,
   // so it is throttled the way every other unauthenticated lookup is.
   if (!rateLimit(`invite-preview:${await getClientIp()}`, { limit: 30, windowMs: 10 * 60 * 1000 }).ok) return null;
-  const invitation = await prisma.invitation.findUnique({ where: { token }, include: { business: true } });
+  if (typeof token !== "string" || token.length > 200) return null;
+  const invitation = (await prisma.invitation.findUnique({ where: { token: hashInvitationToken(token) }, include: { business: true } })) ?? (isLegacyInvitationToken(token) ? await prisma.invitation.findUnique({ where: { token }, include: { business: true } }) : null);
   if (!invitation) return null;
 
   let status = invitation.status;
@@ -284,7 +289,8 @@ export async function acceptInvitation(token: string, formData: FormData): Promi
   const tokenOk = rateLimit(`invite-accept:token:${token}`, { limit: 8, windowMs: 10 * 60 * 1000 }).ok;
   if (!ipOk || !tokenOk) return { error: "Too many attempts. Wait a few minutes and try again." };
 
-  const invitation = await prisma.invitation.findUnique({ where: { token } });
+  if (typeof token !== "string" || token.length > 200) return { error: "This invitation link is invalid." };
+  const invitation = (await prisma.invitation.findUnique({ where: { token: hashInvitationToken(token) } })) ?? (isLegacyInvitationToken(token) ? await prisma.invitation.findUnique({ where: { token } }) : null);
   if (!invitation) return { error: "This invitation link is invalid." };
   if (invitation.status === "REVOKED") return { error: "This invitation has been revoked." };
   if (invitation.status === "ACCEPTED") return { error: "This invitation has already been used." };

@@ -16,6 +16,7 @@ import { stripeConnectConfigured, stripeConnectAuthUrl, deauthorizeStripeAccount
 import { accessGranted } from "@/server/accessRequests";
 import { providerMaturity } from "@/lib/integrations/flags";
 import { recordAudit } from "@/server/audit";
+import { revokeProviderAccess } from "@/server/providerRevoke";
 import { syncOutlookForBusiness } from "@/server/outlookSync";
 import { syncCalendlyForBusiness, type CalendlySettings } from "@/server/calendlySync";
 import { postToSlack, type SlackSettings } from "@/server/notify";
@@ -281,28 +282,8 @@ export async function disconnectIntegration(provider: IntegrationProvider, sessi
   }
   const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider } } });
   if (!row) return { error: "Nothing to disconnect." };
-  // Providers with a revocation endpoint are told first, while the credential still works.
-  // Best effort, like Meta below: a provider that refuses never blocks the local disconnect.
-  const warn = (err: unknown) => reportFailure("oauth", `${provider} revoke failed on disconnect`, { businessId: ctx.business.id, provider, error: err, level: "warn" });
-  if (provider === "SLACK" && row.accessToken) await revokeSlackToken(row.accessToken).catch(warn);
-  // Zoom: give the grant back. Meetings already made stay on the owner's Zoom account (they
-  // are theirs), and the bookings keep their join links, which still work.
-  if (provider === "ZOOM" && (row.accessToken || row.refreshToken)) await revokeZoomToken((row.accessToken ?? row.refreshToken)!).catch(warn);
-  if (provider === "DROPBOX" && row.accessToken) await revokeDropboxToken(row.accessToken).catch(warn);
-  if (provider === "STRIPE" && row.externalId) await deauthorizeStripeAccount(row.externalId).catch(warn);
-  if (provider === "CALENDLY" && row.refreshToken) {
-    const hook = ((row.settings ?? {}) as CalendlySettings).webhookUri;
-    if (hook) await calendlyToken(row).then((t) => deleteCalendlyWebhook(t, hook)).catch(warn);
-    await revokeCalendlyToken(row.refreshToken).catch(warn);
-  }
-  // Tell Meta to stop delivering first, while the credential still works. Best effort: a
-  // provider that refuses must never leave the user unable to disconnect locally, and the
-  // webhook ignores events for a row that is no longer connected either way.
-  if ((provider === "INSTAGRAM" || provider === "WHATSAPP") && row.accessToken) {
-    await revokeMetaSubscription(provider, row).catch((err) =>
-      reportFailure("oauth", `${provider} webhook unsubscribe failed on disconnect`, { businessId: ctx.business.id, provider, error: err, level: "warn" })
-    );
-  }
+  // The provider is told first, while the credential still works (best effort; see providerRevoke).
+  await revokeProviderAccess(row);
   await prisma.externalEvent.deleteMany({ where: { integrationId: row.id } });
   await prisma.integration.update({ where: { id: row.id }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null, tokenExpiresAt: null, externalAccount: null, externalId: null, scopes: null, syncCursor: null, settings: undefined, lastSyncStatus: null, lastError: null, lastErrorAt: null } });
   if (provider === "APPLE_CALENDAR" || provider === "MICROSOFT_CALENDAR") await prisma.booking.updateMany({ where: { businessId: ctx.business.id, externalCalendarProvider: provider }, data: { externalEventId: null, externalCalendarProvider: null } });
@@ -392,20 +373,6 @@ export async function releaseSmsNumber(session?: SessionPayload | null): Promise
  * erased here and the user can also remove Daythread from their Instagram settings — the
  * disconnect UI says so rather than implying a revocation that did not happen.
  */
-async function revokeMetaSubscription(provider: IntegrationProvider, row: { accessToken: string | null; externalId: string | null; settings: unknown }): Promise<void> {
-  if (!row.accessToken) return;
-  if (provider === "INSTAGRAM" && row.externalId) {
-    await unsubscribeInstagramWebhooks(row.accessToken, row.externalId);
-    // And hand the grant back, so disconnecting actually ends Daythread's access rather
-    // than only stopping delivery. Every other provider already revokes.
-    await revokeInstagramPermissions(row.accessToken, row.externalId).catch(() => {});
-    return;
-  }
-  if (provider === "WHATSAPP") {
-    const wabaId = (row.settings as { wabaId?: string } | null)?.wabaId;
-    if (wabaId) await unsubscribeWabaWebhooks(row.accessToken, wabaId);
-  }
-}
 
 /**
  * Switch the connected WhatsApp number. The id arrives from the browser, so it is only

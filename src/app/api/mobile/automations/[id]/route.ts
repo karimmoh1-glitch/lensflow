@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse, jsonError, publicMessage } from "@/lib/mobileApi";
 import { getSessionFromRequest, STAFF_ROLES } from "@/lib/auth";
 import { z } from "zod";
 import { toggleAutomation, updateAutomation, deleteAutomation } from "@/app/actions/automations";
@@ -30,14 +30,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const parsed = updateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError("Check the fields.", 400);
-  const r = await updateAutomation(id, parsed.data, session);
-  return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, paused: r.paused ?? null });
+  try {
+    const r = await updateAutomation(id, parsed.data, session);
+    return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true, paused: r.paused ?? null });
+  } catch (err) {
+    return jsonError(publicMessage(err, "Not allowed"), 403);
+  }
 }
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireMobileRole(req, STAFF_ROLES);
   if (isErrorResponse(ctx)) return ctx;
   const session = await getSessionFromRequest(req);
   const { id } = await params;
-  const r = await deleteAutomation(id, session);
-  return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true });
+  try {
+    const r = await deleteAutomation(id, session);
+    return r.error ? jsonError(r.error, 400) : NextResponse.json({ ok: true });
+  } catch (err) {
+    return jsonError(publicMessage(err, "Not allowed"), 403);
+  }
 }

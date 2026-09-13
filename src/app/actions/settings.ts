@@ -119,8 +119,7 @@ export async function deleteWorkspace(confirmName: string, session?: SessionPayl
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
   if (confirmName.trim() !== business.name) return { error: "The name doesn't match." };
-  const { revokeGoogleToken } = await import("@/lib/google");
-  const { releaseNumber, twilioConfigured } = await import("@/lib/twilio");
+  const { revokeProviderAccess } = await import("@/server/providerRevoke");
   const { pushBookingToCalendars } = await import("@/server/calendarSync");
   // Remove mirror events we created on external calendars, while we still have credentials.
   const mirrored = await prisma.booking.findMany({ where: { businessId: business.id, externalEventId: { not: null } }, select: { id: true } });
@@ -128,11 +127,10 @@ export async function deleteWorkspace(confirmName: string, session?: SessionPayl
     await prisma.booking.update({ where: { id: b.id }, data: { status: "CANCELED" } });
     await pushBookingToCalendars(b.id).catch(() => {});
   }
+  // Every provider is told to stop while the credentials still exist; the cascade below
+  // destroys them, and a grant left behind at that point could never be revoked.
   const integrations = await prisma.integration.findMany({ where: { businessId: business.id } });
-  for (const i of integrations) {
-    if ((i.provider === "EMAIL" || i.provider === "GOOGLE_CALENDAR") && i.refreshToken) await revokeGoogleToken(i.refreshToken);
-    if (i.provider === "SMS" && i.externalId && twilioConfigured()) await releaseNumber(i.externalId);
-  }
+  for (const i of integrations) await revokeProviderAccess(i);
   // A deleted workspace must never keep being billed. If Stripe can't be reached the
   // deletion stops here — the owner can retry, or cancel from the billing portal first.
   const { cancelSubscriptionNow } = await import("@/lib/subscriptionBilling");

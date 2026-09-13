@@ -101,6 +101,10 @@ describe("email verification", () => {
     await prisma.passwordResetToken.create({ data: { userId: user.id, token: hashResetToken(reset), expiresAt: new Date(Date.now() + 60_000) } });
     expect(await consumeEmailVerification(reset)).toEqual({ ok: false });
     expect(await resetPassword(token!, form({ password: "another-long-pass-2" }))).toMatchObject({ error: expect.stringMatching(/invalid or has expired/) });
+    // Even a row that somehow carried a verification-shaped hash is refused unless its purpose says so.
+    const odd = generatePasswordResetToken();
+    await prisma.passwordResetToken.create({ data: { userId: user.id, token: hashVerificationToken(odd), purpose: "PASSWORD_RESET", expiresAt: new Date(Date.now() + 60_000) } });
+    expect(await consumeEmailVerification(odd)).toEqual({ ok: false });
     expect((await prisma.user.findUniqueOrThrow({ where: { id: user.id } })).emailVerifiedAt).toBeNull();
   });
 

@@ -1,71 +1,43 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { addMinutes } from "date-fns";
 import { prisma } from "@/lib/db";
-import { fireAutomationEvent } from "@/server/automationRunner";
-import { pushBookingToCalendars } from "@/server/calendarSync";
-import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
-import { isSlotStillAvailable } from "@/lib/availability";
+import { bookLead } from "@/app/actions/leads";
+import { getSessionFromRequest } from "@/lib/auth";
+import { requireMobileRole, isErrorResponse, jsonError, publicMessage } from "@/lib/mobileApi";
 
 const bookSchema = z.object({ startISO: z.string().datetime() });
 
 /**
- * Converts a lead into a real Booking — the mobile equivalent of
- * the public booking form, but starting from an existing lead/client instead of a
- * stranger's contact info. Re-checks the slot is still open (another booking could have
- * landed between "Check Availability" and this tap) before writing anything.
+ * Converts a lead into a real Booking — the same `bookLead` the inbox uses, fed the mobile
+ * bearer session: the slot is re-checked under the workspace lock, a lead already booked
+ * or lost is refused, and the confirmation automation and calendar mirror fire once.
+ * This route used to re-implement the write without the lock or the state guard, so a
+ * double tap booked the same lead twice.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireMobileRole(req, ["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (isErrorResponse(ctx)) return ctx;
+  const session = await getSessionFromRequest(req);
   const { id } = await params;
-  const { business } = ctx;
 
   const body = await req.json().catch(() => null);
   const parsed = bookSchema.safeParse(body);
   if (!parsed.success) return jsonError("startISO is required", 400);
 
-  const lead = await prisma.lead.findFirst({ where: { id, businessId: business.id }, include: { client: true, service: true, conversation: true } });
-  if (!lead) return jsonError("Not found", 404);
-  if (!lead.service) return jsonError("This lead has no service assigned yet", 400);
-  if (!lead.clientId) return jsonError("This lead has no client record", 400);
-
-  const start = new Date(parsed.data.startISO);
-  const end = addMinutes(start, lead.service.durationMins);
-
-  const stillAvailable = await isSlotStillAvailable(business.id, start, end);
-  if (!stillAvailable) return jsonError("That time is no longer available. Pick another slot.", 409);
-
-  const { booking } = await prisma.$transaction(async (tx) => {
-    const booking = await tx.booking.create({
-      data: {
-        businessId: business.id,
-        clientId: lead.clientId!,
-        conversationId: lead.conversationId,
-        serviceId: lead.service!.id,
-        startAt: start,
-        endAt: end,
-        status: "BOOKED",
-        totalCents: lead.service!.priceCents,
-      },
-    });
-    await tx.lead.update({ where: { id: lead.id }, data: { status: "BOOKED" } });
-    await tx.client.update({ where: { id: lead.clientId! }, data: { relationship: "CUSTOMER" } });
-    return { booking };
-  });
-
-  await prisma.auditLog.create({
-    data: { businessId: business.id, actorId: ctx.session.userId, action: "mobile_booking_created", targetType: "booking", targetId: booking.id },
-  });
-  await fireAutomationEvent({ businessId: business.id, trigger: "BOOKING_CREATED", targetType: "booking", targetId: booking.id });
-  await pushBookingToCalendars(booking.id).catch(() => {});
-
+  let bookingId: string;
+  try {
+    ({ bookingId } = await bookLead(id, parsed.data.startISO, null, session));
+  } catch (err) {
+    const message = publicMessage(err, "Unable to book this inquiry");
+    return jsonError(message, /not found/i.test(message) ? 404 : /no longer available/i.test(message) ? 409 : 400);
+  }
+  const booking = await prisma.booking.findUniqueOrThrow({ where: { id: bookingId }, include: { client: { select: { name: true } }, service: { select: { name: true } } } });
   return NextResponse.json({
     bookingId: booking.id,
     startAt: booking.startAt,
     endAt: booking.endAt,
     totalCents: booking.totalCents,
-    clientName: lead.client?.name ?? "Client",
-    serviceName: lead.service.name,
+    clientName: booking.client?.name ?? "Client",
+    serviceName: booking.service.name,
   });
 }

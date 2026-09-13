@@ -8,6 +8,7 @@ import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { activateIntegration } from "@/server/integrationQuota";
 import { recordAudit } from "@/server/audit";
+import { withLock } from "@/lib/dbLock";
 import type { OAuthTokens } from "@/lib/integrations/oauth";
 import type { Integration, IntegrationProvider, Prisma } from "@prisma/client";
 
@@ -100,13 +101,6 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
       return fail("scopes");
     }
     const identity = await spec.identity(tokens, flow);
-    if (spec.exclusive) {
-      const elsewhere = await prisma.integration.findFirst({ where: { provider: providerKey, externalId: identity.externalId, businessId: { not: businessId }, status: { not: "NOT_CONNECTED" } }, select: { id: true } });
-      if (elsewhere) {
-        await spec.revoke?.(tokens);
-        return fail("in_use");
-      }
-    }
     const previous = await prisma.integration.findUnique({ where: { businessId_provider: { businessId, provider: providerKey } } });
     const base: Omit<Prisma.IntegrationUncheckedCreateInput, "businessId" | "provider" | "status"> = {
       externalAccount: identity.externalAccount,
@@ -122,7 +116,22 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
       syncCursor: null,
       wanted: false,
     };
-    const activation = await activateIntegration({ businessId, provider: providerKey, create: base, update: base });
+    // The exclusivity check and the activation happen under one lock keyed by the external
+    // account: two workspaces finishing a flow for the same account at the same moment
+    // used to both pass the check, and inbound messages then went to whichever row the
+    // database returned first.
+    const activate = async () => {
+      if (spec.exclusive) {
+        const elsewhere = await prisma.integration.findFirst({ where: { provider: providerKey, externalId: identity.externalId, businessId: { not: businessId }, status: { not: "NOT_CONNECTED" } }, select: { id: true } });
+        if (elsewhere) return { ok: false as const, reason: "in_use" as const };
+      }
+      return activateIntegration({ businessId, provider: providerKey, create: base, update: base });
+    };
+    const activation = spec.exclusive ? await withLock(`integration:${providerKey}:${identity.externalId}`, activate) : await activate();
+    if (!activation.ok && activation.reason === "in_use") {
+      await spec.revoke?.(tokens);
+      return fail("in_use");
+    }
     if (!activation.ok) {
       await spec.revoke?.(tokens);
       await track("integration_limit_reached", { businessId, properties: { provider: providerKey, plan: activation.usage.plan } });

@@ -8,6 +8,7 @@ vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-forwarded
 
 import { sendTransactional, messagingIsLive } from "@/lib/messaging";
 import { inviteClient, invitePartner, inviteTeammate, resendInvitation } from "@/app/actions/invitations";
+import { hashInvitationToken } from "@/lib/invitations";
 
 /**
  * Production has no email provider configured, which is exactly the condition under which
@@ -83,7 +84,8 @@ describe("transactional email honesty", () => {
     const after = await prisma.invitation.findUniqueOrThrow({ where: { id: row.id } });
     // A resend replaces the token, so a link that leaked earlier stops working.
     expect(after.token).not.toBe(row.token);
-    expect(again.link).toContain(after.token);
+    // The link carries the new token; the database holds only its hash.
+    expect(after.token).toBe(hashInvitationToken(again.link!.split("/invite/")[1]));
   });
 
   it("never claims delivery for an address the provider could not have accepted", async () => {

@@ -1,5 +1,6 @@
 import { timingSafeEqual, createHash } from "crypto";
-import { rateLimit, clientIpFrom } from "@/lib/rateLimit";
+import { clientIpFrom } from "@/lib/rateLimit";
+import { sharedRateLimit } from "@/lib/sharedRateLimit";
 
 /**
  * Constant-time comparison for the shared admin secret. Hashing both sides to a fixed
@@ -18,14 +19,14 @@ function safeEqual(a: string, b: string): boolean {
  * many times recently (caller should 429), "unauthorized" if it doesn't match (401), or
  * "ok". Centralized so every admin-only route uses the same constant-time, rate-limited
  * check — these routes guard cross-tenant destructive operations behind a single static
- * secret, so unlimited guessing attempts is a real risk worth closing even though the
- * secret itself is long and random. */
-export function verifySeedSecret(req: Request): "ok" | "unauthorized" | "unconfigured" | "rate-limited" {
+ * secret. The budget lives in the shared table, not in one instance's memory: a fleet of
+ * serverless instances must not each hand a guesser a fresh window. */
+export async function verifySeedSecret(req: Request): Promise<"ok" | "unauthorized" | "unconfigured" | "rate-limited"> {
   const secret = process.env.SEED_SECRET;
   if (!secret) return "unconfigured";
 
   const ip = clientIpFrom(req.headers);
-  if (!rateLimit(`admin-auth:${ip}`, { limit: 10, windowMs: 10 * 60 * 1000 }).ok) return "rate-limited";
+  if (!(await sharedRateLimit(`admin-auth:${ip}`, { limit: 10, windowMs: 10 * 60 * 1000 })).ok) return "rate-limited";
 
   const provided = req.headers.get("x-seed-secret");
   if (!provided || !safeEqual(provided, secret)) return "unauthorized";

@@ -9,6 +9,7 @@ import { metaCredentialsPresent } from "@/lib/meta/config";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { ingestInboundMessage } from "@/server/leadIngestion";
+import { withLock } from "@/lib/dbLock";
 import { activateIntegration } from "@/server/integrationQuota";
 
 /**
@@ -66,8 +67,6 @@ export async function GET(req: Request) {
     if (granted && !granted.includes("instagram_business_manage_messages")) return fail("scopes");
 
     // One Instagram account can only feed one workspace.
-    const elsewhere = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: { in: [...selfIds] }, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
-    if (elsewhere) return fail("in_use");
 
     // Subscribe, then ask Meta what it actually recorded. A POST that does not throw is not
     // evidence the field is subscribed, and a connection that looks healthy while Meta
@@ -93,12 +92,19 @@ export async function GET(req: Request) {
       settings,
       wanted: false,
     };
-    const activation = await activateIntegration({
-      businessId,
-      provider: "INSTAGRAM",
-      create: { ...credentials, lastError: null, lastErrorAt: null },
-      update: { ...credentials, lastError: null, lastErrorAt: null, lastSyncStatus: null },
+    // The exclusivity check and the activation run under one lock keyed by the account, so
+    // two workspaces finishing a flow for the same account cannot both be connected.
+    const activation = await withLock(`integration:INSTAGRAM:${identity.professionalId}`, async () => {
+      const elsewhere = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: { in: [...selfIds] }, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
+      if (elsewhere) return { ok: false as const, reason: "in_use" as const };
+      return activateIntegration({
+        businessId,
+        provider: "INSTAGRAM",
+        create: { ...credentials, lastError: null, lastErrorAt: null },
+        update: { ...credentials, lastError: null, lastErrorAt: null, lastSyncStatus: null },
+      });
     });
+    if (!activation.ok && activation.reason === "in_use") return fail("in_use");
     if (!activation.ok) {
       await track("integration_limit_reached", { businessId, properties: { provider: "INSTAGRAM", plan: activation.usage.plan } });
       return fail("limit");

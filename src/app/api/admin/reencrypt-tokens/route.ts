@@ -10,7 +10,7 @@ import { encryptedWithCurrentKey, tokenCryptoConfigured } from "@/lib/tokenCrypt
  * current one. Guarded by SEED_SECRET; reports counts only, never values.
  */
 export async function POST(req: Request) {
-  const auth = verifySeedSecret(req);
+  const auth = await verifySeedSecret(req);
   if (auth === "rate-limited") return NextResponse.json({ error: "Too many attempts" }, { status: 429 });
   if (auth !== "ok") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!tokenCryptoConfigured()) return NextResponse.json({ error: "INTEGRATION_TOKEN_ENCRYPTION_KEY is not set." }, { status: 400 });

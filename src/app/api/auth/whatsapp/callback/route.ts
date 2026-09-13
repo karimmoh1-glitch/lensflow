@@ -8,6 +8,7 @@ import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { metaCredentialsPresent } from "@/lib/meta/config";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
+import { withLock } from "@/lib/dbLock";
 import { activateIntegration } from "@/server/integrationQuota";
 
 /**
@@ -87,8 +88,6 @@ export async function GET(req: Request) {
     if (!chosen) return fail("no_phone");
 
     // One WhatsApp number can only feed one workspace.
-    const elsewhere = await prisma.integration.findFirst({ where: { provider: "WHATSAPP", externalId: chosen.phone.id, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
-    if (elsewhere) return fail("in_use");
 
     let webhooksOk = true;
     await subscribeWabaWebhooks(tokens.accessToken, chosen.wabaId).catch(async (err) => {
@@ -117,12 +116,19 @@ export async function GET(req: Request) {
       scopes: "whatsapp_business_management,whatsapp_business_messaging",
       wanted: false,
     };
-    const activation = await activateIntegration({
-      businessId,
-      provider: "WHATSAPP",
-      create: { ...credentials, lastSyncedAt: new Date(), lastSyncStatus: webhooksOk ? "ok" : "failed", lastError: webhooksOk ? null : subscriptionWarning, lastErrorAt: webhooksOk ? null : new Date() },
-      update: { ...credentials, lastSyncedAt: new Date(), lastSyncStatus: webhooksOk ? "ok" : "failed", lastError: webhooksOk ? null : subscriptionWarning, lastErrorAt: webhooksOk ? null : new Date() },
+    // The exclusivity check and the activation run under one lock keyed by the account, so
+    // two workspaces finishing a flow for the same account cannot both be connected.
+    const activation = await withLock(`integration:WHATSAPP:${chosen.phone.id}`, async () => {
+      const elsewhere = await prisma.integration.findFirst({ where: { provider: "WHATSAPP", externalId: chosen.phone.id, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
+      if (elsewhere) return { ok: false as const, reason: "in_use" as const };
+      return activateIntegration({
+        businessId,
+        provider: "WHATSAPP",
+        create: { ...credentials, lastSyncedAt: new Date(), lastSyncStatus: webhooksOk ? "ok" : "failed", lastError: webhooksOk ? null : subscriptionWarning, lastErrorAt: webhooksOk ? null : new Date() },
+        update: { ...credentials, lastSyncedAt: new Date(), lastSyncStatus: webhooksOk ? "ok" : "failed", lastError: webhooksOk ? null : subscriptionWarning, lastErrorAt: webhooksOk ? null : new Date() },
+      });
     });
+    if (!activation.ok && activation.reason === "in_use") return fail("in_use");
     if (!activation.ok) {
       await track("integration_limit_reached", { businessId, properties: { provider: "WHATSAPP", plan: activation.usage.plan } });
       return fail("limit");

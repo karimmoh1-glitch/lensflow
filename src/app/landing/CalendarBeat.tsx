@@ -81,7 +81,7 @@ export function CalendarBeat() {
                   ))}
                   {DAYS.map((d, di) => (
                     <div key={d} className="relative" style={{ gridColumn: di + 2 }}>
-                      {HOURS.map((h, i) => <span key={h} aria-hidden className="absolute left-0 right-0 border-t border-border/70" style={{ top: i * rowH }} />)}
+                      {HOURS.map((h, i) => <span key={h} aria-hidden className="absolute left-0 right-0 border-t border-border" style={{ top: i * rowH }} />)}
                       {/* busy time from the external calendar */}
                       {d === "Tue" && <span aria-hidden className="absolute left-1 right-1 rounded-md bg-ink/[0.06]" style={{ top: 2 * rowH + 2, height: rowH - 4 }} />}
                       {d === "Fri" && <span aria-hidden className="absolute left-1 right-1 rounded-md bg-ink/[0.06]" style={{ top: 0 * rowH + 2, height: rowH * 2 - 4 }} />}

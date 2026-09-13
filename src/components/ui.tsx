@@ -331,8 +331,8 @@ export function EmptyState({
   );
 }
 
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-black/[0.06]", className)} aria-hidden />;
+export function Skeleton({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <div className={cn("animate-pulse rounded-md bg-black/[0.055]", className)} style={style} aria-hidden />;
 }
 
 /** A generic page-loading skeleton for route-level loading.tsx files — a header bar plus

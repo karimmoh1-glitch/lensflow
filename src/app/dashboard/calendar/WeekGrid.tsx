@@ -66,7 +66,7 @@ export function WeekGrid({ week, agendas, timezone, today, selected, dayKey }: P
                     <span key={w.startAt.toISOString()} aria-hidden className="absolute inset-x-0 bg-white" style={{ top: top(mins(w.startAt)), height: Math.max(0, (mins(w.endAt) || 24 * 60) - mins(w.startAt)) * PX_PER_MIN }} />
                   ))}
                   {hours.map((h) => (
-                    <span key={h} aria-hidden className="absolute inset-x-0 border-t border-border/70" style={{ top: top(h * 60) }} />
+                    <span key={h} aria-hidden className="absolute inset-x-0 border-t border-border" style={{ top: top(h * 60) }} />
                   ))}
                   {/* items */}
                   {a.items.filter((it) => it.kind === "booking" || !it.allDay).map((it) => {

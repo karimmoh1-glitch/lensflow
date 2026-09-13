@@ -223,7 +223,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
           )}
 
           <InboxKeys />
-          <ol className="dt-rows divide-y divide-border/70" aria-label="Conversations">
+          <ol className="dt-rows divide-y divide-border" aria-label="Conversations">
             {rows.map(({ conv, last, isPerson, unread, unanswered, followUp, opportunity }) => (
               <ConversationRow
                 key={conv.id}
@@ -249,7 +249,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
             ))}
           </ol>
           {view === "priority" && filteredOut > 0 && !q && rows.length > 0 && (
-            <p className="px-5 py-4 text-xs text-ink/55 border-t border-border/70">
+            <p className="px-5 py-4 text-xs text-ink/55 border-t border-border">
               {filteredOut} automated or promotional {filteredOut === 1 ? "message" : "messages"} kept out of the way. <Link href={href({ view: "all", cat: "all" })} className="font-medium text-ink/70 underline decoration-ink/20 underline-offset-2 hover:text-ink">See all</Link>
             </p>
           )}
@@ -266,7 +266,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 <>
                   <p className="text-[15px] font-semibold text-ink tracking-[-0.005em]">{headline}</p>
                   <p className="mt-1 text-sm text-ink/60">Oldest first. Answering first is how the booking is won.</p>
-                  <ul className="mt-4 rounded-xl border border-border bg-white shadow-surface divide-y divide-border/70 overflow-hidden">
+                  <ul className="mt-4 rounded-xl border border-border bg-white shadow-surface divide-y divide-border overflow-hidden">
                     {[...waiting].sort((a, b) => a.conv.lastMessageAt.getTime() - b.conv.lastMessageAt.getTime()).slice(0, 4).map((r) => (
                       <li key={r.conv.id}>
                         <Link href={rowHref(r.conv.id)} className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-black/[0.025] focus-visible:outline-none focus-visible:bg-black/[0.035]">

@@ -1,5 +1,5 @@
-import { RouteLoading } from "@/components/brand/RouteLoading";
+import { ListSkeleton } from "@/components/skeletons";
 
 export default function Loading() {
-  return <RouteLoading label="Gathering bookings" />;
+  return <ListSkeleton label="Loading bookings" />;
 }

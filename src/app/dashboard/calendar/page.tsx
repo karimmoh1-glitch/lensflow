@@ -4,7 +4,7 @@ import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getDayAgenda } from "@/server/dayAgenda";
 import { WeekGrid } from "./WeekGrid";
-import { ChevronLeft, ChevronRight, CalendarDays, Plus, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 import { addDays, addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 import { cn, toZonedDisplayDate } from "@/lib/utils";
@@ -69,13 +69,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         description={isSelectedToday ? "What's on today, and when you're free." : format(selected, "EEEE, MMMM d")}
         action={
           <div className="flex items-center gap-1.5">
-            <div role="group" aria-label="View" className="inline-flex items-center h-9 rounded-full border border-border bg-white p-0.5 mr-1">
+            {!isSelectedToday && <Link href={`?view=${view}&day=${dayKey(today)}`} className="inline-flex items-center h-8 px-3 rounded-lg border border-ink/[0.12] bg-white text-13 font-semibold text-ink hover:border-ink/25">Today</Link>}
+            <div role="group" aria-label="View" className="inline-flex items-center rounded-lg bg-black/[0.045] p-0.5">
               {(["day", "week"] as const).map((v) => (
-                <Link key={v} href={`?view=${v}&day=${dayKey(selected)}`} aria-current={view === v ? "page" : undefined} className={cn("inline-flex items-center h-8 px-3 rounded-lg text-sm font-semibold transition-colors", view === v ? "bg-ink text-white" : "text-ink/65 hover:text-ink")}>{v === "day" ? "Day" : "Week"}</Link>
+                <Link key={v} href={`?view=${v}&day=${dayKey(selected)}`} aria-current={view === v ? "page" : undefined} className={cn("inline-flex items-center h-7 px-3 rounded-md text-13 font-medium transition-colors", view === v ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink")}>{v === "day" ? "Day" : "Week"}</Link>
               ))}
             </div>
-            {!isSelectedToday && <Link href={`?view=${view}&day=${dayKey(today)}`} className="inline-flex items-center h-9 px-3.5 rounded-lg border border-border bg-white text-sm font-semibold text-ink hover:bg-black/[0.03]">Today</Link>}
-            <Link href="/dashboard/bookings" className="inline-flex items-center h-9 px-3.5 rounded-lg bg-ink text-white text-sm font-semibold hover:bg-black"><Plus className="w-4 h-4 mr-1" strokeWidth={2.5} aria-hidden />Bookings</Link>
+            <Link href="/dashboard/bookings" className="inline-flex items-center h-8 px-3 rounded-lg border border-ink/[0.12] bg-white text-13 font-semibold text-ink hover:border-ink/25">All bookings</Link>
           </div>
         }
       />

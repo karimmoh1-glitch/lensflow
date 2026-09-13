@@ -147,7 +147,7 @@ export function ConversationTools({ conversationId, unread, category, clientId, 
   return (
     <div
       ref={menuRef}
-      className={cn("relative flex items-center", variant === "row" ? "gap-0.5 rounded-lg bg-paper/95 backdrop-blur px-0.5 py-0.5 border border-border/70" : "gap-1")}
+      className={cn("relative flex items-center", variant === "row" ? "gap-0.5 rounded-lg bg-paper/95 backdrop-blur px-0.5 py-0.5 border border-border" : "gap-1")}
       onClick={stop}
     >
       {btn("Summarize", summarize, AlignLeft)}

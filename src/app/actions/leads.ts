@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
 import { fireAutomationEvent } from "@/server/automationRunner";
@@ -16,6 +18,7 @@ import { addMinutes } from "date-fns";
  * scoped to a lead's already-known service instead of one picked on a public form.
  */
 export async function checkLeadAvailability(leadId: string, dateISO: string, serviceId?: string | null, session?: SessionPayload | null) {
+  assertIds(leadId, serviceId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) throw new Error("Pick a day.");
@@ -37,6 +40,7 @@ export async function checkLeadAvailability(leadId: string, dateISO: string, ser
  * conversation instead of a stranger filling out a form.
  */
 export async function bookLead(leadId: string, startISO: string, serviceId?: string | null, actingSession?: SessionPayload | null): Promise<{ bookingId: string }> {
+  assertIds(leadId, serviceId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], actingSession);
   if (!ctx) throw new Error("unauthorized");
   const { business, session } = ctx;
@@ -99,6 +103,7 @@ export async function bookLead(leadId: string, startISO: string, serviceId?: str
  * is simply not found. Returns { error } for expected outcomes instead of throwing.
  */
 export async function markLeadHandled(leadId: string, session?: SessionPayload | null): Promise<{ error?: string }> {
+  assertIds(leadId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) return { error: "Please log in again." };
   const lead = await prisma.lead.findFirst({ where: { id: leadId, businessId: ctx.business.id }, select: { id: true, status: true } });
@@ -123,6 +128,7 @@ const OVERRIDES = new Set(["QUALIFIED", "COLD", "LOST", "CONTACTED"]);
  * made the usual way. Tenant-scoped; an id from another workspace is not found.
  */
 export async function setLeadStatus(leadId: string, status: string, session?: SessionPayload | null): Promise<{ error?: string }> {
+  assertIds(leadId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) return { error: "Please log in again." };
   if (!OVERRIDES.has(status)) return { error: "That isn't a stage you can set by hand." };

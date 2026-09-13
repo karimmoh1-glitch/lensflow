@@ -5,6 +5,8 @@ const isDev = process.env.NODE_ENV === "development";
 // matter much here — there are no third-party scripts or user-supplied HTML rendered
 // anywhere in the app. 'unsafe-inline' on script/style still blocks the actual threat
 // that matters (an attacker loading a remote script from an attacker-controlled origin).
+// Inline event-handler attributes are refused outright (script-src-attr 'none': React never
+// emits them), and nothing may be framed, run as a worker or loaded as media from elsewhere.
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""};
@@ -12,7 +14,12 @@ const cspHeader = `
   img-src 'self' data: blob:;
   font-src 'self' data:;
   connect-src 'self';
+  media-src 'self';
+  worker-src 'self';
+  manifest-src 'self';
+  frame-src 'none';
   object-src 'none';
+  script-src-attr 'none';
   base-uri 'self';
   form-action 'self';
   frame-ancestors 'none';

@@ -1,3 +1,4 @@
+import { settleAfterSuccessfulSync } from "@/server/integrationQuota";
 import { prisma } from "@/lib/db";
 import { getValidAccessToken, listRecentGmailMessages, listGmailMessageIdsSince, fetchGmailMessages, getGmailHistoryId } from "@/lib/google";
 import { ingestInboundMessage } from "@/server/leadIngestion";
@@ -34,7 +35,8 @@ export async function syncGmailForBusiness(businessId: string): Promise<GmailSyn
       const result = await ingestInboundMessage({ businessId, channel: "EMAIL", senderName: m.fromName || m.from.split("@")[0], senderHandle: m.from, body: m.body, subject: m.subject, clientEmail: m.from, providerMessageId: m.messageIdHeader || m.id, headers: m.headers, rawBody: m.rawBody });
       if (!result.duplicate) ingested += 1;
     }
-    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, status: "CONNECTED", syncCursor: cursor } });
+    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, syncCursor: cursor } });
+    await settleAfterSuccessfulSync(integration);
     return { ok: true, found: messages.length, ingested };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Gmail sync failed";

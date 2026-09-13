@@ -15,13 +15,14 @@ export type SetupStep = { key: string; title: string; detail: string; cta: strin
  * others — the team. Every "done" is read from the database; nothing is ticked for them.
  */
 export async function setupSteps(businessId: string): Promise<SetupStep[]> {
-  const [p, integrations, services, hours, confirmations, seats] = await Promise.all([
+  const [p, integrations, services, hours, confirmations, seats, clients] = await Promise.all([
     getPersonalization(businessId),
     prisma.integration.findMany({ where: { businessId }, select: { provider: true, status: true } }),
     prisma.service.count({ where: { businessId, active: true } }),
     prisma.availability.count({ where: { businessId } }),
     prisma.automation.count({ where: { businessId, action: "SEND_CONFIRMATION", enabled: true } }),
     prisma.orgMembership.count({ where: { businessId, status: "ACTIVE", role: { not: "CLIENT" } } }),
+    prisma.client.count({ where: { businessId } }),
   ]);
   const connected = new Set(integrations.filter((r) => (ACTIVE as readonly string[]).includes(r.status)).map((r) => r.provider as string));
   const channelOn = CHANNELS.some((c) => connected.has(c));
@@ -35,6 +36,14 @@ export async function setupSteps(businessId: string): Promise<SetupStep[]> {
       cta: "Connect",
       href: "/dashboard/settings?tab=channels",
       done: channelOn,
+    },
+    {
+      key: "client",
+      title: clients > 0 ? "Your first client is in" : "Add your first client",
+      detail: "Add them by name, or send your booking link and the next booking arrives filled in. A message on a connected channel does this by itself.",
+      cta: "Add",
+      href: "/dashboard/clients?new=1",
+      done: clients > 0,
     },
     {
       key: "services",

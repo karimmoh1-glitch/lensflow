@@ -4,6 +4,27 @@ import { prisma } from "@/lib/db";
 import { effectivePlan, trialEligible } from "@/lib/billing";
 
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
+/**
+ * Stripe's API, as the handler sees it: subscriptions are re-read before they are applied,
+ * so the mock answers with the latest version of each subscription a test has declared.
+ * Signature verification stays real.
+ */
+const remote = vi.hoisted(() => ({ subscriptions: new Map<string, unknown>(), charges: new Map<string, unknown>() }));
+vi.mock("@/lib/payments", async () => {
+  const { default: StripeSdk } = await import("stripe");
+  const client = new StripeSdk("sk_test_dummy", { apiVersion: undefined as unknown as never });
+  client.subscriptions.retrieve = (async (id: string) => {
+    const sub = remote.subscriptions.get(id);
+    if (!sub) throw new Error(`No such subscription: ${id}`);
+    return sub;
+  }) as never;
+  client.charges.retrieve = (async (id: string) => {
+    const ch = remote.charges.get(id);
+    if (!ch) throw new Error(`No such charge: ${id}`);
+    return ch;
+  }) as never;
+  return { stripe: client, stripeIsLive: true };
+});
 
 /**
  * Signed Stripe events against the real webhook route and database. The Stripe SDK's own
@@ -21,7 +42,12 @@ function signed(body: object): Request {
   return new Request("http://localhost/api/webhooks/stripe", { method: "POST", body: payload, headers: { "stripe-signature": header, "content-type": "application/json" } });
 }
 let seq = 0;
-const evt = (type: string, object: object) => ({ id: `evt_test_${Date.now()}_${++seq}`, object: "event", type, data: { object }, api_version: "2024-06-20", created: Math.floor(Date.now() / 1000), livemode: false, pending_webhooks: 1, request: null });
+const evt = (type: string, object: object) => {
+  // What Stripe would answer if asked for this subscription now: the state this event describes.
+  const o = object as { object?: string; id?: string };
+  if (o.object === "subscription" && o.id) remote.subscriptions.set(o.id, object);
+  return { id: `evt_test_${Date.now()}_${++seq}`, object: "event", type, data: { object }, api_version: "2024-06-20", created: Math.floor(Date.now() / 1000), livemode: false, pending_webhooks: 1, request: null };
+};
 const price = (planKey: "PRO" | "BUSINESS", amount: number) => ({ id: `price_${planKey}`, object: "price", lookup_key: `daythread_${planKey.toLowerCase()}_monthly`, unit_amount: amount, currency: "usd", recurring: { interval: "month" }, product: `prod_${planKey}` });
 const subscription = (o: { id: string; businessId: string; customer: string; status: string; planKey: "PRO" | "BUSINESS" | null; periodEnd?: number; cancelAtPeriodEnd?: boolean }) => ({
   id: o.id,

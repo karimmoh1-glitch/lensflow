@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { track } from "@/lib/analytics";
@@ -21,6 +23,7 @@ export type MessageSummaryResult = { summary?: string; source?: "ai" | "rules"; 
  * Tenant-scoped through the conversation: a message id from another workspace is not found.
  */
 export async function summarizeMessage(messageId: string, session?: SessionPayload | null): Promise<MessageSummaryResult> {
+  assertIds(messageId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;

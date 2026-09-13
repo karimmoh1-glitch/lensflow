@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { verifyOAuthState } from "@/lib/integrations/oauthState";
+import { oauthLanding } from "@/lib/integrations/oauthReturn";
 import { exchangeWhatsAppCode, discoverWabas, listPhoneNumbers, subscribeWabaWebhooks, wabaDetail, type WaPhone } from "@/lib/meta/whatsapp";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
-import { appBaseUrl, metaCredentialsPresent } from "@/lib/meta/config";
+import { metaCredentialsPresent } from "@/lib/meta/config";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
+import { withLock } from "@/lib/dbLock";
 import { activateIntegration } from "@/server/integrationQuota";
 
 /**
@@ -41,20 +43,23 @@ function rank(p: WaPhone): number {
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const back = new URL("/dashboard/settings", appBaseUrl() || url.origin);
-  back.searchParams.set("tab", "connections");
+  // The hub until the state has verified: only a verified state may choose the landing page.
+  let back = oauthLanding(url.origin, null);
   const fail = (reason: string) => {
     back.searchParams.set("connect_error", reason);
     back.searchParams.set("provider", "WHATSAPP");
     return NextResponse.redirect(back);
   };
 
+  // The state is verified first: a verified state decides where the browser lands, whether
+  // the provider then reports success or a refusal.
+  const verified = await verifyOAuthState("whatsapp", url.searchParams.get("state"));
+  if (verified.ok) back = oauthLanding(url.origin, verified.state.returnTo);
   const error = url.searchParams.get("error");
   if (error) return fail(error === "access_denied" ? "denied" : "provider");
   if (!metaCredentialsPresent("whatsapp")) return fail("configuration");
-
-  const verified = await verifyOAuthState("whatsapp", url.searchParams.get("state"));
   if (!verified.ok) return fail(verified.reason === "expired" ? "expired" : "state");
+
   const code = url.searchParams.get("code");
   if (!code) return fail("provider");
 
@@ -83,8 +88,6 @@ export async function GET(req: Request) {
     if (!chosen) return fail("no_phone");
 
     // One WhatsApp number can only feed one workspace.
-    const elsewhere = await prisma.integration.findFirst({ where: { provider: "WHATSAPP", externalId: chosen.phone.id, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
-    if (elsewhere) return fail("in_use");
 
     let webhooksOk = true;
     await subscribeWabaWebhooks(tokens.accessToken, chosen.wabaId).catch(async (err) => {
@@ -113,12 +116,19 @@ export async function GET(req: Request) {
       scopes: "whatsapp_business_management,whatsapp_business_messaging",
       wanted: false,
     };
-    const activation = await activateIntegration({
-      businessId,
-      provider: "WHATSAPP",
-      create: { ...credentials, lastSyncedAt: new Date(), lastSyncStatus: webhooksOk ? "ok" : "failed", lastError: webhooksOk ? null : subscriptionWarning, lastErrorAt: webhooksOk ? null : new Date() },
-      update: { ...credentials, lastSyncedAt: new Date(), lastSyncStatus: webhooksOk ? "ok" : "failed", lastError: webhooksOk ? null : subscriptionWarning, lastErrorAt: webhooksOk ? null : new Date() },
+    // The exclusivity check and the activation run under one lock keyed by the account, so
+    // two workspaces finishing a flow for the same account cannot both be connected.
+    const activation = await withLock(`integration:WHATSAPP:${chosen.phone.id}`, async () => {
+      const elsewhere = await prisma.integration.findFirst({ where: { provider: "WHATSAPP", externalId: chosen.phone.id, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
+      if (elsewhere) return { ok: false as const, reason: "in_use" as const };
+      return activateIntegration({
+        businessId,
+        provider: "WHATSAPP",
+        create: { ...credentials, lastSyncedAt: new Date(), lastSyncStatus: webhooksOk ? "ok" : "failed", lastError: webhooksOk ? null : subscriptionWarning, lastErrorAt: webhooksOk ? null : new Date() },
+        update: { ...credentials, lastSyncedAt: new Date(), lastSyncStatus: webhooksOk ? "ok" : "failed", lastError: webhooksOk ? null : subscriptionWarning, lastErrorAt: webhooksOk ? null : new Date() },
+      });
     });
+    if (!activation.ok && activation.reason === "in_use") return fail("in_use");
     if (!activation.ok) {
       await track("integration_limit_reached", { businessId, properties: { provider: "WHATSAPP", plan: activation.usage.plan } });
       return fail("limit");

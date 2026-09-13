@@ -11,7 +11,7 @@ import { verifySeedSecret } from "@/lib/adminAuth";
  * time it's called.
  */
 export async function POST(req: Request) {
-  const auth = verifySeedSecret(req);
+  const auth = await verifySeedSecret(req);
   if (auth === "unconfigured") {
     return NextResponse.json({ error: "SEED_SECRET is not configured on this deployment." }, { status: 501 });
   }

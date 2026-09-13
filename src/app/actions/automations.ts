@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
 import { requireRole, type SessionPayload } from "@/lib/auth";
@@ -11,6 +13,7 @@ import { revalidatePath } from "next/cache";
  * generic one — so the upgrade prompt would never reach the user. Throwing is reserved
  * for genuine failures (no session), which the client renders as a plain retry message. */
 export async function toggleAutomation(id: string, enabled: boolean, session?: SessionPayload | null): Promise<{ error?: string }> {
+  assertIds(id);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   // Automations are a Pro+ feature — only enforce on turning one ON. Turning one OFF
@@ -91,6 +94,7 @@ export async function createAutomation(input: AutomationInput, session?: Session
 }
 
 export async function updateAutomation(id: string, input: AutomationInput, session?: SessionPayload | null): Promise<{ id?: string; error?: string; paused?: string }> {
+  assertIds(id);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const parsed = AutomationSchema.safeParse(input);
@@ -103,6 +107,7 @@ export async function updateAutomation(id: string, input: AutomationInput, sessi
 }
 
 export async function deleteAutomation(id: string, session?: SessionPayload | null): Promise<{ error?: string }> {
+  assertIds(id);
   const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
   const r = await prisma.automation.deleteMany({ where: { id, businessId: ctx.business.id } });

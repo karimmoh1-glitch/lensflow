@@ -64,13 +64,6 @@ export default function BookingScreen() {
     try { await api(`/api/mobile/bookings/${id}/assign`, { method: "POST", body: { membershipId }, token: session.token }); await r2.reload(); }
     catch (e) { Alert.alert("Couldn't assign", describeError(e)); }
   }
-  async function questionnaire() {
-    if (!session) return;
-    setBusy(true);
-    try { await api(`/api/mobile/bookings/${id}/questionnaire`, { method: "POST", token: session.token }); await r2.reload(); Alert.alert("Questionnaire sent", "It went out on their channel and is in the thread."); }
-    catch (e) { Alert.alert("Not sent", describeError(e)); }
-    finally { setBusy(false); }
-  }
   const r2 = r;
   return (
     <Screen>
@@ -91,7 +84,6 @@ export default function BookingScreen() {
             {b.status !== "CANCELED" && b.status !== "FOLLOWED_UP" && <Button title="Cancel booking" variant="ghost" onPress={() => advance("CANCELED", "Cancel")} />}
           </View>
           {reschedule && <Card><Text style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginBottom: 8 }}>Move to</Text><SlotPicker load={loadSlots} onPick={move} busy={busy} confirmLabel="Move" /></Card>}
-          {(b.status === "CONFIRMED" || b.status === "BOOKED" || b.status === "UPCOMING") && !b.questionnaireSentAt && b.conversationId && <Button title="Send questionnaire" variant="secondary" icon="document-text-outline" loading={busy} onPress={questionnaire} />}
           {team.data?.canManage && team.data.members.some((m) => m.role === "PARTNER" && m.status === "ACTIVE") && (
             <Card>
               <Text style={{ ...type.micro, color: c.inkFaint, textTransform: "uppercase", marginBottom: 6 }}>Assigned to</Text>

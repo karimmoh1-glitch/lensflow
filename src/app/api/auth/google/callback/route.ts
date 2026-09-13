@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { exchangeCodeForTokens, getGoogleUserEmail, revokeGoogleToken } from "@/lib/google";
 import { verifyOAuthState } from "@/lib/integrations/oauthState";
+import { oauthLanding } from "@/lib/integrations/oauthReturn";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
@@ -26,8 +27,8 @@ export async function GET(req: Request) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
-  const back = new URL("/dashboard/settings", url.origin);
-  back.searchParams.set("tab", "connections");
+  // The hub until the state has verified: only a verified state may choose the landing page.
+  let back = oauthLanding(url.origin, null);
   const fail = (reason: string, provider = "google") => {
     back.searchParams.set("connect_error", reason);
     back.searchParams.set("provider", provider);
@@ -37,6 +38,7 @@ export async function GET(req: Request) {
   // Sign-in with Google shares this callback: its state says so, and it ends on the login
   // page with a session (or a reason), never on the settings page.
   const verified = await verifyOAuthState("google", state);
+  if (verified.ok) back = oauthLanding(url.origin, verified.state.returnTo);
   if (verified.ok && verified.state.purpose === "signin") {
     const to = new URL("/login", url.origin);
     if (error || !code) { to.searchParams.set("google", error === "access_denied" ? "denied" : "provider"); return NextResponse.redirect(to); }

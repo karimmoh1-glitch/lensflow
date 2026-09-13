@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -11,6 +13,7 @@ import { revalidatePath } from "next/cache";
  * not just a hidden UI row.
  */
 export async function setMembershipStatus(membershipId: string, active: boolean, session?: SessionPayload | null) {
+  assertIds(membershipId);
   const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
 
@@ -30,6 +33,7 @@ export async function setMembershipStatus(membershipId: string, active: boolean,
  * business conversation. Never automatic — the owner explicitly grants it per partner.
  */
 export async function setPartnerConversationAccess(membershipId: string, canViewAll: boolean, session?: SessionPayload | null) {
+  assertIds(membershipId);
   const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
 

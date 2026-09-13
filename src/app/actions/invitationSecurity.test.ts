@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({ redirect: (url: string) => { throw new Error
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-forwarded-for": ip.value }), cookies: async () => ({ get: () => undefined, set: () => {}, delete: () => {} }) }));
 
 import { acceptInvitation, resendInvitation } from "@/app/actions/invitations";
-import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
+import { generateInvitationToken, hashInvitationToken, invitationExpiry } from "@/lib/invitations";
 
 /**
  * Accepting an invitation verifies a password, which makes it a login. Any signed-up owner
@@ -101,7 +101,10 @@ describe("resending an invitation cannot revive a dead link", () => {
     expect(r.error).toBeUndefined();
     const after = await prisma.invitation.findUniqueOrThrow({ where: { id: inv.id } });
     expect(after.token).not.toBe(inv.token);
-    expect(r.link).toContain(after.token);
+    // The link carries the new token; the database holds only its hash.
+    const raw = r.link!.split("/invite/")[1];
+    expect(after.token).toBe(hashInvitationToken(raw));
+    expect(r.link).not.toContain(after.token);
     // The old link no longer resolves to anything.
     expect(await prisma.invitation.findUnique({ where: { token: inv.token } })).toBeNull();
   });

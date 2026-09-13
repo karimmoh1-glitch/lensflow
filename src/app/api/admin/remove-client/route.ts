@@ -6,7 +6,7 @@ import { verifySeedSecret } from "@/lib/adminAuth";
  * substring match on the message body or client name/email — so a specific record can
  * be targeted for removal without guessing. Same auth as the delete below. */
 export async function GET(req: Request) {
-  const auth = verifySeedSecret(req);
+  const auth = await verifySeedSecret(req);
   if (auth === "unconfigured") return NextResponse.json({ error: "SEED_SECRET is not configured on this deployment." }, { status: 501 });
   if (auth === "rate-limited") return NextResponse.json({ error: "Too many attempts" }, { status: 429 });
   if (auth !== "ok") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
  * seed endpoint — infrastructure-only, never a public feature.
  */
 export async function POST(req: Request) {
-  const auth = verifySeedSecret(req);
+  const auth = await verifySeedSecret(req);
   if (auth === "unconfigured") {
     return NextResponse.json({ error: "SEED_SECRET is not configured on this deployment." }, { status: 501 });
   }

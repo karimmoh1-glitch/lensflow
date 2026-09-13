@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
@@ -12,6 +14,7 @@ import { track } from "@/lib/analytics";
  * another workspace is simply not found.
  */
 export async function setFollowUp(leadId: string, at: string | null, session?: SessionPayload | null): Promise<{ error?: string; followUpAt?: string | null }> {
+  assertIds(leadId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) return { error: "Please log in again." };
   const lead = await prisma.lead.findFirst({ where: { id: leadId, businessId: ctx.business.id }, select: { id: true, conversationId: true } });

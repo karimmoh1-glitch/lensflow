@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { verifyPassword, createSessionToken, getUserMemberships, homeRouteFor } from "@/lib/auth";
+import { verifyPassword, createSessionToken, getUserMemberships, homeRouteFor, DUMMY_HASH } from "@/lib/auth";
 import { jsonError } from "@/lib/mobileApi";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { accountPasswordBucket } from "@/lib/sharedRateLimit";
@@ -31,7 +31,9 @@ export async function POST(req: Request) {
   if (!ipOk || !emailOk || !(await accountPasswordBucket(parsed.data.email)).ok) return jsonError(TOO_MANY_ATTEMPTS, 429);
 
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
+  // Compare against a real hash either way, so the response time doesn't say whether the account exists.
+  const passwordOk = await verifyPassword(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
+  if (!user || !passwordOk) {
     return jsonError("Incorrect email or password", 401);
   }
 

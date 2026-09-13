@@ -1,3 +1,4 @@
+import { settleAfterSuccessfulSync } from "@/server/integrationQuota";
 import { prisma } from "@/lib/db";
 import { reportFailure } from "@/lib/observe";
 import { calendlyToken, listCalendlyEvents, listCalendlyInvitees, rawToEvent, type CalendlyEvent, type CalendlyInvitee, type CalendlyWebhookPayload } from "@/lib/calendly";
@@ -39,7 +40,8 @@ export async function syncCalendlyForBusiness(businessId: string): Promise<Calen
       else if (r === "updated") out.updated++;
       else if (r === "canceled") out.canceled++;
     }
-    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, status: "CONNECTED", settings: { ...settings, importedAt: new Date().toISOString() } } });
+    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, settings: { ...settings, importedAt: new Date().toISOString() } } });
+    await settleAfterSuccessfulSync(integration);
     return { ok: true, ...out };
   } catch (err) {
     const revoked = err instanceof OAuthError ? err.revoked : false;

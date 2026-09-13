@@ -49,6 +49,10 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   // would tell a workspace its money is being recorded from Stripe when nothing is.
   const connected = Boolean(stripe && stripe.status !== "NOT_CONNECTED" && stripe.status !== "DEMO");
   const { rows, totals, count } = view;
+  // The ledger is fed by the business's own connected Stripe account and nothing else.
+  // Without that connection and without history there is nothing true to show, and the
+  // product does not collect client payments, so the page is not somewhere to land.
+  if (!connected && count === 0) redirect("/dashboard");
   // Only the statuses this workspace actually has: a filter that can only ever be empty is
   // not a filter, it is a dead end.
   const chips: Array<"all" | PaymentStatus> = count > 0 ? ["all", ...view.statuses] : [];

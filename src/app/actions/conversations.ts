@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -31,6 +33,7 @@ function refresh() {
  * is still in All.
  */
 export async function reclassifyConversation(conversationId: string, category: MessageCategory, session?: SessionPayload | null): Promise<{ error?: string; ruleFor?: string }> {
+  assertIds(conversationId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const businessId = ctx.business.id;
@@ -75,6 +78,7 @@ export async function reclassifyConversation(conversationId: string, category: M
 }
 
 export async function setClientRelationship(clientId: string, relationship: ClientRelationship, session?: SessionPayload | null): Promise<{ error?: string }> {
+  assertIds(clientId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const r = await prisma.client.updateMany({ where: { id: clientId, businessId: ctx.business.id }, data: { relationship } });
@@ -86,6 +90,7 @@ export async function setClientRelationship(clientId: string, relationship: Clie
 }
 
 export async function markConversationRead(conversationId: string, read: boolean, session?: SessionPayload | null): Promise<void> {
+  assertIds(conversationId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   await prisma.conversation.updateMany({ where: { id: conversationId, businessId: ctx.business.id }, data: { lastReadAt: read ? new Date() : null } });
@@ -95,6 +100,7 @@ export async function markConversationRead(conversationId: string, read: boolean
 /** "Delete for me": hides the conversation from Daythread. The external message (Gmail,
  * SMS) is untouched and nothing is destroyed here — Undo brings it straight back. */
 export async function removeConversationForMe(conversationId: string, archived = true, session?: SessionPayload | null): Promise<{ error?: string }> {
+  assertIds(conversationId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const r = await prisma.conversation.updateMany({ where: { id: conversationId, businessId: ctx.business.id }, data: { archived } });
@@ -104,6 +110,7 @@ export async function removeConversationForMe(conversationId: string, archived =
 }
 
 export async function summarizeConversation(conversationId: string, opts: { force?: boolean } = {}, session?: SessionPayload | null): Promise<{ summary?: ConversationSummary; error?: string }> {
+  assertIds(conversationId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
@@ -177,6 +184,7 @@ function guessName(handle: string | null | undefined): string | null {
  * and the plan is re-read from the database, never trusted from the client.
  */
 export async function assignConversation(conversationId: string, membershipId: string | null, session?: SessionPayload | null): Promise<{ error?: string; assignee?: string | null }> {
+  assertIds(conversationId, membershipId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;

@@ -96,7 +96,9 @@ describe("mobile parity routes", () => {
       expect((await prisma.booking.findUnique({ where: { id: bookingId } }))?.startAt.toISOString()).toBe(other.start);
     }
     const q = await import("./bookings/[id]/questionnaire/route");
-    expect((await q.POST(req(`/x`, b.token, json({})), params(bookingId))).status).toBe(400);
+    // Retired for everyone, and it sends nothing.
+    expect((await q.POST(req(`/x`, b.token, json({})))).status).toBe(410);
+    expect((await q.POST(req(`/x`, a.token, json({})))).status).toBe(410);
     const cancel = await import("./bookings/[id]/cancel/route");
     expect((await cancel.POST(req(`/x`, b.token, json({})), params(bookingId))).status).toBe(400);
     expect((await cancel.POST(req(`/x`, a.token, json({})), params(bookingId))).status).toBe(200);

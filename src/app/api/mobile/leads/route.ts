@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireMobileRole, isErrorResponse } from "@/lib/mobileApi";
+import { requireMobileRole, isErrorResponse, jsonError } from "@/lib/mobileApi";
 import { STAFF_ROLES } from "@/lib/auth";
-import type { LeadStatus } from "@prisma/client";
+import { LeadStatus } from "@prisma/client";
 
 const ACTIVE_STATUSES: LeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED"];
 
@@ -18,6 +18,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const statusParam = url.searchParams.get("status");
+  if (statusParam !== null && !(Object.values(LeadStatus) as string[]).includes(statusParam)) return jsonError("Unknown status", 400);
   const statuses: LeadStatus[] = statusParam ? [statusParam as LeadStatus] : ACTIVE_STATUSES;
 
   const leads = await prisma.lead.findMany({

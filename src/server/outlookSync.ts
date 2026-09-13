@@ -1,3 +1,4 @@
+import { settleAfterSuccessfulSync } from "@/server/integrationQuota";
 import { prisma } from "@/lib/db";
 import { ingestInboundMessage } from "@/server/leadIngestion";
 import { reportFailure } from "@/lib/observe";
@@ -51,7 +52,8 @@ export async function syncOutlookForBusiness(businessId: string): Promise<Outloo
       });
       if (!result.duplicate) ingested++;
     }
-    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, status: "CONNECTED", syncCursor: page.deltaLink ?? integration.syncCursor } });
+    await prisma.integration.update({ where: { id: integration.id }, data: { lastSyncedAt: new Date(), lastSyncStatus: "ok", lastError: null, lastErrorAt: null, syncCursor: page.deltaLink ?? integration.syncCursor } });
+    await settleAfterSuccessfulSync(integration);
     return { ok: true, found, ingested };
   } catch (err) {
     const revoked = err instanceof OAuthError ? err.revoked : /invalid_grant|No refresh token|401/i.test(err instanceof Error ? err.message : "");

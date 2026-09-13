@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { normalizeEmail, normalizePhone } from "@/server/identity";
 import { track } from "@/lib/analytics";
@@ -25,6 +27,7 @@ const MAX_LOOKAHEAD_DAYS = 400;
  * as NaN and come back as a server error.
  */
 export async function getSlotsForDate(handle: string, dateISO: string, serviceId: string) {
+  assertIds(serviceId);
   if (!rateLimit(`public-slots:${await getClientIp()}`, { limit: 120, windowMs: 60 * 60 * 1000 }).ok) return [];
 
   const date = new Date(dateISO);

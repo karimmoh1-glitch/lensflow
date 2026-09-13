@@ -1,10 +1,12 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
-import { signOAuthState, beginPkce, type OAuthProvider, type OAuthPurpose } from "@/lib/integrations/oauthState";
+import { signOAuthState, beginPkce, type OAuthProvider, type OAuthPurpose, type OAuthReturn } from "@/lib/integrations/oauthState";
 import { microsoftConfigured, microsoftAuthUrl } from "@/lib/microsoft";
 import { slackConfigured, slackAuthUrl, revokeSlackToken, listSlackChannels, joinSlackChannel, type SlackChannel } from "@/lib/slack";
 import { dropboxConfigured, dropboxAuthUrl, revokeDropboxToken } from "@/lib/dropbox";
@@ -14,6 +16,7 @@ import { stripeConnectConfigured, stripeConnectAuthUrl, deauthorizeStripeAccount
 import { accessGranted } from "@/server/accessRequests";
 import { providerMaturity } from "@/lib/integrations/flags";
 import { recordAudit } from "@/server/audit";
+import { revokeProviderAccess } from "@/server/providerRevoke";
 import { syncOutlookForBusiness } from "@/server/outlookSync";
 import { syncCalendlyForBusiness, type CalendlySettings } from "@/server/calendlySync";
 import { postToSlack, type SlackSettings } from "@/server/notify";
@@ -30,7 +33,7 @@ import { smsEntitled } from "@/lib/billing";
 import { track } from "@/lib/analytics";
 import { reportFailure } from "@/lib/observe";
 import { disconnectGoogle } from "@/app/actions/googleAuth";
-import { activateIntegration, canActivate, limitMessage } from "@/server/integrationQuota";
+import { activateIntegration, canActivate, limitMessage, settleAfterSuccessfulSync } from "@/server/integrationQuota";
 import { syncCalendarNow } from "@/app/actions/calendars";
 import { z } from "zod";
 import type { IntegrationProvider } from "@prisma/client";
@@ -53,7 +56,9 @@ async function guardQuotaOrRedirect(businessId: string, provider: IntegrationPro
 /** Instagram: Meta's own authorization screen. Professional accounts only. Invite-only while
  * Meta's review is pending: a workspace without an approved access request is sent back
  * with the reason instead of to Meta. */
-export async function connectInstagram(session?: SessionPayload | null) {
+type ConnectOptions = { returnTo?: OAuthReturn };
+
+export async function connectInstagram(session?: SessionPayload | null, opts: ConnectOptions = {}) {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!instagramConfigured()) throw new Error("Instagram isn't configured on this deployment.");
@@ -61,12 +66,12 @@ export async function connectInstagram(session?: SessionPayload | null) {
   guardEncryption();
   await guardQuotaOrRedirect(ctx.business.id, "INSTAGRAM");
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "INSTAGRAM" } });
-  const state = await signOAuthState({ provider: "instagram", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId });
+  const state = await signOAuthState({ provider: "instagram", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId, returnTo: opts.returnTo });
   redirect(instagramAuthUrl(state));
 }
 
 /** WhatsApp: Meta's Embedded Signup (Facebook Login for Business). */
-export async function connectWhatsApp(session?: SessionPayload | null) {
+export async function connectWhatsApp(session?: SessionPayload | null, opts: ConnectOptions = {}) {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!whatsappConfigured()) throw new Error("WhatsApp isn't configured on this deployment.");
@@ -74,7 +79,7 @@ export async function connectWhatsApp(session?: SessionPayload | null) {
   guardEncryption();
   await guardQuotaOrRedirect(ctx.business.id, "WHATSAPP");
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: "WHATSAPP" } });
-  const state = await signOAuthState({ provider: "whatsapp", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId });
+  const state = await signOAuthState({ provider: "whatsapp", purpose: "messaging", businessId: ctx.business.id, userId: ctx.session.userId, returnTo: opts.returnTo });
   redirect(whatsappAuthUrl(state));
 }
 
@@ -83,22 +88,22 @@ export async function connectWhatsApp(session?: SessionPayload | null) {
  * slot, a signed state (and a PKCE challenge when the provider uses one), then the
  * provider's own authorization screen. Never a toggle.
  */
-async function startOAuth(opts: { provider: IntegrationProvider; oauthProvider: OAuthProvider; purpose: OAuthPurpose; configured: boolean; name: string; pkce?: boolean; url: (state: string, codeChallenge: string | null) => string }, session?: SessionPayload | null): Promise<never> {
+async function startOAuth(opts: { provider: IntegrationProvider; oauthProvider: OAuthProvider; purpose: OAuthPurpose; configured: boolean; name: string; pkce?: boolean; returnTo?: OAuthReturn; url: (state: string, codeChallenge: string | null) => string }, session?: SessionPayload | null): Promise<never> {
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!opts.configured) throw new Error(`${opts.name} isn't configured on this deployment.`);
   guardEncryption();
   await guardQuotaOrRedirect(ctx.business.id, opts.provider);
   await track("integration_connect_started", { businessId: ctx.business.id, properties: { provider: opts.provider } });
-  const state = await signOAuthState({ provider: opts.oauthProvider, purpose: opts.purpose, businessId: ctx.business.id, userId: ctx.session.userId });
+  const state = await signOAuthState({ provider: opts.oauthProvider, purpose: opts.purpose, businessId: ctx.business.id, userId: ctx.session.userId, returnTo: opts.returnTo });
   const challenge = opts.pkce ? (await beginPkce(opts.oauthProvider)).codeChallenge : null;
   redirect(opts.url(state, challenge));
 }
 
 /** Microsoft: Outlook mail or Outlook calendar, one Entra app, the purpose picks the scopes. */
-export async function connectMicrosoft(purpose: "mail" | "calendar", session?: SessionPayload | null) {
+export async function connectMicrosoft(purpose: "mail" | "calendar", session?: SessionPayload | null, opts: ConnectOptions = {}) {
   const calendar = purpose === "calendar";
-  return startOAuth({ provider: calendar ? "MICROSOFT_CALENDAR" : "MICROSOFT_OUTLOOK", oauthProvider: "microsoft", purpose: calendar ? "calendar" : "mail", configured: microsoftConfigured(), name: calendar ? "Microsoft Calendar" : "Microsoft Outlook", pkce: true, url: (state, challenge) => microsoftAuthUrl(state, purpose, challenge!) }, session);
+  return startOAuth({ provider: calendar ? "MICROSOFT_CALENDAR" : "MICROSOFT_OUTLOOK", oauthProvider: "microsoft", purpose: calendar ? "calendar" : "mail", configured: microsoftConfigured(), name: calendar ? "Microsoft Calendar" : "Microsoft Outlook", pkce: true, returnTo: opts.returnTo, url: (state, challenge) => microsoftAuthUrl(state, purpose, challenge!) }, session);
 }
 
 export async function connectSlack(session?: SessionPayload | null) {
@@ -178,6 +183,7 @@ export async function listSlackChannelsAction(session?: SessionPayload | null): 
 
 /** Choose the channel. The bot joins it (public channels) and posts one line so the choice is verified, not assumed. */
 export async function selectSlackChannel(channelId: string, session?: SessionPayload | null): Promise<{ error?: string; channelName?: string }> {
+  assertIds(channelId);
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) return { error: "unauthorized" };
   const id = channelId.trim().slice(0, 40);
@@ -189,7 +195,8 @@ export async function selectSlackChannel(channelId: string, session?: SessionPay
     if (!chosen) return { error: "That channel isn't available to the Daythread app." };
     if (!chosen.isMember) await joinSlackChannel(row.accessToken, chosen.id);
     const settings = (row.settings ?? {}) as SlackSettings;
-    await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, channelId: chosen.id, channelName: chosen.name, lastPostError: null }, status: "CONNECTED", lastError: null, lastErrorAt: null, lastSyncStatus: null } });
+    await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, channelId: chosen.id, channelName: chosen.name, lastPostError: null }, lastError: null, lastErrorAt: null, lastSyncStatus: null } });
+    await settleAfterSuccessfulSync(row);
     const posted = await postToSlack(ctx.business.id, { kind: "integration", title: "Daythread connected", body: `New inquiries and bookings for ${ctx.business.name} will be posted here.` });
     if (!posted) return { error: "The channel was saved but the first message didn't go through. Check the app's permissions in Slack." };
     await recordAudit({ businessId: ctx.business.id, actorId: ctx.session.userId, action: "integration.slack_channel_set", targetType: "integration", targetId: row.id, metadata: { channel: chosen.name } });
@@ -215,6 +222,7 @@ const AppleSchema = z.object({
 export type AppleConnectResult = { error?: string; calendars?: CalendarChoice[]; selected?: string[] };
 
 export async function connectAppleCalendar(appleId: string, appSpecificPassword: string, session?: SessionPayload | null): Promise<AppleConnectResult> {
+  assertIds(appleId);
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   guardEncryption();
@@ -275,28 +283,8 @@ export async function disconnectIntegration(provider: IntegrationProvider, sessi
   }
   const row = await prisma.integration.findUnique({ where: { businessId_provider: { businessId: ctx.business.id, provider } } });
   if (!row) return { error: "Nothing to disconnect." };
-  // Providers with a revocation endpoint are told first, while the credential still works.
-  // Best effort, like Meta below: a provider that refuses never blocks the local disconnect.
-  const warn = (err: unknown) => reportFailure("oauth", `${provider} revoke failed on disconnect`, { businessId: ctx.business.id, provider, error: err, level: "warn" });
-  if (provider === "SLACK" && row.accessToken) await revokeSlackToken(row.accessToken).catch(warn);
-  // Zoom: give the grant back. Meetings already made stay on the owner's Zoom account (they
-  // are theirs), and the bookings keep their join links, which still work.
-  if (provider === "ZOOM" && (row.accessToken || row.refreshToken)) await revokeZoomToken((row.accessToken ?? row.refreshToken)!).catch(warn);
-  if (provider === "DROPBOX" && row.accessToken) await revokeDropboxToken(row.accessToken).catch(warn);
-  if (provider === "STRIPE" && row.externalId) await deauthorizeStripeAccount(row.externalId).catch(warn);
-  if (provider === "CALENDLY" && row.refreshToken) {
-    const hook = ((row.settings ?? {}) as CalendlySettings).webhookUri;
-    if (hook) await calendlyToken(row).then((t) => deleteCalendlyWebhook(t, hook)).catch(warn);
-    await revokeCalendlyToken(row.refreshToken).catch(warn);
-  }
-  // Tell Meta to stop delivering first, while the credential still works. Best effort: a
-  // provider that refuses must never leave the user unable to disconnect locally, and the
-  // webhook ignores events for a row that is no longer connected either way.
-  if ((provider === "INSTAGRAM" || provider === "WHATSAPP") && row.accessToken) {
-    await revokeMetaSubscription(provider, row).catch((err) =>
-      reportFailure("oauth", `${provider} webhook unsubscribe failed on disconnect`, { businessId: ctx.business.id, provider, error: err, level: "warn" })
-    );
-  }
+  // The provider is told first, while the credential still works (best effort; see providerRevoke).
+  await revokeProviderAccess(row);
   await prisma.externalEvent.deleteMany({ where: { integrationId: row.id } });
   await prisma.integration.update({ where: { id: row.id }, data: { status: "NOT_CONNECTED", accessToken: null, refreshToken: null, tokenExpiresAt: null, externalAccount: null, externalId: null, scopes: null, syncCursor: null, settings: undefined, lastSyncStatus: null, lastError: null, lastErrorAt: null } });
   if (provider === "APPLE_CALENDAR" || provider === "MICROSOFT_CALENDAR") await prisma.booking.updateMany({ where: { businessId: ctx.business.id, externalCalendarProvider: provider }, data: { externalEventId: null, externalCalendarProvider: null } });
@@ -386,20 +374,6 @@ export async function releaseSmsNumber(session?: SessionPayload | null): Promise
  * erased here and the user can also remove Daythread from their Instagram settings — the
  * disconnect UI says so rather than implying a revocation that did not happen.
  */
-async function revokeMetaSubscription(provider: IntegrationProvider, row: { accessToken: string | null; externalId: string | null; settings: unknown }): Promise<void> {
-  if (!row.accessToken) return;
-  if (provider === "INSTAGRAM" && row.externalId) {
-    await unsubscribeInstagramWebhooks(row.accessToken, row.externalId);
-    // And hand the grant back, so disconnecting actually ends Daythread's access rather
-    // than only stopping delivery. Every other provider already revokes.
-    await revokeInstagramPermissions(row.accessToken, row.externalId).catch(() => {});
-    return;
-  }
-  if (provider === "WHATSAPP") {
-    const wabaId = (row.settings as { wabaId?: string } | null)?.wabaId;
-    if (wabaId) await unsubscribeWabaWebhooks(row.accessToken, wabaId);
-  }
-}
 
 /**
  * Switch the connected WhatsApp number. The id arrives from the browser, so it is only
@@ -408,6 +382,7 @@ async function revokeMetaSubscription(provider: IntegrationProvider, row: { acce
  * workspace is refused.
  */
 export async function selectWhatsAppNumber(phoneNumberId: string, session?: SessionPayload | null): Promise<{ error?: string; displayPhoneNumber?: string }> {
+  assertIds(phoneNumberId);
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!/^\d{5,25}$/.test(phoneNumberId)) return { error: "That isn't a WhatsApp phone number id." };

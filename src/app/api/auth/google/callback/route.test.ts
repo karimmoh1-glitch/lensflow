@@ -92,6 +92,27 @@ describe("Google Calendar callback", () => {
     expect(calls.some((c) => c.startsWith("POST https://oauth2.googleapis.com/token"))).toBe(true);
   });
 
+  it("a flow started from onboarding comes back to onboarding's connect step, success or failure, and never anywhere else", async () => {
+    const { state, nonce } = await signOAuthStateRaw({ provider: "google", purpose: "calendar", businessId, userId, returnTo: "onboarding" });
+    cookieStore.nonce = nonce;
+    session.current = { userId, activeBusinessId: businessId };
+    const ok = location(await hit({ code: "auth-code", state }));
+    expect(ok.origin).toBe("http://localhost:3000");
+    expect(ok.pathname).toBe("/onboarding");
+    expect(ok.searchParams.get("step")).toBe("connect");
+    expect(ok.searchParams.get("setup")).toBe("GOOGLE_CALENDAR");
+    // Refused by Google: back to the same step with the reason, and onboarding is untouched.
+    const denied = await signOAuthStateRaw({ provider: "google", purpose: "calendar", businessId, userId, returnTo: "onboarding" });
+    cookieStore.nonce = denied.nonce;
+    const no = location(await hit({ error: "access_denied", state: denied.state }));
+    expect(no.pathname).toBe("/onboarding");
+    expect(no.searchParams.get("connect_error")).toBe("denied");
+    expect((await prisma.business.findUniqueOrThrow({ where: { id: businessId } })).onboardingComplete).toBe(false);
+    // A state that never verified cannot pick the landing page: the hub, with the reason.
+    const forged = location(await hit({ code: "c", state: state.slice(0, -4) + "zzzz" }));
+    expect(forged.pathname).toBe("/dashboard/settings");
+  });
+
   it("rejects a reused state (nonce already consumed) and a forged one", async () => {
     const { state, nonce } = await signOAuthStateRaw({ provider: "google", purpose: "calendar", businessId, userId });
     cookieStore.nonce = nonce;

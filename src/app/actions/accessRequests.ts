@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -26,6 +28,7 @@ export async function requestIntegrationAccess(provider: IntegrationProvider, no
 
 /** A founder decides. Anyone else — or a deployment without FOUNDER_EMAILS — is refused, not hinted. */
 export async function decideIntegrationAccess(id: string, decision: "APPROVED" | "REJECTED" | "REVOKED", note?: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  assertIds(id);
   const session = await getSession();
   if (!session) return { ok: false, error: "unauthorized" };
   const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true, emailVerifiedAt: true, createdAt: true } });

@@ -25,7 +25,8 @@ import { sendReplyAction } from "@/app/actions/inbox";
 import { advanceBookingStatus } from "@/app/actions/bookings";
 import { sendClientFiles } from "@/app/actions/clientFiles";
 import { inviteClient, acceptInvitation } from "@/app/actions/invitations";
-import { requireClientRecord } from "@/app/actions/portal";
+import { hashInvitationToken } from "@/lib/invitations";
+import { requireClientRecord } from "@/server/portalAuth";
 import { portalDeliveries } from "@/server/portalDeliveries";
 import { getSession, verifySessionToken } from "@/lib/auth";
 
@@ -209,7 +210,7 @@ describe("a real business, end to end", () => {
     const membership = await prisma.orgMembership.findFirstOrThrow({ where: { userId: customerUser.id, businessId } });
     expect(membership.role).toBe("CLIENT");
     // The invitation is spent, so the same link cannot be used again.
-    expect((await prisma.invitation.findFirstOrThrow({ where: { businessId, token } })).status).toBe("ACCEPTED");
+    expect((await prisma.invitation.findFirstOrThrow({ where: { businessId, token: hashInvitationToken(token) } })).status).toBe("ACCEPTED");
   });
 
   it("11. the customer signs in and finds their own files, and only those", async () => {

@@ -68,7 +68,7 @@ function LoginFormInner({ google }: { google: boolean }) {
           id="password"
           label="Password"
           trailing={
-            <Link href="/forgot-password" className="text-xs font-semibold text-ink/65 hover:text-ink transition-colors">
+            <Link href="/forgot-password" className="inline-flex items-center min-h-[24px] text-xs font-semibold text-ink/65 hover:text-ink transition-colors">
               Forgot it?
             </Link>
           }

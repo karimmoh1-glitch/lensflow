@@ -12,6 +12,7 @@ vi.mock("@/lib/auth", async (importOriginal) => { const mod = await importOrigin
 
 import { turnOnStarterAutomations, completeOnboarding } from "@/app/actions/onboarding";
 import { setupSteps } from "@/server/setupSteps";
+import { createClient } from "@/app/actions/clients";
 import { savePersonalization } from "@/server/personalization";
 
 /**
@@ -88,7 +89,7 @@ describe("Today's setup checklist", () => {
   it("ticks only what the records show, and adds the team step only for people who work with others", async () => {
     const { businessId } = await workspace();
     let steps = await setupSteps(businessId);
-    expect(steps.map((s) => [s.key, s.done])).toEqual([["channel", false], ["services", false], ["calendar", false], ["confirm", false]]);
+    expect(steps.map((s) => [s.key, s.done])).toEqual([["channel", false], ["client", false], ["services", false], ["calendar", false], ["confirm", false]]);
 
     // A wanted-but-unconnected channel names the provider; it isn't counted as done.
     await savePersonalization(businessId, { userType: "business_owner", workCategory: "photography", businessStatus: "team", teamSize: "2_5", channels: ["instagram"], painPoints: ["bookings"], desiredFeatures: ["inbox", "team"], currentTools: [], bookings: "yes", teamUsage: "regularly" }, { source: "signup" });
@@ -105,6 +106,7 @@ describe("Today's setup checklist", () => {
 
     await prisma.availability.create({ data: { businessId, weekday: 2, startMin: 540, endMin: 1020 } });
     await prisma.automation.updateMany({ where: { businessId }, data: { enabled: true } });
+    await prisma.client.create({ data: { businessId, name: "First", email: `first-${stamp()}@example.test` } });
     await prisma.integration.update({ where: { businessId_provider: { businessId, provider: "INSTAGRAM" } }, data: { status: "CONNECTED" } });
     await prisma.integration.create({ data: { businessId, provider: "GOOGLE_CALENDAR", status: "NEEDS_ATTENTION" } }).catch(async () => prisma.integration.update({ where: { businessId_provider: { businessId, provider: "GOOGLE_CALENDAR" } }, data: { status: "NEEDS_ATTENTION" } }));
     const u = await prisma.user.create({ data: { name: "Second", email: `second-${stamp()}@example.test`, passwordHash: "x" } });
@@ -122,5 +124,33 @@ describe("Today's setup checklist", () => {
     await prisma.integration.create({ data: { businessId: theirs.businessId, provider: "EMAIL", status: "CONNECTED" } });
     const steps = await setupSteps(mine.businessId);
     expect(steps.some((s) => s.done)).toBe(false);
+  });
+
+  it("the first client can be added by hand: scoped to the workspace, once per address, and counted as the first", async () => {
+    const { businessId } = await workspace();
+    const bad = await createClient({ name: "  ", email: "x" }, sess());
+    expect(bad.ok).toBe(false);
+    const noContact = await createClient({ name: "Maya" }, sess());
+    expect(noContact).toMatchObject({ ok: false, error: expect.stringMatching(/email or a phone/) });
+    const r = await createClient({ name: "Maya Chen", email: "Maya@Example.test" }, sess());
+    expect(r).toMatchObject({ ok: true, existed: false });
+    const again = await createClient({ name: "M. Chen", email: "maya@example.test" }, sess());
+    expect(again).toMatchObject({ ok: true, existed: true, id: (r as { id: string }).id });
+    expect(await prisma.client.count({ where: { businessId } })).toBe(1);
+    expect(await prisma.analyticsEvent.count({ where: { businessId, name: "first_client_created" } })).toBe(1);
+    expect((await setupSteps(businessId)).find((s) => s.key === "client")?.done).toBe(true);
+    // A phone alone is enough, and a second person is not "the first".
+    const byPhone = await createClient({ name: "Sam", phone: "+1 512 555 0148" }, sess());
+    expect(byPhone).toMatchObject({ ok: true, existed: false });
+    expect(await prisma.analyticsEvent.count({ where: { businessId, name: "first_client_created" } })).toBe(1);
+  });
+
+  it("a client added in one workspace never appears in another", async () => {
+    const mine = await workspace();
+    const r = await createClient({ name: "Only mine", email: `mine-${stamp()}@example.test` }, sess());
+    expect(r.ok).toBe(true);
+    const theirs = await workspace();
+    expect(await prisma.client.count({ where: { businessId: theirs.businessId } })).toBe(0);
+    expect(await prisma.client.count({ where: { businessId: mine.businessId } })).toBe(1);
   });
 });

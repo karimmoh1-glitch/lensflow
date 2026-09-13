@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { isSafeHttpsUrl } from "@/lib/utils";
 import { fireAutomationEvent } from "@/server/automationRunner";
@@ -14,6 +16,7 @@ import { addMinutes, format } from "date-fns";
 import type { BookingStatus } from "@prisma/client";
 
 export async function assignPartner(bookingId: string, membershipId: string | null, session?: SessionPayload | null) {
+  assertIds(bookingId, membershipId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
 
@@ -48,6 +51,7 @@ const LEGAL_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
 };
 
 export async function advanceBookingStatus(bookingId: string, status: BookingStatus, session?: SessionPayload | null) {
+  assertIds(bookingId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
@@ -84,6 +88,7 @@ export async function advanceBookingStatus(bookingId: string, status: BookingSta
  * field on it.
  */
 export async function markDelivered(bookingId: string, url: string, note: string | undefined) {
+  assertIds(bookingId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (!ctx) throw new Error("unauthorized");
 
@@ -111,34 +116,12 @@ export async function markDelivered(bookingId: string, url: string, note: string
   revalidatePath("/portal");
 }
 
-export async function sendQuestionnaire(bookingId: string, session?: SessionPayload | null) {
-  const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
-  if (!ctx) throw new Error("unauthorized");
-  const { business } = ctx;
-
-  const booking = await prisma.booking.findFirst({
-    where: { id: bookingId, businessId: business.id },
-    include: { client: true, conversation: true, service: true },
-  });
-  if (!booking) throw new Error("not found");
-
-  if (!booking.conversation) throw new Error("There's no conversation with this person to send it on.");
-  const body = `Hi ${firstName(booking.client.name)}! Ahead of your ${booking.service.name} session, please fill out this quick questionnaire so we can make the most of it.`;
-  const lastInbound = await prisma.message.findFirst({ where: { conversationId: booking.conversation.id, direction: "INBOUND" }, orderBy: { createdAt: "desc" }, select: { createdAt: true, providerMessageId: true } });
-  const delivery = await deliverToCustomer({ businessId: business.id, businessName: business.name, businessHandle: business.handle, channel: booking.conversation.channel, to: booking.conversation.externalHandle, body, subject: `${business.name}: a quick questionnaire`, inReplyTo: booking.conversation.channel === "EMAIL" ? lastInbound?.providerMessageId ?? null : null, lastInboundAt: lastInbound?.createdAt ?? null }).catch(() => ({ status: "FAILED" as const, via: "none" as const, error: "Send failed" }));
-  await prisma.message.create({ data: { conversationId: booking.conversation.id, direction: "OUTBOUND", body, status: delivery.status, statusDetail: (delivery as { statusDetail?: string }).statusDetail, sentByUserId: ctx.session.userId, providerMessageId: (delivery as { providerMessageId?: string }).providerMessageId } });
-  if (delivery.status !== "SENT") throw new Error(delivery.error ?? "It couldn't be delivered on this channel. Nothing was marked as sent.");
-  // Stamped only once it actually left, so "Questionnaire sent" is never a claim.
-  await prisma.questionnaire.upsert({ where: { bookingId }, create: { bookingId, sentAt: new Date() }, update: { sentAt: new Date() } });
-
-  revalidatePath(`/dashboard/bookings/${bookingId}`);
-}
-
 // ── Reschedule and cancel ────────────────────────────────────────────────────
 
 /** Bookable slots for the staff-side reschedule picker: the booking's own time is not
  * counted as busy, so the current slot can be kept or moved freely. */
 export async function getRescheduleSlots(bookingId: string, dateISO: string, session?: SessionPayload | null): Promise<Array<{ start: string; end: string }>> {
+  assertIds(bookingId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const booking = await prisma.booking.findFirst({ where: { id: bookingId, businessId: ctx.business.id }, include: { service: true } });
@@ -157,6 +140,7 @@ export async function getRescheduleSlots(bookingId: string, dateISO: string, ses
  * when one exists — honestly recorded as not delivered if that channel isn't connected.
  */
 export async function rescheduleBooking(bookingId: string, startISO: string, opts: { notify?: boolean } = {}, session?: SessionPayload | null): Promise<{ ok: true; startAt: string; notified: "sent" | "not_delivered" | "no_channel" | "skipped" } | { ok: false; error: string }> {
+  assertIds(bookingId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business } = ctx;
@@ -215,6 +199,7 @@ export async function rescheduleBooking(bookingId: string, startISO: string, opt
 /** Cancels a booking: status only — messages and the client are untouched; the
  * calendar mirror is removed. Returns rather than throws so the UI can say why. */
 export async function cancelBooking(bookingId: string, session?: SessionPayload | null): Promise<{ ok: true } | { ok: false; error: string }> {
+  assertIds(bookingId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const current = await prisma.booking.findFirst({ where: { id: bookingId, businessId: ctx.business.id }, select: { status: true } });

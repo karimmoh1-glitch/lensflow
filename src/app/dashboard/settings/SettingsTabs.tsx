@@ -72,7 +72,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
         </>
       ) : (
         <div className="dt-swap" key={active}>
-          <Link href="/dashboard/settings" className="lg:hidden inline-flex items-center gap-1 text-xs font-semibold text-ink/70 hover:text-ink mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded">
+          <Link href="/dashboard/settings" className="lg:hidden inline-flex items-center gap-1 min-h-[32px] text-xs font-semibold text-ink/70 hover:text-ink mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded">
             <ChevronLeft className="w-4 h-4" strokeWidth={2} aria-hidden />All settings
           </Link>
           <h2 className="lg:hidden font-sans font-extrabold text-xl tracking-tight text-ink mb-4">{current.label}</h2>

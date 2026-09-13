@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { verifyOAuthState, consumePkce, type OAuthProvider, type OAuthPurpose } from "@/lib/integrations/oauthState";
+import { oauthLanding } from "@/lib/integrations/oauthReturn";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { activateIntegration } from "@/server/integrationQuota";
 import { recordAudit } from "@/server/audit";
+import { withLock } from "@/lib/dbLock";
 import type { OAuthTokens } from "@/lib/integrations/oauth";
 import type { Integration, IntegrationProvider, Prisma } from "@prisma/client";
 
@@ -57,8 +59,8 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
-  const back = new URL("/dashboard/settings", url.origin);
-  back.searchParams.set("tab", "connections");
+  // The hub until the state has verified: only a verified state may choose the landing page.
+  let back = oauthLanding(url.origin, null);
   let providerKey: IntegrationProvider = spec.providerFor(spec.purposes[0]);
   const fail = (reason: string) => {
     back.searchParams.set("connect_error", reason);
@@ -68,6 +70,7 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
 
   const verified = await verifyOAuthState(spec.oauthProvider, state);
   const codeVerifier = spec.pkce ? await consumePkce(spec.oauthProvider) : null;
+  if (verified.ok) back = oauthLanding(url.origin, verified.state.returnTo);
   if (verified.ok && spec.purposes.includes(verified.state.purpose)) providerKey = spec.providerFor(verified.state.purpose);
   if (error) return fail(error === "access_denied" || error === "user_denied" ? "denied" : "provider");
   if (!verified.ok) return fail(verified.reason === "expired" ? "expired" : "state");
@@ -98,13 +101,6 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
       return fail("scopes");
     }
     const identity = await spec.identity(tokens, flow);
-    if (spec.exclusive) {
-      const elsewhere = await prisma.integration.findFirst({ where: { provider: providerKey, externalId: identity.externalId, businessId: { not: businessId }, status: { not: "NOT_CONNECTED" } }, select: { id: true } });
-      if (elsewhere) {
-        await spec.revoke?.(tokens);
-        return fail("in_use");
-      }
-    }
     const previous = await prisma.integration.findUnique({ where: { businessId_provider: { businessId, provider: providerKey } } });
     const base: Omit<Prisma.IntegrationUncheckedCreateInput, "businessId" | "provider" | "status"> = {
       externalAccount: identity.externalAccount,
@@ -120,7 +116,22 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
       syncCursor: null,
       wanted: false,
     };
-    const activation = await activateIntegration({ businessId, provider: providerKey, create: base, update: base });
+    // The exclusivity check and the activation happen under one lock keyed by the external
+    // account: two workspaces finishing a flow for the same account at the same moment
+    // used to both pass the check, and inbound messages then went to whichever row the
+    // database returned first.
+    const activate = async () => {
+      if (spec.exclusive) {
+        const elsewhere = await prisma.integration.findFirst({ where: { provider: providerKey, externalId: identity.externalId, businessId: { not: businessId }, status: { not: "NOT_CONNECTED" } }, select: { id: true } });
+        if (elsewhere) return { ok: false as const, reason: "in_use" as const };
+      }
+      return activateIntegration({ businessId, provider: providerKey, create: base, update: base });
+    };
+    const activation = spec.exclusive ? await withLock(`integration:${providerKey}:${identity.externalId}`, activate) : await activate();
+    if (!activation.ok && activation.reason === "in_use") {
+      await spec.revoke?.(tokens);
+      return fail("in_use");
+    }
     if (!activation.ok) {
       await spec.revoke?.(tokens);
       await track("integration_limit_reached", { businessId, properties: { provider: providerKey, plan: activation.usage.plan } });
@@ -134,7 +145,10 @@ export async function completeOAuthConnect(req: Request, spec: OAuthConnectSpec)
     let extra: Record<string, string> = { connected: providerKey };
     if (spec.afterActivate) {
       try {
-        const r = await spec.afterActivate(activation.row, tokens, identity, previous, flow);
+        // Re-read: the upsert returns the row as stored, with the tokens still encrypted, and
+        // the post-connect step (a calendar discovery, a first sync) needs them usable.
+        const stored = (await prisma.integration.findUnique({ where: { id: activation.row.id } })) ?? activation.row;
+        const r = await spec.afterActivate(stored, tokens, identity, previous, flow);
         if (r?.redirect) extra = r.redirect;
       } catch (err) {
         await reportFailure("oauth", `${providerKey} post-connect step failed`, { businessId, provider: providerKey, error: err, level: "warn" });

@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { verifyOAuthState } from "@/lib/integrations/oauthState";
+import { oauthLanding } from "@/lib/integrations/oauthReturn";
 import { exchangeInstagramCode, instagramProfile, instagramIdentity, instagramGrantedScopes, subscribeInstagramWebhooks, listInstagramConversations, isProfessionalAccount, IG_SCOPES, listInstagramSubscriptions } from "@/lib/meta/instagram";
 import { tokenCryptoConfigured } from "@/lib/tokenCrypto";
-import { appBaseUrl, metaCredentialsPresent } from "@/lib/meta/config";
+import { metaCredentialsPresent } from "@/lib/meta/config";
 import { reportFailure } from "@/lib/observe";
 import { track } from "@/lib/analytics";
 import { ingestInboundMessage } from "@/server/leadIngestion";
+import { withLock } from "@/lib/dbLock";
 import { activateIntegration } from "@/server/integrationQuota";
 
 /**
@@ -23,24 +25,25 @@ export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  // Redirects are built from the deployment's own configured URL, not the request host, so
-  // a proxied or preview host can never redirect a completed connection somewhere else.
-  const back = new URL("/dashboard/settings", appBaseUrl() || url.origin);
-  back.searchParams.set("tab", "connections");
+  // The hub until the state has verified: only a verified state may choose the landing page.
+  let back = oauthLanding(url.origin, null);
   const fail = (reason: string) => {
     back.searchParams.set("connect_error", reason);
     back.searchParams.set("provider", "INSTAGRAM");
     return NextResponse.redirect(back);
   };
 
+  // The state is verified first: a verified state decides where the browser lands, whether
+  // the provider then reports success or a refusal.
+  const verified = await verifyOAuthState("instagram", url.searchParams.get("state"));
+  if (verified.ok) back = oauthLanding(url.origin, verified.state.returnTo);
   const error = url.searchParams.get("error");
   if (error) return fail(error === "access_denied" ? "denied" : "provider");
   // Only what completing the exchange actually needs: a flow already in flight is not
   // thrown away because the webhook token is still being wired up.
   if (!metaCredentialsPresent("instagram")) return fail("configuration");
-
-  const verified = await verifyOAuthState("instagram", url.searchParams.get("state"));
   if (!verified.ok) return fail(verified.reason === "expired" ? "expired" : "state");
+
   const code = url.searchParams.get("code");
   if (!code) return fail("provider");
 
@@ -64,8 +67,6 @@ export async function GET(req: Request) {
     if (granted && !granted.includes("instagram_business_manage_messages")) return fail("scopes");
 
     // One Instagram account can only feed one workspace.
-    const elsewhere = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: { in: [...selfIds] }, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
-    if (elsewhere) return fail("in_use");
 
     // Subscribe, then ask Meta what it actually recorded. A POST that does not throw is not
     // evidence the field is subscribed, and a connection that looks healthy while Meta
@@ -91,12 +92,19 @@ export async function GET(req: Request) {
       settings,
       wanted: false,
     };
-    const activation = await activateIntegration({
-      businessId,
-      provider: "INSTAGRAM",
-      create: { ...credentials, lastError: null, lastErrorAt: null },
-      update: { ...credentials, lastError: null, lastErrorAt: null, lastSyncStatus: null },
+    // The exclusivity check and the activation run under one lock keyed by the account, so
+    // two workspaces finishing a flow for the same account cannot both be connected.
+    const activation = await withLock(`integration:INSTAGRAM:${identity.professionalId}`, async () => {
+      const elsewhere = await prisma.integration.findFirst({ where: { provider: "INSTAGRAM", externalId: { in: [...selfIds] }, businessId: { not: businessId }, status: { in: ["CONNECTED", "SYNC_ERROR", "NEEDS_ATTENTION"] } } });
+      if (elsewhere) return { ok: false as const, reason: "in_use" as const };
+      return activateIntegration({
+        businessId,
+        provider: "INSTAGRAM",
+        create: { ...credentials, lastError: null, lastErrorAt: null },
+        update: { ...credentials, lastError: null, lastErrorAt: null, lastSyncStatus: null },
+      });
     });
+    if (!activation.ok && activation.reason === "in_use") return fail("in_use");
     if (!activation.ok) {
       await track("integration_limit_reached", { businessId, properties: { provider: "INSTAGRAM", plan: activation.usage.plan } });
       return fail("limit");

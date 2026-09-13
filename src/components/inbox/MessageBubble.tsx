@@ -13,19 +13,19 @@ export function MessageBubble({ direction, status, meta, children, className, ar
     <div className={cn("max-w-[min(85%,28rem)]", outbound ? "ml-auto" : "", arrive && "dt-msg-in", className)}>
       <div
         className={cn(
-          "rounded-[18px] px-4 py-2.5 text-[14px] leading-relaxed",
+          "rounded-2xl px-3.5 py-2.5 text-sm",
           status === "FAILED"
-            ? "bg-danger-soft text-danger-text rounded-br-[6px] border border-danger/30"
+            ? "bg-danger-soft text-danger-text rounded-br border border-danger/25"
             : status === "NOT_DELIVERED"
-              ? "bg-warning-soft/60 text-ink rounded-br-[6px] border border-warning/40"
+              ? "bg-warning-soft text-ink rounded-br border border-warning/30"
               : outbound
-                ? "bg-ink text-white rounded-br-[6px]"
-                : "bg-black/[0.05] text-ink rounded-bl-[6px]"
+                ? "bg-ink text-white rounded-br"
+                : "bg-paper border border-border text-ink rounded-bl"
         )}
       >
         {children}
       </div>
-      {meta && <div className={cn("text-2xs text-ink/65 mt-1 px-1", outbound ? "text-right" : "")}>{meta}</div>}
+      {meta && <div className={cn("text-xs text-ink/65 mt-1 px-1", outbound ? "text-right" : "")}>{meta}</div>}
     </div>
   );
 }

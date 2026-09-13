@@ -87,7 +87,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
               key={key}
               href={key === "all" ? "/dashboard/payments" : `/dashboard/payments?status=${key}`}
               aria-current={status === key ? "page" : undefined}
-              className={cn("h-8 px-3.5 rounded-lg text-13 font-semibold inline-flex items-center whitespace-nowrap transition-colors", status === key ? "bg-ink text-white" : "text-ink/70 hover:text-ink hover:bg-black/[0.04]")}
+              className={cn("h-8 px-3.5 rounded-lg text-13 font-medium inline-flex items-center whitespace-nowrap transition-colors", status === key ? "bg-ink text-white" : "text-ink/70 hover:text-ink hover:bg-ink/[0.04]")}
             >
               {key === "all" ? "All" : LABEL[key]}
             </Link>
@@ -120,9 +120,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
             const when = p.paidAt ?? p.createdAt;
             return (
               <li key={p.id}>
-                <div className="rounded-xl border border-border bg-white px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                  <span className="shrink-0 w-9 h-9 rounded-xl border border-border bg-paper hidden sm:flex items-center justify-center">
-                    <CreditCard className="w-4 h-4 text-ink/60" strokeWidth={2} aria-hidden />
+                <div className="rounded-lg border border-border bg-white px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <span className="shrink-0 w-9 h-9 rounded-lg border border-border bg-paper hidden sm:flex items-center justify-center">
+                    <CreditCard className="w-4 h-4 text-ink/60" strokeWidth={1.75} aria-hidden />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -144,11 +144,11 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                   </div>
                   <div className="sm:text-right shrink-0">
                     <div className={cn("text-[15px] font-semibold tabular-nums", p.status === "REFUNDED" ? "text-ink/60 line-through" : "text-ink")}>{formatMoneyExact(p.amountCents, p.currency)}</div>
-                    <div className="text-2xs text-ink/60">{format(when, "MMM d, yyyy")}</div>
+                    <div className="text-xs text-ink/60">{format(when, "MMM d, yyyy")}</div>
                   </div>
                   {p.booking && (
                     <Link href={`/dashboard/bookings/${p.booking.id}`} aria-label="Open booking" className="hidden sm:inline-flex text-ink/60 hover:text-ink">
-                      <ChevronRight className="w-4 h-4" strokeWidth={2} />
+                      <ChevronRight className="w-4 h-4" strokeWidth={1.75} />
                     </Link>
                   )}
                 </div>
@@ -165,9 +165,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
 
 function Tile({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="rounded-xl border border-border bg-white px-4 py-3">
-      <div className="text-13 font-semibold text-ink/60">{label}</div>
-      <div className={cn("mt-1 text-[1.35rem] font-extrabold tracking-[-0.02em] tabular-nums", tone)}>{value}</div>
+    <div className="rounded-lg border border-border bg-white px-4 py-3">
+      <div className="text-xs font-medium text-ink/65">{label}</div>
+      <div className={cn("mt-1 text-[1.35rem] font-semibold tracking-[-0.02em] tabular-nums", tone)}>{value}</div>
     </div>
   );
 }

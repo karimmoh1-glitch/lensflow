@@ -48,7 +48,7 @@ export function AppleConnectDialog({ onClose }: { onClose: () => void }) {
           <>Paste that password below. It only works for this app and you can revoke it at Apple any time.</>,
           <>Daythread verifies the connection with iCloud, then you choose which calendars to sync.</>,
         ].map((t, i) => (
-          <li key={i} className="flex gap-3"><span className="w-5 h-5 rounded-full bg-ink text-white text-2xs font-extrabold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span><span>{t}</span></li>
+          <li key={i} className="flex gap-3"><span className="w-5 h-5 rounded-full bg-ink text-white text-2xs font-semibold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span><span>{t}</span></li>
         ))}
       </ol>
       <div className="rounded-xl bg-warning-soft/50 border border-warning/30 px-3 py-2 text-xs text-ink/75"><span className="font-semibold text-ink">Never enter your normal Apple ID password here.</span> Daythread only accepts app-specific passwords, which are stored encrypted.</div>

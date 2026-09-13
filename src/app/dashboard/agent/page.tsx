@@ -29,10 +29,10 @@ export default async function AgentPage() {
     return (
       <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10">
         <PageHeader title="Assistant" description="Daythread proposes the day's work and carries it out when you approve." />
-        <section className="rounded-xl border border-border bg-white overflow-hidden">
+        <section className="rounded-lg border border-border bg-white overflow-hidden">
           <div className="px-6 py-6 md:px-8 md:py-8 bg-[radial-gradient(120%_140%_at_0%_0%,rgba(109,90,230,0.12),transparent_55%)]">
-            <span className="inline-flex items-center gap-1.5 text-13 font-semibold text-ink/75"><Lock className="w-3 h-3" strokeWidth={2.5} aria-hidden /> Daythread Pro</span>
-            <h2 className="mt-2 font-sans font-extrabold text-[1.6rem] md:text-[1.9rem] leading-[1.05] tracking-[-0.03em] text-ink">{askedForIt ? "Meet your Business Agent." : "Your business has an assistant."}</h2>
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink/65"><Lock className="w-3 h-3" strokeWidth={2.5} aria-hidden /> Daythread Pro</span>
+            <h2 className="mt-2 font-sans font-semibold text-[1.6rem] md:text-[1.9rem] leading-[1.05] tracking-[-0.03em] text-ink">{askedForIt ? "Meet your Business Agent." : "Your business has an assistant."}</h2>
             {askedForIt && <p className="mt-2 max-w-xl text-sm font-semibold text-ink leading-relaxed">You said you&rsquo;d like help with replies and follow-ups during setup. This is that help.</p>}
             <p className="mt-2 max-w-xl text-sm text-ink/70 leading-relaxed">It reads what is actually happening — who is waiting, what isn&rsquo;t confirmed, who went quiet, what stopped syncing — and proposes the exact next action with the message ready. You approve; it sends, records and moves things forward. Ask it anything about your own business and it answers from your records.</p>
             <ul className="mt-5 grid sm:grid-cols-2 gap-2.5">
@@ -44,8 +44,8 @@ export default async function AgentPage() {
               ].map(([Icon, text], i) => {
                 const I = Icon as typeof MessageSquare;
                 return (
-                  <li key={i} className="flex items-start gap-2.5 rounded-xl border border-border bg-white/80 px-3.5 py-3 text-sm text-ink/80">
-                    <span className="w-7 h-7 rounded-lg bg-ink text-ink/75 flex items-center justify-center shrink-0"><I className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /></span>
+                  <li key={i} className="flex items-start gap-2.5 rounded-lg border border-border bg-white/80 px-3.5 py-3 text-sm text-ink/80">
+                    <span className="w-7 h-7 rounded-lg bg-ink text-ink/75 flex items-center justify-center shrink-0"><I className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden /></span>
                     <span className="leading-snug">{text as string}</span>
                   </li>
                 );
@@ -71,7 +71,7 @@ export default async function AgentPage() {
       <PageHeader
         title="Assistant"
         description="What Daythread would do next, with the message ready. Nothing is sent until you approve it."
-        action={<span className="inline-flex items-center gap-1.5 text-2xs font-medium text-ink/75 bg-black/[0.03] rounded-md px-2.5 py-1"><ListChecks className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> {PLANS[plan].name}</span>}
+        action={<span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink/75 bg-ink/[0.03] rounded-md px-2.5 py-1"><ListChecks className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden /> {PLANS[plan].name}</span>}
       />
       <AgentBoard initial={{ generatedAt: brief.generatedAt.toISOString(), proposals: brief.proposals, activity: brief.activity.map((a) => ({ ...a, at: a.at.toISOString() })) }} />
     </div>

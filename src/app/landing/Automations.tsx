@@ -22,7 +22,7 @@ export function Automations() {
   return (
     <div className="max-w-[1200px] mx-auto px-6">
       <Reveal className="max-w-2xl">
-        <h2 className="font-sans font-bold text-[clamp(2.1rem,4.2vw,3.4rem)] leading-[1] tracking-[-0.04em] text-ink text-balance">Switched on once. Runs every time.</h2>
+        <h2 className="font-serif font-normal text-[clamp(2.4rem,4.8vw,3.9rem)] leading-[1.02] tracking-[-0.012em] text-ink text-balance">Switched on once. Runs every time.</h2>
         <p className="mt-4 text-[1.0625rem] text-ink/60 leading-relaxed">You book the client. Daythread sends the messages every booking needs, each one written into the thread.</p>
       </Reveal>
 
@@ -43,7 +43,7 @@ export function Automations() {
                   <p className="text-[15px] font-semibold text-ink tracking-[-0.01em]">{s.when}</p>
                   <p className="mt-0.5 text-13 text-ink/60">{s.note}</p>
                 </div>
-                <div className="mt-4 rounded-xl border border-border bg-white shadow-[0_1px_0_rgba(16,17,20,0.03),0_12px_32px_-20px_rgba(16,17,20,0.25)] p-4">
+                <div className="mt-4 rounded-xl border border-border bg-white shadow-elev-2 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-13 font-semibold text-ink">{recipe.label}</p>
                     <span aria-hidden className="w-8 h-[18px] rounded-full bg-ink relative shrink-0">

@@ -44,10 +44,10 @@ export function VerticalPage({ v }: { v: Vertical }) {
       <Navbar />
       <header className="max-w-[1200px] mx-auto px-6 pt-28 md:pt-36 pb-16 md:pb-20">
         <p className="text-2xs font-bold uppercase tracking-[0.16em] text-ink/65">{v.eyebrow}</p>
-        <h1 className="mt-4 font-sans font-extrabold text-[clamp(2.4rem,5vw,4.5rem)] leading-[0.95] tracking-[-0.05em] text-ink max-w-4xl text-balance">{v.title}</h1>
+        <h1 className="mt-4 font-serif font-normal text-[clamp(2.8rem,5.6vw,5rem)] leading-[1] tracking-[-0.012em] text-ink max-w-4xl text-balance">{v.title}</h1>
         <p className="mt-6 text-base md:text-lg text-ink/70 leading-relaxed max-w-xl">{v.lede}</p>
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <Link href="/start" className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-accent-strong text-white text-[15px] font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] hover:scale-[1.03] active:scale-[0.97] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2">Start free <span aria-hidden>→</span></Link>
+          <Link href="/start" className="inline-flex items-center gap-2 h-12 px-6 rounded bg-accent-strong text-white text-[15px] font-semibold transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2">Start free <span aria-hidden>→</span></Link>
           <span className="text-sm font-semibold text-ink/65">Free to start. No card.</span>
         </div>
         <ul className="mt-10 flex flex-wrap items-center gap-3" aria-label="Channels Daythread brings together">
@@ -59,14 +59,14 @@ export function VerticalPage({ v }: { v: Vertical }) {
 
       <section className="bg-white border-y border-border py-16 md:py-24" aria-labelledby="problem-title">
         <div className="max-w-[1200px] mx-auto px-6">
-          <h2 id="problem-title" className="font-sans font-extrabold text-[1.8rem] md:text-[2.4rem] leading-[1.02] tracking-[-0.04em] text-ink max-w-2xl text-balance">How a lead gets lost.</h2>
+          <h2 id="problem-title" className="font-serif font-normal text-[2.1rem] md:text-[2.8rem] leading-[1.04] tracking-[-0.012em] text-ink max-w-2xl text-balance">How a lead gets lost.</h2>
           <ol className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {v.problems.map((pr, i) => (
               <li key={pr.title} className="h-full">
                 <RevealOnScroll delay={i * 70} className="h-full">
                   <div className="h-full rounded-2xl border border-border bg-paper px-5 py-5">
                     <span className="text-2xs font-bold text-accent-text tabular-nums">0{i + 1}</span>
-                    <h3 className="mt-2 text-[15px] font-extrabold text-ink">{pr.title}</h3>
+                    <h3 className="mt-2 text-[15px] font-semibold text-ink">{pr.title}</h3>
                     <p className="mt-1.5 text-sm text-ink/70 leading-relaxed">{pr.body}</p>
                   </div>
                 </RevealOnScroll>
@@ -79,15 +79,15 @@ export function VerticalPage({ v }: { v: Vertical }) {
       <section className="py-16 md:py-24" aria-labelledby="how-title">
         <div className="max-w-[1200px] mx-auto px-6">
           <p className="text-2xs font-bold uppercase tracking-[0.16em] text-signal-text">What Daythread does about it</p>
-          <h2 id="how-title" className="mt-3 font-sans font-extrabold text-[1.8rem] md:text-[2.4rem] leading-[1.02] tracking-[-0.04em] text-ink max-w-2xl text-balance">One thread, from the first message to the booking.</h2>
+          <h2 id="how-title" className="mt-3 font-serif font-normal text-[2.1rem] md:text-[2.8rem] leading-[1.04] tracking-[-0.012em] text-ink max-w-2xl text-balance">One thread, from the first message to the booking.</h2>
           <ol className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {v.steps.map((st, i) => (
               <li key={st.title} className="h-full">
                 <RevealOnScroll delay={i * 70} className="h-full">
                   <div className="h-full rounded-2xl border border-border bg-white px-5 py-5">
                     <div className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-full bg-ink text-white text-xs font-extrabold flex items-center justify-center tabular-nums">{i + 1}</span>
-                      <h3 className="text-[15px] font-extrabold text-ink">{st.title}</h3>
+                      <span className="w-7 h-7 rounded bg-ink text-white text-xs font-semibold flex items-center justify-center tabular-nums">{i + 1}</span>
+                      <h3 className="text-[15px] font-semibold text-ink">{st.title}</h3>
                     </div>
                     <p className="mt-2.5 text-sm text-ink/70 leading-relaxed">{st.body}</p>
                   </div>
@@ -106,11 +106,11 @@ export function VerticalPage({ v }: { v: Vertical }) {
 
       <section className="bg-paper border-t border-border py-16 md:py-24" aria-labelledby="faq-title">
         <div className="max-w-[840px] mx-auto px-6">
-          <h2 id="faq-title" className="font-sans font-extrabold text-[1.8rem] md:text-[2.2rem] leading-[1.02] tracking-[-0.04em] text-ink">Questions we get.</h2>
+          <h2 id="faq-title" className="font-serif font-normal text-[2.1rem] md:text-[2.6rem] leading-[1.04] tracking-[-0.012em] text-ink">Questions we get.</h2>
           <dl className="mt-8 divide-y divide-border">
             {v.faq.map((f) => (
               <div key={f.q} className="py-5">
-                <dt className="text-[15px] font-extrabold text-ink">{f.q}</dt>
+                <dt className="text-[15px] font-semibold text-ink">{f.q}</dt>
                 <dd className="mt-1.5 text-sm text-ink/70 leading-relaxed">{f.a}</dd>
               </div>
             ))}
@@ -120,9 +120,9 @@ export function VerticalPage({ v }: { v: Vertical }) {
 
       <section className="bg-midnight text-paper py-20 md:py-28">
         <div className="max-w-[1200px] mx-auto px-6 text-center">
-          <p className="font-sans font-extrabold text-[2rem] md:text-[3rem] leading-[1] tracking-[-0.04em] text-balance">Don&rsquo;t lose the next one.</p>
+          <p className="font-serif font-normal text-[2.4rem] md:text-[3.4rem] leading-[1.02] tracking-[-0.012em] text-balance">Don&rsquo;t lose the next one.</p>
           <div className="mt-8 flex flex-col items-center gap-3">
-            <Link href="/start" className="inline-flex items-center gap-2 h-14 px-8 rounded-full bg-accent-strong text-white text-base font-extrabold shadow-[0_16px_40px_-12px_rgba(240,82,77,0.85)] hover:scale-[1.03] active:scale-[0.97] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight">Start free <span aria-hidden>→</span></Link>
+            <Link href="/start" className="inline-flex items-center gap-2 h-14 px-8 rounded bg-accent-strong text-white text-base font-semibold transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight">Start free <span aria-hidden>→</span></Link>
             <span className="text-sm text-paper/60">Free to start. Pro is $20 a month when you need it.</span>
           </div>
         </div>

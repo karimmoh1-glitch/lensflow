@@ -56,7 +56,7 @@ export function InvitationRow({
               setTimeout(() => setCopied(false), 1500);
             }}
           >
-            {copied ? <Check className="w-4 h-4" strokeWidth={2} /> : <Copy className="w-4 h-4" strokeWidth={2} />}
+            {copied ? <Check className="w-4 h-4" strokeWidth={1.75} /> : <Copy className="w-4 h-4" strokeWidth={1.75} />}
           </IconButton>
           <IconButton
             aria-label="Resend invitation"
@@ -73,7 +73,7 @@ export function InvitationRow({
               })
             }
           >
-            <RotateCcw className={cn("w-4 h-4", pending && "animate-spin")} strokeWidth={2} />
+            <RotateCcw className={cn("w-4 h-4", pending && "animate-spin")} strokeWidth={1.75} />
           </IconButton>
           <IconButton
             aria-label="Revoke invitation"
@@ -87,7 +87,7 @@ export function InvitationRow({
               })
             }
           >
-            <Ban className="w-4 h-4" strokeWidth={2} />
+            <Ban className="w-4 h-4" strokeWidth={1.75} />
           </IconButton>
         </div>
       )}

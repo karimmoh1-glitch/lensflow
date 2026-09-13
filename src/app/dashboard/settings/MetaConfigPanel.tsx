@@ -14,7 +14,7 @@ import { CopyField } from "./CopyField";
  */
 const STATE: Record<SettingReport["state"], { label: string; className: string; icon: typeof Check }> = {
   configured: { label: "Configured", className: "text-success-text bg-success-soft", icon: Check },
-  missing: { label: "Missing", className: "text-ink/70 bg-black/[0.05]", icon: X },
+  missing: { label: "Missing", className: "text-ink/70 bg-ink/[0.05]", icon: X },
   invalid: { label: "Invalid", className: "text-warning-text bg-warning-soft", icon: AlertTriangle },
 };
 
@@ -28,11 +28,11 @@ function Row({ setting }: { setting: SettingReport }) {
         {s.label}
       </span>
       <span className="min-w-0 flex-1">
-        <code className="text-2xs font-mono text-ink/80 break-all">{setting.key}</code>
-        {setting.secret && <span className="ml-1.5 text-2xs text-ink/65">secret — never shown</span>}
-        <span className="block text-2xs text-ink/70 leading-snug">{setting.label}</span>
+        <code className="text-xs font-mono text-ink/80 break-all">{setting.key}</code>
+        {setting.secret && <span className="ml-1.5 text-xs text-ink/65">secret — never shown</span>}
+        <span className="block text-xs text-ink/70 leading-snug">{setting.label}</span>
         {setting.note && (
-          <span className="block text-2xs text-warning-text leading-snug mt-0.5">
+          <span className="block text-xs text-warning-text leading-snug mt-0.5">
             {setting.note}
             {setting.state === "invalid" && !setting.blocking ? " Connecting is still offered — Meta will refuse it if it really is wrong." : ""}
           </span>
@@ -46,16 +46,16 @@ export function MetaConfigPanel() {
   const report = metaConfigReport();
 
   return (
-    <details className="rounded-xl border border-border bg-white overflow-hidden group">
+    <details className="rounded-lg border border-border bg-white overflow-hidden group">
       <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden px-5 py-4 flex items-center gap-3">
         <span className="min-w-0 flex-1">
           <span className="block text-[15px] font-semibold text-ink">Meta configuration</span>
-          <span className="block text-2xs text-ink/70 mt-0.5">
+          <span className="block text-xs text-ink/70 mt-0.5">
             {report.products.map((p) => `${p.name}: ${p.ready ? "ready" : "not configured"}`).join(" · ")}
           </span>
         </span>
-        <span className="shrink-0 text-2xs font-semibold text-ink/65 group-open:hidden">Show</span>
-        <span className="shrink-0 text-2xs font-semibold text-ink/65 hidden group-open:inline">Hide</span>
+        <span className="shrink-0 text-xs font-medium text-ink/65 group-open:hidden">Show</span>
+        <span className="shrink-0 text-xs font-medium text-ink/65 hidden group-open:inline">Hide</span>
       </summary>
 
       <div className="border-t border-border px-5 py-4 space-y-5 text-sm">
@@ -65,36 +65,36 @@ export function MetaConfigPanel() {
 
         {report.products.map((product) => (
           <section key={product.product}>
-            <h4 className="flex items-center gap-2 text-13 font-semibold text-ink/65">
+            <h4 className="flex items-center gap-2 text-xs font-medium text-ink/65">
               {product.name}
-              <span className={`text-2xs rounded-md px-1.5 py-0.5 ${product.ready ? "bg-success-soft text-success-text" : "bg-black/[0.05] text-ink/70"}`}>{product.ready ? "Ready to connect" : "Configuration required"}</span>
+              <span className={`text-2xs rounded-md px-1.5 py-0.5 ${product.ready ? "bg-success-soft text-success-text" : "bg-ink/[0.05] text-ink/70"}`}>{product.ready ? "Ready to connect" : "Configuration required"}</span>
             </h4>
             <ul className="mt-1 divide-y divide-border">
               {product.settings.map((s) => (
                 <Row key={`${product.product}-${s.key}`} setting={s} />
               ))}
             </ul>
-            <p className="mt-2 text-2xs text-ink/65 leading-relaxed">
+            <p className="mt-2 text-xs text-ink/65 leading-relaxed">
               <span className="font-semibold text-ink/70">Still required from Meta:</span> {product.approval}
             </p>
           </section>
         ))}
 
         <section>
-          <h4 className="text-13 font-semibold text-ink/65">Paste these into the Meta App Dashboard</h4>
+          <h4 className="text-xs font-medium text-ink/65">Paste these into the Meta App Dashboard</h4>
           <div className="mt-2 space-y-2">
             <CopyField label="Webhook callback URL (Instagram + WhatsApp)" value={report.webhookUrl} />
             <CopyField label="Instagram OAuth redirect URI" value={report.redirectUris.instagram} />
             <CopyField label="WhatsApp / Facebook Login redirect URI" value={report.redirectUris.whatsapp} />
           </div>
-          <p className="mt-2 text-2xs text-ink/65 leading-relaxed">
+          <p className="mt-2 text-xs text-ink/65 leading-relaxed">
             The verify token is whatever you set in <code className="font-mono">META_WEBHOOK_VERIFY_TOKEN</code>; Daythread compares it in constant time and never displays it.
             {report.appUrl.state !== "configured" && <span className="block mt-1 text-warning-text">These URLs are built from NEXT_PUBLIC_APP_URL, which is {report.appUrl.state}. Fix it first or Meta will be given the wrong callback.</span>}
           </p>
         </section>
 
-        <p className="text-2xs text-ink/65 flex items-start gap-1.5">
-          <Copy className="w-3 h-3 mt-0.5 shrink-0" strokeWidth={2} aria-hidden />
+        <p className="text-xs text-ink/65 flex items-start gap-1.5">
+          <Copy className="w-3 h-3 mt-0.5 shrink-0" strokeWidth={1.75} aria-hidden />
           Full setup and review checklist: <code className="font-mono">docs/integrations/meta.md</code> in the repository.
         </p>
       </div>

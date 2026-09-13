@@ -20,7 +20,7 @@ export function Dialog({ open, onClose, title, description, children, className,
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-24 bg-black/30 px-0 sm:px-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-24 bg-ink/30 px-0 sm:px-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div
         ref={panel}
         role="dialog"
@@ -29,7 +29,7 @@ export function Dialog({ open, onClose, title, description, children, className,
         aria-describedby={description ? `${id}-desc` : undefined}
         tabIndex={-1}
         className={cn(
-          "w-full rounded-t-2xl sm:rounded-xl border border-border bg-white shadow-overlay p-5 sm:p-6 max-h-[92svh] overflow-y-auto focus:outline-none dt-land",
+          "w-full rounded-t-2xl sm:rounded-2xl bg-white shadow-overlay p-5 max-h-[92svh] overflow-y-auto focus:outline-none dt-sheet",
           size === "sm" ? "sm:max-w-sm" : size === "md" ? "sm:max-w-md" : "sm:max-w-lg",
           className
         )}
@@ -40,7 +40,7 @@ export function Dialog({ open, onClose, title, description, children, className,
             {description && <p id={`${id}-desc`} className="mt-1 text-13 text-ink/60">{description}</p>}
           </div>
           <IconButton aria-label="Close" onClick={onClose} className="-mr-1 -mt-1">
-            <X className="w-4 h-4" strokeWidth={2} />
+            <X className="w-4 h-4" strokeWidth={1.75} />
           </IconButton>
         </div>
         {children}

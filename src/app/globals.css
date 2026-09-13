@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --font-sans and --font-display are set by next/font in layout.tsx (both Manrope). Do not
-   redeclare them here: a :root fallback ties on specificity with next/font's class and, by
-   source order, won — which is why Inter and Playfair kept rendering after the swap. */
+/* --font-sans (Instrument Sans) and --font-serif (Instrument Serif) are set by next/font in
+   layout.tsx. Do not redeclare them here: a :root fallback ties on specificity with next/font's
+   class and wins by source order. */
 
 html {
   scroll-behavior: smooth;
@@ -30,30 +30,44 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px #fff inset;
-  -webkit-text-fill-color: #101114;
-  caret-color: #101114;
+  -webkit-text-fill-color: #16171A;
+  caret-color: #16171A;
   transition: background-color 9999s ease-in-out 0s;
 }
 
-/* The "display voice" is now the same family as body (Manrope) — what distinguishes it
-   is weight and tracking, so give every font-display site that in one place. This lives
-   in the components layer so Tailwind's utilities layer (font-black, font-semibold, etc.)
-   still wins wherever a site sets its own weight. */
+/* font-display is the sans at a heavier weight with tighter tracking — the product's
+   headline voice. The serif (font-serif) is editorial and is never bolded. Both live in the
+   components layer so a site's own weight utility still wins. */
 @layer components {
   .font-display {
-    font-weight: 800;
+    font-weight: 600;
     letter-spacing: -0.02em;
+  }
+  .font-serif {
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 }
 
-body {
-  background-color: #FAFAF8;
-  color: #0B0D12;
+@layer base {
+  body {
+    background-color: #FFFFFF;
+    color: #16171A;
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+  :focus-visible {
+    outline: 2px solid rgba(22, 23, 26, 0.75);
+    outline-offset: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
 ::selection {
-  background-color: #FBE4D8;
-  color: #0B0D12;
+  background-color: #E4E6FB;
+  color: #16171A;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -173,10 +187,10 @@ body {
 .dt-pulse { animation: dtPulseRing 900ms ease-out; }
 /* Content swapping inside one application frame — a settle, not a cut. */
 @keyframes dtSwap {
-  from { opacity: 0; transform: translateY(10px) scale(0.992); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
-.dt-swap { animation: dtSwap 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dt-swap { animation: dtSwap 200ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 /* Scraps drifting before they're gathered — tension. */
 @keyframes dtDrift {
   0%, 100% { translate: 0 0; }
@@ -194,11 +208,10 @@ body {
 .dt-rise { animation: dtRise 14s linear infinite; }
 /* The one thing, arriving. */
 @keyframes dtLand {
-  0% { opacity: 0; transform: translateY(22px) scale(0.96); }
-  60% { opacity: 1; transform: translateY(-3px) scale(1.01); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
-.dt-land { animation: dtLand 700ms cubic-bezier(0.22, 1.2, 0.36, 1) both; }
+.dt-land { animation: dtLand 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 /* Thinking: the violet node breathes while the system reads. */
 @keyframes dtBreathe {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(109, 90, 230, 0.45); }

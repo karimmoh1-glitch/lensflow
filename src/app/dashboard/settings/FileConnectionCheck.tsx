@@ -25,15 +25,15 @@ export function FileConnectionCheck({ provider, initial }: { provider: "GOOGLE_D
     });
 
   return (
-    <div className="rounded-xl border border-border bg-paper/60 px-3 py-2.5 text-xs">
+    <div className="rounded-lg border border-border bg-paper px-3 py-2.5 text-xs">
       <div className="flex items-center justify-between gap-3">
         <p className="font-semibold text-ink/75">Connection check</p>
-        <button type="button" onClick={run} disabled={pending} className="text-2xs font-semibold text-ink/70 hover:text-ink disabled:opacity-60">
+        <button type="button" onClick={run} disabled={pending} className="text-xs font-medium text-ink/70 hover:text-ink disabled:opacity-60">
           {pending ? "Checking…" : check ? "Check again" : "Run check"}
         </button>
       </div>
-      {error && <p role="alert" className="mt-1.5 text-2xs text-warning-text">{error}</p>}
-      {!check && !error && <p className="mt-1 text-2xs text-ink/65">Confirms the account, the Daythread folder and what is in it.</p>}
+      {error && <p role="alert" className="mt-1.5 text-xs text-warning-text">{error}</p>}
+      {!check && !error && <p className="mt-1 text-xs text-ink/65">Confirms the account, the Daythread folder and what is in it.</p>}
       {check && (
         <>
           <ul className="mt-2 space-y-1.5">
@@ -42,11 +42,11 @@ export function FileConnectionCheck({ provider, initial }: { provider: "GOOGLE_D
             <Row label="Client folders" ok={check.clientFolders !== null} detail={check.clientFolders === null ? "Unknown" : `${check.clientFolders} so far`} />
           </ul>
           {check.problem ? (
-            <p className="mt-2 text-2xs text-warning-text leading-relaxed border-t border-border pt-2">{check.problem}</p>
+            <p className="mt-2 text-xs text-warning-text leading-relaxed border-t border-border pt-2">{check.problem}</p>
           ) : (
-            <p className="mt-2 text-2xs text-success-text border-t border-border pt-2">Working. Client folders can be created, shared and sent.</p>
+            <p className="mt-2 text-xs text-success-text border-t border-border pt-2">Working. Client folders can be created, shared and sent.</p>
           )}
-          <p className="mt-1 text-2xs text-ink/60">Checked {new Date(check.checkedAt).toLocaleString()}</p>
+          <p className="mt-1 text-xs text-ink/60">Checked {new Date(check.checkedAt).toLocaleString()}</p>
         </>
       )}
     </div>
@@ -59,7 +59,7 @@ function Row({ label, ok, detail, href }: { label: string; ok: boolean; detail: 
       <span aria-hidden className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${ok ? "bg-success" : "bg-warning"}`} />
       <span className="min-w-0">
         <span className="text-ink/80">{label}</span>
-        <span className="block text-2xs text-ink/65 leading-snug break-all">
+        <span className="block text-xs text-ink/65 leading-snug break-all">
           {href ? (
             <Link href={href} target="_blank" rel="noreferrer" className="hover:underline">
               {detail}

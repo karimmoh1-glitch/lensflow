@@ -27,7 +27,7 @@ function Header({ action = true }: { action?: boolean }) {
 
 function Rows({ n = 6, meta = true }: { n?: number; meta?: boolean }) {
   return (
-    <div className="rounded-xl border border-border bg-white shadow-surface divide-y divide-border">
+    <div className="rounded-lg border border-border bg-white divide-y divide-border">
       {Array.from({ length: n }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 px-4 py-3">
           <Skeleton className="w-8 h-8 rounded-full shrink-0" />
@@ -51,7 +51,7 @@ export function TodaySkeleton() {
         <Skeleton className="h-3.5 w-80" />
       </div>
       <Skeleton className="h-3.5 w-24 mb-3" />
-      <div className="rounded-xl border border-border bg-white shadow-surface p-5 flex gap-3.5">
+      <div className="rounded-lg border border-border bg-white p-5 flex gap-3.5">
         <Skeleton className="w-10 h-10 rounded-full shrink-0" />
         <div className="flex-1 space-y-2.5">
           <Skeleton className="h-4 w-1/2" />

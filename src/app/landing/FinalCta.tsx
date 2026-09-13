@@ -23,7 +23,7 @@ export function FinalCta() {
             </li>
           ))}
         </ol>
-        <p className="font-sans font-bold text-[clamp(2.4rem,5.6vw,4.4rem)] leading-[0.98] tracking-[-0.045em] text-balance">Answer first. Book first.</p>
+        <p className="font-serif font-normal text-[clamp(2.8rem,6.2vw,5rem)] leading-[1] tracking-[-0.012em] text-balance">Answer first. Book first.</p>
         <p className="mt-5 text-[1.0625rem] text-paper/60">Every inquiry in one place, with the next step ready.</p>
         <div className="mt-9 flex flex-col items-center gap-3">
           <Link

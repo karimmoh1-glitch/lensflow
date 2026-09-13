@@ -74,14 +74,14 @@ export function DeliveryPanel({
     <Card>
       <CardBody>
         <div className="flex items-center justify-between mb-3">
-          <div className="text-13 font-semibold text-ink/65">Delivery</div>
+          <div className="text-13 font-semibold text-ink">Delivery</div>
           {deliveryUrl ? <Badge tone="success">Delivered</Badge> : <Badge tone="neutral">Not delivered</Badge>}
         </div>
 
         {deliveryUrl ? (
           <div className="space-y-2">
             <div className="flex items-center gap-1.5 text-xs text-success-text">
-              <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={2} />
+              <CheckCircle2 className="w-3.5 h-3.5" strokeWidth={1.75} />
               {deliveredAt ? `Delivered ${format(deliveredAt, "MMM d, yyyy")}` : "Delivered"}
             </div>
             {deliveryNote && <p className="text-sm text-ink/70">{deliveryNote}</p>}
@@ -89,9 +89,9 @@ export function DeliveryPanel({
               href={isSafeHttpsUrl(deliveryUrl) ? deliveryUrl : undefined}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 text-sm text-accent-text hover:underline bg-black/[0.03] rounded-lg px-3 py-2.5 break-all"
+              className="flex items-center gap-2 text-sm text-accent-text hover:underline bg-ink/[0.03] rounded-lg px-3 py-2.5 break-all"
             >
-              <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
+              <ExternalLink className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} />
               {deliveryUrl}
             </a>
           </div>
@@ -111,7 +111,7 @@ export function DeliveryPanel({
                 <Button size="sm" className="w-full" onClick={sendFromStore} disabled={pending || !clientHasContact} loading={pending} loadingLabel="Sending">
                   Send {first} their files
                 </Button>
-                <button type="button" className="text-xs font-semibold text-ink/65 hover:text-ink" onClick={() => setManual(true)}>
+                <button type="button" className="text-xs font-medium text-ink/65 hover:text-ink" onClick={() => setManual(true)}>
                   Or paste a link from somewhere else
                 </button>
               </>
@@ -131,7 +131,7 @@ export function DeliveryPanel({
               Mark as delivered
             </Button>
             {fileStore && (
-              <button type="button" className="text-xs font-semibold text-ink/65 hover:text-ink" onClick={() => setManual(false)}>
+              <button type="button" className="text-xs font-medium text-ink/65 hover:text-ink" onClick={() => setManual(false)}>
                 Back to sending from {fileStore.name}
               </button>
             )}

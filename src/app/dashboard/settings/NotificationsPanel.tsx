@@ -30,16 +30,16 @@ export async function NotificationsPanel({ business }: { business: Business }) {
                     <div className={cn("text-sm", n.read ? "font-medium text-ink/80" : "font-semibold text-ink")}>{n.title}</div>
                     <div className="text-xs text-ink/65 leading-relaxed">{n.body}</div>
                   </div>
-                  <time dateTime={n.createdAt.toISOString()} suppressHydrationWarning className="text-2xs text-ink/65 shrink-0 tabular-nums">{formatDistanceToNowStrict(n.createdAt)} ago</time>
+                  <time dateTime={n.createdAt.toISOString()} suppressHydrationWarning className="text-xs text-ink/65 shrink-0 tabular-nums">{formatDistanceToNowStrict(n.createdAt)} ago</time>
                 </>
               );
-              const row = cn("flex items-start gap-3 px-4 py-3.5", !n.read && "bg-black/[0.03]");
+              const row = cn("flex items-start gap-3 px-4 py-3.5", !n.read && "bg-ink/[0.03]");
               // A notice that names a record opens it; one that does not stays plain text
               // rather than pretending to be a link.
               return (
                 <li key={n.id}>
                   {n.path ? (
-                    <Link href={`/dashboard${n.path}`} className={cn(row, "hover:bg-black/[0.03] transition-colors")}>
+                    <Link href={`/dashboard${n.path}`} className={cn(row, "hover:bg-ink/[0.03] transition-colors")}>
                       {inner}
                     </Link>
                   ) : (

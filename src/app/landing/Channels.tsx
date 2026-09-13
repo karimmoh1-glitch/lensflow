@@ -1,15 +1,15 @@
+import Link from "next/link";
 import type { CSSProperties } from "react";
 import type { RegisteredProvider } from "@/lib/integrations/registry";
 import { ChannelIcon, type ChannelKey } from "./ChannelIcon";
 import { ScrollScene } from "./Scroll";
 import { Reveal } from "./Reveal";
-import { channelStatus } from "./channelStatus";
 
 /**
  * Where clients actually write, and what Daythread does with each. Scrolling draws the
- * channels into one list: six inboxes become one conversation. The status beside every
- * channel is read from this deployment's own configuration, so the page can never claim a
- * connection a customer can't make today — the convergence is the idea; the list is the fact.
+ * channels into one list: six inboxes become one conversation. The logos carry no status
+ * stamps; which channels a deployment has switched on is stated once, on /status, and the
+ * footnote here points there.
  */
 type Row = { name: string; what: string; provider: RegisteredProvider | null; icon: ChannelKey | "zoom" | "outlook" };
 
@@ -24,12 +24,12 @@ const ROWS: Row[] = [
 ];
 
 export function Channels() {
-  const rows = ROWS.map((r) => ({ ...r, status: channelStatus(r.provider) }));
+  const rows = ROWS;
   const converging = rows.filter((r) => r.provider !== null);
   return (
     <div className="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-10 lg:gap-16 items-start">
       <Reveal className="lg:sticky lg:top-28">
-        <h2 className="font-sans font-bold text-[clamp(2.1rem,4.2vw,3.4rem)] leading-[1] tracking-[-0.04em] text-ink text-balance">Answer where they write.</h2>
+        <h2 className="font-serif font-normal text-[clamp(2.4rem,4.8vw,3.9rem)] leading-[1.02] tracking-[-0.012em] text-ink text-balance">Answer where they write.</h2>
         <p className="mt-4 text-[1.0625rem] text-ink/60 leading-relaxed max-w-md">Clients don&rsquo;t fill in forms first. They DM, they text, they reply to an old email. Daythread brings all of it into one list, sorted by who has waited longest.</p>
         <p className="mt-6 text-sm text-ink/60 max-w-md">Already use a tool for contracts and invoices? Keep it. Daythread is where the inquiry gets answered and booked.</p>
       </Reveal>
@@ -42,12 +42,11 @@ export function Channels() {
               {converging.map((r, i) => (
                 <li key={r.name} className="dt-converge flex flex-col items-center gap-1.5" style={{ "--i": i, "--n": converging.length } as CSSProperties}>
                   <Icon k={r.icon} />
-                  <span className={r.status === "Live" ? "dt-converge-label text-2xs font-medium text-success-text" : "dt-converge-label text-2xs font-medium text-ink/60"}>{r.status}</span>
                 </li>
               ))}
             </ul>
             <div className="dt-step absolute inset-x-0 bottom-0" style={{ "--a": 0.55, "--b": 0.8, "--dy": "10px" } as CSSProperties}>
-              <div className="mx-auto max-w-md rounded-xl border border-border bg-white shadow-[0_1px_0_rgba(16,17,20,0.03),0_16px_40px_-28px_rgba(16,17,20,0.3)] px-4 py-3 flex items-start gap-3">
+              <div className="mx-auto max-w-md rounded-xl border border-border bg-white shadow-elev-2 px-4 py-3 flex items-start gap-3">
                 <span className="relative mt-0.5 w-8 h-8 rounded-full bg-ink/[0.06] text-ink/75 text-2xs font-semibold flex items-center justify-center shrink-0">
                   MC
                   <span className="absolute -top-px -right-px w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-white" />
@@ -70,7 +69,7 @@ export function Channels() {
           </p>
         </ScrollScene>
 
-        <ul className="mt-10 rounded-2xl border border-border bg-white shadow-[0_1px_0_rgba(16,17,20,0.03),0_16px_40px_-28px_rgba(16,17,20,0.3)] divide-y divide-border">
+        <ul className="mt-10 rounded-2xl border border-border bg-white shadow-elev-2 divide-y divide-border">
           {rows.map((r) => (
             <li key={r.name} className="flex items-center gap-4 px-5 py-4">
               <Icon k={r.icon} />
@@ -78,11 +77,10 @@ export function Channels() {
                 <p className="text-[15px] font-semibold text-ink">{r.name}</p>
                 <p className="text-13 text-ink/60">{r.what}</p>
               </div>
-              <span className={r.status === "Live" ? "text-xs font-medium text-success-text" : "text-xs font-medium text-ink/60"}>{r.status}</span>
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-xs text-ink/60">Status is this deployment&rsquo;s, today. Beta channels work but are still being proven with early customers; Coming soon means the provider isn&rsquo;t connected here yet.</p>
+        <p className="mt-3 text-xs text-ink/65">Some channels are still rolling out. The <Link href="/status" className="underline underline-offset-2 hover:text-ink">status page</Link> lists which are switched on today.</p>
       </div>
     </div>
   );

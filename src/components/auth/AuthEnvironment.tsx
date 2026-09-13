@@ -93,7 +93,7 @@ export function AuthEnvironment() {
           );
         })}
       </svg>
-      <div className={cn("rounded-xl border bg-paper/[0.04] backdrop-blur-sm p-4 min-h-[168px] flex flex-col transition-all duration-700", reading ? "border-border shadow-[0_0_0_6px_rgba(109,90,230,0.12)]" : awake ? "border-paper/20" : "border-paper/10")}>
+      <div className={cn("rounded-lg border bg-paper/[0.04] p-4 min-h-[168px] flex flex-col transition-all duration-700", reading ? "border-border shadow-[0_0_0_6px_rgba(109,90,230,0.12)]" : awake ? "border-paper/20" : "border-paper/10")}>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-1.5 h-1.5 rounded-full transition-colors duration-500" style={{ background: brand === "#101114" ? "#FAFAF9" : brand }} />
           <span className="text-13 font-semibold text-paper/60 ">{CHANNEL[s.k].name}</span>

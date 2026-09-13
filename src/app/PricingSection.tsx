@@ -36,13 +36,13 @@ export function PricingSection({ trial = false, beta = false }: { trial?: boolea
   return (
     <section className="px-6 py-20 md:py-28 max-w-[1200px] mx-auto">
       <div className="max-w-2xl mb-8">
-        <h2 className="font-sans font-bold text-[clamp(2.1rem,4.2vw,3.4rem)] leading-[1] tracking-[-0.04em] text-ink">{beta ? <>Pro is free for a month.</> : <>Start free. Step up when it&rsquo;s obvious.</>}</h2>
+        <h2 className="font-serif font-normal text-[clamp(2.4rem,4.8vw,3.9rem)] leading-[1.02] tracking-[-0.012em] text-ink">{beta ? <>Pro is free for a month.</> : <>Start free. Step up when it&rsquo;s obvious.</>}</h2>
         {beta && <p className="mt-4 text-[1.0625rem] text-ink/60">Daythread is in beta, so every new account gets Pro free for {BETA_PRO_DAYS} days. No card.</p>}
       </div>
-      <div role="group" aria-label="Billing interval" className="mb-8 inline-flex items-center rounded-lg bg-black/[0.045] p-0.5">
+      <div role="group" aria-label="Billing interval" className="mb-8 inline-flex items-center rounded bg-ink/[0.05] p-0.5">
         {(["month", "year"] as const).map((v) => (
-          <button key={v} type="button" onClick={() => setInterval(v)} aria-pressed={interval === v} className={cn("inline-flex items-center h-8 px-3.5 rounded-md text-13 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", interval === v ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink")}>
-            {v === "month" ? "Monthly" : "Yearly"}{v === "year" && <span className={cn("ml-2 text-2xs font-semibold rounded px-1.5 py-0.5", "bg-success-soft text-success-text")}>2 months free</span>}
+          <button key={v} type="button" onClick={() => setInterval(v)} aria-pressed={interval === v} className={cn("inline-flex items-center h-8 px-3.5 rounded-sm text-13 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", interval === v ? "bg-white text-ink shadow-xs" : "text-ink/75 hover:text-ink")}>
+            {v === "month" ? "Monthly" : "Yearly"}{v === "year" && <span className="ml-2 text-xs font-medium rounded-sm px-1.5 py-0.5 bg-success-soft text-success-text">2 months free</span>}
           </button>
         ))}
       </div>
@@ -57,18 +57,18 @@ export function PricingSection({ trial = false, beta = false }: { trial?: boolea
           return (
             <RevealOnScroll key={key} delay={i * 90} className="h-full">
               <div className={cn("relative h-full rounded-2xl border p-6 md:p-7 flex flex-col", unavailable ? "border-border bg-paper" : pro ? "border-ink/80 bg-white shadow-[0_24px_60px_-32px_rgba(16,17,20,0.45)]" : "border-border bg-white")} aria-disabled={unavailable || undefined}>
-                {badge && <span className={cn("absolute -top-2.5 left-6 text-xs font-semibold rounded-md px-2 py-0.5", pro ? "bg-accent-strong text-white" : unavailable ? "bg-black/[0.06] text-ink/60" : "bg-ink text-white")}>{badge}</span>}
+                {badge && <span className={cn("absolute -top-2.5 left-6 text-xs font-semibold rounded-md px-2 py-0.5", pro ? "bg-accent-strong text-white" : unavailable ? "bg-ink/[0.06] text-ink/60" : "bg-ink text-white")}>{badge}</span>}
                 <div className="text-lg font-semibold tracking-[-0.01em] text-ink">{plan.name}</div>
                 <div className="mt-0.5 text-13 text-ink/60 leading-snug min-h-[2.5rem]">{l.who}</div>
                 <div className={cn("mt-4 flex items-baseline gap-1.5", unavailable && "opacity-60")}>
                   {betaPro ? (
                     <>
-                      <span className="font-sans font-bold text-4xl tracking-[-0.04em] text-ink">Free</span>
+                      <span className="font-sans font-semibold text-4xl tracking-[-0.025em] text-ink">Free</span>
                       <span className="text-sm text-ink/65">for 1 month, then {formatMoney(price(plan.priceCents))} / {interval === "year" ? "year" : "month"}</span>
                     </>
                   ) : (
                     <>
-                      <span className="font-sans font-bold text-4xl tracking-[-0.04em] text-ink">{formatMoney(price(plan.priceCents))}</span>
+                      <span className="font-sans font-semibold text-4xl tracking-[-0.025em] text-ink">{formatMoney(price(plan.priceCents))}</span>
                       <span className="text-sm text-ink/60">{plan.priceCents > 0 ? `/ ${interval === "year" ? "year" : "month"}` : "forever"}</span>
                     </>
                   )}

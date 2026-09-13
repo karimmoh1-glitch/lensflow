@@ -22,7 +22,7 @@ export default function DashboardError({ error, reset }: { error: Error & { dige
         <span className="w-[13px] h-[13px] rounded-full bg-accent ring-[3px] ring-paper" />
         <span className="w-px h-8 bg-gradient-to-b from-ink/10 to-transparent" />
       </div>
-      <h1 className="font-sans font-extrabold text-2xl tracking-tight text-ink">This page didn&rsquo;t load.</h1>
+      <h1 className="font-sans font-semibold text-2xl tracking-tight text-ink">This page didn&rsquo;t load.</h1>
       <p className="mt-2 text-sm text-ink/65 leading-relaxed">
         Something on our side broke while opening it. Your messages are untouched. Try once more, or head back to the inbox.
       </p>
@@ -32,7 +32,7 @@ export default function DashboardError({ error, reset }: { error: Error & { dige
           Back to inbox
         </Link>
       </div>
-      {error.digest && <p className="mt-8 text-2xs text-ink/65 tabular-nums">Reference {error.digest}</p>}
+      {error.digest && <p className="mt-8 text-xs text-ink/65 tabular-nums">Reference {error.digest}</p>}
     </div>
   );
 }

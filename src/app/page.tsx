@@ -2,7 +2,6 @@ import { Navbar } from "./Navbar";
 import { Hero } from "./landing/Hero";
 import { Story } from "./landing/Story";
 import { Automations } from "./landing/Automations";
-import { channelStatus } from "./landing/channelStatus";
 import { ProductDemo } from "./landing/ProductDemo";
 import { Channels } from "./landing/Channels";
 import { Faq, FAQ } from "./landing/Faq";
@@ -28,7 +27,8 @@ function structuredData() {
   return {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "Organization", "@id": `${SITE}/#org`, name: "Daythread", url: SITE, logo: `${SITE}/icon`, email: "support@daythread.org" },
+      { "@type": "WebSite", "@id": `${SITE}/#website`, name: "Daythread", url: SITE, publisher: { "@id": `${SITE}/#org` } },
+      { "@type": "Organization", "@id": `${SITE}/#org`, name: "Daythread", url: SITE, logo: `${SITE}/icon`, email: "support@daythread.org", founder: { "@id": `${SITE}/karim-mohamed#person` } },
       {
         "@type": "SoftwareApplication",
         name: "Daythread",
@@ -55,7 +55,7 @@ export default function LandingPage() {
       </div>
 
       <section id="flow" aria-label="From message to booked" className="relative bg-white border-y border-border scroll-mt-16 py-20 lg:py-0">
-        <Story instagram={channelStatus("INSTAGRAM")} />
+        <Story />
       </section>
 
       <section id="demo" aria-label="Try the inbox" className="relative py-20 md:py-28 bg-paper overflow-hidden scroll-mt-16">
@@ -83,7 +83,7 @@ export default function LandingPage() {
       </section>
 
       <FinalCta />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()).replace(/</g, "\\u003c") }} />
       <Footer />
     </main>
   );

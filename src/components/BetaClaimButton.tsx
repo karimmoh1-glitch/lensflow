@@ -25,7 +25,7 @@ export function BetaClaimButton({ className, label = "Claim 1 month of Pro free"
   };
   return (
     <div className="flex flex-col gap-1.5">
-      <button type="button" onClick={claim} disabled={pending} className={cn("inline-flex items-center justify-center h-11 px-5 rounded-lg bg-accent-strong text-white text-sm font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] hover:brightness-95 active:scale-[0.98] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", className)}>
+      <button type="button" onClick={claim} disabled={pending} className={cn("inline-flex items-center justify-center h-11 px-5 rounded-lg bg-accent-strong text-white text-sm font-semibold hover:brightness-95 active:scale-[0.98] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", className)}>
         {pending ? "One moment…" : label}
       </button>
       {error && <p role="alert" className="text-xs text-danger">{error}</p>}

@@ -115,24 +115,24 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
 
       <div>
         <div className="flex items-baseline justify-between gap-3">
-          <h4 className="text-13 font-semibold text-ink/65">Calendars to use with Daythread</h4>
-          <button type="button" onClick={() => load(true)} disabled={pending} className="text-2xs font-semibold text-ink/65 hover:text-ink">{busy === "refresh" ? "Refreshing…" : "Refresh list"}</button>
+          <h4 className="text-xs font-medium text-ink/65">Calendars to use with Daythread</h4>
+          <button type="button" onClick={() => load(true)} disabled={pending} className="text-xs font-medium text-ink/65 hover:text-ink">{busy === "refresh" ? "Refreshing…" : "Refresh list"}</button>
         </div>
         {state.error && <p className="mt-1 text-xs text-warning-text">{state.error}</p>}
         <ul className="mt-2 space-y-1.5">
           {state.available.map((c) => {
             const on = selected.includes(c.id);
             return (
-              <li key={c.id} className={cn("rounded-xl border px-3.5 py-2.5 flex items-center gap-3 transition-colors", on ? "border-border bg-black/[0.03]" : "border-border bg-white hover:border-ink/20")}>
+              <li key={c.id} className={cn("rounded-lg border px-3.5 py-2.5 flex items-center gap-3 transition-colors", on ? "border-border bg-ink/[0.03]" : "border-border bg-white hover:border-ink/20")}>
                 <label className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
                   <input type="checkbox" checked={on} onChange={() => toggle(c.id)} className="w-4 h-4 accent-ink" aria-label={`Use ${c.name}`} />
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-ink truncate">{c.name}{c.primary ? <span className="ml-1.5 text-13 font-semibold text-ink/65">primary</span> : null}</span>
-                    <span className="block text-2xs text-ink/65">{c.readOnly ? "Read-only · busy time only" : "Busy time blocks availability"}</span>
+                    <span className="block text-sm font-semibold text-ink truncate">{c.name}{c.primary ? <span className="ml-1.5 text-xs font-medium text-ink/65">primary</span> : null}</span>
+                    <span className="block text-xs text-ink/65">{c.readOnly ? "Read-only · busy time only" : "Busy time blocks availability"}</span>
                   </span>
                 </label>
                 {on && !c.readOnly && (
-                  <label className={cn("shrink-0 inline-flex items-center gap-1.5 text-2xs font-semibold rounded-md px-2 py-1 cursor-pointer", bookingCalendar === c.id ? "bg-ink text-white" : "text-ink/70 hover:bg-black/[0.05]")}>
+                  <label className={cn("shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold rounded-md px-2 py-1 cursor-pointer", bookingCalendar === c.id ? "bg-ink text-white" : "text-ink/70 hover:bg-ink/[0.05]")}>
                     <input type="radio" name="booking-calendar" className="sr-only" checked={bookingCalendar === c.id} onChange={() => setBookingCalendar(c.id)} />
                     {bookingCalendar === c.id ? "Bookings go here" : "Send bookings here"}
                   </label>
@@ -142,7 +142,7 @@ export function CalendarSetup({ provider, mode, onDone, reconnect }: { provider:
           })}
           {state.available.length === 0 && <li className="text-sm text-ink/70">No calendars found on this account.</li>}
         </ul>
-        <p className="mt-2 text-2xs text-ink/65">Daythread bookings stay the source of truth. Events on these calendars only block your availability; they never change a booking.</p>
+        <p className="mt-2 text-xs text-ink/65">Daythread bookings stay the source of truth. Events on these calendars only block your availability; they never change a booking.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

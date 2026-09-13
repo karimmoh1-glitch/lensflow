@@ -35,7 +35,7 @@ export function EditAutomationButton({ automation }: { automation: { id: string 
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1 text-xs font-semibold text-ink/65 hover:text-ink px-2 py-1 rounded-md hover:bg-black/[0.05]"><Pencil className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />Edit</button>
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1 text-xs font-medium text-ink/65 hover:text-ink px-2 py-1 rounded-md hover:bg-ink/[0.05]"><Pencil className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden />Edit</button>
       <AutomationSheet open={open} onClose={() => setOpen(false)} existing={automation} />
     </>
   );
@@ -76,13 +76,13 @@ function AutomationSheet({ open, onClose, existing }: { open: boolean; onClose: 
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={existing ? "Edit automation" : "New automation"} subtitle="When this happens → Daythread does this" icon={<Zap className="w-4 h-4 text-ink/75" strokeWidth={2} aria-hidden />} size="lg">
+    <BottomSheet open={open} onClose={onClose} title={existing ? "Edit automation" : "New automation"} subtitle="When this happens → Daythread does this" icon={<Zap className="w-4 h-4 text-ink/75" strokeWidth={1.75} aria-hidden />} size="lg">
       {!existing && (
         <div className="mb-5">
-          <div className="text-13 font-semibold text-ink/65 mb-2">Start from</div>
+          <div className="text-xs font-medium text-ink/65 mb-2">Start from</div>
           <div className="flex flex-wrap gap-1.5">
             {RECIPES.map((r) => (
-              <button key={r.key} type="button" onClick={() => { setRecipe(r.key); setForm(r.input); }} className={cn("text-13 font-medium px-3 py-1.5 rounded-lg border transition-colors", recipe === r.key ? "bg-ink text-white border-ink" : "border-border bg-white text-ink/75 hover:bg-black/[0.03]")}>{r.label}</button>
+              <button key={r.key} type="button" onClick={() => { setRecipe(r.key); setForm(r.input); }} className={cn("text-13 font-medium px-3 py-1.5 rounded-lg border transition-colors", recipe === r.key ? "bg-ink text-white border-ink" : "border-border bg-white text-ink/75 hover:bg-ink/[0.03]")}>{r.label}</button>
             ))}
           </div>
         </div>
@@ -106,17 +106,17 @@ function AutomationSheet({ open, onClose, existing }: { open: boolean; onClose: 
             <Input id="auto-offset" type="number" inputMode="numeric" min={0} max={1440} value={form.offsetHours} onChange={(e) => set("offsetHours", Math.max(0, Math.min(1440, Number(e.target.value) || 0)))} />
           </Field>
         )}
-        <Field id="auto-message" label="Message" hint={<span>Filled in per person: {VARS.map((v) => <button key={v} type="button" onClick={() => set("messageTemplate", `${form.messageTemplate}${form.messageTemplate.endsWith(" ") || !form.messageTemplate ? "" : " "}{{${v}}}`)} className="mr-1 rounded-md bg-black/[0.03] text-ink/75 px-1.5 py-0.5 text-2xs font-semibold">{`{{${v}}}`}</button>)}</span>}>
+        <Field id="auto-message" label="Message" hint={<span>Filled in per person: {VARS.map((v) => <button key={v} type="button" onClick={() => set("messageTemplate", `${form.messageTemplate}${form.messageTemplate.endsWith(" ") || !form.messageTemplate ? "" : " "}{{${v}}}`)} className="mr-1 rounded-md bg-ink/[0.03] text-ink/75 px-1.5 py-0.5 text-xs font-semibold">{`{{${v}}}`}</button>)}</span>}>
           <Textarea id="auto-message" rows={4} value={form.messageTemplate} onChange={(e) => set("messageTemplate", e.target.value)} className="text-[16px] md:text-sm" />
         </Field>
         {error && <p role="alert" className="text-xs font-medium text-danger-text">{error}</p>}
         <div className="flex items-center gap-2 pt-1">
           <Button onClick={save} loading={pending} loadingLabel="Saving">{existing ? "Save changes" : "Create automation"}</Button>
-          <button type="button" onClick={onClose} className="text-xs font-semibold text-ink/70 hover:text-ink px-2 py-1">Cancel</button>
-          {existing && !confirmDelete && <button type="button" onClick={() => setConfirmDelete(true)} className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-ink/65 hover:text-danger-text px-2 py-1"><Trash2 className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />Delete</button>}
+          <button type="button" onClick={onClose} className="text-xs font-medium text-ink/70 hover:text-ink px-2 py-1">Cancel</button>
+          {existing && !confirmDelete && <button type="button" onClick={() => setConfirmDelete(true)} className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-ink/65 hover:text-danger-text px-2 py-1"><Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} aria-hidden />Delete</button>}
           {existing && confirmDelete && <span className="ml-auto inline-flex items-center gap-1"><Button size="sm" variant="danger" onClick={remove} loading={pending} loadingLabel="Deleting">Delete</Button><button type="button" onClick={() => setConfirmDelete(false)} className="text-xs text-ink/65 px-2 py-1">Keep</button></span>}
         </div>
-        <p className="text-2xs text-ink/65">Sends on the channel the conversation lives on, or the client&rsquo;s email or phone. If that channel isn&rsquo;t connected, the run is recorded as not delivered — never pretended sent.</p>
+        <p className="text-xs text-ink/65">Sends on the channel the conversation lives on, or the client&rsquo;s email or phone. If that channel isn&rsquo;t connected, the run is recorded as not delivered — never pretended sent.</p>
       </div>
     </BottomSheet>
   );

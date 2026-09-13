@@ -123,7 +123,7 @@ export function Welcome({
       <header className="px-5 md:px-8 pt-5 md:pt-7 max-w-2xl w-full mx-auto">
         <div className="flex items-center justify-between gap-4">
           <DaythreadLogo />
-          <span className="text-xs font-semibold text-ink/65 tabular-nums">Step {view === "automate" ? 1 : 2} of 2</span>
+          <span className="text-xs font-medium text-ink/65 tabular-nums">Step {view === "automate" ? 1 : 2} of 2</span>
         </div>
         <div className="mt-4 h-1 rounded-full bg-ink/10 overflow-hidden" role="progressbar" aria-label="Setup progress" aria-valuemin={1} aria-valuemax={2} aria-valuenow={view === "automate" ? 1 : 2}>
           <div className="h-full rounded-full bg-ink transition-[width] duration-500 motion-reduce:transition-none" style={{ width: view === "automate" ? "50%" : "100%" }} />
@@ -134,7 +134,7 @@ export function Welcome({
         {view === "automate" ? (
           <section key="automate" className="dt-swap" aria-labelledby="automate-title">
             <p className="text-sm text-ink/60">Welcome, {firstName}.</p>
-            <h1 id="automate-title" className="mt-1.5 font-sans font-bold text-[1.75rem] md:text-[2.25rem] leading-[1.05] tracking-[-0.035em] text-ink text-balance">Let the follow-through run itself.</h1>
+            <h1 id="automate-title" className="mt-1.5 font-serif font-normal text-[2.125rem] md:text-[2.75rem] leading-[1.04] tracking-[-0.012em] text-ink text-balance">Let the follow-through run itself.</h1>
             <p className="mt-2.5 text-[15px] text-ink/65 leading-relaxed max-w-lg">Switch on the messages every booking needs. Each one goes to the client on the channel they wrote from. Change the wording any time under Automations.</p>
 
             <fieldset className="mt-7">
@@ -144,7 +144,7 @@ export function Welcome({
                   const checked = r.on || chosen.includes(r.key);
                   return (
                     <li key={r.key}>
-                      <label className={cn("flex items-start gap-3.5 rounded-xl border bg-white px-4 py-3.5 shadow-surface transition-colors", r.on ? "border-border cursor-default" : "cursor-pointer hover:border-ink/25", checked && !r.on && "border-ink/40")}>
+                      <label className={cn("flex items-start gap-3.5 rounded-xl border bg-white px-4 py-3.5 transition-colors", r.on ? "border-border cursor-default" : "cursor-pointer hover:border-ink/25", checked && !r.on && "border-ink/40")}>
                         <input
                           type="checkbox"
                           className="mt-0.5 h-4 w-4 shrink-0 accent-ink cursor-pointer disabled:cursor-default"
@@ -180,7 +180,7 @@ export function Welcome({
           </section>
         ) : (
           <section key="connect" className="dt-swap" aria-labelledby="connect-title">
-            <h1 id="connect-title" className="font-sans font-bold text-[1.75rem] md:text-[2.25rem] leading-[1.05] tracking-[-0.035em] text-ink text-balance">Connect where clients message you.</h1>
+            <h1 id="connect-title" className="font-serif font-normal text-[2.125rem] md:text-[2.75rem] leading-[1.04] tracking-[-0.012em] text-ink text-balance">Connect where clients message you.</h1>
             <p className="mt-2.5 text-[15px] text-ink/65 leading-relaxed max-w-lg">
               {wantedNames.length ? `You said clients reach you on ${list(wantedNames)}. ` : ""}Each opens the provider&rsquo;s own sign-in. New messages land in one inbox, and you reply from the same account.
               {personal?.wantsCalendar ? " Your calendar connects under Settings → Channels." : ""}
@@ -191,7 +191,7 @@ export function Welcome({
             {connectError && (
               <p role="alert" className="mt-4 rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">That connection didn&rsquo;t finish{connectError === "limit" ? " — your plan's channel limit is reached" : ""}. Nothing was saved; try again, or connect it later from Settings.</p>
             )}
-            <ul className="mt-6 rounded-xl border border-border bg-white shadow-surface divide-y divide-border">
+            <ul className="mt-6 rounded-xl border border-border bg-white divide-y divide-border">
               {channels.map((c) => {
                 const action = connect[c.provider];
                 return (
@@ -229,7 +229,7 @@ export function Welcome({
 function ProviderIcon({ provider }: { provider: IntegrationProvider }) {
   const icon = ICON[provider];
   if (icon) return <span className="shrink-0"><ChannelIcon k={icon} size={32} /></span>;
-  if (provider === "MICROSOFT_OUTLOOK") return <span aria-hidden className="shrink-0 w-8 h-8 rounded-[9px] bg-[#0F6CBD] text-white text-sm font-bold flex items-center justify-center">O</span>;
+  if (provider === "MICROSOFT_OUTLOOK") return <span aria-hidden className="shrink-0 w-8 h-8 rounded-[9px] bg-[#0F6CBD] text-white text-sm font-semibold flex items-center justify-center">O</span>;
   return <span aria-hidden className="shrink-0 w-8 h-8 rounded-[9px] bg-ink/[0.06]" />;
 }
 

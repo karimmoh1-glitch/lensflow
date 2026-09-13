@@ -30,8 +30,8 @@ export function CheckMessagesButton() {
     });
   }
   return (
-    <button type="button" onClick={run} disabled={pending} aria-label={pending ? "Checking for messages" : "Check for messages"} title={last ? `Checked ${last}` : "Check connected channels for anything missed"} className="inline-flex items-center justify-center w-8 h-8 [@media(pointer:coarse)]:w-10 [@media(pointer:coarse)]:h-10 rounded-lg text-ink/60 hover:text-ink hover:bg-black/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
-      <RefreshCw className={pending ? "w-4 h-4 animate-spin" : "w-4 h-4"} strokeWidth={2} aria-hidden />
+    <button type="button" onClick={run} disabled={pending} aria-label={pending ? "Checking for messages" : "Check for messages"} title={last ? `Checked ${last}` : "Check connected channels for anything missed"} className="inline-flex items-center justify-center w-8 h-8 [@media(pointer:coarse)]:w-10 [@media(pointer:coarse)]:h-10 rounded-lg text-ink/60 hover:text-ink hover:bg-ink/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
+      <RefreshCw className={pending ? "w-4 h-4 animate-spin" : "w-4 h-4"} strokeWidth={1.75} aria-hidden />
     </button>
   );
 }

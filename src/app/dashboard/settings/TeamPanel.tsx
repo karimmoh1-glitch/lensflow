@@ -49,25 +49,25 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
   return (
     <div className="dt-stagger">
       {!entitled && (
-        <div className="mb-8 rounded-xl border border-border bg-black/[0.03] px-5 py-5">
-          <p className="text-13 font-semibold text-ink/75">Daythread Pro</p>
-          <h2 className="mt-1.5 font-sans font-extrabold text-xl tracking-[-0.02em] text-ink">Run the inbox as a team.</h2>
+        <div className="mb-8 rounded-lg border border-border bg-ink/[0.03] px-5 py-5">
+          <p className="text-xs font-medium text-ink/65">Daythread Pro</p>
+          <h2 className="mt-1.5 font-sans font-semibold text-xl tracking-[-0.02em] text-ink">Run the inbox as a team.</h2>
           <p className="mt-1.5 text-sm text-ink/70 leading-relaxed max-w-lg">Pro puts up to {PLANS.PRO.maxTeamSeats} people on one shared inbox: everyone sees the same conversations, any thread can be assigned to whoever should answer it, and partners can be handed bookings. Business seats up to {PLANS.BUSINESS.maxTeamSeats}, with roles and internal notes.</p>
           <PaywallTrigger feature="team" source="settings-team" className="mt-4">Bring your team in →</PaywallTrigger>
         </div>
       )}
       <div className="flex items-baseline justify-between gap-3 mb-4">
-        <h2 className="font-sans font-extrabold text-lg tracking-[-0.02em] text-ink">Team</h2>
-        <span className="text-xs font-semibold text-ink/70 tabular-nums">{capped ? `${seats} of ${limits.maxTeamSeats}` : `${seats} · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></span>
+        <h2 className="font-sans font-semibold text-lg tracking-[-0.02em] text-ink">Team</h2>
+        <span className="text-xs font-medium text-ink/70 tabular-nums">{capped ? `${seats} of ${limits.maxTeamSeats}` : `${seats} · unlimited`} <span className="text-ink/65">· {PLANS[plan].name}</span></span>
       </div>
 
       {over && (
-        <div role="alert" className="mb-5 rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">
+        <div role="alert" className="mb-5 rounded-lg border border-warning/40 bg-warning-soft/60 px-4 py-3 text-sm text-ink/80">
           <span className="font-semibold text-ink">{seats} team members; {PLANS[plan].name} includes {limits.maxTeamSeats}.</span> Everyone keeps access. New invitations are paused until you upgrade or deactivate someone.{nextPlan && <Link href="/dashboard/settings?tab=subscription" className="ml-2 font-semibold text-ink/75 hover:underline">See plans →</Link>}
         </div>
       )}
       {full && !over && nextPlan && (
-        <div className="mb-5 rounded-xl border border-border bg-black/[0.03] px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="mb-5 rounded-lg border border-border bg-ink/[0.03] px-4 py-3 text-sm text-ink/80 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span><span className="font-semibold text-ink">Team is full.</span> {PLANS[plan].name} includes {limits.maxTeamSeats} team member{limits.maxTeamSeats === 1 ? "" : "s"}{pendingSeats ? ` (${pendingSeats} invitation${pendingSeats === 1 ? "" : "s"} pending)` : ""}. {PLANS[nextPlan].name} includes {limitLabel(PLANS[nextPlan].maxTeamSeats).toLowerCase()}.</span>
           <Link href="/dashboard/settings?tab=subscription" className="text-ink/75 font-semibold hover:underline">Upgrade →</Link>
         </div>
@@ -80,7 +80,7 @@ export async function TeamPanel({ business, role }: { business: Business; role: 
             {members.map((m) => (
               <div key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3.5">
                 <div className="flex items-center gap-3 flex-1 min-w-[12rem]">
-                  <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-medium shrink-0">
                     {initials(m.user.name)}
                   </div>
                   <div className="flex-1 min-w-0">

@@ -12,7 +12,7 @@ export function TemplatePreview({ text, businessName }: { text: string; business
         const m = part.match(/^\{\{\s*([a-z]+)\s*\}\}$/);
         if (!m) return <span key={i}>{part}</span>;
         if (m[1] === "business") return <span key={i}>{businessName}</span>;
-        return <span key={i} className="rounded bg-ink/[0.06] px-1 text-ink/60">{VARIABLE_LABEL[m[1]] ?? m[1]}</span>;
+        return <span key={i} className="rounded-sm bg-ink/[0.06] px-1 text-ink/80">{VARIABLE_LABEL[m[1]] ?? m[1]}</span>;
       })}
     </>
   );

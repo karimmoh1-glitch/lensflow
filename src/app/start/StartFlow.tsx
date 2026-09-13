@@ -223,7 +223,7 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
 
       <div className="flex-1 w-full max-w-2xl mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-6">
         <section key={step.key} className="dt-swap" aria-labelledby="start-title">
-          <h1 id="start-title" ref={titleRef} tabIndex={-1} className="font-sans font-bold text-[1.75rem] md:text-[2.25rem] leading-[1.05] tracking-[-0.035em] text-ink text-balance focus:outline-none">{step.title}</h1>
+          <h1 id="start-title" ref={titleRef} tabIndex={-1} className="font-serif font-normal text-[2.125rem] md:text-[2.75rem] leading-[1.04] tracking-[-0.012em] text-ink text-balance focus:outline-none">{step.title}</h1>
           {step.hint && <p className="mt-2.5 text-[15px] text-ink/65 leading-relaxed max-w-lg">{step.hint}</p>}
 
           <div className="mt-7">
@@ -247,7 +247,7 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
         </section>
       </div>
 
-      <div className="sticky bottom-0 z-10 border-t border-border bg-paper/90 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+      <div className="sticky bottom-0 z-10 border-t border-border bg-paper/90 pb-[env(safe-area-inset-bottom)]">
         <div className="w-full max-w-2xl mx-auto px-5 md:px-8 py-3 flex items-center justify-between gap-3">
           <button type="button" onClick={back} disabled={idx === 0} className="inline-flex items-center gap-1.5 h-11 px-3 -ml-3 rounded-lg text-sm font-semibold text-ink/70 hover:text-ink disabled:opacity-0 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
             <ArrowLeft className="w-4 h-4" strokeWidth={2.5} aria-hidden />Back
@@ -282,7 +282,7 @@ function Summary({ p, billingLive, prices, beta, businessUnavailable, onChoose, 
   const setup = setupPlan(p);
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-white shadow-surface px-5 py-5">
+      <div className="rounded-xl border border-border bg-white px-5 py-5">
         <h2 className="text-13 font-semibold text-ink/70">What Today will walk you through</h2>
         <ol className="mt-3 space-y-3">
           {setup.map((item, i) => (
@@ -297,9 +297,9 @@ function Summary({ p, billingLive, prices, beta, businessUnavailable, onChoose, 
         </ol>
       </div>
 
-      <div className="rounded-xl border border-border bg-white shadow-surface px-5 py-5">
+      <div className="rounded-xl border border-border bg-white px-5 py-5">
         <h2 className="text-13 font-semibold text-ink/70">Plan</h2>
-        <p className="mt-1.5 font-sans font-bold text-[1.35rem] leading-tight tracking-[-0.025em] text-ink">{rec === "FREE" ? "Start on Free." : `${planName(rec)} is the better fit.`}</p>
+        <p className="mt-1.5 font-sans font-semibold text-[1.35rem] leading-tight tracking-[-0.025em] text-ink">{rec === "FREE" ? "Start on Free." : `${planName(rec)} is the better fit.`}</p>
         <ul className="mt-3 space-y-1.5">
           {p.reasons.map((r) => (
             <li key={r} className="flex items-start gap-2.5 text-sm text-ink/75 leading-snug">

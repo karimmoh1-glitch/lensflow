@@ -28,9 +28,9 @@ export function LogoBadge({ className }: { className?: string }) {
 
 export function Logo({ className, markClassName, wordmarkClassName }: { className?: string; markClassName?: string; wordmarkClassName?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5 text-ink", className)}>
-      <LogoMark className={cn("w-6 h-6 shrink-0", markClassName)} />
-      <span className={cn("font-display text-lg tracking-tight", wordmarkClassName)}>Daythread</span>
+    <span className={cn("inline-flex items-center gap-2 text-ink", className)}>
+      <LogoMark className={cn("w-[22px] h-[22px] shrink-0", markClassName)} />
+      <span className={cn("font-sans font-semibold text-[17px] tracking-[-0.025em]", wordmarkClassName)}>Daythread</span>
     </span>
   );
 }

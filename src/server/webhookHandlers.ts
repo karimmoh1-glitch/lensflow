@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { handleZoomInboxPayload, type ZoomInboxPayload } from "@/server/zoomChat";
 import { prisma } from "@/lib/db";
 import { handleStripeEvent } from "@/server/stripeEvents";
 import { handleStripeConnectEvent } from "@/server/stripeConnectEvents";
@@ -12,6 +13,7 @@ import type { CalendlyWebhookPayload } from "@/lib/calendly";
  */
 export function webhookRetryHandlers(): Record<string, (payload: unknown) => Promise<void>> {
   return {
+    zoom: async (payload) => { await handleZoomInboxPayload(payload as ZoomInboxPayload); },
     stripe: async (payload) => { await handleStripeEvent(payload as Stripe.Event); },
     stripe_connect: async (payload) => { await handleStripeConnectEvent(payload as Stripe.Event); },
     calendly: async (payload) => {

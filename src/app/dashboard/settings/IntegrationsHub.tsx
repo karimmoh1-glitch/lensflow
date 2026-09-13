@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { zoomChatSendGranted } from "@/lib/zoom";
 import { formatDistanceToNowStrict } from "date-fns";
 import { PROVIDERS, GROUPS, comingSoonFor, providerConfigured, providerMaturity, displayStatus, type ProviderSpec, type RegisteredProvider } from "@/lib/integrations/registry";
 import { accessGated } from "@/lib/integrations/flags";
@@ -50,7 +51,7 @@ const DESCRIPTION: Partial<Record<IntegrationProvider, string>> = {
   DROPBOX: "A Daythread app folder in your Dropbox with a folder per client. Files stay in Dropbox.",
   WEBSITE: "Your public booking page and contact form. Inquiries and bookings arrive as conversations.",
   SLACK: "New inquiries and bookings posted to a channel you choose. Names and times, never the message.",
-  ZOOM: "A Zoom meeting on any booking, made with your own account. The client gets the join link; you start it from the booking.",
+  ZOOM: "A Zoom meeting on any booking, and Zoom Chat messages from clients in your Inbox. Made with your own account.",
 };
 const CAPS: Partial<Record<IntegrationProvider, string[]>> = {
   EMAIL: ["Inbox sync", "Send replies", "Threads"],
@@ -67,7 +68,7 @@ const CAPS: Partial<Record<IntegrationProvider, string[]>> = {
   DROPBOX: ["Folder per client", "File list"],
   WEBSITE: ["Inquiries", "Bookings"],
   SLACK: ["New inquiry", "New booking", "Connection alerts"],
-  ZOOM: ["Meeting per booking", "Moves with the booking", "Removed when canceled"],
+  ZOOM: ["Meeting per booking", "Client DMs in the Inbox", "Reply from Daythread"],
 };
 const ERRORS: Record<string, string> = {
   denied: "could not be connected. The authorization was canceled before it finished — try connecting again.",
@@ -220,7 +221,9 @@ export async function IntegrationsHub({ business, role, connected, connectError,
       <Details rows={[
         ["Account", zoomRow.externalAccount ?? ((zoomRow.settings ?? {}) as { name?: string }).name ?? "—"],
         ["Last changed", zoomRow.updatedAt ? `${formatDistanceToNowStrict(zoomRow.updatedAt)} ago` : "—"],
-      ]} note="Open a booking and press Create Zoom meeting. The join link goes to your client and your calendars; your own start link is fetched from Zoom only when you press Start. Rescheduling moves the meeting and canceling the booking removes it." />
+        ["Chat replies", zoomChatSendGranted(zoomRow.scopes) ? "On" : "Reconnect Zoom to allow replies from the Inbox"],
+        ["Last chat event", zoomRow.lastWebhookAt ? `${formatDistanceToNowStrict(zoomRow.lastWebhookAt)} ago` : "None yet"],
+      ]} note="Open a booking and press Create Zoom meeting. The join link goes to your client and your calendars; your own start link is fetched from Zoom only when you press Start. Rescheduling moves the meeting and canceling the booking removes it. Direct messages from people outside your Zoom account appear in the Inbox, and replies go out as you; chats with your own colleagues stay in Zoom." />
     );
     if (provider === "CALENDLY" && calendlyRow) return (
       <Details rows={[

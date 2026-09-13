@@ -29,7 +29,7 @@ export type MessageCategory = "PRIORITY" | "AUTOMATED" | "PROMOTIONAL" | "VENDOR
 export type SenderRule = { kind: "email" | "domain"; value: string; category: MessageCategory };
 
 export type ClassifyInput = {
-  channel: "EMAIL" | "SMS" | "WHATSAPP" | "INSTAGRAM" | "WEBSITE" | "PHONE";
+  channel: "EMAIL" | "SMS" | "WHATSAPP" | "INSTAGRAM" | "WEBSITE" | "PHONE" | "ZOOM";
   senderEmail?: string | null;
   senderName?: string | null;
   subject?: string | null;

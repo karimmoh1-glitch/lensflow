@@ -10,6 +10,7 @@ import { reportFailure } from "@/lib/observe";
 import type { ChannelType, MessageStatus } from "@prisma/client";
 import { platformFromNumber } from "@/lib/twilio";
 import { smsConsent, OPTED_OUT_MESSAGE } from "@/lib/smsConsent";
+import { zoomToken, sendZoomChatMessage, zoomChatSendGranted, userFacingZoomChatError, ZOOM_CHAT_MAX_CHARS } from "@/lib/zoom";
 
 /**
  * The one way a message leaves Daythread for a customer. Used by the composer, the
@@ -36,7 +37,7 @@ export type Delivery = {
   error?: string;
   /** Short machine-readable reason stored on the message row ("window_closed", "not_connected"…). */
   statusDetail?: string;
-  via: "gmail" | "outlook" | "provider" | "instagram" | "whatsapp" | "sms" | "none";
+  via: "gmail" | "outlook" | "provider" | "instagram" | "whatsapp" | "sms" | "zoom" | "none";
 };
 
 export async function deliverToCustomer(params: {
@@ -142,6 +143,25 @@ export async function deliverToCustomer(params: {
     }
   }
 
+  if (channel === "ZOOM") {
+    const zm = await prisma.integration.findUnique({ where: { businessId_provider: { businessId, provider: "ZOOM" } } });
+    if (!zm || zm.status === "NOT_CONNECTED" || !zm.externalId) return { status: "NOT_DELIVERED", error: "Zoom isn't connected for this business.", statusDetail: "not_connected", via: "none" };
+    if (zm.status === "NEEDS_ATTENTION" || !zm.refreshToken) return { status: "NOT_DELIVERED", error: "Zoom needs to be reconnected before replies can be sent.", statusDetail: "reauth_required", via: "none" };
+    // A connection made before chat permissions were added can't send; Zoom would refuse.
+    if (!zoomChatSendGranted(zm.scopes)) return { status: "NOT_DELIVERED", error: "Reconnect Zoom under Settings → Integrations and approve the chat permissions to reply from Daythread.", statusDetail: "scope_missing", via: "none" };
+    if (body.length > ZOOM_CHAT_MAX_CHARS) return { status: "NOT_DELIVERED", error: `Zoom Chat messages can be at most ${ZOOM_CHAT_MAX_CHARS.toLocaleString()} characters. Shorten the reply and send again.`, statusDetail: "too_long", via: "none" };
+    try {
+      const sent = await sendZoomChatMessage(await zoomToken(zm), to, body);
+      return { status: "SENT", providerMessageId: sent.id, statusDetail: "accepted", via: "zoom" };
+    } catch (err) {
+      const revoked = err instanceof OAuthError && (err.revoked || err.code === "no_refresh_token");
+      const forbidden = err instanceof OAuthError && (err.status === 403 || err.code === "4711");
+      if (revoked || forbidden) await prisma.integration.update({ where: { id: zm.id }, data: { status: "NEEDS_ATTENTION", lastError: forbidden ? "Zoom chat permission missing — reconnect and approve it" : "Zoom needs reconnecting.", lastErrorAt: new Date() } });
+      await reportFailure("delivery", "Zoom Chat send failed", { businessId, provider: "ZOOM", error: err });
+      return { status: "FAILED", error: userFacingZoomChatError(err), statusDetail: "provider_rejected", via: "zoom" };
+    }
+  }
+
   let from: string | null | undefined;
   if (channel === "SMS") {
     // Someone who replied STOP has withdrawn consent. Texting them anyway is unlawful in
@@ -168,5 +188,5 @@ export async function deliverToCustomer(params: {
 }
 
 export function channelLabel(channel: ChannelType): string {
-  return { EMAIL: "Email", SMS: "SMS", WHATSAPP: "WhatsApp", INSTAGRAM: "Instagram", WEBSITE: "Website", PHONE: "Phone" }[channel];
+  return ({ EMAIL: "Email", SMS: "SMS", WHATSAPP: "WhatsApp", INSTAGRAM: "Instagram", WEBSITE: "Website", PHONE: "Phone", ZOOM: "Zoom" } satisfies Record<ChannelType, string>)[channel];
 }

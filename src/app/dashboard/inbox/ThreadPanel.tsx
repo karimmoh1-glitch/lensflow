@@ -337,15 +337,17 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
                   meta={
                     <>
                       {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
-                      {m.status === "NOT_DELIVERED" && <span className="text-warning-text">Not delivered — {CHANNEL_META[conversation.channel].label} isn&rsquo;t connected · </span>}
+                      {m.status === "NOT_DELIVERED" && <span className="text-warning-text">Not delivered — {m.statusDetail === "too_long" ? "too long for Zoom Chat" : m.statusDetail === "scope_missing" ? "reconnect Zoom to allow chat replies" : <>{CHANNEL_META[conversation.channel].label} isn&rsquo;t connected</>} · </span>}
                       {m.status === "DELIVERED" && m.direction === "OUTBOUND" && <span className="text-success-text">Delivered · </span>}
                       {m.aiDrafted && <span className="text-signal-text">AI drafted · </span>}
-                      {m.direction === "OUTBOUND" && !m.sentByUserId && !m.aiDrafted && <span className="text-signal-text">Sent by Daythread · </span>}
+                      {m.direction === "OUTBOUND" && m.statusDetail === "sent_in_zoom" && <span>Sent in Zoom · </span>}
+                      {m.direction === "OUTBOUND" && !m.sentByUserId && !m.aiDrafted && m.statusDetail !== "sent_in_zoom" && <span className="text-signal-text">Sent by Daythread · </span>}
+                      {m.editedAt && !m.deletedAt && <span>Edited · </span>}
                       <time dateTime={m.createdAt.toISOString()}>{format(toZonedDisplayDate(m.createdAt, tz), "h:mm a")}</time>
                     </>
                   }
                 >
-                  <MessageBody body={m.body} outbound={m.direction === "OUTBOUND"} />
+                  {m.deletedAt ? <p className="text-sm italic text-ink/60">Message deleted in Zoom.</p> : <MessageBody body={m.body} outbound={m.direction === "OUTBOUND"} />}
                   {m.direction === "INBOUND" && isPerson && <MessageSummary messageId={m.id} outbound={false} initial={m.summary ?? null} initialSource={m.summarySource === "ai" ? "ai" : m.summarySource === "rules" ? "rules" : null} />}
                 </MessageBubble>
               </div>

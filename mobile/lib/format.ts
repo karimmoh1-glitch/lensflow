@@ -13,5 +13,6 @@ export const CHANNEL: Record<string, { label: string; icon: keyof typeof Ionicon
   WHATSAPP: { label: "WhatsApp", icon: "logo-whatsapp" },
   WEBSITE: { label: "Website", icon: "globe-outline" },
   PHONE: { label: "Phone", icon: "call-outline" },
+  ZOOM: { label: "Zoom", icon: "videocam-outline" },
 };
 export const channelLabel = (c: string | null | undefined) => (c ? CHANNEL[c]?.label ?? c : "");

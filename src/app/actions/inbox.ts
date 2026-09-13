@@ -126,18 +126,19 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
   // Only ever marked SENT once the provider actually confirms it — a failed send keeps
   // the draft text intact (the caller still has it) and the message row records exactly
   // what went wrong instead of silently pretending it went out.
+  const record = { conversationId, direction: "OUTBOUND" as const, body, aiDrafted, status: delivery.status, sentByUserId: ctxSession.userId, providerMessageId: delivery.providerMessageId };
   await prisma.$transaction([
-    prisma.message.create({
-      data: {
-        conversationId,
-        direction: "OUTBOUND",
-        body,
-        aiDrafted,
-        status: delivery.status,
-        sentByUserId: ctxSession.userId,
-        providerMessageId: delivery.providerMessageId,
-      },
-    }),
+    // A provider that reports our own send back on its webhook (Zoom Team Chat) can store the
+    // message under its id before this line runs. Keyed on that id, the reply is recorded
+    // once either way, with who sent it.
+    delivery.providerMessageId
+      ? prisma.message.upsert({
+          where: { conversationId_providerMessageId: { conversationId, providerMessageId: delivery.providerMessageId } },
+          create: record,
+          // Sent from Daythread, not typed in Zoom: the echo's "sent_in_zoom" note no longer applies.
+          update: { aiDrafted, sentByUserId: ctxSession.userId, status: delivery.status, statusDetail: null },
+        })
+      : prisma.message.create({ data: record }),
     prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
     // The lead counts as answered only when something actually reached them.
     ...(delivery.status === "SENT" ? [prisma.lead.updateMany({ where: { conversationId }, data: { respondedAt: new Date(), status: "CONTACTED" as const } })] : []),

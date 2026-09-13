@@ -20,7 +20,7 @@ export type MessageState = {
   detail: string | null;
 };
 
-const CHANNEL_LABEL: Record<ChannelType, string> = { EMAIL: "Email", SMS: "SMS", WHATSAPP: "WhatsApp", INSTAGRAM: "Instagram", WEBSITE: "Website", PHONE: "Phone" };
+const CHANNEL_LABEL: Record<ChannelType, string> = { EMAIL: "Email", SMS: "SMS", WHATSAPP: "WhatsApp", INSTAGRAM: "Instagram", WEBSITE: "Website", PHONE: "Phone", ZOOM: "Zoom" };
 
 /**
  * Channels whose provider tells us what happened after the send. On those, "Sent" is the

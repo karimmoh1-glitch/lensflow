@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import type { ChannelType } from "@prisma/client";
 import { deliverToCustomer, type Delivery } from "@/server/deliver";
 import { automationsEntitled, planLimits } from "@/lib/billing";
 import { toZonedDisplayDate, firstName } from "@/lib/utils";
@@ -186,7 +187,7 @@ type Ctx = {
   date: string | null;
   time: string | null;
   amount: string | null;
-  conversation: { id: string; channel: "EMAIL" | "SMS" | "WHATSAPP" | "INSTAGRAM" | "WEBSITE" | "PHONE"; externalHandle: string | null } | null;
+  conversation: { id: string; channel: ChannelType; externalHandle: string | null } | null;
 };
 
 async function loadContext(businessId: string, target: Target): Promise<Ctx | null> {

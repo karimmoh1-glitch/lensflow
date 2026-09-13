@@ -472,6 +472,7 @@ enum ChannelType {
   WHATSAPP
   WEBSITE
   PHONE
+  ZOOM // Zoom Team Chat direct messages with people outside the connected Zoom account
 }
 
 model Conversation {
@@ -596,6 +597,12 @@ model Message {
   statusDetail     String?
   deliveredAt      DateTime?
   readAt           DateTime?
+  /// When the author changed this message on the provider (Zoom Team Chat edits). `body`
+  /// holds the current text.
+  editedAt  DateTime?
+  /// When the author deleted this message on the provider. The text is removed from `body`
+  /// and `rawBody`; the row stays so the thread's history and order remain honest.
+  deletedAt DateTime?
 
   @@index([conversationId, createdAt])
   @@index([providerMessageId])

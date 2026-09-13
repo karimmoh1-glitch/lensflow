@@ -37,7 +37,7 @@ type Filter = "all" | "unread" | "unanswered";
 type Cat = "all" | "automated" | "promotions" | "vendors" | "internal" | "spam";
 type ChannelFilter = "all" | ChannelType;
 
-const CHANNELS: ChannelType[] = ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS", "WEBSITE"];
+const CHANNELS: ChannelType[] = ["EMAIL", "INSTAGRAM", "WHATSAPP", "SMS", "ZOOM", "WEBSITE"];
 const CAT_TO_CATEGORY: Record<Exclude<Cat, "all">, ConversationCategory> = { automated: "AUTOMATED", promotions: "PROMOTIONAL", vendors: "VENDOR", internal: "INTERNAL", spam: "SPAM" };
 const CATEGORY_LABEL: Record<ConversationCategory, string> = { PRIORITY: "Priority", AUTOMATED: "Automated", PROMOTIONAL: "Promotion", VENDOR: "Vendor", INTERNAL: "Internal", SPAM: "Spam" };
 

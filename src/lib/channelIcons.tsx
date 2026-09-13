@@ -1,4 +1,4 @@
-import { MessageSquare, Mail, Phone, MessageCircle, Globe } from "lucide-react";
+import { MessageSquare, Mail, Phone, MessageCircle, Globe, Video } from "lucide-react";
 import type { ChannelType } from "@prisma/client";
 
 function CameraGlyph({ className }: { className?: string }) {
@@ -23,6 +23,7 @@ export const CHANNEL_META: Record<ChannelType, { label: string; icon: IconCompon
   WHATSAPP: { label: "WhatsApp", icon: MessageCircle, bg: "bg-[#25D366]" },
   PHONE: { label: "Phone", icon: Phone, bg: "bg-[#0D9488]" },
   WEBSITE: { label: "Website", icon: Globe, bg: "bg-ink/70" },
+  ZOOM: { label: "Zoom", icon: Video, bg: "bg-[#0B5CFF]" },
 };
 
 export function ChannelBadge({ channel, className }: { channel: ChannelType; className?: string }) {

@@ -116,6 +116,26 @@ export async function activateIntegration(params: {
   return result;
 }
 
+/**
+ * A sync just succeeded on this row. A connection that was only failing to sync is healthy
+ * again. One that needed attention held no plan slot while it was down, so it takes one back
+ * the only way any row becomes CONNECTED — through the locked quota check — and stays where
+ * it was when the plan is full. Background syncs used to write CONNECTED directly, which let
+ * a workspace over its limit quietly keep more connections than it pays for.
+ */
+export async function settleAfterSuccessfulSync(row: { id: string; businessId: string; provider: IntegrationProvider; status: IntegrationStatus }): Promise<IntegrationStatus> {
+  if (row.status === "CONNECTED") return "CONNECTED";
+  if (row.status === "SYNC_ERROR") {
+    await prisma.integration.update({ where: { id: row.id }, data: { status: "CONNECTED" } });
+    return "CONNECTED";
+  }
+  if (row.status === "NOT_CONNECTED" || row.status === "DEMO") return row.status;
+  const activation = await activateIntegration({ businessId: row.businessId, provider: row.provider, create: {}, update: {} });
+  if (activation.ok) return "CONNECTED";
+  await prisma.integration.update({ where: { id: row.id }, data: { lastError: limitMessage(activation.usage), lastErrorAt: new Date() } });
+  return row.status;
+}
+
 /** The sentence shown when a connection is refused for the plan. */
 export function limitMessage(usage: IntegrationUsage): string {
   const plan = PLANS[usage.plan];

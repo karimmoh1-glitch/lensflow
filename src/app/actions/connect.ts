@@ -33,7 +33,7 @@ import { smsEntitled } from "@/lib/billing";
 import { track } from "@/lib/analytics";
 import { reportFailure } from "@/lib/observe";
 import { disconnectGoogle } from "@/app/actions/googleAuth";
-import { activateIntegration, canActivate, limitMessage } from "@/server/integrationQuota";
+import { activateIntegration, canActivate, limitMessage, settleAfterSuccessfulSync } from "@/server/integrationQuota";
 import { syncCalendarNow } from "@/app/actions/calendars";
 import { z } from "zod";
 import type { IntegrationProvider } from "@prisma/client";
@@ -195,7 +195,8 @@ export async function selectSlackChannel(channelId: string, session?: SessionPay
     if (!chosen) return { error: "That channel isn't available to the Daythread app." };
     if (!chosen.isMember) await joinSlackChannel(row.accessToken, chosen.id);
     const settings = (row.settings ?? {}) as SlackSettings;
-    await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, channelId: chosen.id, channelName: chosen.name, lastPostError: null }, status: "CONNECTED", lastError: null, lastErrorAt: null, lastSyncStatus: null } });
+    await prisma.integration.update({ where: { id: row.id }, data: { settings: { ...settings, channelId: chosen.id, channelName: chosen.name, lastPostError: null }, lastError: null, lastErrorAt: null, lastSyncStatus: null } });
+    await settleAfterSuccessfulSync(row);
     const posted = await postToSlack(ctx.business.id, { kind: "integration", title: "Daythread connected", body: `New inquiries and bookings for ${ctx.business.name} will be posted here.` });
     if (!posted) return { error: "The channel was saved but the first message didn't go through. Check the app's permissions in Slack." };
     await recordAudit({ businessId: ctx.business.id, actorId: ctx.session.userId, action: "integration.slack_channel_set", targetType: "integration", targetId: row.id, metadata: { channel: chosen.name } });

@@ -72,7 +72,7 @@ export function InstagramDeliveryCheck({ initial }: { initial: DeliveryCheck | n
             ))}
           </ul>
           <p className="mt-2 text-2xs text-ink/75 leading-relaxed border-t border-border pt-2">{check.verdict}</p>
-          <p className="mt-1 text-2xs text-ink/50">Checked {new Date(check.checkedAt).toLocaleString()}</p>
+          <p className="mt-1 text-2xs text-ink/60">Checked {new Date(check.checkedAt).toLocaleString()}</p>
         </>
       )}
     </div>

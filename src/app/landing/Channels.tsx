@@ -32,7 +32,7 @@ export function Channels() {
       <Reveal className="lg:sticky lg:top-28">
         <h2 className="font-sans font-bold text-[clamp(2.1rem,4.2vw,3.4rem)] leading-[1] tracking-[-0.04em] text-ink text-balance">Answer where they write.</h2>
         <p className="mt-4 text-[1.0625rem] text-ink/60 leading-relaxed max-w-md">Clients don&rsquo;t fill in forms first. They DM, they text, they reply to an old email. Daythread brings all of it into one list, sorted by who has waited longest.</p>
-        <p className="mt-6 text-sm text-ink/55 max-w-md">Already use a tool for contracts and invoices? Keep it. Daythread is where the inquiry gets answered and booked.</p>
+        <p className="mt-6 text-sm text-ink/60 max-w-md">Already use a tool for contracts and invoices? Keep it. Daythread is where the inquiry gets answered and booked.</p>
       </Reveal>
       <ul className="rounded-2xl border border-border bg-white shadow-[0_1px_0_rgba(16,17,20,0.03),0_16px_40px_-28px_rgba(16,17,20,0.3)] divide-y divide-border">
         {ROWS.map((r) => {
@@ -42,9 +42,9 @@ export function Channels() {
               <Icon k={r.icon} />
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-semibold text-ink">{r.name}</p>
-                <p className="text-13 text-ink/55">{r.what}</p>
+                <p className="text-13 text-ink/60">{r.what}</p>
               </div>
-              <span className={s === "Live" ? "text-xs font-medium text-success-text" : "text-xs font-medium text-ink/45"}>{s}</span>
+              <span className={s === "Live" ? "text-xs font-medium text-success-text" : "text-xs font-medium text-ink/60"}>{s}</span>
             </li>
           );
         })}

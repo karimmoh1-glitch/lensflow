@@ -378,7 +378,7 @@ function NotYet({ name, summary }: { name: string; summary: string }) {
         <h3 className="text-[15px] font-semibold text-ink/70">{name}</h3>
         <span className="inline-flex items-center text-2xs font-bold rounded-md px-2 py-0.5 bg-black/[0.05] text-ink/60">Coming soon</span>
       </div>
-      <p className="mt-1 text-sm text-ink/55 leading-snug">{summary}</p>
+      <p className="mt-1 text-sm text-ink/60 leading-snug">{summary}</p>
     </article>
   );
 }

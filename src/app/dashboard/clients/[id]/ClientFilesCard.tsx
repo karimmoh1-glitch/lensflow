@@ -66,10 +66,10 @@ export async function ClientFilesCard({ businessId, clientId }: { businessId: st
                         ) : (
                           f.name
                         )}
-                        {f.isFolder ? <span className="text-ink/50"> · folder</span> : null}
+                        {f.isFolder ? <span className="text-ink/60"> · folder</span> : null}
                       </li>
                     ))}
-                    {s.files.length > 8 && <li className="text-2xs text-ink/55">and {s.files.length - 8} more in the folder</li>}
+                    {s.files.length > 8 && <li className="text-2xs text-ink/60">and {s.files.length - 8} more in the folder</li>}
                   </ul>
                 )}
               </div>

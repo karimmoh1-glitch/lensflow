@@ -139,11 +139,11 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                     </p>
                   </div>
                   <div className="sm:text-right shrink-0">
-                    <div className={cn("text-[15px] font-semibold tabular-nums", p.status === "REFUNDED" ? "text-ink/50 line-through" : "text-ink")}>{formatMoneyExact(p.amountCents, p.currency)}</div>
+                    <div className={cn("text-[15px] font-semibold tabular-nums", p.status === "REFUNDED" ? "text-ink/60 line-through" : "text-ink")}>{formatMoneyExact(p.amountCents, p.currency)}</div>
                     <div className="text-2xs text-ink/60">{format(when, "MMM d, yyyy")}</div>
                   </div>
                   {p.booking && (
-                    <Link href={`/dashboard/bookings/${p.booking.id}`} aria-label="Open booking" className="hidden sm:inline-flex text-ink/40 hover:text-ink">
+                    <Link href={`/dashboard/bookings/${p.booking.id}`} aria-label="Open booking" className="hidden sm:inline-flex text-ink/60 hover:text-ink">
                       <ChevronRight className="w-4 h-4" strokeWidth={2} />
                     </Link>
                   )}

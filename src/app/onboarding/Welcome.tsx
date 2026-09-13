@@ -157,7 +157,7 @@ export function Welcome({
                             <span className="text-sm font-semibold text-ink">{r.label}</span>
                             {r.on && <span className="inline-flex items-center gap-1 text-xs font-medium text-success-text shrink-0"><Check className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden />Already on</span>}
                           </span>
-                          <span className="block text-13 text-ink/55">{r.when}</span>
+                          <span className="block text-13 text-ink/60">{r.when}</span>
                           <span className="mt-2 block rounded-lg bg-paper px-3 py-2 text-13 text-ink/75 leading-relaxed">
                             <TemplatePreview text={r.template} businessName={businessName} />
                           </span>
@@ -198,7 +198,7 @@ export function Welcome({
                   <li key={c.provider} className="px-4 py-3.5 flex items-center gap-3.5">
                     <ProviderIcon provider={c.provider} />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold text-ink">{c.name}{c.wanted && !c.connected && <span className="ml-2 text-xs font-medium text-ink/55">You use this</span>}</div>
+                      <div className="text-sm font-semibold text-ink">{c.name}{c.wanted && !c.connected && <span className="ml-2 text-xs font-medium text-ink/60">You use this</span>}</div>
                       <div className="text-13 text-ink/60">{c.note ?? BLURB[c.provider]}</div>
                     </div>
                     {c.connected ? (
@@ -219,7 +219,7 @@ export function Welcome({
               <Button size="lg" onClick={finish} loading={pending} loadingLabel="Opening Today">{connectedCount > 0 ? "Open Today" : "Continue to Today"} <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden /></Button>
               <Button size="lg" variant="ghost" onClick={() => setView("automate")} disabled={pending}>Back</Button>
             </div>
-            <p className="mt-4 text-xs text-ink/55 max-w-md">Today keeps a short setup list — services and hours, your calendar, anything you skip here — until it&rsquo;s done.</p>
+            <p className="mt-4 text-xs text-ink/60 max-w-md">Today keeps a short setup list — services and hours, your calendar, anything you skip here — until it&rsquo;s done.</p>
           </section>
         )}
       </div>
@@ -258,10 +258,10 @@ function PlanBlock({ personal, pending, onStart, onFree }: { personal: PersonalW
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Button variant="secondary" onClick={() => onStart(plan)} loading={pending} loadingLabel="One moment">{trial ? "Start the 7-day Pro trial" : `Start ${planName(plan)}`}</Button>
           <Button variant="ghost" onClick={() => { onFree(); setDismissed(true); }} disabled={pending}>Stay on Free</Button>
-          <p className="basis-full text-xs text-ink/55">{trial ? "Card required. No charge today; cancel before day 8 and you pay nothing." : "Cancel any time from Settings → Subscription."}</p>
+          <p className="basis-full text-xs text-ink/60">{trial ? "Card required. No charge today; cancel before day 8 and you pay nothing." : "Cancel any time from Settings → Subscription."}</p>
         </div>
       ) : (
-        <p className="mt-2 text-xs text-ink/55">{personal.billingLive ? "Ask the workspace owner to upgrade when you're ready." : "Upgrades aren't open on this deployment yet, so you're on Free."}</p>
+        <p className="mt-2 text-xs text-ink/60">{personal.billingLive ? "Ask the workspace owner to upgrade when you're ready." : "Upgrades aren't open on this deployment yet, so you're on Free."}</p>
       )}
     </div>
   );

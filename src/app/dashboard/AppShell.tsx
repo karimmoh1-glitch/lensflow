@@ -37,16 +37,16 @@ import { Search } from "lucide-react";
 // should draw the eye there is where you are, and the active pill already says it.
 type NavItem = { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[]; group: "work" | "automate" | "workspace"; lower?: boolean; requires?: "payments" };
 const BASE_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Today", icon: Home, tone: "text-ink/55", group: "work" },
-  { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-ink/55", group: "work" },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-ink/55", group: "work" },
-  { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-ink/55", group: "work" },
-  { href: "/dashboard/clients", label: "People", icon: Users, tone: "text-ink/55", group: "work" },
+  { href: "/dashboard", label: "Today", icon: Home, tone: "text-ink/60", group: "work" },
+  { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-ink/60", group: "work" },
+  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-ink/60", group: "work" },
+  { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-ink/60", group: "work" },
+  { href: "/dashboard/clients", label: "People", icon: Users, tone: "text-ink/60", group: "work" },
   // Only for a workspace whose Stripe account is connected: an empty ledger is not a destination.
-  { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-ink/55", group: "work", requires: "payments" },
-  { href: "/dashboard/agent", label: "Assistant", icon: ListChecks, tone: "text-ink/55", group: "automate" },
-  { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-ink/55", group: "automate" },
-  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/55", group: "workspace", roles: ["OWNER", "ADMIN"], lower: true },
+  { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-ink/60", group: "work", requires: "payments" },
+  { href: "/dashboard/agent", label: "Assistant", icon: ListChecks, tone: "text-ink/60", group: "automate" },
+  { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-ink/60", group: "automate" },
+  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/60", group: "workspace", roles: ["OWNER", "ADMIN"], lower: true },
 ];
 const GROUP_LABEL: Record<"work" | "automate" | "workspace", string> = { work: "", automate: "Runs for you", workspace: "" };
 const navFor = (role: Role, showPayments: boolean) => BASE_NAV.filter((item) => (!item.roles || item.roles.includes(role)) && (item.requires !== "payments" || showPayments));
@@ -99,7 +99,7 @@ function NavLinks({ pathname, search, role, showPayments, onNavigate }: { pathna
       <div aria-hidden className="dt-nav-indicator" style={{ transform: `translateY(${indicator.y}px)`, opacity: indicator.visible ? 1 : 0 }} />
       {groups.map(({ g, items }, gi) => (
         <div key={g} className={cn(gi > 0 && "mt-5")}>
-          {GROUP_LABEL[g] && <div className="px-2.5 pb-1 text-xs font-medium text-ink/55">{GROUP_LABEL[g]}</div>}
+          {GROUP_LABEL[g] && <div className="px-2.5 pb-1 text-xs font-medium text-ink/60">{GROUP_LABEL[g]}</div>}
           <div className="space-y-0.5">{items.map(link)}</div>
         </div>
       ))}

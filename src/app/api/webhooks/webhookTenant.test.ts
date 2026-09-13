@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
-import { createHmac } from "crypto";
+import { createHash, createHmac } from "crypto";
 import { prisma } from "@/lib/db";
 
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
@@ -47,8 +47,11 @@ describe("an Instagram envelope must be signed by the Instagram app", () => {
   const IG = "instagram_secret_for_dms";
   let POST: (req: Request) => Promise<Response>;
   const sign = (body: string, secret: string) => "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
+  // Only this suite's events are cleaned up; the Meta route suite shares the table in parallel.
+  const posted = new Set<string>();
   const post = (body: object, secret: string) => {
     const raw = JSON.stringify(body);
+    posted.add(createHash("sha256").update(raw).digest("hex"));
     return POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sign(raw, secret), "content-type": "application/json" } }));
   };
 
@@ -57,9 +60,8 @@ describe("an Instagram envelope must be signed by the Instagram app", () => {
     vi.stubEnv("INSTAGRAM_APP_SECRET", IG);
     vi.stubEnv("META_WEBHOOK_VERIFY_TOKEN", "verify");
     ({ POST } = await import("./meta/route"));
-    await prisma.webhookEvent.deleteMany({ where: { provider: "meta" } });
   });
-  afterAll(async () => { await prisma.webhookEvent.deleteMany({ where: { provider: "meta" } }); vi.unstubAllEnvs(); });
+  afterAll(async () => { await prisma.webhookEvent.deleteMany({ where: { provider: "meta", eventId: { in: [...posted] } } }); vi.unstubAllEnvs(); });
 
   const igEnvelope = () => ({ object: "instagram", entry: [{ id: `ig_${stamp()}`, time: Date.now(), messaging: [] }] });
   const waEnvelope = () => ({ object: "whatsapp_business_account", entry: [{ id: `wa_${stamp()}`, changes: [] }] });

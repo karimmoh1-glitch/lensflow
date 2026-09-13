@@ -168,7 +168,7 @@ export function ConversationTools({ conversationId, unread, category, clientId, 
               <div className="my-1 border-t border-border" />
             </div>
           )}
-          <div className="px-2.5 pt-1.5 pb-1 text-2xs font-medium text-ink/55">Daythread put this in {label(category)}</div>
+          <div className="px-2.5 pt-1.5 pb-1 text-2xs font-medium text-ink/60">Daythread put this in {label(category)}</div>
           {category !== "PRIORITY" ? (
             <Item onClick={(e) => reclassify(e, "PRIORITY")} title="Mark as priority" hint="A real person — show them in Priority" />
           ) : (

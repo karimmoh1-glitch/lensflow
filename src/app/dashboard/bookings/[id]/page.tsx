@@ -75,7 +75,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <div className="mb-8 max-w-xl" aria-label={`Stage: ${LIFECYCLE[currentIndex].label}, step ${currentIndex + 1} of ${LIFECYCLE.length}`}>
           <div className="flex items-baseline justify-between text-13">
             <span className="font-semibold text-ink">{LIFECYCLE[currentIndex].label}</span>
-            {currentIndex < LIFECYCLE.length - 1 && <span className="text-ink/55">Next: {LIFECYCLE[currentIndex + 1].label}</span>}
+            {currentIndex < LIFECYCLE.length - 1 && <span className="text-ink/60">Next: {LIFECYCLE[currentIndex + 1].label}</span>}
           </div>
           <div aria-hidden className="mt-2 grid gap-1" style={{ gridTemplateColumns: `repeat(${LIFECYCLE.length}, minmax(0, 1fr))` }}>
             {LIFECYCLE.map((step, i) => <span key={step.status} title={step.label} className={`h-1 rounded-full ${i <= currentIndex ? "bg-ink" : "bg-black/[0.08]"}`} />)}

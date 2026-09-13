@@ -198,7 +198,7 @@ export function HeroThread() {
             <ol className="relative pl-9 pr-4 py-4 min-h-[300px]">
               <span aria-hidden className="absolute left-[19px] top-4 bottom-4 w-px bg-border" />
               <span aria-hidden className="absolute left-[19px] top-4 w-px bg-gradient-to-b from-accent via-ink/40 to-success origin-top transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ height: "calc(100% - 2rem)", transform: `scaleY(${still || inFlight ? 1 : phase / 4})` }} />
-              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}`} labelClass="text-ink/55">
+              <Node on={on(1)} dot="bg-accent" label={`${CHANNEL[shown].name} · ${s.handle}`} labelClass="text-ink/60">
                 <span className="font-semibold">{s.who}</span>{" "}
                 <span className="text-ink/70">“<Highlight text={s.msg} part={s.highlight} on={on(2)} />”</span>
                 <span className="mt-1.5 flex flex-wrap gap-1.5">
@@ -208,29 +208,29 @@ export function HeroThread() {
                       className={cn("inline-flex items-center gap-1 rounded-md bg-black/[0.045] px-1.5 py-0.5 text-2xs font-medium text-ink/75 transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)]", on(2) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-90")}
                       style={{ transitionDelay: on(2) ? `${120 + i * 110}ms` : "0ms" }}
                     >
-                      <span className="text-ink/50">{k}</span>
+                      <span className="text-ink/60">{k}</span>
                       {v}
                     </span>
                   ))}
                 </span>
               </Node>
-              <Node on={on(2)} dot={cn("bg-ink", phase === 1 && !still && "animate-[dtBreathe_1.1s_ease-in-out_infinite]")} label="Daythread read" labelClass="text-ink/55">
+              <Node on={on(2)} dot={cn("bg-ink", phase === 1 && !still && "animate-[dtBreathe_1.1s_ease-in-out_infinite]")} label="Daythread read" labelClass="text-ink/60">
                 <span className="font-semibold">{s.ctx}</span>
                 <span className="block text-xs text-ink/65">{s.ctxMeta}</span>
               </Node>
-              <Node on={on(3)} dot="bg-ink/75" label="Your calendar" labelClass="text-ink/55">
+              <Node on={on(3)} dot="bg-ink/75" label="Your calendar" labelClass="text-ink/60">
                 {s.action}
               </Node>
-              <Node on={on(4)} dot="bg-success" label="Outcome" labelClass="text-ink/55">
+              <Node on={on(4)} dot="bg-success" label="Outcome" labelClass="text-ink/60">
                 {s.outcome}
               </Node>
             </ol>
             <aside className="hidden md:flex lg:hidden xl:flex flex-col border-l border-border bg-paper/60 p-4">
-              <div className="text-xs font-medium text-ink/55 mb-2">{s.who.split(" ")[0]}</div>
+              <div className="text-xs font-medium text-ink/60 mb-2">{s.who.split(" ")[0]}</div>
               <div className="text-xs text-ink/70 leading-relaxed">{s.ctx}</div>
               <div className="mt-auto pt-4">
                 <div className={cn("rounded-2xl border px-3 py-2.5 transition-all duration-500", on(4) ? "border-border bg-white shadow-[0_1px_3px_rgba(16,17,20,0.06)] opacity-100 translate-y-0" : "border-border opacity-0 translate-y-1")}>
-                  <div className="text-xs font-medium text-ink/55 mb-0.5">Next</div>
+                  <div className="text-xs font-medium text-ink/60 mb-0.5">Next</div>
                   <div className="text-13 font-semibold text-ink leading-snug">{s.next}</div>
                   <div className="text-2xs text-ink/65 mt-0.5 leading-snug">{s.nextWhy}</div>
                 </div>

@@ -157,7 +157,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                 <Link href={standingHref} className="inline-flex items-center h-10 px-4 rounded-lg bg-ink text-white text-sm font-semibold transition-colors hover:bg-black active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2">
                   {standing.nextAction.label}
                 </Link>
-                <span className="text-xs text-ink/55">{standing.nextAction.why}</span>
+                <span className="text-xs text-ink/60">{standing.nextAction.why}</span>
               </div>
             )}
           </div>

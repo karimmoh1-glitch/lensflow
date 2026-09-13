@@ -153,9 +153,9 @@ export default async function AutomationsPage() {
 
 const BEAT: Record<"signal" | "thinking" | "outcome", { dot: string; label: string; bg: string }> = {
   // One neutral block per beat; the words When / If / Then carry the structure, not three colors.
-  signal: { dot: "bg-ink/40", label: "text-ink/55", bg: "bg-black/[0.03]" },
-  thinking: { dot: "bg-ink/40", label: "text-ink/55", bg: "bg-black/[0.03]" },
-  outcome: { dot: "bg-ink/40", label: "text-ink/55", bg: "bg-black/[0.03]" },
+  signal: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-black/[0.03]" },
+  thinking: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-black/[0.03]" },
+  outcome: { dot: "bg-ink/40", label: "text-ink/60", bg: "bg-black/[0.03]" },
 };
 
 function Beat({ label, tone, text }: { label: string; tone: keyof typeof BEAT; text: string }) {

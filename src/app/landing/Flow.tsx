@@ -31,7 +31,7 @@ export function Flow() {
           <li key={s.key} className="relative grid grid-cols-[24px_minmax(0,1fr)] md:grid-cols-[260px_24px_minmax(0,1fr)] gap-x-4 md:gap-x-6 pb-10 md:pb-14 last:pb-0">
             <div className="hidden md:block pt-1 text-right">
               <p className="text-[15px] font-semibold text-ink tracking-[-0.01em]">{s.step}</p>
-              <p className="mt-0.5 text-13 text-ink/55">{s.note}</p>
+              <p className="mt-0.5 text-13 text-ink/60">{s.note}</p>
             </div>
             <span aria-hidden className="relative z-10 mt-1.5 w-[23px] h-[23px] rounded-full bg-paper border border-ink/15 flex items-center justify-center">
               <span className={i === STEPS.length - 1 ? "w-2 h-2 rounded-full bg-ink/30" : i === 0 ? "w-2 h-2 rounded-full bg-accent" : "w-2 h-2 rounded-full bg-ink"} />
@@ -39,7 +39,7 @@ export function Flow() {
             <div className="min-w-0">
               <div className="md:hidden mb-3">
                 <p className="text-[15px] font-semibold text-ink">{s.step}</p>
-                <p className="text-13 text-ink/55">{s.note}</p>
+                <p className="text-13 text-ink/60">{s.note}</p>
               </div>
               <Reveal>
                 <Fragment k={s.key} />
@@ -62,7 +62,7 @@ function Fragment({ k }: { k: (typeof STEPS)[number]["key"] }) {
           <span className="w-8 h-8 rounded-full bg-ink/[0.06] text-ink/75 text-2xs font-semibold flex items-center justify-center">MC</span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-ink leading-5">Maya Chen</p>
-            <p className="text-xs text-ink/55 flex items-center gap-1.5"><ChannelIcon k="instagram" size={14} /> Instagram · just now</p>
+            <p className="text-xs text-ink/60 flex items-center gap-1.5"><ChannelIcon k="instagram" size={14} /> Instagram · just now</p>
           </div>
           <span aria-hidden className="ml-auto w-2.5 h-2.5 rounded-full bg-accent" />
         </div>
@@ -76,14 +76,14 @@ function Fragment({ k }: { k: (typeof STEPS)[number]["key"] }) {
     return (
       <div className="flex flex-col lg:flex-row gap-3 max-w-2xl">
         <div className={`${card} p-4 lg:w-[300px] shrink-0`}>
-          <p className="text-xs font-medium text-ink/55">Next step</p>
+          <p className="text-xs font-medium text-ink/60">Next step</p>
           <p className="mt-1 text-[15px] font-semibold text-ink leading-snug">Book them on Friday at 2:00 PM</p>
           <p className="mt-1 text-13 text-ink/60">Asked about Portrait session.</p>
           <span className="mt-3 flex items-center justify-center h-9 rounded-lg bg-ink text-white text-13 font-semibold">Pick a time</span>
         </div>
         <dl className={`${card} p-4 grid grid-cols-[84px_1fr] gap-x-3 gap-y-2 text-13 content-start lg:w-[260px]`}>
           {[["Intent", "Wants to book"], ["Date", "Friday"], ["Time", "2:00 PM"], ["Service", "Portrait session"], ["Context", "Returning client"]].map(([a, b]) => (
-            <div key={a} className="contents"><dt className="text-ink/55">{a}</dt><dd className="font-medium text-ink">{b}</dd></div>
+            <div key={a} className="contents"><dt className="text-ink/60">{a}</dt><dd className="font-medium text-ink">{b}</dd></div>
           ))}
         </dl>
       </div>
@@ -92,7 +92,7 @@ function Fragment({ k }: { k: (typeof STEPS)[number]["key"] }) {
   if (k === "time") {
     return (
       <div className={`${card} max-w-md p-4`}>
-        <p className="text-xs font-medium text-ink/55">Open times · Fri, Sep 18</p>
+        <p className="text-xs font-medium text-ink/60">Open times · Fri, Sep 18</p>
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {["10:00 AM", "11:30 AM", "2:00 PM", "4:30 PM"].map((t) => (
             <span key={t} className={t === "2:00 PM" ? "h-8 px-2.5 inline-flex items-center rounded-md border border-ink bg-ink text-white text-xs font-medium" : "h-8 px-2.5 inline-flex items-center rounded-md border border-ink/[0.12] bg-white text-ink text-xs font-medium"}>{t}</span>
@@ -100,7 +100,7 @@ function Fragment({ k }: { k: (typeof STEPS)[number]["key"] }) {
         </div>
         <div className="mt-3 rounded-lg border border-border bg-paper/70 p-3">
           <p className="text-13 text-ink"><span className="font-semibold">Portrait session</span> · Fri, Sep 18 at 2:00 PM</p>
-          <p className="mt-0.5 text-xs text-ink/55">60 min · checked against your Google Calendar</p>
+          <p className="mt-0.5 text-xs text-ink/60">60 min · checked against your Google Calendar</p>
           <span className="mt-2.5 inline-flex items-center h-8 px-3 rounded-lg bg-ink text-white text-13 font-semibold">Book it</span>
         </div>
       </div>
@@ -114,7 +114,7 @@ function Fragment({ k }: { k: (typeof STEPS)[number]["key"] }) {
             Hi Maya — you&rsquo;re booked for Portrait session on Friday, Sep 18 at 2:00 PM with Alex Rivera Photography. Reply here if anything changes. See you then!
           </p>
         </div>
-        <p className="mt-2 text-right text-xs text-ink/55 flex items-center justify-end gap-1.5"><Check className="w-3.5 h-3.5 text-success" strokeWidth={2.5} aria-hidden />Sent on Instagram by your confirmation automation</p>
+        <p className="mt-2 text-right text-xs text-ink/60 flex items-center justify-end gap-1.5"><Check className="w-3.5 h-3.5 text-success" strokeWidth={2.5} aria-hidden />Sent on Instagram by your confirmation automation</p>
       </div>
     );
   }

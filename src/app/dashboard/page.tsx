@@ -52,7 +52,7 @@ export default async function TodayPage() {
     <div className="max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10 dt-stagger">
       {gmailConnected && <AutoGmailSync immediate />}
       <header className="mb-8">
-        <p className="text-13 text-ink/55">{format(new Date(), "EEEE, MMMM d")}</p>
+        <p className="text-13 text-ink/60">{format(new Date(), "EEEE, MMMM d")}</p>
         <h1 className="mt-1 font-sans font-bold text-[1.75rem] leading-tight tracking-[-0.025em] text-ink">
           {greeting}, {firstName}.
         </h1>
@@ -123,7 +123,7 @@ export default async function TodayPage() {
           <h2 id="running-label" className="text-13 font-semibold text-ink/70 mb-2.5">Running for you</h2>
           <div className="rounded-xl border border-border bg-white shadow-surface divide-y divide-border">
             <Link href="/dashboard/agent" className="flex items-start gap-3 px-4 py-3.5 hover:bg-black/[0.02] transition-colors focus-visible:outline-none focus-visible:bg-black/[0.03]">
-              <ListChecks className="mt-0.5 w-4 h-4 text-ink/50 shrink-0" strokeWidth={2} aria-hidden />
+              <ListChecks className="mt-0.5 w-4 h-4 text-ink/60 shrink-0" strokeWidth={2} aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block text-13 font-semibold text-ink">Assistant</span>
                 <span className="block text-13 text-ink/60 leading-snug">
@@ -136,7 +136,7 @@ export default async function TodayPage() {
               </span>
             </Link>
             <Link href="/dashboard/automations" className="flex items-start gap-3 px-4 py-3.5 hover:bg-black/[0.02] transition-colors focus-visible:outline-none focus-visible:bg-black/[0.03]">
-              <Zap className="mt-0.5 w-4 h-4 text-ink/50 shrink-0" strokeWidth={2} aria-hidden />
+              <Zap className="mt-0.5 w-4 h-4 text-ink/60 shrink-0" strokeWidth={2} aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block text-13 font-semibold text-ink">Automations</span>
                 <span className="block text-13 text-ink/60 leading-snug">
@@ -147,7 +147,7 @@ export default async function TodayPage() {
               </span>
             </Link>
             <Link href="/dashboard/clients" className="flex items-start gap-3 px-4 py-3.5 hover:bg-black/[0.02] transition-colors focus-visible:outline-none focus-visible:bg-black/[0.03]">
-              <Users className="mt-0.5 w-4 h-4 text-ink/50 shrink-0" strokeWidth={2} aria-hidden />
+              <Users className="mt-0.5 w-4 h-4 text-ink/60 shrink-0" strokeWidth={2} aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block text-13 font-semibold text-ink">People</span>
                 <span className="block text-13 text-ink/60 leading-snug">
@@ -187,7 +187,7 @@ function BookingList({
                   <span className="block text-xs text-ink/65 truncate">{b.service.name}{timeFormat.includes("EEE") && ` · ${format(toZonedDisplayDate(b.startAt, timezone), "EEE, MMM d")}`}</span>
                 </span>
               </div>
-              {b.status === "BOOKED" ? <span className="text-xs font-medium text-warning-text shrink-0">Not confirmed</span> : b.status === "CANCELED" ? <span className="text-xs text-ink/50 shrink-0">Canceled</span> : null}
+              {b.status === "BOOKED" ? <span className="text-xs font-medium text-warning-text shrink-0">Not confirmed</span> : b.status === "CANCELED" ? <span className="text-xs text-ink/60 shrink-0">Canceled</span> : null}
             </div>
           );
           return linked ? (

@@ -45,7 +45,7 @@ export function AccessRequestsPanel({ rows }: { rows: AccessRow[] }) {
                 {r.decisionNote && <p className="mt-1 text-[12px] text-ink/65">Note sent: {r.decisionNote}</p>}
               </div>
               <div className="flex flex-col gap-1.5 shrink-0 md:w-64">
-                <input value={notes[r.id] ?? ""} onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })} aria-label="Note to the workspace (optional)" placeholder="Note to the workspace (optional)" maxLength={300} className="h-8 rounded-lg border border-border px-2.5 text-[12px] text-ink placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-ink/70" />
+                <input value={notes[r.id] ?? ""} onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })} aria-label="Note to the workspace (optional)" placeholder="Note to the workspace (optional)" maxLength={300} className="h-8 rounded-lg border border-border px-2.5 text-[12px] text-ink placeholder:text-ink/60 focus:outline-none focus:ring-2 focus:ring-ink/70" />
                 <div className="flex gap-1.5">
                   {r.status !== "APPROVED" && <button type="button" disabled={pending && busy === r.id} onClick={() => decide(r.id, "APPROVED")} className="h-8 px-3 rounded-full bg-ink text-white text-[12px] font-semibold disabled:opacity-60">Approve</button>}
                   {r.status === "PENDING" && <button type="button" disabled={pending && busy === r.id} onClick={() => decide(r.id, "REJECTED")} className="h-8 px-3 rounded-full border border-border text-[12px] font-semibold text-ink disabled:opacity-60">Decline</button>}

@@ -28,7 +28,7 @@ export function Trust() {
           </li>
         ))}
       </ul>
-      <p className="mt-5 text-13 text-ink/55">
+      <p className="mt-5 text-13 text-ink/60">
         Daythread doesn&rsquo;t collect payments from your clients. Read the <Link href="/privacy" className="font-medium text-ink underline decoration-ink/20 underline-offset-2">privacy policy</Link>, the <Link href="/terms" className="font-medium text-ink underline decoration-ink/20 underline-offset-2">terms</Link> and the <Link href="/status" className="font-medium text-ink underline decoration-ink/20 underline-offset-2">status page</Link>, or write to <a href="mailto:support@daythread.org" className="font-medium text-ink underline decoration-ink/20 underline-offset-2">support@daythread.org</a>.
       </p>
     </div>

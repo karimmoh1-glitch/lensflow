@@ -66,8 +66,8 @@ export function NextActions({ rows, atRisk, caughtUp }: { rows: Row[]; atRisk: M
   return (
     <section aria-labelledby="now-label">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-2.5">
-        <h2 id="now-label" className="text-13 font-semibold text-ink/70">Needs you{live.length > 0 ? <span className="ml-1.5 font-normal text-ink/45 tabular-nums">{live.length}</span> : null}</h2>
-        {risk && <p className="text-xs text-ink/55">{risk}</p>}
+        <h2 id="now-label" className="text-13 font-semibold text-ink/70">Needs you{live.length > 0 ? <span className="ml-1.5 font-normal text-ink/60 tabular-nums">{live.length}</span> : null}</h2>
+        {risk && <p className="text-xs text-ink/60">{risk}</p>}
       </div>
 
       {!top ? (
@@ -86,10 +86,10 @@ export function NextActions({ rows, atRisk, caughtUp }: { rows: Row[]; atRisk: M
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <h3 className="text-[1.0625rem] font-semibold leading-snug tracking-[-0.01em] text-ink">{top.headline}</h3>
-                  <span className="text-xs text-ink/50">{top.stage}</span>
+                  <span className="text-xs text-ink/60">{top.stage}</span>
                 </div>
                 <p className="mt-1 text-sm text-ink/70 leading-snug">{top.why}{top.detail ? ` ${top.detail}.` : ""}</p>
-                {top.value && <p className="mt-1 text-xs text-ink/55">{top.value.label}{top.value.known ? "" : " · estimate"}</p>}
+                {top.value && <p className="mt-1 text-xs text-ink/60">{top.value.label}{top.value.known ? "" : " · estimate"}</p>}
                 <div className="mt-3.5 flex flex-wrap gap-2">
                   {top.kind === "confirm_booking" ? (
                     <Link href={top.href} className={primary}>Open booking<ArrowRight className="w-3.5 h-3.5" strokeWidth={2.2} aria-hidden /></Link>
@@ -116,21 +116,21 @@ export function NextActions({ rows, atRisk, caughtUp }: { rows: Row[]; atRisk: M
             <ol className="border-t border-border divide-y divide-border" aria-label="Also needs you">
               {rest.slice(0, 8).map((r) => (
                 <li key={r.id} className="group flex items-center gap-3 px-4 sm:px-5 py-2.5 hover:bg-black/[0.02] transition-colors">
-                  <span className={cn("w-16 text-xs font-medium shrink-0", r.rule === "waiting_reply" ? "text-ink" : "text-ink/55")}>
+                  <span className={cn("w-16 text-xs font-medium shrink-0", r.rule === "waiting_reply" ? "text-ink" : "text-ink/60")}>
                     {r.rule === "waiting_reply" && <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-1.5 align-middle" />}
                     {CHIP_LABEL[r.rule]}
                   </span>
                   <Link href={r.href} className="min-w-0 flex-1 focus-visible:outline-none">
-                    <span className="block text-13 text-ink truncate"><span className="font-semibold group-hover:underline">{r.person.name}</span><span className="text-ink/55"> · {withoutName(r.why, r.person.name)}{r.detail ? ` ${r.detail}.` : ""}</span></span>
+                    <span className="block text-13 text-ink truncate"><span className="font-semibold group-hover:underline">{r.person.name}</span><span className="text-ink/60"> · {withoutName(r.why, r.person.name)}{r.detail ? ` ${r.detail}.` : ""}</span></span>
                   </Link>
-                  {r.value && <span className="hidden md:block text-xs text-ink/50 tabular-nums shrink-0">{r.value.label}</span>}
+                  {r.value && <span className="hidden md:block text-xs text-ink/60 tabular-nums shrink-0">{r.value.label}</span>}
                   {r.kind !== "confirm_booking" && (
                     <span className="hidden sm:flex items-center gap-1 shrink-0">
                       <Link href={draftHref(r)} className="h-7 px-2.5 inline-flex items-center rounded-md text-xs font-semibold text-ink hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">{r.kind === "reply" ? "Draft reply" : "Draft follow-up"}</Link>
                       {r.kind === "reply" ? (
-                        <button type="button" disabled={pending} onClick={() => run(r, "handled")} className="h-7 px-2.5 rounded-md text-xs font-medium text-ink/55 hover:text-ink hover:bg-black/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Handled</button>
+                        <button type="button" disabled={pending} onClick={() => run(r, "handled")} className="h-7 px-2.5 rounded-md text-xs font-medium text-ink/60 hover:text-ink hover:bg-black/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Handled</button>
                       ) : (
-                        <button type="button" disabled={pending} onClick={() => run(r, "tomorrow")} className="h-7 px-2.5 rounded-md text-xs font-medium text-ink/55 hover:text-ink hover:bg-black/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Tomorrow</button>
+                        <button type="button" disabled={pending} onClick={() => run(r, "tomorrow")} className="h-7 px-2.5 rounded-md text-xs font-medium text-ink/60 hover:text-ink hover:bg-black/[0.05] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Tomorrow</button>
                       )}
                     </span>
                   )}

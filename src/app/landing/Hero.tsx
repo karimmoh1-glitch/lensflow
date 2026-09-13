@@ -32,7 +32,7 @@ export function Hero() {
               See how it works
             </Link>
           </div>
-          <p className="mt-4 text-13 text-ink/55">{beta ? "Pro free for your first month · No card" : "Free to start · No card"}</p>
+          <p className="mt-4 text-13 text-ink/60">{beta ? "Pro free for your first month · No card" : "Free to start · No card"}</p>
         </div>
 
         <div className="dt-hero-visual relative" style={{ transform: "translate(calc(var(--mx) * -5px), calc(var(--my) * -3px))", transition: "transform 600ms cubic-bezier(0.16,1,0.3,1)" }}>

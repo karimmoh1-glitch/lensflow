@@ -88,7 +88,7 @@ export function UnderstandingCard({
   return (
     <section aria-labelledby="next-step-title" className="rounded-xl border border-border bg-white shadow-surface">
       <div className="p-4">
-        <h2 id="next-step-title" className="text-xs font-medium text-ink/55">Next step</h2>
+        <h2 id="next-step-title" className="text-xs font-medium text-ink/60">Next step</h2>
         <p className={cn("mt-1 text-[15px] font-semibold leading-snug tracking-[-0.005em]", none ? "text-ink/60" : "text-ink")}>{u.nextAction.label}</p>
         {why && !none && <p className="mt-1 text-13 text-ink/65 leading-snug">{why}</p>}
         {!none && (
@@ -101,7 +101,7 @@ export function UnderstandingCard({
             {actionVerb(u.nextAction.kind)}
           </button>
         )}
-        {u.ifNot && !none && <p className="mt-2 text-xs text-ink/55 leading-snug">{u.ifNot}</p>}
+        {u.ifNot && !none && <p className="mt-2 text-xs text-ink/60 leading-snug">{u.ifNot}</p>}
         {disabled && u.nextAction.kind === "book" && <p className="mt-1.5 text-xs text-ink/60">Match a service to this inquiry first, below.</p>}
         {u.confidence === "low" && <p className="mt-1.5 text-xs text-ink/60">Read from the message. Check it before acting.</p>}
       </div>
@@ -115,7 +115,7 @@ export function UnderstandingCard({
           <dl className="mt-3 grid grid-cols-[88px_1fr] gap-x-3 gap-y-1.5 text-13">
             {[...read.filter(([, v]) => v).map(([k, v]) => ({ label: k, value: v as string })), ...known].map((f) => (
               <div key={f.label} className="contents">
-                <dt className="text-ink/55">{f.label}</dt>
+                <dt className="text-ink/60">{f.label}</dt>
                 <dd className="text-ink font-medium">{f.value}</dd>
               </div>
             ))}

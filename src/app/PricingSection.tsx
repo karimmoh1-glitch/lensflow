@@ -59,7 +59,7 @@ export function PricingSection({ trial = false, beta = false }: { trial?: boolea
               <div className={cn("relative h-full rounded-2xl border p-6 md:p-7 flex flex-col", unavailable ? "border-border bg-paper" : pro ? "border-ink/80 bg-white shadow-[0_24px_60px_-32px_rgba(16,17,20,0.45)]" : "border-border bg-white")} aria-disabled={unavailable || undefined}>
                 {badge && <span className={cn("absolute -top-2.5 left-6 text-xs font-semibold rounded-md px-2 py-0.5", pro ? "bg-accent-strong text-white" : unavailable ? "bg-black/[0.06] text-ink/60" : "bg-ink text-white")}>{badge}</span>}
                 <div className="text-lg font-semibold tracking-[-0.01em] text-ink">{plan.name}</div>
-                <div className="mt-0.5 text-13 text-ink/55 leading-snug min-h-[2.5rem]">{l.who}</div>
+                <div className="mt-0.5 text-13 text-ink/60 leading-snug min-h-[2.5rem]">{l.who}</div>
                 <div className={cn("mt-4 flex items-baseline gap-1.5", unavailable && "opacity-60")}>
                   {betaPro ? (
                     <>
@@ -69,7 +69,7 @@ export function PricingSection({ trial = false, beta = false }: { trial?: boolea
                   ) : (
                     <>
                       <span className="font-sans font-bold text-4xl tracking-[-0.04em] text-ink">{formatMoney(price(plan.priceCents))}</span>
-                      <span className="text-sm text-ink/55">{plan.priceCents > 0 ? `/ ${interval === "year" ? "year" : "month"}` : "forever"}</span>
+                      <span className="text-sm text-ink/60">{plan.priceCents > 0 ? `/ ${interval === "year" ? "year" : "month"}` : "forever"}</span>
                     </>
                   )}
                 </div>
@@ -82,7 +82,7 @@ export function PricingSection({ trial = false, beta = false }: { trial?: boolea
                 {pro && trial && !beta && <p className="mt-3 text-xs font-semibold text-ink leading-relaxed">7-day free trial · card required · first charge on day 8 · cancel before then and pay nothing.</p>}
                 {betaPro && <p className="mt-5 text-xs text-ink/60 leading-relaxed">No card. When the month ends you stay on Free unless you choose Pro.</p>}
                 {unavailable ? (
-                  <span className="mt-6 inline-flex items-center justify-center h-11 rounded-xl text-sm font-bold bg-black/5 text-ink/55 cursor-not-allowed select-none">Temporarily unavailable</span>
+                  <span className="mt-6 inline-flex items-center justify-center h-11 rounded-xl text-sm font-bold bg-black/5 text-ink/60 cursor-not-allowed select-none">Temporarily unavailable</span>
                 ) : (
                   <Link
                     href="/start"
@@ -96,7 +96,7 @@ export function PricingSection({ trial = false, beta = false }: { trial?: boolea
           );
         })}
       </div>
-      <p className="mt-6 text-13 text-ink/55">No card to start. Cancel any time. Daythread doesn&rsquo;t collect payments from your clients.</p>
+      <p className="mt-6 text-13 text-ink/60">No card to start. Cancel any time. Daythread doesn&rsquo;t collect payments from your clients.</p>
     </section>
   );
 }

@@ -138,7 +138,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
     <>
       <div className="px-5 pt-5 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0", isPerson ? "bg-ink/[0.06] text-ink/75" : "bg-black/[0.04] text-ink/55")}>{initials(displayName)}</div>
+          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0", isPerson ? "bg-ink/[0.06] text-ink/75" : "bg-black/[0.04] text-ink/60")}>{initials(displayName)}</div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold truncate">{displayName}</div>
             <div className="text-xs text-ink/60 truncate">{relationshipLabel}{relationship ? ` · ${relationship.label}` : ""}</div>
@@ -188,7 +188,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
           <Link href={`/dashboard/bookings/${upcoming.id}`} className="flex items-center gap-3 rounded-xl border border-border bg-white shadow-surface px-3.5 py-3 hover:border-ink/20 transition-colors">
             <span className="w-8 h-8 rounded-lg bg-success-soft text-success-text flex items-center justify-center shrink-0"><CalendarDays className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
             <span className="min-w-0 flex-1">
-              <span className="block text-xs font-medium text-ink/55">On the calendar</span>
+              <span className="block text-xs font-medium text-ink/60">On the calendar</span>
               <span className="block text-sm font-semibold text-ink truncate">{upcomingLabel}</span>
               {upcoming.status === "BOOKED" && <span className="block text-2xs text-warning-text font-semibold">Not confirmed yet</span>}
             </span>

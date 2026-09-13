@@ -35,18 +35,18 @@ export function SummaryCard({ conversationId, initial, autoRun }: { conversation
     <div className={cn(summary || pending || error ? "rounded-xl border border-border bg-white px-4 py-3.5" : "")}>
       <div className="flex items-center justify-between gap-2">
         {summary || pending || error ? (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-ink/55">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-ink/60">
             <AlignLeft className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
             Summary
           </div>
         ) : (
           <button type="button" onClick={() => run(true)} className="w-full flex items-center gap-2 h-9 px-3 rounded-lg border border-border bg-white text-13 font-medium text-ink/75 hover:text-ink hover:border-ink/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
-            <AlignLeft className="w-3.5 h-3.5 text-ink/50" strokeWidth={2} aria-hidden />
+            <AlignLeft className="w-3.5 h-3.5 text-ink/60" strokeWidth={2} aria-hidden />
             Summarize this conversation
           </button>
         )}
         {(summary || pending) && (
-          <button type="button" onClick={() => run(true)} disabled={pending} className="text-xs font-medium text-ink/55 hover:text-ink rounded-md px-1.5 h-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
+          <button type="button" onClick={() => run(true)} disabled={pending} className="text-xs font-medium text-ink/60 hover:text-ink rounded-md px-1.5 h-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
             {pending ? <WorkingDots /> : "Refresh"}
           </button>
         )}

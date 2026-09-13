@@ -249,7 +249,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
             ))}
           </ol>
           {view === "priority" && filteredOut > 0 && !q && rows.length > 0 && (
-            <p className="px-5 py-4 text-xs text-ink/55 border-t border-border">
+            <p className="px-5 py-4 text-xs text-ink/60 border-t border-border">
               {filteredOut} automated or promotional {filteredOut === 1 ? "message" : "messages"} kept out of the way. <Link href={href({ view: "all", cat: "all" })} className="font-medium text-ink/70 underline decoration-ink/20 underline-offset-2 hover:text-ink">See all</Link>
             </p>
           )}
@@ -272,7 +272,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                         <Link href={rowHref(r.conv.id)} className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-black/[0.025] focus-visible:outline-none focus-visible:bg-black/[0.035]">
                           <ChannelBadge channel={r.conv.channel} className="w-3.5 h-3.5 rounded-[4px]" />
                           <span className="text-13 font-medium text-ink truncate">{nameOf(r.conv)}</span>
-                          <span className="ml-auto text-xs text-ink/55 tabular-nums shrink-0">{shortAgo(r.conv.lastMessageAt)}</span>
+                          <span className="ml-auto text-xs text-ink/60 tabular-nums shrink-0">{shortAgo(r.conv.lastMessageAt)}</span>
                         </Link>
                       </li>
                     ))}
@@ -285,7 +285,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 </div>
               )}
               {rows.length > 0 && (
-                <p className="mt-5 text-xs text-ink/50 text-center">
+                <p className="mt-5 text-xs text-ink/60 text-center">
                   <kbd className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded border border-ink/10 bg-white font-medium text-ink/60">j</kbd>{" "}
                   <kbd className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded border border-ink/10 bg-white font-medium text-ink/60">k</kbd> to move ·{" "}
                   <kbd className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded border border-ink/10 bg-white font-medium text-ink/60">/</kbd> to search
@@ -328,7 +328,7 @@ function Chip({ href, active, label, count, icon, dot }: { href: string; active:
       {dot && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-accent" />}
       {icon}
       {label}
-      {typeof count === "number" && count > 0 && <span className={cn("tabular-nums", active ? "text-ink/60" : "text-ink/40")}>{count}</span>}
+      {typeof count === "number" && count > 0 && <span className={cn("tabular-nums", active ? "text-ink/60" : "text-ink/60")}>{count}</span>}
     </Link>
   );
 }

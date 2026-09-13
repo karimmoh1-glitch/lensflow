@@ -80,10 +80,10 @@ export default async function GrowthPage({ searchParams }: { searchParams: Promi
               <ol className="space-y-1.5">
                 {g.activationFunnel.map((st, i) => (
                   <li key={st.label} className="flex items-baseline gap-3 text-sm">
-                    <span className="w-5 text-2xs font-bold text-ink/55 tabular-nums">{i + 1}</span>
+                    <span className="w-5 text-2xs font-bold text-ink/60 tabular-nums">{i + 1}</span>
                     <span className="flex-1 text-ink/85">{st.label}</span>
                     <span className="font-extrabold text-ink tabular-nums">{st.n}</span>
-                    <span className={cn("w-16 text-right text-2xs tabular-nums", st.drop === null ? "text-ink/40" : st.drop >= 50 ? "text-danger-text font-semibold" : "text-ink/60")}>{st.drop === null ? "" : `−${st.drop}%`}</span>
+                    <span className={cn("w-16 text-right text-2xs tabular-nums", st.drop === null ? "text-ink/60" : st.drop >= 50 ? "text-danger-text font-semibold" : "text-ink/60")}>{st.drop === null ? "" : `−${st.drop}%`}</span>
                   </li>
                 ))}
               </ol>

@@ -63,7 +63,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
                     <span className="block text-sm font-semibold text-ink">{t.label}</span>
                     <span className="block text-xs text-ink/65 truncate">{t.blurb}</span>
                   </span>
-                  <ChevronRight className="w-4 h-4 text-ink/40 shrink-0" strokeWidth={2} aria-hidden />
+                  <ChevronRight className="w-4 h-4 text-ink/60 shrink-0" strokeWidth={2} aria-hidden />
                 </Link>
               </li>
             ))}

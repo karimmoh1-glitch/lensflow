@@ -90,7 +90,7 @@ export function MeetingPanel({ bookingId, joinUrl, zoom, canCreate }: { bookingI
         ) : (
           <p className="text-sm text-ink/75">Meetings can only be added to upcoming bookings.</p>
         )}
-        {zoom === "needs_attention" && joinUrl && <p className="mt-2 text-xs text-ink/70">Zoom needs reconnecting. The join link still works, but moving or removing the meeting won't reach Zoom until you reconnect.</p>}
+        {zoom === "needs_attention" && joinUrl && <p className="mt-2 text-xs text-ink/70">Zoom needs reconnecting. The join link still works, but moving or removing the meeting won&apos;t reach Zoom until you reconnect.</p>}
         {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
       </CardBody>
     </Card>

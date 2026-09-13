@@ -4,6 +4,7 @@ import { z } from "zod";
 import { betaGrantForNewWorkspace } from "@/server/betaOffer";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { issueEmailVerification, consumeEmailVerification } from "@/server/emailVerification";
 import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, getUserMemberships, homeRouteFor, getSession, DUMMY_HASH } from "@/lib/auth";
 import { generatePasswordResetToken, passwordResetExpiry } from "@/lib/passwordReset";
 import { sendOnChannel, messagingIsLive } from "@/lib/messaging";
@@ -100,8 +101,37 @@ export async function signup(formData: FormData): Promise<FormState> {
   if (answers) await savePersonalization(business.id, answers, { selectedPlan, anonymousId, source: "signup" }).catch((err) => console.error("[personalization] save failed", err));
   await attributeReferral(business.id, formData.get("ref"), anonymousId).catch((err) => console.error("[referral] attribution failed", err));
   await applyCompedAccess(user.id, user.email);
+  // The proof-of-address link. Best effort: a signup never fails because an email could not go out.
+  await issueEmailVerification(user).catch(() => null);
   await setSessionCookie({ userId: user.id, activeBusinessId: business.id });
   redirect(homeRouteFor("OWNER", business));
+}
+
+const VERIFY_FAILED = "This link no longer works. Request a new one from Daythread and try again.";
+
+/**
+ * Redeems the link from a verification email. Authorized by the single-use token, not by a
+ * session — the person may be on a different device — and throttled per network so tokens
+ * cannot be guessed at speed (they are 192 random bits, so this is belt and braces).
+ */
+export async function verifyEmail(token: unknown): Promise<{ ok: true; next: string } | { error: string }> {
+  const ip = await getClientIp();
+  if (!rateLimit(`verify-email:${ip}`, { limit: 20, windowMs: 60 * 60 * 1000 }).ok) return { error: TOO_MANY_ATTEMPTS };
+  const r = await consumeEmailVerification(token);
+  if (!r.ok) return { error: VERIFY_FAILED };
+  const session = await getSession();
+  return { ok: true, next: session?.userId === r.userId ? "/dashboard" : "/login" };
+}
+
+/** Sends the signed-in person a fresh link for their own address. */
+export async function resendVerification(): Promise<{ status: "sent" | "not_live" | "throttled" | "already_verified" | "unauthorized" }> {
+  const session = await getSession();
+  if (!session) return { status: "unauthorized" };
+  if (!rateLimit(`verify-resend:${session.userId}`, { limit: 3, windowMs: 15 * 60 * 1000 }).ok) return { status: "throttled" };
+  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { id: true, email: true, name: true, emailVerifiedAt: true } });
+  if (!user) return { status: "unauthorized" };
+  const r = await issueEmailVerification(user);
+  return { status: r.status };
 }
 
 const loginSchema = z.object({

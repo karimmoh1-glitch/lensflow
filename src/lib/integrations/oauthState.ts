@@ -1,7 +1,18 @@
 import { SignJWT, jwtVerify } from "jose";
-import { oauthStateKey } from "@/lib/env";
+import { requiredSecret } from "@/lib/env";
 import { cookies } from "next/headers";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes, createHash, createHmac } from "crypto";
+
+/**
+ * The key OAuth `state` values are signed with. Derived from JWT_SECRET under its own label,
+ * so a state token — which travels through provider URLs and browser history — can never
+ * verify as a session token, and a session token can never pass as a state. Lives here,
+ * not in lib/env.ts, so the middleware (which only needs the secret) never bundles node's
+ * crypto into the edge runtime.
+ */
+export function oauthStateKey(): Uint8Array {
+  return new Uint8Array(createHmac("sha256", requiredSecret("JWT_SECRET")).update("daythread:oauth-state:v1").digest());
+}
 
 /**
  * One OAuth `state` for every provider. The state round-trips through the provider and

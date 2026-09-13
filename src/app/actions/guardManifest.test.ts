@@ -35,6 +35,8 @@ const PUBLIC_ACTIONS: Record<string, string> = {
   "auth.ts:logout": "Clears the cookie; there is nothing to protect.",
   "auth.ts:forgotPassword": "A password reset cannot require being signed in. Rate limited, and it never says whether the address exists.",
   "auth.ts:resetPassword": "Authorized by the single-use token in the link, not by a session.",
+  "auth.ts:verifyEmail": "Authorized by the single-use token in the verification link, not by a session. Rate limited per network.",
+  "auth.ts:resendVerification": "Acts only on the signed-in user's own address, read from the session. Rate limited per user and per address.",
   "auth.ts:personalWorkspaceName": "Pure string formatting, no data access.",
   "auth.ts:uniqueHandle": "Picks an unused handle during signup; touches no existing workspace's data.",
   "googleSignIn.ts:startGoogleSignIn": "Signing in with Google, before any session exists. Rate limited.",

@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { oauthStateKey } from "@/lib/env";
+import { oauthStateKey } from "@/lib/integrations/oauthState";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";

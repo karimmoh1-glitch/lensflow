@@ -10,6 +10,7 @@ import { sharedRateLimit } from "@/lib/sharedRateLimit";
 import { track } from "@/lib/analytics";
 import { answersSchema, planSchema } from "@/lib/personalization";
 import { savePersonalization } from "@/server/personalization";
+import { issueEmailVerification } from "@/server/emailVerification";
 
 const signupSchema = z.object({
   name: z.string().trim().min(1, "Your name is required").max(80),
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
   await track("workspace_created", { businessId: business.id });
   if (answers) await savePersonalization(business.id, answers, { selectedPlan: selectedPlan ?? null, source: "mobile" }).catch((err) => console.error("[personalization] save failed", err));
 
+  await issueEmailVerification(user).catch(() => null);
   const token = await createSessionToken({ userId: user.id, activeBusinessId: business.id });
 
   return NextResponse.json({

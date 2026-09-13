@@ -12,6 +12,9 @@ import { PaywallProvider } from "@/components/Paywall";
 import { getPersonalization } from "@/server/personalization";
 import { touchLastActive } from "@/server/awayDigest";
 import { personalPaywallCopy } from "@/lib/personalization";
+import { addressProven } from "@/lib/founder";
+import { messagingIsLive } from "@/lib/messaging";
+import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import type { Metadata, Viewport } from "next";
 
 /** The dashboard as an installed app: standalone on iPhone, no double-tap zoom on controls,
@@ -58,6 +61,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <Toaster>
       <PaywallProvider config={paywall}>
         <AppShell businessName={business.name} handle={business.handle} role={role} plan={PLANS[effectivePlan(business)].name as "Free" | "Pro" | "Business"} workspaces={workspaces} wantedIntegrations={wanted} showPayments={stripeConnected > 0}>
+          {messagingIsLive("EMAIL") && !addressProven(ctx.user) && <VerifyEmailBanner email={ctx.user.email} />}
           {children}
         </AppShell>
         <InboxLive />

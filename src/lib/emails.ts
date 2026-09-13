@@ -114,6 +114,19 @@ export function passwordResetEmail(opts: { name: string; token: string }): Email
   });
 }
 
+/** The link that proves an address is theirs. */
+export function verifyEmailTemplate(opts: { name: string; token: string }): EmailContent {
+  return renderEmail({
+    subject: "Confirm your email address for Daythread",
+    preview: "One click, and it's done.",
+    heading: "Confirm your email address",
+    body: [`Hi ${opts.name}, press the button below to confirm this address is yours. The link works once and expires in a day.`],
+    action: { label: "Confirm my email", url: linkTo(`/verify-email/${opts.token}`) },
+    from: "Daythread",
+    footer: "If you did not create a Daythread account, ignore this and nothing happens.",
+  });
+}
+
 /** A business is sending a customer the work they paid for. */
 export function fileDeliveryEmail(opts: { businessName: string; recipientName: string; url: string; message?: string | null }): EmailContent {
   const note = (opts.message ?? "").trim();

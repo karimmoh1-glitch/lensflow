@@ -9,7 +9,8 @@ import { requireRole, hashPassword, verifyPassword, setSessionCookie, homeRouteF
 import { withLock } from "@/lib/dbLock";
 import { generateInvitationToken, invitationExpiry } from "@/lib/invitations";
 import { revalidatePath } from "next/cache";
-import { sendTransactional, type TransactionalDelivery } from "@/lib/messaging";
+import { sendTransactional, messagingIsLive, type TransactionalDelivery } from "@/lib/messaging";
+import { addressProven } from "@/lib/founder";
 import { invitationEmail, linkTo } from "@/lib/emails";
 import { canAddTeamSeat, planLimits, teamEntitled } from "@/lib/billing";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
@@ -18,6 +19,14 @@ import { sharedRateLimit, accountPasswordBucket } from "@/lib/sharedRateLimit";
 /** Invitation emails a workspace may send in a day: well above real use, far below a spam run. */
 const inviteQuota = (businessId: string) => sharedRateLimit(`invites:${businessId}`, { limit: 50, windowMs: 24 * 60 * 60 * 1000 });
 const QUOTA_ERROR = "That's a lot of invitations today. Try again tomorrow, or write to support@daythread.org.";
+/**
+ * Invitations go out under Daythread's own sending domain, in the workspace's name. That
+ * is only offered to someone who has proven their address: otherwise any signup could put
+ * any name on mail from Daythread. The gate applies wherever email is live enough for a
+ * verification link to have arrived.
+ */
+const VERIFY_FIRST = "Confirm your email address first — the link is in your inbox — and invitations will send.";
+const mustVerify = (user: { emailVerifiedAt?: Date | null; createdAt?: Date | null }) => messagingIsLive("EMAIL") && !addressProven(user);
 
 const inviteSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
@@ -28,6 +37,7 @@ const inviteSchema = z.object({
 export async function inviteClient(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string; delivery?: TransactionalDelivery }> {
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], actingSession);
   if (!ctx) return { error: "unauthorized" };
+  if (mustVerify(ctx.user)) return { error: VERIFY_FIRST };
   const { business, session } = ctx;
 
   const parsed = inviteSchema.safeParse({
@@ -87,6 +97,7 @@ const partnerInviteSchema = z.object({
 export async function invitePartner(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string; delivery?: TransactionalDelivery }> {
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
+  if (mustVerify(ctx.user)) return { error: VERIFY_FIRST };
   const { business, session } = ctx;
   if (!teamEntitled(business)) return { error: "Partners and teammates are part of Daythread Pro. Upgrade under Settings → Subscription." };
 
@@ -146,6 +157,7 @@ export async function invitePartner(formData: FormData, actingSession?: SessionP
 export async function inviteTeammate(formData: FormData, actingSession?: SessionPayload | null): Promise<{ error?: string; link?: string; delivery?: TransactionalDelivery }> {
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
+  if (mustVerify(ctx.user)) return { error: VERIFY_FIRST };
   const { business, session } = ctx;
   if (!teamEntitled(business)) return { error: "Teammates are part of Daythread Pro. Upgrade under Settings → Subscription." };
 
@@ -205,6 +217,7 @@ export async function resendInvitation(id: string, actingSession?: SessionPayloa
   assertIds(id);
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
+  if (mustVerify(ctx.user)) return { error: VERIFY_FIRST };
   // Only an invitation that is still outstanding may be resent. Reviving an ACCEPTED or
   // REVOKED one brought its original token back to life, so any copy of that old link —
   // forwarded, archived, sitting in a support ticket — would grant membership again.
@@ -302,29 +315,33 @@ export async function acceptInvitation(token: string, formData: FormData): Promi
     const parsed = acceptNewSchema.safeParse({ name: formData.get("name"), password: formData.get("password") });
     if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
     const passwordHash = await hashPassword(parsed.data.password);
-    const user = await prisma.user.create({ data: { name: parsed.data.name, email: inviteEmail, passwordHash } });
+    // The link was sent to this address and they hold it: the address is proven.
+    const user = await prisma.user.create({ data: { name: parsed.data.name, email: inviteEmail, passwordHash, emailVerifiedAt: new Date() } });
     userId = user.id;
   }
 
-  if (invitation.role !== "CLIENT") {
-    // The plan may have changed since the invitation was sent: re-check the seat at accept time.
-    const business = await prisma.business.findUnique({ where: { id: invitation.businessId } });
-    const seats = await prisma.orgMembership.count({ where: { businessId: invitation.businessId, role: { not: "CLIENT" }, status: "ACTIVE" } });
-    if (!business || !teamEntitled(business) || !canAddTeamSeat(business, seats)) {
-      return { error: "This workspace has no free team seat right now. Ask the owner to upgrade their plan, then try the link again." };
+  // The seat is counted and taken under the same lock invitations are sent under, so two
+  // invitees accepting at once cannot both pass the check.
+  const seated = await withLock(`seats:${invitation.businessId}`, async () => {
+    if (invitation.role !== "CLIENT") {
+      // The plan may have changed since the invitation was sent: re-check the seat at accept time.
+      const business = await prisma.business.findUnique({ where: { id: invitation.businessId } });
+      const seats = await prisma.orgMembership.count({ where: { businessId: invitation.businessId, role: { not: "CLIENT" }, status: "ACTIVE" } });
+      if (!business || !teamEntitled(business) || !canAddTeamSeat(business, seats)) return false;
     }
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.orgMembership.create({ data: { userId, businessId: invitation.businessId, role: invitation.role } });
-    await tx.invitation.update({ where: { id: invitation.id }, data: { status: "ACCEPTED", acceptedAt: new Date() } });
-    if (invitation.role === "CLIENT" && invitation.clientId) {
-      await tx.client.update({ where: { id: invitation.clientId }, data: { userId } });
-    }
-    await tx.auditLog.create({
-      data: { businessId: invitation.businessId, actorId: userId, action: "invitation.accepted", targetType: "invitation", targetId: invitation.id },
+    await prisma.$transaction(async (tx) => {
+      await tx.orgMembership.create({ data: { userId, businessId: invitation.businessId, role: invitation.role } });
+      await tx.invitation.update({ where: { id: invitation.id }, data: { status: "ACCEPTED", acceptedAt: new Date() } });
+      if (invitation.role === "CLIENT" && invitation.clientId) {
+        await tx.client.update({ where: { id: invitation.clientId }, data: { userId } });
+      }
+      await tx.auditLog.create({
+        data: { businessId: invitation.businessId, actorId: userId, action: "invitation.accepted", targetType: "invitation", targetId: invitation.id },
+      });
     });
+    return true;
   });
+  if (!seated) return { error: "This workspace has no free team seat right now. Ask the owner to upgrade their plan, then try the link again." };
 
   await setSessionCookie({ userId, activeBusinessId: invitation.businessId });
   const business = await prisma.business.findUniqueOrThrow({ where: { id: invitation.businessId } });

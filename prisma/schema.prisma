@@ -260,16 +260,20 @@ model Invitation {
 
 // A single-use, short-lived token for the "forgot password" flow. Same shape/rationale
 // as Invitation.token — a random opaque string, never a database id.
+/// One-time links sent to an address: a password reset, or the proof that the address is
+/// theirs. Only the token's hash is stored, prefixed by purpose, so a copy of the table
+/// cannot be used and a reset link can never verify an address.
 model PasswordResetToken {
   id        String    @id @default(cuid())
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   token     String    @unique
+  purpose   String    @default("PASSWORD_RESET") // PASSWORD_RESET | EMAIL_VERIFICATION
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
-  @@index([userId])
+  @@index([userId, purpose])
 }
 
 enum JoinRequestStatus {

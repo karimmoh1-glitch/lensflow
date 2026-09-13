@@ -9,6 +9,7 @@ import { completeOnboarding, markOnboardingDone, notePlanChoice, turnOnStarterAu
 import { startUpgradeCheckout } from "@/app/actions/billing";
 import { ChannelIcon, type ChannelKey } from "@/app/landing/ChannelIcon";
 import { DaythreadLogo } from "@/components/brand/DaythreadLogo";
+import { TemplatePreview } from "@/components/TemplatePreview";
 import { list, type PlanKey } from "@/lib/personalization";
 import { useToast } from "@/components/Toaster";
 import type { IntegrationProvider } from "@prisma/client";
@@ -37,7 +38,6 @@ const BLURB: Partial<Record<IntegrationProvider, string>> = {
   WHATSAPP: "Your WhatsApp Business number.",
   SMS: "A dedicated number for texts.",
 };
-const VARIABLE_LABEL: Record<string, string> = { name: "client's name", service: "service", date: "date", time: "time" };
 const planName = (p: PlanKey) => (p === "PRO" ? "Pro" : p === "BUSINESS" ? "Business" : "Free");
 
 /**
@@ -159,7 +159,7 @@ export function Welcome({
                           </span>
                           <span className="block text-13 text-ink/55">{r.when}</span>
                           <span className="mt-2 block rounded-lg bg-paper px-3 py-2 text-13 text-ink/75 leading-relaxed">
-                            <Template text={r.template} businessName={businessName} />
+                            <TemplatePreview text={r.template} businessName={businessName} />
                           </span>
                         </span>
                       </label>
@@ -224,21 +224,6 @@ export function Welcome({
         )}
       </div>
     </main>
-  );
-}
-
-/** The recipe's real template, with the variables shown as what they'll become. */
-function Template({ text, businessName }: { text: string; businessName: string }) {
-  const parts = text.split(/(\{\{\s*[a-z]+\s*\}\})/g);
-  return (
-    <>
-      {parts.map((part, i) => {
-        const m = part.match(/^\{\{\s*([a-z]+)\s*\}\}$/);
-        if (!m) return <span key={i}>{part}</span>;
-        if (m[1] === "business") return <span key={i}>{businessName}</span>;
-        return <span key={i} className="rounded bg-ink/[0.06] px-1 text-ink/60">{VARIABLE_LABEL[m[1]] ?? m[1]}</span>;
-      })}
-    </>
   );
 }
 

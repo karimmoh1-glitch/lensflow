@@ -56,7 +56,7 @@ export function PortalMessages({ conversationId, messages }: { conversationId: s
           </p>
         )}
         <div className="flex gap-2 pt-2 border-t border-border">
-          <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} placeholder="Write a message…" />
+          <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} aria-label="Message" placeholder="Write a message…" />
           <Button size="sm" onClick={send} disabled={!body.trim() || pending}>
             Send
           </Button>

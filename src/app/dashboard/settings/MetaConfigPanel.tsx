@@ -23,7 +23,7 @@ function Row({ setting }: { setting: SettingReport }) {
   const Icon = s.icon;
   return (
     <li className="flex flex-wrap items-start gap-x-3 gap-y-1 py-2">
-      <span className={`inline-flex items-center gap-1 shrink-0 text-2xs font-bold uppercase tracking-[0.08em] rounded-md px-1.5 py-0.5 ${s.className}`}>
+      <span className={`inline-flex items-center gap-1 shrink-0 text-2xs font-medium rounded-md px-1.5 py-0.5 ${s.className}`}>
         <Icon className="w-3 h-3" strokeWidth={3} aria-hidden />
         {s.label}
       </span>

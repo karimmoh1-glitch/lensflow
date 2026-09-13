@@ -25,7 +25,7 @@ export async function Priorities({ businessId }: { businessId: string }) {
         {steps.map((s, i) => {
           const isNext = s.key === next.key;
           return (
-            <li key={s.key} className="flex items-center gap-3 px-4 md:px-5 py-3">
+            <li key={s.key} className="grid grid-cols-[24px_minmax(0,1fr)] sm:grid-cols-[24px_minmax(0,1fr)_auto] items-start sm:items-center gap-x-3 gap-y-2 px-4 md:px-5 py-3">
               <span aria-hidden className={cn("w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-2xs font-semibold tabular-nums", s.done ? "bg-ink text-white" : isNext ? "border border-ink/40 text-ink" : "border border-ink/15 text-ink/50")}>
                 {s.done ? <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> : i + 1}
               </span>
@@ -40,8 +40,8 @@ export async function Priorities({ businessId }: { businessId: string }) {
                 <Link
                   href={s.href}
                   className={cn(
-                    "shrink-0 inline-flex items-center h-8 px-3 rounded-lg text-13 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2",
-                    isNext ? "bg-ink text-white hover:bg-black" : "text-ink/70 hover:text-ink hover:bg-black/[0.04]"
+                    "col-start-2 sm:col-start-auto justify-self-start sm:justify-self-end inline-flex items-center h-9 sm:h-8 px-3 rounded-lg text-13 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2",
+                    isNext ? "bg-ink text-white hover:bg-black" : "-ml-3 sm:ml-0 text-ink/70 hover:text-ink hover:bg-black/[0.04]"
                   )}
                 >
                   {s.cta}

@@ -197,7 +197,7 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
 
       {paid && snapshot && snapshot.invoices.length > 0 && (
         <section aria-label="Receipts" className="rounded-xl border border-border bg-white overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-border text-2xs font-bold uppercase tracking-[0.14em] text-ink/65">Receipts for your Daythread subscription</div>
+          <div className="px-5 py-3.5 border-b border-border text-2xs font-medium text-ink/65">Receipts for your Daythread subscription</div>
           <ul className="divide-y divide-border">
             {snapshot.invoices.map((inv) => (
               <li key={inv.id} className="px-5 py-3 flex items-center gap-3 text-sm">

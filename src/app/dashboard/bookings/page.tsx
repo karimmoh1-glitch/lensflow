@@ -99,7 +99,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
         <div className="space-y-6">
           {groups.map((g) => (
             <section key={g.label} aria-label={g.label}>
-              <h2 className={cn("px-1 mb-2 text-2xs font-bold uppercase tracking-[0.14em]", g.label === "Today" ? "text-accent-text" : "text-ink/65")}>{g.label}</h2>
+              <h2 className={cn("px-1 mb-2 text-13 font-semibold", g.label === "Today" ? "text-ink" : "text-ink/60")}>{g.label}</h2>
               <ol className="rounded-xl border border-border bg-white divide-y divide-border overflow-hidden">
                 {g.items.map((b) => {
                   const start = toZonedDisplayDate(b.startAt, tz);

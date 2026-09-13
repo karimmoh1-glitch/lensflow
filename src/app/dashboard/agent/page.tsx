@@ -71,7 +71,7 @@ export default async function AgentPage() {
       <PageHeader
         title="Assistant"
         description="What Daythread would do next, with the message ready. Nothing is sent until you approve it."
-        action={<span className="inline-flex items-center gap-1.5 text-2xs font-bold uppercase tracking-[0.12em] text-ink/75 bg-black/[0.03] rounded-md px-2.5 py-1"><ListChecks className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> {PLANS[plan].name}</span>}
+        action={<span className="inline-flex items-center gap-1.5 text-2xs font-medium text-ink/75 bg-black/[0.03] rounded-md px-2.5 py-1"><ListChecks className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> {PLANS[plan].name}</span>}
       />
       <AgentBoard initial={{ generatedAt: brief.generatedAt.toISOString(), proposals: brief.proposals, activity: brief.activity.map((a) => ({ ...a, at: a.at.toISOString() })) }} />
     </div>

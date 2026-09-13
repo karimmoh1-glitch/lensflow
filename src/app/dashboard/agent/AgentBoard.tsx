@@ -101,7 +101,7 @@ export function AgentBoard({ initial }: { initial: { generatedAt: string; propos
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-13 font-semibold text-ink/65">{k.label}</span>
               {p.valueCents ? <span className="text-13 font-semibold text-ink/65">· {formatMoney(p.valueCents)}</span> : null}
-              <span className={cn("ml-auto text-2xs font-bold uppercase tracking-[0.1em] rounded-md px-1.5 py-0.5", recommendationOnly ? "bg-black/[0.05] text-ink/70" : isOpen ? "bg-black/[0.03] text-ink/75" : "bg-success-soft text-success-text")}>{recommendationOnly ? "Recommendation" : isOpen ? "Preview · needs your approval" : "Ready with your approval"}</span>
+              <span className={cn("ml-auto text-2xs font-medium rounded-md px-1.5 py-0.5", recommendationOnly ? "bg-black/[0.05] text-ink/70" : isOpen ? "bg-black/[0.03] text-ink/75" : "bg-success-soft text-success-text")}>{recommendationOnly ? "Recommendation" : isOpen ? "Preview · needs your approval" : "Ready with your approval"}</span>
             </div>
             <h3 className="mt-0.5 text-[15px] font-semibold text-ink leading-snug">{p.title}</h3>
             <p className="mt-0.5 text-sm text-ink/65 leading-snug">{p.why}</p>
@@ -142,9 +142,9 @@ export function AgentBoard({ initial }: { initial: { generatedAt: string; propos
           <p className="mt-1.5 text-sm text-ink/80 leading-relaxed">{noticed.map((n, i) => <span key={n}>{i > 0 ? (i === noticed.length - 1 ? " and " : ", ") : ""}<span className="font-semibold text-ink">{n}</span></span>)}.{total > 0 ? <span className="text-ink/65"> About {formatMoney(total)} of work is riding on it.</span> : null}</p>
         )}
         <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-13 font-semibold text-ink/65">Ready to send</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{actionable.length}</dd></div>
-          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-13 font-semibold text-ink/65">Recommendations</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{recommendations.length}</dd></div>
-          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-13 font-semibold text-ink/65">Done this week</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{initial.activity.filter((a) => a.result === "sent").length}</dd></div>
+          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-xs sm:text-13 font-medium text-ink/60 leading-tight">Ready to send</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{actionable.length}</dd></div>
+          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-xs sm:text-13 font-medium text-ink/60 leading-tight">Suggested</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{recommendations.length}</dd></div>
+          <div className="rounded-xl bg-paper px-2 py-2"><dt className="text-xs sm:text-13 font-medium text-ink/60 leading-tight">Done this week</dt><dd className="text-lg font-extrabold text-ink tabular-nums">{initial.activity.filter((a) => a.result === "sent").length}</dd></div>
         </dl>
       </section>
 
@@ -179,7 +179,7 @@ export function AgentBoard({ initial }: { initial: { generatedAt: string; propos
 
       {initial.activity.length > 0 && (
         <section>
-          <h2 className="text-2xs font-bold uppercase tracking-[0.14em] text-ink/65 mb-2.5 px-1">Assistant activity · last 7 days</h2>
+          <h2 className="text-2xs font-medium text-ink/65 mb-2.5 px-1">Assistant activity · last 7 days</h2>
           <ul className="rounded-xl border border-border bg-white divide-y divide-border">
             {initial.activity.map((a, i) => (
               <li key={i} className="px-4 py-3 flex items-center gap-3 text-sm">

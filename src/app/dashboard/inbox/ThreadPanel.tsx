@@ -286,8 +286,7 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
             <ChevronLeft className="w-5 h-5 text-ink/65" strokeWidth={2} />
           </Link>
           <div className="flex-1 min-w-0">
-            <h2 className="font-semibold text-sm truncate">{displayName}</h2>
-            <h1 className="sr-only">Conversation with {displayName}</h1>
+            <h2 className="font-semibold text-sm truncate"><span className="sr-only">Conversation with </span>{displayName}</h2>
             <div className="flex items-center gap-1.5 text-xs text-ink/70 truncate">
               <ChannelBadge channel={conversation.channel} />
               {CHANNEL_META[conversation.channel].label}

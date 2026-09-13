@@ -58,7 +58,7 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
             <p className="flex-1">{summary}</p>
             <button type="button" onClick={() => setOpen(false)} aria-label="Hide summary" className={cn("shrink-0 w-5 h-5 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-md inline-flex items-center justify-center", tone)}><X className="w-3 h-3" strokeWidth={2.5} aria-hidden /></button>
           </div>
-          <p className={cn("mt-1 text-2xs font-bold uppercase tracking-[0.12em]", outbound ? "text-white/70" : "text-ink/65")}>{source === "ai" ? "Written by the model from this message" : "From the message, by rules"}</p>
+          <p className={cn("mt-1 text-2xs font-medium", outbound ? "text-white/70" : "text-ink/65")}>{source === "ai" ? "Written by the model from this message" : "From the message, by rules"}</p>
         </div>
       )}
     </div>

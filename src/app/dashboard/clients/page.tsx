@@ -76,18 +76,19 @@ export default async function ClientsPage() {
           <div className="divide-y divide-border">
             {listed.map(({ c, opportunity }) => {
               return (
-                <Link
+                // The whole row opens the person (a stretched link), and the partner action sits
+                // above it rather than inside it — a button nested in a link is not operable.
+                <div
                   key={c.id}
-                  href={`/dashboard/clients/${c.id}`}
-                  className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-5 py-3.5 hover:bg-black/[0.02]"
+                  className="relative flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-5 py-3.5 hover:bg-black/[0.02] focus-within:bg-black/[0.03]"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-ink/[0.06] text-ink/75 flex items-center justify-center text-2xs font-semibold shrink-0">
                       {initials(c.name)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{c.name}</div>
-                      <div className="text-xs text-ink/70 truncate">{opportunity.rank > 0 ? <><span className={cn("font-semibold", opportunity.kind === "client" ? "text-success-text" : "text-accent-text")}>{opportunity.label}</span> · {opportunity.reason}</> : (c.email ?? c.phone ?? (c.instagram ? `@${c.instagram}` : "No contact info"))}</div>
+                      <Link href={`/dashboard/clients/${c.id}`} className="block text-sm font-medium truncate after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ink/70">{c.name}</Link>
+                      <div className="text-xs text-ink/70 truncate">{opportunity.rank > 0 ? <><span className={cn("font-semibold", opportunity.kind === "client" ? "text-success-text" : "text-ink")}>{opportunity.label}</span> · {opportunity.reason}</> : (c.email ?? c.phone ?? (c.instagram ? `@${c.instagram}` : "No contact info"))}</div>
                     </div>
                   </div>
                   <div className="flex items-center flex-wrap gap-3 pl-11 sm:pl-0 shrink-0">
@@ -99,10 +100,10 @@ export default async function ClientsPage() {
                       <div className="text-xs text-ink/65">{c.conversations[0] ? `Last on ${c.conversations[0].channel.toLowerCase()}` : "No conversation yet"}</div>
                     </div>
                     {canPromote && c.userId && clientMembershipByUserId.has(c.userId) && (
-                      <PromotePartnerButton membershipId={clientMembershipByUserId.get(c.userId)!} name={c.name} />
+                      <div className="relative z-10"><PromotePartnerButton membershipId={clientMembershipByUserId.get(c.userId)!} name={c.name} /></div>
                     )}
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { TemplatePreview } from "@/components/TemplatePreview";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getPersonalization } from "@/server/personalization";
@@ -103,7 +104,7 @@ export default async function AutomationsPage() {
                 <div className="flex items-center justify-between gap-4 mb-3">
                   <span className="text-sm font-medium text-ink flex items-center gap-2 min-w-0">
                     <span className="truncate">{a.name}</span>
-                    {a.enabled && !running.has(a.id) && <span className="shrink-0 text-2xs font-bold uppercase tracking-[0.1em] text-warning-text bg-warning-soft rounded-md px-1.5 py-0.5">Paused by plan</span>}
+                    {a.enabled && !running.has(a.id) && <span className="shrink-0 text-2xs font-medium text-warning-text bg-warning-soft rounded-md px-1.5 py-0.5">Paused by plan</span>}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     {isEditable(a.trigger, a.action) ? <EditAutomationButton automation={{ id: a.id, name: a.name, trigger: a.trigger as EditableTrigger, action: a.action as EditableAction, offsetHours: a.offsetHours, messageTemplate: a.messageTemplate }} /> : <span className="text-13 font-semibold text-ink/65">Legacy</span>}
@@ -118,7 +119,7 @@ export default async function AutomationsPage() {
                   <Beat label="Then" tone="outcome" text={ACTION[a.action] ?? a.action.toLowerCase()} />
                 </div>
                 <p className="text-xs text-ink/65 mt-3 truncate">
-                  <span className="text-ink/65">Sends:</span> “{a.messageTemplate}”
+                  <span className="text-ink/65">Sends:</span> “<TemplatePreview text={a.messageTemplate} businessName={business.name} />”
                 </p>
               </div>
             </Card>
@@ -151,17 +152,17 @@ export default async function AutomationsPage() {
 }
 
 const BEAT: Record<"signal" | "thinking" | "outcome", { dot: string; label: string; bg: string }> = {
-  signal: { dot: "bg-accent", label: "text-accent-text", bg: "bg-accent-soft/50" },
-  thinking: { dot: "bg-ink", label: "text-ink/75", bg: "bg-black/[0.03]" },
-  outcome: { dot: "bg-success", label: "text-success-text", bg: "bg-success-soft/60" },
+  // One neutral block per beat; the words When / If / Then carry the structure, not three colors.
+  signal: { dot: "bg-ink/40", label: "text-ink/55", bg: "bg-black/[0.03]" },
+  thinking: { dot: "bg-ink/40", label: "text-ink/55", bg: "bg-black/[0.03]" },
+  outcome: { dot: "bg-ink/40", label: "text-ink/55", bg: "bg-black/[0.03]" },
 };
 
 function Beat({ label, tone, text }: { label: string; tone: keyof typeof BEAT; text: string }) {
   const t = BEAT[tone];
   return (
     <div className={cn("rounded-xl px-3 py-2.5 min-w-0", t.bg)}>
-      <div className={cn("flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide mb-0.5", t.label)}>
-        <span className={cn("w-1.5 h-1.5 rounded-full", t.dot)} />
+      <div className={cn("flex items-center gap-1.5 text-2xs font-medium mb-0.5", t.label)}>
         {label}
       </div>
       <div className="text-sm text-ink truncate">{text}</div>

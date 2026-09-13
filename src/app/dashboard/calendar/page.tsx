@@ -75,7 +75,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 <Link key={v} href={`?view=${v}&day=${dayKey(selected)}`} aria-current={view === v ? "page" : undefined} className={cn("inline-flex items-center h-7 px-3 rounded-md text-13 font-medium transition-colors", view === v ? "bg-white text-ink shadow-xs" : "text-ink/60 hover:text-ink")}>{v === "day" ? "Day" : "Week"}</Link>
               ))}
             </div>
-            <Link href="/dashboard/bookings" className="inline-flex items-center h-8 px-3 rounded-lg border border-ink/[0.12] bg-white text-13 font-semibold text-ink hover:border-ink/25">All bookings</Link>
+            <Link href="/dashboard/bookings" className="hidden sm:inline-flex items-center h-8 px-3 rounded-lg border border-ink/[0.12] bg-white text-13 font-semibold text-ink hover:border-ink/25">All bookings</Link>
           </div>
         }
       />
@@ -98,7 +98,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             return (
               <li key={d.toISOString()}>
                 <Link href={`?view=${view}&day=${dayKey(d)}`} aria-current={sel ? "date" : undefined} className={cn("flex flex-col items-center rounded-xl py-2 min-h-[3.75rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", sel ? "bg-ink text-white" : "bg-white border border-border text-ink hover:bg-black/[0.03]")}>
-                  <span className={cn("text-2xs font-bold uppercase tracking-[0.1em]", sel ? "text-white/70" : "text-ink/65")}>{format(d, "EEE")}</span>
+                  <span className={cn("text-2xs font-medium", sel ? "text-white/70" : "text-ink/65")}>{format(d, "EEE")}</span>
                   <span className={cn("text-lg font-extrabold tabular-nums leading-tight", !sel && isSameDay(d, today) && "text-accent-text")}>{format(d, "d")}</span>
                   <span className="h-1.5 flex items-center gap-0.5" aria-hidden>{Array.from({ length: Math.min(3, count) }).map((_, i) => <span key={i} className={cn("w-1 h-1 rounded-full", sel ? "bg-white/80" : "bg-accent")} />)}</span>
                 </Link>
@@ -142,7 +142,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-ink truncate">{item.title}</div>
                         <div className="text-xs text-ink/65 truncate">{item.subtitle}{item.location ? ` · ${item.location}` : ""}</div>
-                        {item.status === "BOOKED" && <span className="mt-1 inline-block text-2xs font-bold uppercase tracking-[0.1em] text-warning-text bg-warning-soft rounded-md px-1.5 py-0.5">Not confirmed</span>}
+                        {item.status === "BOOKED" && <span className="mt-1 inline-block text-2xs font-medium text-warning-text bg-warning-soft rounded-md px-1.5 py-0.5">Not confirmed</span>}
                       </div>
                       <ChevronRight className="w-4 h-4 text-ink/30 self-center shrink-0" aria-hidden />
                     </Link>

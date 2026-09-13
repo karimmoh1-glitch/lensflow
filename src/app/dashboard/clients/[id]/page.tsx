@@ -108,13 +108,13 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-14 h-14 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-lg font-semibold shrink-0">
+      <div className="flex items-center gap-3 md:gap-4 mb-6">
+        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-ink/[0.06] text-ink/75 flex items-center justify-center text-base md:text-lg font-semibold shrink-0">
           {initials(client.name)}
         </div>
         <div className="min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <h1 className="font-display text-2xl truncate">{client.name}</h1>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+            <h1 className="font-sans font-bold text-page-title text-ink truncate max-w-full">{client.name}</h1>
             <span className={cn("text-2xs font-bold rounded-md px-2 py-0.5 shrink-0", client.relationship === "CUSTOMER" ? "bg-success-soft text-success-text" : client.relationship === "CONTACT" ? "bg-black/[0.05] text-ink/65" : "bg-black/[0.03] text-ink/75")}>
               {client.relationship === "CUSTOMER" ? "Customer" : client.relationship === "CONTACT" ? "Contact" : "Potential client"}
             </span>
@@ -122,9 +122,9 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           <p className="text-sm text-ink/70 truncate">{[client.email, client.phone, client.instagram].filter(Boolean).join(" · ") || "No contact info yet"}</p>
 
         </div>
-        <div className="ml-auto text-right shrink-0">
+        <div className="ml-auto text-right shrink-0 hidden sm:block">
           <div className="text-xs text-ink/65">Bookings</div>
-          <div className="font-display text-2xl tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</div>
+          <div className="font-sans font-bold text-2xl tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</div>
         </div>
       </div>
 
@@ -137,12 +137,12 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             <div className="flex items-center gap-2">
               <span className={cn("w-2 h-2 rounded-full", standing.tone === "signal" ? "bg-accent" : standing.tone === "outcome" ? "bg-success" : standing.tone === "warning" ? "bg-warning" : standing.tone === "thinking" ? "bg-ink" : "bg-ink/30")} />
               <span className="text-13 font-semibold text-ink/65">Where we stand</span>
-              <span className={cn("ml-auto text-2xs font-bold rounded-md px-2 py-0.5", standing.tone === "signal" ? "bg-accent-soft text-accent-text" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-black/[0.03] text-ink/75" : "bg-black/[0.05] text-ink/65")}>{standing.label}</span>
+              <span className={cn("ml-auto text-2xs font-medium rounded-md px-2 py-0.5 text-right", standing.tone === "signal" ? "bg-black/[0.04] text-ink/80" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-black/[0.03] text-ink/75" : "bg-black/[0.05] text-ink/65")}>{standing.label}</span>
             </div>
-            <p className="mt-2 font-sans font-extrabold text-[1.35rem] leading-tight tracking-[-0.02em] text-ink">{standing.standing}</p>
+            <p className="mt-2 font-sans font-bold text-lg md:text-[1.35rem] leading-snug tracking-[-0.02em] text-ink">{standing.standing}</p>
             {(standing.theyWaitFor || standing.youWaitFor) && (
               <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                {standing.theyWaitFor && <div><dt className="inline text-ink/65">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor.charAt(0).toLowerCase() + standing.theyWaitFor.slice(1)}</dd></div>}
+                {standing.theyWaitFor && <div><dt className="inline text-ink/65">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.theyWaitFor.charAt(0).toLowerCase() + standing.theyWaitFor.slice(1)}</dd></div>}
                 {standing.youWaitFor && <div><dt className="inline text-ink/65">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor.charAt(0).toLowerCase() + standing.youWaitFor.slice(1)}</dd></div>}
               </dl>
             )}
@@ -153,10 +153,12 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </p>
             )}
             {standing.nextAction && standingHref && (
-              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-strong text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
-                {standing.nextAction.label}
-                <span className="text-white/60 font-medium text-xs">· {standing.nextAction.why}</span>
-              </Link>
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <Link href={standingHref} className="inline-flex items-center h-10 px-4 rounded-lg bg-ink text-white text-sm font-semibold transition-colors hover:bg-black active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2">
+                  {standing.nextAction.label}
+                </Link>
+                <span className="text-xs text-ink/55">{standing.nextAction.why}</span>
+              </div>
             )}
           </div>
           <dl className="px-5 md:px-6 py-5 grid grid-cols-2 gap-x-4 gap-y-4 content-start">

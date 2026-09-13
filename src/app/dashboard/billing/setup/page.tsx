@@ -59,7 +59,7 @@ export default async function BillingSetupPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <code className="text-[12px] font-semibold text-ink">{v.name}</code>
-                  <span className={cn("text-2xs font-bold uppercase tracking-[0.12em] rounded-md px-2 py-0.5", v.status === "connected" ? "bg-success-soft text-success-text" : v.status === "invalid" ? "bg-danger-soft text-danger-text" : v.status === "unverified" ? "bg-warning-soft text-warning-text" : "bg-black/[0.05] text-ink/70")}>{label(v.status)}</span>
+                  <span className={cn("text-2xs font-medium rounded-md px-2 py-0.5", v.status === "connected" ? "bg-success-soft text-success-text" : v.status === "invalid" ? "bg-danger-soft text-danger-text" : v.status === "unverified" ? "bg-warning-soft text-warning-text" : "bg-black/[0.05] text-ink/70")}>{label(v.status)}</span>
                   {!v.required && <span className="text-2xs text-ink/65">optional</span>}
                 </div>
                 <p className="mt-1 text-sm text-ink/70">{v.does}</p>

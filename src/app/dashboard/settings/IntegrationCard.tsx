@@ -196,7 +196,7 @@ export function IntegrationCard({ model, icon, connect, manage, children }: { mo
             <p className="mt-1 text-sm text-ink/65 leading-snug">{model.description}</p>
             <ul className="mt-2.5 flex flex-wrap gap-1.5">
               {model.capabilities.map((c) => (
-                <li key={c} className="text-2xs font-semibold uppercase tracking-[0.08em] text-ink/65 bg-black/[0.04] rounded-md px-1.5 py-0.5">{c}</li>
+                <li key={c} className="text-2xs font-medium text-ink/65 bg-black/[0.04] rounded-md px-1.5 py-0.5">{c}</li>
               ))}
             </ul>
             {model.status === "connected" && model.lastReceivedAt && <p className="mt-2 text-2xs text-ink/65">Last message received {model.lastReceivedAt}</p>}

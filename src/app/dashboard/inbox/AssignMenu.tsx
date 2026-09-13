@@ -62,7 +62,7 @@ export function AssignMenu({ conversationId, members, current }: { conversationI
       </button>
       {open && (
         <div role="menu" className="absolute right-0 top-full mt-1 z-40 w-56 rounded-xl border border-border bg-white shadow-[0_18px_44px_-20px_rgba(16,17,20,0.35)] p-1 text-sm dt-land">
-          <div className="px-2.5 pt-1.5 pb-1 text-2xs font-bold uppercase tracking-[0.14em] text-ink/65">Owner</div>
+          <div className="px-2.5 pt-1.5 pb-1 text-2xs font-medium text-ink/65">Owner</div>
           {members.map((m) => (
             <button key={m.membershipId} type="button" role="menuitemradio" aria-checked={m.membershipId === current} onClick={() => pick(m.membershipId)} className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.04]">
               <span className="w-6 h-6 rounded-full bg-black/[0.03] text-ink/75 text-2xs font-extrabold flex items-center justify-center">{initials(m.name)}</span>

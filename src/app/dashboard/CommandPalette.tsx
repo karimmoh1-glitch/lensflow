@@ -194,7 +194,7 @@ export function CommandPalette() {
             const on = i === cursor;
             return (
               <li key={it.key} role="presentation">
-                {header && <div className="px-4 pt-2 pb-1 text-2xs font-bold uppercase tracking-[0.14em] text-ink/65">{it.group}</div>}
+                {header && <div className="px-4 pt-2 pb-1 text-2xs font-medium text-ink/65">{it.group}</div>}
                 <button
                   id={`cmd-${it.key}`}
                   role="option"

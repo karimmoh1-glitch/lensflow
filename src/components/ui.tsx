@@ -292,12 +292,12 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-6">
-      <div>
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-6">
+      <div className="min-w-0">
         <h1 className="font-sans font-bold text-page-title text-ink">{title}</h1>
         {description && <p className="mt-1 text-sm text-ink/65">{description}</p>}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className="sm:shrink-0 max-w-full">{action}</div>}
     </div>
   );
 }

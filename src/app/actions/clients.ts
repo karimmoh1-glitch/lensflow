@@ -1,15 +1,19 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { track } from "@/lib/analytics";
 
 export async function addClientNote(clientId: string, body: string, actingSession?: SessionPayload | null) {
+  assertIds(clientId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], actingSession);
   if (!ctx) throw new Error("unauthorized");
   const { business, session } = ctx;
 
+  if (typeof body !== "string" || !body.trim() || body.length > 2000) throw new Error("A note is up to 2,000 characters.");
   const client = await prisma.client.findFirst({ where: { id: clientId, businessId: business.id } });
   if (!client) throw new Error("not found");
 
@@ -19,6 +23,7 @@ export async function addClientNote(clientId: string, body: string, actingSessio
 
 /** Merges another record into this person. Owner or admin only; both must be in this workspace. */
 export async function mergeClients(keepId: string, mergeId: string, actingSession?: SessionPayload | null): Promise<{ ok: true } | { ok: false; error: string }> {
+  assertIds(keepId, mergeId);
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { ok: false, error: "unauthorized" };
   const { mergeClientRecords } = await import("@/server/identity");
@@ -36,6 +41,7 @@ export async function mergeClients(keepId: string, mergeId: string, actingSessio
 
 /** "Not the same person": remembered both ways so the suggestion doesn't come back. */
 export async function dismissMerge(clientId: string, otherId: string, actingSession?: SessionPayload | null): Promise<{ ok: true } | { ok: false; error: string }> {
+  assertIds(clientId, otherId);
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { ok: false, error: "unauthorized" };
   const rows = await prisma.client.findMany({ where: { businessId: ctx.business.id, id: { in: [clientId, otherId] } }, select: { id: true, notSameAs: true } });

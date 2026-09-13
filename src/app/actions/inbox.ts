@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
 import { requireRole, type SessionPayload } from "@/lib/auth";
@@ -24,6 +26,7 @@ export async function generateDraftAction(
   session?: SessionPayload | null,
   modeInput?: unknown
 ): Promise<{ text?: string; error?: string }> {
+  assertIds(conversationId);
   const mode: DraftMode = isDraftMode(modeInput) ? modeInput : "reply";
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
@@ -71,10 +74,12 @@ export async function generateDraftAction(
 const DUPLICATE_SEND_MS = 15_000;
 
 export async function sendReplyAction(conversationId: string, body: string, aiDrafted: boolean, session?: SessionPayload | null) {
+  assertIds(conversationId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const { business, session: ctxSession } = ctx;
 
+  if (typeof body !== "string" || !body.trim() || body.length > 20000) throw new Error("A reply is up to 20,000 characters.");
   const conversation = await prisma.conversation.findFirst({ where: { id: conversationId, businessId: business.id } });
   if (!conversation) throw new Error("not found");
 
@@ -166,6 +171,7 @@ export async function sendReplyAction(conversationId: string, body: string, aiDr
 }
 
 export async function markLeadLost(leadId: string) {
+  assertIds(leadId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"]);
   if (!ctx) throw new Error("unauthorized");
   // The where clause is the tenant guard, so a lead belonging to somebody else matches
@@ -185,6 +191,7 @@ export async function markLeadLost(leadId: string) {
  * irreversible action that shouldn't be one click away.
  */
 export async function deleteConversation(conversationId: string, session?: SessionPayload | null) {
+  assertIds(conversationId);
   const ctx = await requireRole(["OWNER", "ADMIN", "PHOTOGRAPHER"], session);
   if (!ctx) throw new Error("unauthorized");
   const result = await prisma.conversation.updateMany({

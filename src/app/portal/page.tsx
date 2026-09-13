@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireClientRecord } from "@/app/actions/portal";
+import { requireClientRecord } from "@/server/portalAuth";
 import { prisma } from "@/lib/db";
 import { PageHeader, Card, Badge, EmptyState } from "@/components/ui";
 import { toZonedDisplayDate, isSafeHttpsUrl } from "@/lib/utils";

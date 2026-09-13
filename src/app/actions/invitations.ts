@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -184,6 +186,7 @@ export async function inviteTeammate(formData: FormData, actingSession?: Session
 }
 
 export async function revokeInvitation(id: string, actingSession?: SessionPayload | null): Promise<{ error?: string }> {
+  assertIds(id);
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) throw new Error("unauthorized");
   // updateMany is the tenant guard: an id from another workspace simply matches nothing.
@@ -199,6 +202,7 @@ export async function revokeInvitation(id: string, actingSession?: SessionPayloa
 }
 
 export async function resendInvitation(id: string, actingSession?: SessionPayload | null): Promise<{ link?: string; error?: string; delivery?: TransactionalDelivery }> {
+  assertIds(id);
   const ctx = await requireRole(["OWNER", "ADMIN"], actingSession);
   if (!ctx) return { error: "unauthorized" };
   // Only an invitation that is still outstanding may be resent. Reviving an ACCEPTED or

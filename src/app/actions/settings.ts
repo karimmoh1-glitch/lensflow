@@ -155,7 +155,9 @@ export async function deleteWorkspace(confirmName: string, session?: SessionPayl
 // ── Password ────────────────────────────────────────────────────────────────
 
 import { z } from "zod";
-import { verifyPassword, hashPassword, setSessionCookie, getSession } from "@/lib/auth";
+import { verifyPassword, hashPassword, setSessionCookie, getSession, isTrustedSession } from "@/lib/auth";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { accountPasswordBucket } from "@/lib/sharedRateLimit";
 
 const PasswordChangeSchema = z.object({
   current: z.string().min(1, "Enter your current password."),
@@ -172,13 +174,22 @@ export async function changePassword(input: { current: string; next: string }, a
   // authorizes with a bearer token and passes it here; reading the cookie instead meant the
   // change applied to a different person on any client holding both, and did not work at all
   // on a native client, which has no cookie.
-  const session = actingSession ?? (await getSession());
+  // Only a session this server verified may be passed in. A server action is a public
+  // endpoint: without this check a posted `{ userId }` object would change that user's
+  // password with nothing but a correct guess at the current one.
+  const session = actingSession ? (isTrustedSession(actingSession) ? actingSession : null) : await getSession();
   if (!session) throw new Error("unauthorized");
   const parsed = PasswordChangeSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the details." };
   if (parsed.data.current === parsed.data.next) return { error: "Choose a password you haven't used here." };
   const user = await prisma.user.findUnique({ where: { id: session.userId } });
-  if (!user || !(await verifyPassword(parsed.data.current, user.passwordHash))) return { error: "That current password isn't right." };
+  if (!user) throw new Error("unauthorized");
+  // The current password is verified here, so this is a login and is throttled like one:
+  // the same per-account budget the sign-in forms share, plus a per-network brake.
+  if (!rateLimit(`change-password:${await getClientIp()}`, { limit: 20, windowMs: 10 * 60 * 1000 }).ok || !(await accountPasswordBucket(user.email)).ok) {
+    return { error: "Too many attempts. Wait a few minutes and try again." };
+  }
+  if (!(await verifyPassword(parsed.data.current, user.passwordHash))) return { error: "That current password isn't right." };
   const updated = await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(parsed.data.next), sessionVersion: { increment: 1 } }, select: { sessionVersion: true } });
   await prisma.passwordResetToken.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
   // Bumping sessionVersion signs every other device out; this one is re-issued so the person

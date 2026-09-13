@@ -46,7 +46,7 @@ const PUBLIC_ACTIONS: Record<string, string> = {
   "landing.ts:recordLandingEvent": "Anonymous analytics from the marketing site. Rate limited, writes no tenant data.",
   "onboardingEvents.ts:recordOnboardingEvent": "Anonymous analytics from the signup flow. Rate limited.",
   "workspace.ts:switchWorkspace": "Guarded by setActiveBusiness, which refuses anything but an active membership of the caller's own.",
-  "settings.ts:changePassword": "Acts only on the caller's own account, and verifies the current password first.",
+  "settings.ts:changePassword": "Acts only on the caller's own account: a passed session must be one this server verified (isTrustedSession), the current password is checked, and it shares login's per-account guess budget.",
 };
 
 /** API routes outside the mobile tree that are deliberately reachable without a session. */

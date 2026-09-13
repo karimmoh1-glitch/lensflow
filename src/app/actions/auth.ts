@@ -4,7 +4,7 @@ import { z } from "zod";
 import { betaGrantForNewWorkspace } from "@/server/betaOffer";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, getUserMemberships, homeRouteFor, getSession } from "@/lib/auth";
+import { hashPassword, verifyPassword, setSessionCookie, clearSessionCookie, getUserMemberships, homeRouteFor, getSession, DUMMY_HASH } from "@/lib/auth";
 import { generatePasswordResetToken, passwordResetExpiry } from "@/lib/passwordReset";
 import { sendOnChannel, messagingIsLive } from "@/lib/messaging";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
@@ -147,9 +147,6 @@ export async function login(formData: FormData): Promise<FormState> {
   await setSessionCookie({ userId: user.id, activeBusinessId: membership.businessId });
   redirect(homeRouteFor(membership.role, membership.business));
 }
-
-// A valid bcrypt hash of a random string, for timing-equal comparisons when there is no account.
-const DUMMY_HASH = "$2a$10$BaCUUcjgNeUlpal/7DIz..VKv4XaiGJTWtiDla40HVzXvfm.tU0Cm";
 
 export async function logout() {
   // Signing out revokes the token rather than only forgetting it in this browser: a copied

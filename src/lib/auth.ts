@@ -30,6 +30,13 @@ export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
+/**
+ * A valid bcrypt hash of a random string. Every password check that might be for an
+ * account that doesn't exist compares against this instead of skipping the compare, so
+ * the response time never says whether the address is registered.
+ */
+export const DUMMY_HASH = "$2a$10$BaCUUcjgNeUlpal/7DIz..VKv4XaiGJTWtiDla40HVzXvfm.tU0Cm";
+
 export async function createSessionToken(payload: SessionPayload) {
   // Stamp the token with the user's current session version so a later password change
   // or account deletion invalidates it — without keeping a server-side session table.

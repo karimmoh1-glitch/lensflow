@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { track } from "@/lib/analytics";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
@@ -9,6 +11,7 @@ import { rateLimit, getClientIp } from "@/lib/rateLimit";
  * so drop-off from landing to signup can be measured without knowing who anyone is.
  */
 export async function recordLandingEvent(name: "landing_view" | "landing_cta" | "referral_started", anonymousId: string, source?: string): Promise<void> {
+  assertIds(anonymousId);
   if (!/^[a-z0-9]{8,40}$/i.test(anonymousId)) return;
   const ip = await getClientIp();
   if (!rateLimit(`landing:${ip}`, { limit: 60, windowMs: 10 * 60 * 1000 }).ok) return;

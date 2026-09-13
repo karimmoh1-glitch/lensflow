@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -14,12 +16,14 @@ export async function listJoinRequests(session?: SessionPayload | null) {
   if (!ctx) return [];
   return prisma.joinRequest.findMany({
     where: { businessId: ctx.business.id, status: "PENDING" },
-    include: { user: true },
+    // Only what the row shows. A whole User carries the password hash.
+    include: { user: { select: { id: true, name: true, email: true } } },
     orderBy: { createdAt: "asc" },
   });
 }
 
 export async function respondToJoinRequest(id: string, accept: boolean, session?: SessionPayload | null) {
+  assertIds(id);
   const ctx = await requireRole(["OWNER", "ADMIN"], session);
   if (!ctx) throw new Error("unauthorized");
 
@@ -56,6 +60,7 @@ export async function respondToJoinRequest(id: string, accept: boolean, session?
 /** The only path from CLIENT to elevated access — always explicit, always owner/admin
  * initiated. Never automatic, per the standing rule that join requests land as clients. */
 export async function promoteToPartner(membershipId: string) {
+  assertIds(membershipId);
   const ctx = await requireRole(["OWNER", "ADMIN"]);
   if (!ctx) throw new Error("unauthorized");
 

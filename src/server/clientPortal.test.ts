@@ -6,7 +6,8 @@ vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => { throw new Error(`NEXT_REDIRECT:${url}`); } }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-forwarded-for": "198.51.100.101" }), cookies: async () => ({ get: () => undefined, set: () => {}, delete: () => {} }) }));
 
-import { requireClientRecord, sendPortalMessage } from "@/app/actions/portal";
+import { requireClientRecord } from "@/server/portalAuth";
+import { sendPortalMessage } from "@/app/actions/portal";
 import { portalDeliveries } from "@/server/portalDeliveries";
 
 /**

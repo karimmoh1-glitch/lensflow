@@ -25,7 +25,7 @@ import { sendReplyAction } from "@/app/actions/inbox";
 import { advanceBookingStatus } from "@/app/actions/bookings";
 import { sendClientFiles } from "@/app/actions/clientFiles";
 import { inviteClient, acceptInvitation } from "@/app/actions/invitations";
-import { requireClientRecord } from "@/app/actions/portal";
+import { requireClientRecord } from "@/server/portalAuth";
 import { portalDeliveries } from "@/server/portalDeliveries";
 import { getSession, verifySessionToken } from "@/lib/auth";
 

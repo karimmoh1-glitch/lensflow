@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { revalidatePath } from "next/cache";
 import { requireRole, type SessionPayload } from "@/lib/auth";
 import { enforceRateLimit } from "@/lib/rateLimit";
@@ -12,6 +14,7 @@ const isProvider = (p: string): p is FileProvider => p === "GOOGLE_DRIVE" || p =
 
 /** Make (or find) this client's folder in a connected file store. Staff only, tenant-scoped. */
 export async function createClientFolder(clientId: string, provider: FileProvider, session?: SessionPayload | null): Promise<{ ok: true; url: string | null } | { ok: false; error: string }> {
+  assertIds(clientId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) return { ok: false, error: "unauthorized" };
   if (!isProvider(provider)) return { ok: false, error: "Unknown file store." };
@@ -24,6 +27,7 @@ export async function createClientFolder(clientId: string, provider: FileProvide
 
 /** Give this client access to their folder, without sending anything yet. */
 export async function shareClientFiles(clientId: string, provider: FileProvider, session?: SessionPayload | null): Promise<ShareResult> {
+  assertIds(clientId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) return { ok: false, error: "unauthorized" };
   if (!isProvider(provider)) return { ok: false, error: "Unknown file store." };
@@ -34,6 +38,7 @@ export async function shareClientFiles(clientId: string, provider: FileProvider,
 
 /** Share the folder and send the client the link. Rate limited: this sends a real message. */
 export async function sendClientFiles(clientId: string, provider: FileProvider, message?: string, bookingId?: string, session?: SessionPayload | null): Promise<SendResult> {
+  assertIds(clientId, bookingId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) return { ok: false, error: "unauthorized" };
   if (!isProvider(provider)) return { ok: false, error: "Unknown file store." };

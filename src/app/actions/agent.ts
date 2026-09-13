@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { prisma } from "@/lib/db";
 
 import { revalidatePath } from "next/cache";
@@ -35,6 +37,7 @@ export async function getAgentBrief(session?: SessionPayload | null): Promise<Ag
 
 /** Prepares a proposal for approval: the draft the agent would send, from real data. */
 export async function prepareAgentProposal(proposalId: string, session?: SessionPayload | null): Promise<AgentGate | { allowed: true; proposal: AgentProposal; draft: string | null } | { allowed: true; error: string }> {
+  assertIds(proposalId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   if (!businessAgentEntitled(ctx.business)) return denial(effectivePlan(ctx.business));
@@ -71,6 +74,7 @@ export async function approveAgentProposal(input: { proposalId: string; body: st
 
 /** Dismiss without sending: remembered for a week so the same suggestion doesn't nag. */
 export async function dismissAgentProposal(proposalId: string, session?: SessionPayload | null): Promise<AgentGate | { allowed: true }> {
+  assertIds(proposalId);
   const ctx = await requireRole([...STAFF], session);
   if (!ctx) throw new Error("unauthorized");
   if (!businessAgentEntitled(ctx.business)) return denial(effectivePlan(ctx.business));

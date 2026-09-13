@@ -1,5 +1,7 @@
 "use server";
 
+import { assertIds } from "@/lib/ids";
+
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
@@ -178,6 +180,7 @@ export async function listSlackChannelsAction(session?: SessionPayload | null): 
 
 /** Choose the channel. The bot joins it (public channels) and posts one line so the choice is verified, not assumed. */
 export async function selectSlackChannel(channelId: string, session?: SessionPayload | null): Promise<{ error?: string; channelName?: string }> {
+  assertIds(channelId);
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) return { error: "unauthorized" };
   const id = channelId.trim().slice(0, 40);
@@ -215,6 +218,7 @@ const AppleSchema = z.object({
 export type AppleConnectResult = { error?: string; calendars?: CalendarChoice[]; selected?: string[] };
 
 export async function connectAppleCalendar(appleId: string, appSpecificPassword: string, session?: SessionPayload | null): Promise<AppleConnectResult> {
+  assertIds(appleId);
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   guardEncryption();
@@ -408,6 +412,7 @@ async function revokeMetaSubscription(provider: IntegrationProvider, row: { acce
  * workspace is refused.
  */
 export async function selectWhatsAppNumber(phoneNumberId: string, session?: SessionPayload | null): Promise<{ error?: string; displayPhoneNumber?: string }> {
+  assertIds(phoneNumberId);
   const ctx = await requireRole([...ADMIN], session);
   if (!ctx) throw new Error("unauthorized");
   if (!/^\d{5,25}$/.test(phoneNumberId)) return { error: "That isn't a WhatsApp phone number id." };

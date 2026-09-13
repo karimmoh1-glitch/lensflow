@@ -21,7 +21,7 @@ export const PRICING: Record<string, { inputPerMillion: number; outputPerMillion
 
 /** Estimated cost of one call, in micro-dollars. Unknown model or missing usage → 0. */
 export function estimateCostMicros(model: string, inputTokens: number, outputTokens: number): number {
-  const price = PRICING[model];
+  const price = PRICING[model] ?? PRICING[Object.keys(PRICING).find((k) => model.startsWith(`${k}-`)) ?? ""];
   if (!price) return 0;
   const input = Math.round((inputTokens * price.inputPerMillion) / 1_000_000);
   const output = Math.round((outputTokens * price.outputPerMillion) / 1_000_000);

@@ -37,7 +37,8 @@ export async function generateDraftAction(
 
   const conversation = await prisma.conversation.findFirst({
     where: { id: conversationId, businessId: business.id },
-    include: { messages: { orderBy: { createdAt: "desc" }, take: 1 }, client: true },
+    // The message being answered is the customer's latest, never the business's own reply.
+    include: { messages: { where: { direction: "INBOUND" }, orderBy: { createdAt: "desc" }, take: 1 }, client: true },
   });
   if (!conversation) throw new Error("not found");
 

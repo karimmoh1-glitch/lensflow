@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { track } from "@/lib/analytics";
 import { effectivePlan } from "@/lib/billing";
+import { withLock } from "@/lib/dbLock";
 import {
   AI_BLOCK_MESSAGE,
   AI_RATE_LIMITS,
@@ -50,9 +51,10 @@ export function aiOperationalState(): "ready" | "disabled" | "not_configured" {
   return "ready";
 }
 
-export type AiGate = { ok: true } | { ok: false; reason: AiBlockReason; message: string };
+export type AiRefusal = { ok: false; reason: AiBlockReason; message: string };
+export type AiGate = { ok: true } | AiRefusal;
 
-const blocked = (reason: AiBlockReason): AiGate => ({ ok: false, reason, message: AI_BLOCK_MESSAGE[reason] });
+const blocked = (reason: AiBlockReason): AiRefusal => ({ ok: false, reason, message: AI_BLOCK_MESSAGE[reason] });
 
 async function callsByUserSince(userId: string, windowMs: number): Promise<number> {
   const since = new Date(Date.now() - windowMs);
@@ -132,6 +134,61 @@ export async function checkAiLimit(businessId: string, feature: AiFeature, userI
     return blocked("check_failed");
   }
   return { ok: true };
+}
+
+/** Model calls one workspace may have waiting on the provider at the same moment. */
+export const AI_MAX_IN_FLIGHT = 4;
+const IN_FLIGHT_WINDOW_MS = 60_000;
+
+/**
+ * Check and record as one step. Workspaces' limits are counted from recorded calls, and a
+ * call used to be recorded only after the provider answered — so a burst of simultaneous
+ * requests all passed the check before any of them counted. Now the gate runs under a
+ * per-workspace lock and writes the call's row before releasing it, so the next request
+ * already sees it; the row is completed with tokens and cost when the answer comes back.
+ * A workspace also can't have more than a few calls outstanding at once.
+ */
+export async function reserveAiCall(ctx: { businessId: string; feature: AiFeature; userId?: string | null; model: string }): Promise<{ ok: true; id: string } | { ok: false; reason: AiBlockReason; message: string }> {
+  try {
+    type Reservation = { ok: true; id: string } | { ok: false; reason: AiBlockReason; message: string };
+    return await withLock(`ai-gate:${ctx.businessId}`, async (): Promise<Reservation> => {
+      const gate = await checkAiLimit(ctx.businessId, ctx.feature, ctx.userId);
+      if (!gate.ok) return gate;
+      const inFlight = await prisma.analyticsEvent.count({ where: { businessId: ctx.businessId, name: AI_CALL_EVENT, createdAt: { gte: new Date(Date.now() - IN_FLIGHT_WINDOW_MS) }, properties: { path: ["pending"], equals: true } } });
+      if (inFlight >= AI_MAX_IN_FLIGHT) return blocked("feature_limit");
+      const row = await prisma.analyticsEvent.create({
+        data: { name: AI_CALL_EVENT, businessId: ctx.businessId, properties: { feature: ctx.feature, model: ctx.model, pending: true, ok: false, inputTokens: 0, outputTokens: 0, totalTokens: 0, costMicros: 0, ms: 0, ...(ctx.userId ? { userId: ctx.userId } : {}) } },
+        select: { id: true },
+      });
+      return { ok: true as const, id: row.id };
+    }, { timeoutMs: 15_000 });
+  } catch (err) {
+    console.error("[ai] reservation failed; refusing the call", err instanceof Error ? err.message : "unknown");
+    return blocked("check_failed");
+  }
+}
+
+/** Completes a reserved call with what actually happened. */
+export async function completeAiCall(id: string, outcome: AiCallOutcome): Promise<void> {
+  const inputTokens = outcome.inputTokens ?? 0;
+  const outputTokens = outcome.outputTokens ?? 0;
+  await prisma.analyticsEvent.update({
+    where: { id },
+    data: {
+      properties: {
+        feature: outcome.feature,
+        model: outcome.model,
+        inputTokens,
+        outputTokens,
+        totalTokens: outcome.totalTokens ?? inputTokens + outputTokens,
+        costMicros: estimateCostMicros(outcome.model, inputTokens, outputTokens),
+        ms: outcome.ms,
+        ok: outcome.ok,
+        ...(outcome.userId ? { userId: outcome.userId } : {}),
+        ...(outcome.errorKind ? { errorKind: outcome.errorKind } : {}),
+      },
+    },
+  }).catch((err) => console.error("[ai] could not complete the call record", err instanceof Error ? err.message : "unknown"));
 }
 
 export type AiCallOutcome = {

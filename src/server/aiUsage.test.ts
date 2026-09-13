@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import { prisma } from "@/lib/db";
-import { AI_CALL_EVENT, aiDisabledByFlag, aiOperationalState, checkAiLimit, getAiSpend, getAiUsageForBusiness, modelKeyConfigured, recordAiBlocked, recordAiCall, resetAiBudgetCache } from "./aiUsage";
+import { AI_CALL_EVENT, aiDisabledByFlag, aiOperationalState, checkAiLimit, getAiSpend, getAiUsageForBusiness, modelKeyConfigured, recordAiBlocked, recordAiCall, resetAiBudgetCache, reserveAiCall, completeAiCall, AI_MAX_IN_FLIGHT } from "./aiUsage";
 import { AI_MODEL, DAILY_CALL_CEILING, estimateCostMicros, type AiFeature } from "@/lib/aiPolicy";
 
 let a: string, b: string;
@@ -276,5 +276,30 @@ describe("cost ceilings, the per-person limit and the AI_ENABLED switch", () => 
     const row = await prisma.analyticsEvent.findFirst({ where: { businessId: a, name: AI_CALL_EVENT }, orderBy: { createdAt: "desc" } });
     expect(row?.properties).toMatchObject({ userId: "u-123", feature: "draft" });
     expect(Object.keys(row?.properties as object).sort()).toEqual(["costMicros", "feature", "inputTokens", "model", "ms", "ok", "outputTokens", "totalTokens", "userId"]);
+  });
+});
+
+describe("reservation: simultaneous requests can't all slip past the limits", () => {
+  it("a burst gets at most the in-flight allowance, and a completed call frees its slot", async () => {
+    const results = await Promise.all(Array.from({ length: 12 }, () => reserveAiCall({ businessId: a, feature: "draft", model: AI_MODEL })));
+    const granted = results.filter((r): r is { ok: true; id: string } => r.ok);
+    expect(granted).toHaveLength(AI_MAX_IN_FLIGHT);
+    for (const r of results) if (!r.ok) expect(r.reason).toBe("feature_limit");
+    await completeAiCall(granted[0].id, { businessId: a, feature: "draft", model: AI_MODEL, inputTokens: 10, outputTokens: 5, ms: 10, ok: true });
+    const again = await reserveAiCall({ businessId: a, feature: "draft", model: AI_MODEL });
+    expect(again.ok).toBe(true);
+    const row = await prisma.analyticsEvent.findUniqueOrThrow({ where: { id: granted[0].id } });
+    expect(row.properties).toMatchObject({ ok: true, inputTokens: 10 });
+    expect((row.properties as { pending?: boolean }).pending).toBeUndefined();
+  });
+
+  it("the hourly draft cap holds exactly under a burst, because every reservation counts at once", async () => {
+    await seedCalls(a, "draft", 58);
+    const results = await Promise.all(Array.from({ length: 10 }, () => reserveAiCall({ businessId: a, feature: "draft", model: AI_MODEL })));
+    expect(results.filter((r) => r.ok)).toHaveLength(2);
+  });
+
+  it("the provider's dated model name is priced, not recorded as free", () => {
+    expect(estimateCostMicros("gpt-4o-mini-2024-07-18", 1_000_000, 0)).toBe(150_000);
   });
 });

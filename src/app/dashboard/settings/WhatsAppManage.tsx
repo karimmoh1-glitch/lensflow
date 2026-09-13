@@ -85,7 +85,7 @@ export function WhatsAppManage({ model }: { model: WhatsAppManageModel }) {
                     <Phone className="w-3.5 h-3.5 shrink-0 text-ink/65" strokeWidth={2} aria-hidden />
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold text-ink truncate">{n.displayPhoneNumber}</span>
-                      <span className="block text-[11px] text-ink/70 truncate">{n.verifiedName}{n.codeVerificationStatus === "VERIFIED" ? " · verified" : ""}</span>
+                      <span className="block text-2xs text-ink/70 truncate">{n.verifiedName}{n.codeVerificationStatus === "VERIFIED" ? " · verified" : ""}</span>
                     </span>
                     {active && <Check className="w-4 h-4 shrink-0 text-success-text" strokeWidth={3} aria-hidden />}
                   </button>
@@ -98,14 +98,14 @@ export function WhatsAppManage({ model }: { model: WhatsAppManageModel }) {
 
       <div className="rounded-xl border border-warning/30 bg-warning-soft/40 px-3 py-2.5 flex gap-2">
         <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-warning-text" strokeWidth={2} aria-hidden />
-        <p className="text-[11px] text-ink/75 leading-relaxed">
+        <p className="text-2xs text-ink/75 leading-relaxed">
           {model.templatesEnabled
             ? "Outside the 24-hour window Daythread sends an approved template."
             : "WhatsApp only allows a free-form reply within 24 hours of the customer's last message. Message templates aren't set up in Daythread yet, so a later reply is saved to the thread and clearly marked not delivered — never shown as sent."}
         </p>
       </div>
 
-      <p className="text-[11px] text-ink/65">Disconnecting stops Meta delivering this number&rsquo;s events to Daythread and erases the stored credential. Your conversations and customers stay.</p>
+      <p className="text-2xs text-ink/65">Disconnecting stops Meta delivering this number&rsquo;s events to Daythread and erases the stored credential. Your conversations and customers stay.</p>
     </div>
   );
 }

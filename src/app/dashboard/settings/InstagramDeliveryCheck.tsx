@@ -52,12 +52,12 @@ export function InstagramDeliveryCheck({ initial }: { initial: DeliveryCheck | n
     <div className="rounded-xl border border-border bg-paper/60 px-3 py-2.5">
       <div className="flex items-center justify-between gap-3">
         <p className="font-semibold text-ink/75">Delivery check</p>
-        <button type="button" onClick={run} disabled={pending} className="text-[11px] font-semibold text-ink/70 hover:text-ink disabled:opacity-60">
+        <button type="button" onClick={run} disabled={pending} className="text-2xs font-semibold text-ink/70 hover:text-ink disabled:opacity-60">
           {pending ? "Asking Meta…" : check ? "Check again" : "Run check"}
         </button>
       </div>
-      {error && <p role="alert" className="mt-1.5 text-[11px] text-warning-text">{error}</p>}
-      {!check && !error && <p className="mt-1 text-[11px] text-ink/65">Asks Meta whether DMs to this account will actually arrive here, and shows where the chain breaks.</p>}
+      {error && <p role="alert" className="mt-1.5 text-2xs text-warning-text">{error}</p>}
+      {!check && !error && <p className="mt-1 text-2xs text-ink/65">Asks Meta whether DMs to this account will actually arrive here, and shows where the chain breaks.</p>}
       {check && (
         <>
           <ul className="mt-2 space-y-1.5">
@@ -66,13 +66,13 @@ export function InstagramDeliveryCheck({ initial }: { initial: DeliveryCheck | n
                 <span aria-hidden className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${dot[r.state]}`} />
                 <span className="min-w-0">
                   <span className="text-ink/80">{r.label}</span>
-                  <span className="block text-[11px] text-ink/65 leading-snug">{r.detail}</span>
+                  <span className="block text-2xs text-ink/65 leading-snug">{r.detail}</span>
                 </span>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[11px] text-ink/75 leading-relaxed border-t border-border pt-2">{check.verdict}</p>
-          <p className="mt-1 text-[10px] text-ink/50">Checked {new Date(check.checkedAt).toLocaleString()}</p>
+          <p className="mt-2 text-2xs text-ink/75 leading-relaxed border-t border-border pt-2">{check.verdict}</p>
+          <p className="mt-1 text-2xs text-ink/60">Checked {new Date(check.checkedAt).toLocaleString()}</p>
         </>
       )}
     </div>

@@ -38,7 +38,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
                   href={hrefFor(t.key)}
                   aria-current={on ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+                    "flex items-center gap-2.5 rounded-xl px-3 py-2 text-13 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70",
                     on ? "bg-ink text-white" : "text-ink/70 hover:text-ink hover:bg-black/[0.04]"
                   )}
                 >
@@ -54,7 +54,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
       {/* Phone: an index of sections, then the chosen one with a way back. */}
       {!explicit ? (
         <>
-          <ul className="lg:hidden divide-y divide-border rounded-[20px] border border-border bg-white overflow-hidden" aria-label="Settings sections">
+          <ul className="lg:hidden divide-y divide-border rounded-xl border border-border bg-white overflow-hidden" aria-label="Settings sections">
             {TABS.map((t) => (
               <li key={t.key}>
                 <Link href={`${hrefFor(t.key)}${t.key === "channels" ? "?tab=channels" : ""}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-black/[0.02] active:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.04]">
@@ -63,7 +63,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
                     <span className="block text-sm font-semibold text-ink">{t.label}</span>
                     <span className="block text-xs text-ink/65 truncate">{t.blurb}</span>
                   </span>
-                  <ChevronRight className="w-4 h-4 text-ink/40 shrink-0" strokeWidth={2} aria-hidden />
+                  <ChevronRight className="w-4 h-4 text-ink/60 shrink-0" strokeWidth={2} aria-hidden />
                 </Link>
               </li>
             ))}
@@ -72,7 +72,7 @@ export function SettingsTabs({ active, explicit, panels }: { active: SettingsTab
         </>
       ) : (
         <div className="dt-swap" key={active}>
-          <Link href="/dashboard/settings" className="lg:hidden inline-flex items-center gap-1 text-xs font-semibold text-ink/70 hover:text-ink mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded">
+          <Link href="/dashboard/settings" className="lg:hidden inline-flex items-center gap-1 text-xs font-semibold text-ink/70 hover:text-ink mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded">
             <ChevronLeft className="w-4 h-4" strokeWidth={2} aria-hidden />All settings
           </Link>
           <h2 className="lg:hidden font-sans font-extrabold text-xl tracking-tight text-ink mb-4">{current.label}</h2>

@@ -31,12 +31,12 @@ export function BusinessMemoryForm({ initial }: { initial: BusinessMemory }) {
     </Field>
   );
   return (
-    <section aria-labelledby="memory-title" className="rounded-[22px] border border-border bg-white px-5 py-5">
+    <section aria-labelledby="memory-title" className="rounded-xl border border-border bg-white px-5 py-5">
       <h2 id="memory-title" className="text-[15px] font-extrabold text-ink">How Daythread should understand your business</h2>
       <p className="mt-1 text-sm text-ink/65 leading-relaxed">In your words. Drafts and the assistant treat these as facts they may quote and must not contradict; anything not written here they ask about rather than invent. Nothing on this page is ever written by the model.</p>
       <div className="mt-5 space-y-5">
         <fieldset>
-          <legend className="text-[13px] font-semibold text-ink/80 mb-2">Tone of voice</legend>
+          <legend className="text-13 font-semibold text-ink/80 mb-2">Tone of voice</legend>
           <OptionGrid label="Tone of voice" options={(Object.keys(TONE_LABEL) as BusinessMemory["tone"][]).map((k) => [k, TONE_LABEL[k]] as const)} value={m.tone} onChange={(k) => setM({ ...m, tone: k })} columns={3} size="sm" />
         </fieldset>
         {T("about", "What you do", "One or two sentences a customer would understand.", 2, 600)}

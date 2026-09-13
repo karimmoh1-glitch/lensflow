@@ -48,7 +48,7 @@ export function BookingActions({ bookingId, status, hasQuestionnaire }: { bookin
   return (
     <Card>
       <CardBody className="space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-ink/65">Actions</div>
+        <div className="text-13 font-semibold text-ink/65">Actions</div>
         {next.filter((n) => n.show).map((n) => (
           <Button key={n.to} size="sm" className="w-full" onClick={() => doAdvance(n.to, n.done)} loading={pending} loadingLabel="Saving">{n.label}</Button>
         ))}

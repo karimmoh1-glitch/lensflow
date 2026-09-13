@@ -1,5 +1,5 @@
-import { RouteLoading } from "@/components/brand/RouteLoading";
+import { SettingsSkeleton } from "@/components/skeletons";
 
 export default function Loading() {
-  return <RouteLoading label="Loading your team" />;
+  return <SettingsSkeleton />;
 }

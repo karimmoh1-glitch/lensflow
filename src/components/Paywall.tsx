@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
-import { Check, Sparkles } from "lucide-react";
+import { Check, ArrowUpRight } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { PAYWALLS, type PaywallFeature } from "@/lib/paywall";
 import { recordPaywallEvent } from "@/app/actions/paywall";
@@ -85,9 +85,9 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
   };
 
   return (
-    <BottomSheet open onClose={dismiss} title={`Daythread ${plan === "PRO" ? "Pro" : "Business"}`} subtitle={copy.eyebrow} icon={<Sparkles className="w-4 h-4" strokeWidth={2} aria-hidden />} size="lg">
+    <BottomSheet open onClose={dismiss} title={`Daythread ${plan === "PRO" ? "Pro" : "Business"}`} subtitle={copy.eyebrow} icon={<ArrowUpRight className="w-4 h-4" strokeWidth={2} aria-hidden />} size="lg">
       <div className="px-5 pb-6 pt-1 sm:px-7">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">{copy.eyebrow}</p>
+        <p className="text-13 font-semibold text-ink/75">{copy.eyebrow}</p>
         <h2 className="mt-2 font-sans font-extrabold text-[1.9rem] sm:text-[2.3rem] leading-[0.98] tracking-[-0.04em] text-ink text-balance">{personal?.title ?? copy.title}</h2>
         <p className="mt-3 text-[15px] text-ink/70 leading-relaxed max-w-lg">{personal ? personal.lede : copy.lede}</p>
         {personal && <p className="mt-2 text-sm text-ink/65 leading-relaxed max-w-lg">{copy.title} {copy.lede}</p>}
@@ -102,28 +102,28 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
         </ul>
 
         {plan === "PRO" && config.betaClaimable ? (
-          <div className="mt-6 rounded-2xl border border-accent/30 bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div className="mt-6 rounded-xl border border-accent/30 bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
             <div>
               <div className="font-sans font-extrabold text-2xl tracking-[-0.03em] text-ink"><span className="text-success-text">Free for 1 month</span><span className="text-ink/60 text-base font-semibold"> · beta</span></div>
               <p className="mt-1 text-xs text-ink/70 leading-relaxed">Daythread is in beta, so Pro is free for a month. No card. When the month ends you&rsquo;re back on Free unless you choose to subscribe.</p>
             </div>
             <div className="mt-4 sm:mt-0 flex flex-col items-stretch gap-2 shrink-0 sm:w-56">
               {config.canBill ? <BetaClaimButton onClaimed={onClose} /> : <p className="text-xs text-ink/70">Ask the workspace owner to claim it.</p>}
-              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-full">Not now</button>
+              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded-full">Not now</button>
             </div>
           </div>
         ) : plan === "BUSINESS" && config.businessUnavailable ? (
-          <div className="mt-6 rounded-2xl border border-border bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div className="mt-6 rounded-xl border border-border bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
             <div>
               <div className="font-sans font-extrabold text-xl tracking-[-0.02em] text-ink">Business is temporarily unavailable</div>
               <p className="mt-1 text-xs text-ink/70 leading-relaxed">It isn&rsquo;t open to new workspaces during the beta. Everything else in Daythread keeps working.</p>
             </div>
             <div className="mt-4 sm:mt-0 flex flex-col items-stretch gap-2 shrink-0 sm:w-56">
-              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Got it</button>
+              <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Got it</button>
             </div>
           </div>
         ) : (
-        <div className="mt-6 rounded-2xl border border-border bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+        <div className="mt-6 rounded-xl border border-border bg-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
           <div>
             <div className="font-sans font-extrabold text-2xl tracking-[-0.03em] text-ink tabular-nums">
               {trial ? <><span className="text-success-text">7 days free</span><span className="text-ink/60 text-base font-semibold">, then {fmt(price)}/month</span></> : <>{fmt(price)}<span className="text-ink/60 text-base font-semibold">/month</span></>}
@@ -134,19 +134,19 @@ function PaywallDialog({ feature, source, config, onClose }: { feature: PaywallF
           </div>
           <div className="mt-4 sm:mt-0 flex flex-col items-stretch gap-2 shrink-0 sm:w-56">
             {config.billingLive && config.canBill ? (
-              <button type="button" onClick={go} disabled={pending || redirecting} className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-accent-strong text-white text-sm font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] hover:brightness-95 active:scale-[0.98] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <button type="button" onClick={go} disabled={pending || redirecting} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-accent-strong text-white text-sm font-extrabold shadow-[0_10px_28px_-10px_rgba(240,82,77,0.7)] hover:brightness-95 active:scale-[0.98] transition disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
                 {redirecting ? "Taking you to Stripe…" : pending ? "One moment…" : trial ? "Start your 7-day Pro trial" : `Upgrade to ${plan === "PRO" ? "Pro" : "Business"}`}
               </button>
             ) : (
-              <Link href="/dashboard/settings?tab=subscription" onClick={() => void recordPaywallEvent("paywall_cta", feature, source)} className="inline-flex items-center justify-center h-11 px-5 rounded-full bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+              <Link href="/dashboard/settings?tab=subscription" onClick={() => void recordPaywallEvent("paywall_cta", feature, source)} className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-ink text-white text-sm font-extrabold hover:bg-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
                 See {plan === "PRO" ? "Pro" : "Business"}
               </Link>
             )}
-            <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-full">Not now</button>
+            <button type="button" onClick={dismiss} className="inline-flex items-center justify-center h-9 text-sm font-semibold text-ink/70 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded-full">Not now</button>
           </div>
         </div>
         )}
-        <p className="mt-3 text-[11px] text-ink/65">Your conversations, contacts and bookings stay exactly as they are whatever you choose. Daythread only ever bills its own subscription.</p>
+        <p className="mt-3 text-2xs text-ink/65">Your conversations, contacts and bookings stay exactly as they are whatever you choose. Daythread only ever bills its own subscription.</p>
       </div>
     </BottomSheet>
   );
@@ -158,8 +158,8 @@ export function PaywallTrigger({ feature, source, children, className, variant =
   const href = "/dashboard/settings?tab=subscription";
   const cls = cn(
     variant === "primary"
-      ? "inline-flex items-center justify-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-      : "inline-block text-xs font-bold text-signal-text hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded",
+      ? "inline-flex items-center justify-center h-10 px-5 rounded-full bg-ink text-white text-sm font-bold hover:bg-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
+      : "inline-block text-xs font-bold text-ink/75 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded",
     className
   );
   if (!ctx) return <Link href={href} className={cls}>{children}</Link>;

@@ -51,7 +51,7 @@ export function AuthShell({
               <span aria-hidden>←</span> {back.label}
             </Link>
           )}
-          {eyebrow && <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65 mb-3">{eyebrow}</p>}
+          {eyebrow && <p className="text-13 font-semibold text-ink/65 mb-3">{eyebrow}</p>}
           <h1 className="font-sans font-extrabold text-[2rem] leading-[1.05] tracking-[-0.035em] text-ink">{title}</h1>
           {lede && <p className="mt-3 text-sm text-ink/70 leading-relaxed">{lede}</p>}
           <div className="mt-8">{children}</div>

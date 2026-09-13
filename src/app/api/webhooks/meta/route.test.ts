@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
-import { createHmac } from "crypto";
+import { createHash, createHmac } from "crypto";
 import { prisma } from "@/lib/db";
 
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
@@ -18,8 +18,12 @@ const sign = (body: string, secret = SECRET) => "sha256=" + createHmac("sha256",
  * production never sends.
  */
 const secretFor = (body: object) => ((body as { object?: string }).object === "instagram" ? IG_SECRET : SECRET);
+// Only this file's events are cleaned up: another webhook suite runs in parallel against the
+// same table, and a blanket delete there (or here) erases the other's dedupe rows mid-test.
+const posted = new Set<string>();
 const post = (body: object, sig?: string) => {
   const raw = JSON.stringify(body);
+  posted.add(createHash("sha256").update(raw).digest("hex"));
   return POST(new Request("http://localhost/api/webhooks/meta", { method: "POST", body: raw, headers: { "x-hub-signature-256": sig ?? sign(raw, secretFor(body)), "content-type": "application/json" } }));
 };
 
@@ -34,7 +38,8 @@ describe("Meta webhook", () => {
     vi.stubEnv("INSTAGRAM_APP_SECRET", IG_SECRET);
     vi.stubEnv("META_WEBHOOK_VERIFY_TOKEN", "verify-me");
     ({ GET, POST } = await import("./route"));
-    await prisma.webhookEvent.deleteMany({ where: { provider: "meta" } });
+    // Leftovers from an interrupted earlier run would read as duplicates here.
+    await prisma.webhookEvent.deleteMany({ where: { provider: "meta", receivedAt: { lt: new Date(Date.now() - 10 * 60_000) } } });
     const stamp = Date.now();
     aId = (await prisma.business.create({ data: { name: "Meta A", handle: `meta-a-${stamp}` } })).id;
     bId = (await prisma.business.create({ data: { name: "Meta B", handle: `meta-b-${stamp}` } })).id;
@@ -44,7 +49,7 @@ describe("Meta webhook", () => {
   afterAll(async () => {
     await prisma.business.delete({ where: { id: aId } });
     await prisma.business.delete({ where: { id: bId } });
-    await prisma.webhookEvent.deleteMany({ where: { provider: "meta" } });
+    await prisma.webhookEvent.deleteMany({ where: { provider: "meta", eventId: { in: [...posted] } } });
     vi.unstubAllEnvs();
   });
 
@@ -161,7 +166,7 @@ describe("Meta webhook", () => {
   });
 
   it("acknowledges a well-formed event for an object it doesn't handle", async () => {
-    const r = await post({ object: "page", entry: [{ id: "page_1" }] });
+    const r = await post({ object: "page", entry: [{ id: `page_${Date.now()}` }] });
     expect(r.status).toBe(200);
     expect(await r.json()).toMatchObject({ handled: 0 });
   });

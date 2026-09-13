@@ -93,17 +93,17 @@ export function AuthEnvironment() {
           );
         })}
       </svg>
-      <div className={cn("rounded-2xl border bg-paper/[0.04] backdrop-blur-sm p-4 min-h-[168px] flex flex-col transition-all duration-700", reading ? "border-signal/50 shadow-[0_0_0_6px_rgba(109,90,230,0.12)]" : awake ? "border-paper/20" : "border-paper/10")}>
+      <div className={cn("rounded-xl border bg-paper/[0.04] backdrop-blur-sm p-4 min-h-[168px] flex flex-col transition-all duration-700", reading ? "border-border shadow-[0_0_0_6px_rgba(109,90,230,0.12)]" : awake ? "border-paper/20" : "border-paper/10")}>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-1.5 h-1.5 rounded-full transition-colors duration-500" style={{ background: brand === "#101114" ? "#FAFAF9" : brand }} />
-          <span className="text-[11px] font-bold text-paper/60 uppercase tracking-[0.12em]">{CHANNEL[s.k].name}</span>
+          <span className="text-13 font-semibold text-paper/60 ">{CHANNEL[s.k].name}</span>
         </div>
         <div className={cn("transition-all duration-500", on(1) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1")}>
           <div className="text-sm font-semibold text-paper">{s.who}</div>
           <div className="text-sm text-paper/60">“{s.msg}”</div>
         </div>
-        <div className={cn("mt-3 text-xs text-signal transition-all duration-500", on(2) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1")}>
-          <span className="text-paper/60 uppercase tracking-[0.12em] font-bold text-[10px] mr-2">Knows</span>
+        <div className={cn("mt-3 text-xs text-ink/75 transition-all duration-500", on(2) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1")}>
+          <span className="text-paper/60 font-semibold text-13 mr-2">Knows</span>
           <span className="text-paper/80">{s.ctx}</span>
         </div>
         <div className={cn("mt-auto pt-3 flex items-center gap-2 text-xs transition-all duration-500", on(2) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1")}>

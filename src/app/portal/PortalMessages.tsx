@@ -41,10 +41,10 @@ export function PortalMessages({ conversationId, messages }: { conversationId: s
         <div className="space-y-3 max-h-80 overflow-y-auto scrollbar-thin">
           {messages.map((m) => (
             <div key={m.id} className={cn("max-w-[85%]", m.direction === "INBOUND" ? "ml-auto" : "")}>
-              <div className={cn("rounded-2xl px-3.5 py-2 text-sm", m.direction === "INBOUND" ? "bg-ink text-white" : "bg-black/[0.05] text-ink")}>
+              <div className={cn("rounded-xl px-3.5 py-2 text-sm", m.direction === "INBOUND" ? "bg-ink text-white" : "bg-black/[0.05] text-ink")}>
                 {m.body}
               </div>
-              <div className={cn("text-[11px] text-ink/65 mt-1", m.direction === "INBOUND" ? "text-right" : "")}>
+              <div className={cn("text-2xs text-ink/65 mt-1", m.direction === "INBOUND" ? "text-right" : "")}>
                 {format(new Date(m.createdAt), "MMM d, h:mm a")}
               </div>
             </div>
@@ -56,7 +56,7 @@ export function PortalMessages({ conversationId, messages }: { conversationId: s
           </p>
         )}
         <div className="flex gap-2 pt-2 border-t border-border">
-          <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} placeholder="Write a message…" />
+          <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} aria-label="Message" placeholder="Write a message…" />
           <Button size="sm" onClick={send} disabled={!body.trim() || pending}>
             Send
           </Button>

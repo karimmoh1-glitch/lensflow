@@ -1,5 +1,5 @@
-import { RouteLoading } from "@/components/brand/RouteLoading";
+import { CalendarSkeleton } from "@/components/skeletons";
 
 export default function Loading() {
-  return <RouteLoading label="Reading your calendar" />;
+  return <CalendarSkeleton />;
 }

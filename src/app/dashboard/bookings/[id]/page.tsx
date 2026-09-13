@@ -71,28 +71,24 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         description={format(toZonedDisplayDate(booking.startAt, business.timezone), "EEEE, MMMM d, yyyy · h:mm a")}
       />
 
-      {booking.status !== "CANCELED" && (
-        <div className="flex items-center mb-8 overflow-x-auto scrollbar-thin pb-2">
-          {LIFECYCLE.map((step, i) => (
-            <div key={step.status} className="flex items-center shrink-0">
-              <div
-                className={`text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap ${
-                  i <= currentIndex ? "bg-ink text-white" : "bg-black/5 text-ink/65"
-                }`}
-              >
-                {step.label}
-              </div>
-              {i < LIFECYCLE.length - 1 && <div className={`w-6 h-px ${i < currentIndex ? "bg-ink" : "bg-black/10"}`} />}
-            </div>
-          ))}
+      {booking.status !== "CANCELED" && currentIndex >= 0 && (
+        <div className="mb-8 max-w-xl" aria-label={`Stage: ${LIFECYCLE[currentIndex].label}, step ${currentIndex + 1} of ${LIFECYCLE.length}`}>
+          <div className="flex items-baseline justify-between text-13">
+            <span className="font-semibold text-ink">{LIFECYCLE[currentIndex].label}</span>
+            {currentIndex < LIFECYCLE.length - 1 && <span className="text-ink/60">Next: {LIFECYCLE[currentIndex + 1].label}</span>}
+          </div>
+          <div aria-hidden className="mt-2 grid gap-1" style={{ gridTemplateColumns: `repeat(${LIFECYCLE.length}, minmax(0, 1fr))` }}>
+            {LIFECYCLE.map((step, i) => <span key={step.status} title={step.label} className={`h-1 rounded-full ${i <= currentIndex ? "bg-ink" : "bg-black/[0.08]"}`} />)}
+          </div>
         </div>
       )}
+      {booking.status === "CANCELED" && <p className="mb-8 text-13 font-medium text-ink/60">Canceled</p>}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">Details</div>
+              <div className="text-13 font-semibold text-ink/65 mb-3">Details</div>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between"><dt className="text-ink/75">Service</dt><dd className="font-medium">{booking.service.name}</dd></div>
                 <div className="flex justify-between"><dt className="text-ink/75">When</dt><dd className="font-medium">{format(toZonedDisplayDate(booking.startAt, business.timezone), "EEE, MMM d · h:mm a")} – {format(toZonedDisplayDate(booking.endAt, business.timezone), "h:mm a")}</dd></div>
@@ -107,7 +103,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           {showMeeting && (role === "PARTNER" ? (
             <Card>
               <CardBody>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">Video meeting</div>
+                <div className="text-13 font-semibold text-ink/65 mb-3">Video meeting</div>
                 <a href={meetingJoinUrl!} target="_blank" rel="noopener noreferrer" className="text-sm font-medium break-all hover:underline">{meetingJoinUrl}</a>
               </CardBody>
             </Card>
@@ -117,7 +113,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
 
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">Questionnaire</div>
+              <div className="text-13 font-semibold text-ink/65 mb-3">Questionnaire</div>
               {booking.questionnaire?.completedAt ? (
                 <Badge tone="success">Completed</Badge>
               ) : booking.questionnaire?.sentAt ? (
@@ -145,7 +141,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
         <div>
           <Card>
             <CardBody>
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-3">Client</div>
+              <div className="text-13 font-semibold text-ink/65 mb-3">Client</div>
               <Link href={`/dashboard/clients/${booking.clientId}`} className="font-medium text-sm hover:underline">
                 {booking.client.name}
               </Link>
@@ -173,7 +169,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
           <div className="mt-4">
             <BookingActions bookingId={booking.id} status={booking.status} hasQuestionnaire={Boolean(booking.questionnaire)} />
             {role !== "PARTNER" && !["CANCELED", "COMPLETED", "BALANCE_PAID", "FOLLOWED_UP"].includes(booking.status) && (
-              <div className="mt-4 rounded-2xl border border-border bg-white px-5 py-4"><RescheduleCancel bookingId={booking.id} canCancel canReschedule timezone={business.timezone} currentStartISO={booking.startAt.toISOString()} /></div>
+              <div className="mt-4 rounded-xl border border-border bg-white px-5 py-4"><RescheduleCancel bookingId={booking.id} canCancel canReschedule timezone={business.timezone} currentStartISO={booking.startAt.toISOString()} /></div>
             )}
           </div>
         </div>

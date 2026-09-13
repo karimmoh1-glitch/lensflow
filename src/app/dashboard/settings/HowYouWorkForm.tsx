@@ -45,13 +45,13 @@ export function HowYouWorkForm({ initial }: { initial: OnboardingAnswers | null 
 
   const Q = ({ label, children }: { label: string; children: React.ReactNode }) => (
     <fieldset className="space-y-2.5">
-      <legend className="text-[13px] font-semibold text-ink/80">{label}</legend>
+      <legend className="text-13 font-semibold text-ink/80">{label}</legend>
       {children}
     </fieldset>
   );
 
   return (
-    <section aria-labelledby="how-you-work" className="rounded-[22px] border border-border bg-white px-5 py-5">
+    <section aria-labelledby="how-you-work" className="rounded-xl border border-border bg-white px-5 py-5">
       <h2 id="how-you-work" className="text-[15px] font-extrabold text-ink">How you work</h2>
       <p className="mt-1 text-sm text-ink/65 leading-relaxed">{initial ? "What you told us when you started. Change anything and Daythread re-orders itself around it." : "Tell Daythread how you work and it puts the right things first — on Today, in empty pages, and in what it recommends."}</p>
       <div className="mt-5 space-y-6">

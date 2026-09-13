@@ -66,44 +66,44 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
       {(checkout === "success" || checkout === "canceled") && <CheckoutReturn outcome={checkout} expectedPlan={expectedPlan ?? null} currentPlan={current} />}
 
       {!subscriptionBillingIsLive && (
-        <div className="text-sm text-ink/70 bg-signal-soft/50 border border-signal/15 rounded-2xl px-4 py-3 mb-6">
+        <div className="text-sm text-ink/70 bg-black/[0.03] border border-border rounded-xl px-4 py-3 mb-6">
           Upgrades aren&apos;t open on this deployment yet — plans are shown for reference and nothing is charged.
         </div>
       )}
       {betaActive && current === "PRO" && business.planTier === "FREE" && (
-        <div className="mb-6 rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-3.5 text-sm text-ink/80">
+        <div className="mb-6 rounded-xl border border-success/30 bg-success-soft/50 px-4 py-3.5 text-sm text-ink/80">
           <span className="font-semibold text-ink">Pro is free on this workspace until {format(business.betaProEndsAt!, "MMMM d, yyyy")}, while Daythread is in beta.</span> No card and nothing to cancel. When it ends the workspace goes back to Free and nothing is deleted.
         </div>
       )}
       {betaClaimable && (
-        <div className="mb-6 rounded-2xl border border-accent/30 bg-white px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="mb-6 rounded-xl border border-accent/30 bg-white px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-1 text-sm text-ink/80"><span className="font-semibold text-ink">Pro is free for {BETA_PRO_DAYS} days while Daythread is in beta.</span> Every channel, AI on every thread, the assistant and up to five people. No card.</div>
           {canBill ? <BetaClaimButton /> : <p className="text-xs text-ink/70">Ask the workspace owner to claim it.</p>}
         </div>
       )}
       {business.compedPlan && business.compedPlan !== "FREE" && (
-        <div className="mb-6 rounded-2xl border border-success/30 bg-success-soft/50 px-4 py-3.5 text-sm text-ink/80">
+        <div className="mb-6 rounded-xl border border-success/30 bg-success-soft/50 px-4 py-3.5 text-sm text-ink/80">
           <span className="font-semibold text-ink">Daythread {PLANS[business.compedPlan].name} is on this workspace as complimentary access.</span> There is no subscription and nothing is charged. If that ever changes you&rsquo;ll be told before it does.
         </div>
       )}
       {recommended && (
-        <div className="mb-6 rounded-2xl border border-signal/25 bg-signal-soft/40 px-4 py-3.5 text-sm text-ink/80">
-          <span className="font-semibold text-ink">Based on what you told us during setup, we&rsquo;d recommend {PLANS[recommended.recommendedPlan].name}.</span> {recommended.reasons[0]} <Link href="/dashboard/settings?tab=profile" className="text-signal-text font-semibold hover:underline">Change how you work →</Link>
+        <div className="mb-6 rounded-xl border border-border bg-black/[0.03] px-4 py-3.5 text-sm text-ink/80">
+          <span className="font-semibold text-ink">Based on what you told us during setup, we&rsquo;d recommend {PLANS[recommended.recommendedPlan].name}.</span> {recommended.reasons[0]} <Link href="/dashboard/settings?tab=profile" className="text-ink/75 font-semibold hover:underline">Change how you work →</Link>
         </div>
       )}
       {pastDue && (
-        <div role="alert" className="mb-6 rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div role="alert" className="mb-6 rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-1 text-sm text-ink/80"><span className="font-semibold text-ink">Your last payment didn&rsquo;t go through.</span> Stripe will retry over the next few days and your plan stays on until then. Update your card to keep everything running.</div>
           {canBill && <ManageBillingButton flow="payment_method" label="Update card" variant="primary" size="md" />}
         </div>
       )}
       {lapsed && (
-        <div role="alert" className="mb-6 rounded-2xl border border-danger/30 bg-danger-soft/50 px-4 py-3.5 text-sm text-ink/80">
+        <div role="alert" className="mb-6 rounded-xl border border-danger/30 bg-danger-soft/50 px-4 py-3.5 text-sm text-ink/80">
           <span className="font-semibold text-ink">Your {PLANS[business.planTier].name} subscription has ended.</span> You&rsquo;re on Free now — nothing was deleted. Channels, automations and teammates above Free&rsquo;s limits are kept but paused for new additions until you choose a plan again.
         </div>
       )}
       {(usage.overQuota || seatsOver || automationsOver) && (
-        <div role="alert" className="mb-6 rounded-2xl border border-warning/40 bg-warning-soft/60 px-4 py-3.5 text-sm text-ink/80 space-y-1">
+        <div role="alert" className="mb-6 rounded-xl border border-warning/40 bg-warning-soft/60 px-4 py-3.5 text-sm text-ink/80 space-y-1">
           <div className="font-semibold text-ink">Over {plan.name}&rsquo;s limits — nothing was removed.</div>
           {usage.overQuota && <div>{usage.active} connected; {plan.name} includes {usage.limit}. All keep working; new connections are paused until you disconnect down to {usage.limit} or upgrade.</div>}
           {seatsOver && <div>{seatCount} people; {plan.name} includes {plan.maxTeamSeats}. Everyone keeps access; new invitations are paused.</div>}
@@ -111,10 +111,10 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
         </div>
       )}
 
-      <section aria-label="Your Daythread subscription" className="mb-8 rounded-[22px] border border-border bg-white overflow-hidden">
+      <section aria-label="Your Daythread subscription" className="mb-8 rounded-xl border border-border bg-white overflow-hidden">
         <div className="px-5 md:px-6 py-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Your Daythread subscription</p>
+            <p className="text-13 font-semibold text-ink/65">Your Daythread subscription</p>
             <div className="mt-1 flex items-center gap-2 flex-wrap">
               <h2 className="font-sans font-extrabold text-[1.35rem] tracking-[-0.02em] text-ink">Daythread {plan.name}</h2>
               {status && paid && <Badge tone={status.tone}>{status.label}</Badge>}
@@ -150,7 +150,7 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
       <section aria-label="Plans" className="mb-8">
         <div role="group" aria-label="Billing interval" className="mb-4 inline-flex items-center h-9 rounded-full border border-border bg-white p-0.5">
         {(["month", "year"] as const).map((v) => (
-          <Link key={v} href={`/dashboard/settings?tab=subscription&interval=${v}`} aria-current={interval === v ? "page" : undefined} className={cn("inline-flex items-center h-8 px-3 rounded-full text-sm font-semibold transition-colors", interval === v ? "bg-ink text-white" : "text-ink/70 hover:text-ink")}>{v === "month" ? "Monthly" : "Yearly · 2 months free"}</Link>
+          <Link key={v} href={`/dashboard/settings?tab=subscription&interval=${v}`} aria-current={interval === v ? "page" : undefined} className={cn("inline-flex items-center h-8 px-3 rounded-lg text-sm font-semibold transition-colors", interval === v ? "bg-ink text-white" : "text-ink/70 hover:text-ink")}>{v === "month" ? "Monthly" : "Yearly · 2 months free"}</Link>
         ))}
       </div>
       <div className="grid sm:grid-cols-3 gap-3 md:gap-4 items-stretch">
@@ -161,7 +161,7 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
             const unavailable = !isCurrent && key !== "FREE" && !planPurchasable(key);
             const label = isCurrent || unavailable ? null : key === "FREE" ? null : rank > currentRank ? `Upgrade to ${p.name}` : `Switch to ${p.name}`;
             return (
-              <div key={key} className={cn("rounded-[22px] border bg-white p-5 flex flex-col transition-colors", isCurrent ? "border-ink shadow-[0_18px_44px_-28px_rgba(16,17,20,0.5)]" : "border-border")}>
+              <div key={key} className={cn("rounded-xl border bg-white p-5 flex flex-col transition-colors", isCurrent ? "border-ink shadow-[0_18px_44px_-28px_rgba(16,17,20,0.5)]" : "border-border")}>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-sans font-extrabold text-lg tracking-tight text-ink">{p.name}</h3>
                   {isCurrent && <Badge tone="accent">Current</Badge>}
@@ -171,7 +171,7 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
                   {p.priceCents === 0 ? "Free" : formatMoney(priceFor(key as "PRO" | "BUSINESS"))}
                   {p.priceCents > 0 && <span className="text-sm font-medium text-ink/65"> / {interval === "year" ? "year" : "mo"}</span>}
                 </div>
-                {p.priceCents > 0 && interval === "year" && <p className="text-[11px] font-semibold text-success-text">Two months free — {formatMoney(p.priceCents * 10 / 12)} a month, billed yearly</p>}
+                {p.priceCents > 0 && interval === "year" && <p className="text-2xs font-semibold text-success-text">Two months free — {formatMoney(p.priceCents * 10 / 12)} a month, billed yearly</p>}
                 <p className="mt-1 text-sm font-semibold text-ink">{p.tagline}</p>
                 <p className="mt-1 text-xs text-ink/70 leading-relaxed">{p.outcome}</p>
                 <ul className="mt-4 space-y-1.5 flex-1">
@@ -196,8 +196,8 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
       </section>
 
       {paid && snapshot && snapshot.invoices.length > 0 && (
-        <section aria-label="Receipts" className="rounded-[22px] border border-border bg-white overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-border text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Receipts for your Daythread subscription</div>
+        <section aria-label="Receipts" className="rounded-xl border border-border bg-white overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-border text-2xs font-medium text-ink/65">Receipts for your Daythread subscription</div>
           <ul className="divide-y divide-border">
             {snapshot.invoices.map((inv) => (
               <li key={inv.id} className="px-5 py-3 flex items-center gap-3 text-sm">
@@ -220,9 +220,9 @@ export async function SubscriptionPanel({ business, role, checkout, plan: expect
 function Fact({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "warning" }) {
   return (
     <div className="bg-white px-5 py-3.5">
-      <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">{label}</dt>
+      <dt className="text-13 font-semibold text-ink/65">{label}</dt>
       <dd className={cn("mt-1 text-sm font-semibold", tone === "warning" ? "text-warning-text" : "text-ink")}>{value}</dd>
-      {sub && <dd className="text-[11px] text-ink/65 mt-0.5">{sub}</dd>}
+      {sub && <dd className="text-2xs text-ink/65 mt-0.5">{sub}</dd>}
     </div>
   );
 }

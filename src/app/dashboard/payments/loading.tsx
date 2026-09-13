@@ -1,5 +1,5 @@
-import { RouteLoading } from "@/components/brand/RouteLoading";
+import { ListSkeleton } from "@/components/skeletons";
 
 export default function Loading() {
-  return <RouteLoading label="Counting what came in" />;
+  return <ListSkeleton label="Loading payments" rows={5} action={false} />;
 }

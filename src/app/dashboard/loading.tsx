@@ -1,6 +1,5 @@
-import { RouteLoading } from "@/components/brand/RouteLoading";
+import { TodaySkeleton } from "@/components/skeletons";
 
-/** The first authenticated paint: the thread, then the day. */
 export default function Loading() {
-  return <RouteLoading label="Bringing everything together" />;
+  return <TodaySkeleton />;
 }

@@ -64,7 +64,7 @@ export function InstagramManage({ model }: { model: InstagramManageModel }) {
           ))}
         </ul>
         {!canMessage && (
-          <p className="mt-2 rounded-xl border border-warning/30 bg-warning-soft/40 px-3 py-2 text-[11px] text-ink/75 leading-relaxed">
+          <p className="mt-2 rounded-xl border border-warning/30 bg-warning-soft/40 px-3 py-2 text-2xs text-ink/75 leading-relaxed">
             The messaging permission isn&rsquo;t among what Meta granted, so replies cannot be sent from here. Reconnect and approve everything Instagram asks for.
           </p>
         )}
@@ -72,7 +72,7 @@ export function InstagramManage({ model }: { model: InstagramManageModel }) {
 
       <InstagramDeliveryCheck initial={model.deliveryCheck} />
 
-      <p className="text-[11px] text-ink/65 leading-relaxed">
+      <p className="text-2xs text-ink/65 leading-relaxed">
         Disconnecting stops Meta delivering this account&rsquo;s events to Daythread and erases the stored credential. Instagram has no third-party revocation endpoint, so you can also remove Daythread under Instagram → Settings → Website permissions. Your conversations and customers stay either way.
       </p>
     </div>

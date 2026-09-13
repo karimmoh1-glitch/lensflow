@@ -21,7 +21,7 @@ export function MessageBody({ body, outbound }: { body: string; outbound: boolea
           onClick={() => setShowAll((v) => !v)}
           aria-expanded={showAll}
           className={cn(
-            "mt-2 inline-flex items-center gap-1 text-[11px] font-semibold rounded-md px-1.5 py-0.5 -ml-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+            "mt-2 inline-flex items-center gap-1 text-2xs font-semibold rounded-md px-1.5 py-0.5 -ml-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70",
             outbound ? "text-white/60 hover:text-white hover:bg-white/10" : "text-ink/65 hover:text-ink hover:bg-black/[0.05]"
           )}
         >

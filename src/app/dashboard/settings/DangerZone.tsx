@@ -11,7 +11,7 @@ export function DangerZone({ businessName }: { businessName: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   return (
-    <section aria-label="Delete workspace" className="mt-10 rounded-[22px] border border-danger/30 bg-white px-5 py-4">
+    <section aria-label="Delete workspace" className="mt-10 rounded-xl border border-danger/30 bg-white px-5 py-4">
       <h3 className="text-sm font-semibold text-ink">Delete this workspace</h3>
       <p className="mt-1 text-xs text-ink/65 leading-relaxed">Permanently removes {businessName}: people, conversations, messages, bookings, automations, teammates&rsquo; access, every connected-account credential and the calendar events Daythread created. Connected providers are told to stop where they support it, and any Daythread subscription ends. This cannot be undone.</p>
       {!open ? (

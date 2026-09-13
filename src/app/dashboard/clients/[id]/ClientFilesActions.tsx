@@ -109,8 +109,9 @@ export function ClientFilesActions({ clientId, model }: { clientId: string; mode
             onChange={(e) => setMessage(e.target.value)}
             rows={2}
             maxLength={500}
+            aria-label="A line for the client (optional)"
             placeholder="A line for the client (optional)"
-            className="w-full rounded-xl border border-border px-3 py-2 text-[13px] text-ink placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-accent/40"
+            className="w-full rounded-xl border border-border px-3 py-2 text-13 text-ink placeholder:text-ink/60 focus:outline-none focus:ring-2 focus:ring-ink/70"
           />
           <Button size="sm" onClick={send} loading={pending && busy === "send"} loadingLabel="Sending">
             Send the link

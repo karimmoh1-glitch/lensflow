@@ -16,7 +16,7 @@ export function RequestAccess({ provider, name, access, canAsk }: { provider: In
   const [pending, start] = useTransition();
   const router = useRouter();
   const { toast } = useToast();
-  if (access.status === "PENDING") return <span className="inline-flex items-center h-8 px-3 rounded-full bg-accent-soft text-accent-text text-[12px] font-semibold">Access requested</span>;
+  if (access.status === "PENDING") return <span className="inline-flex items-center h-8 px-3 rounded-lg bg-accent-soft text-accent-text text-[12px] font-semibold">Access requested</span>;
   if (!canAsk) return null;
   const submit = () => start(async () => {
     const r = await requestIntegrationAccess(provider, note);
@@ -28,7 +28,7 @@ export function RequestAccess({ provider, name, access, canAsk }: { provider: In
   if (!open) return <Button size="sm" variant="outline" onClick={() => setOpen(true)}>{access.status === "REJECTED" || access.status === "REVOKED" ? "Request again" : "Request access"}</Button>;
   return (
     <div className="w-full sm:w-72 space-y-2">
-      <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} placeholder={`How you use ${name} for your business (optional)`} className="w-full rounded-xl border border-border px-3 py-2 text-[13px] text-ink placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-accent/40" />
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} aria-label="How you use it for your business (optional)" placeholder={`How you use ${name} for your business (optional)`} className="w-full rounded-xl border border-border px-3 py-2 text-13 text-ink placeholder:text-ink/60 focus:outline-none focus:ring-2 focus:ring-ink/70" />
       <div className="flex gap-1.5">
         <Button size="sm" onClick={submit} loading={pending} loadingLabel="Sending">Send request</Button>
         <button type="button" onClick={() => setOpen(false)} className="text-[12px] text-ink/65 px-2">Cancel</button>

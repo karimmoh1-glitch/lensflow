@@ -50,7 +50,7 @@ export function InviteClientButton() {
       {open && (
         <div className="fixed inset-0 bg-black/30 flex items-start justify-center pt-24 px-4 z-50" onClick={close}>
           <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <Card className="shadow-popover">
+            <Card className="shadow-surface">
               <CardBody className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-display text-section-title">{link ? "Invitation ready" : "Invite a client"}</h2>

@@ -4,24 +4,26 @@ import { Skeleton } from "@/components/ui";
  * the real rows land. Announced once as busy. */
 export default function Loading() {
   return (
-    <div className="flex h-full min-h-0 bg-white" aria-busy="true" aria-label="Loading your inbox">
+    <div className="flex h-full min-h-0 bg-white" role="status" aria-busy="true" aria-label="Loading your inbox">
       <div className="w-full lg:w-[380px] xl:w-[400px] shrink-0 border-r border-border flex flex-col">
-        <div className="px-4 md:px-5 pt-3 md:pt-4 pb-3 border-b border-border space-y-3">
-          <div className="flex items-center justify-between"><Skeleton className="h-6 w-16" /><Skeleton className="h-7 w-28 rounded-full" /></div>
-          <Skeleton className="h-10 md:h-9 w-full rounded-xl" />
-          <Skeleton className="h-4 w-2/3" />
-          <div className="flex gap-1.5"><Skeleton className="h-7 w-24 rounded-full" /><Skeleton className="h-7 w-16 rounded-full" /><Skeleton className="h-7 w-20 rounded-full" /></div>
+        <div className="px-3 md:px-4 pt-2.5 pb-2 border-b border-border space-y-2">
+          <div className="flex items-center gap-2 h-9 pl-1"><Skeleton className="h-4 w-12" /><Skeleton className="h-7 w-24 rounded-lg" /><Skeleton className="ml-auto h-8 w-8 rounded-lg" /></div>
+          <Skeleton className="h-8 w-full rounded-lg" />
+          <div className="flex gap-1.5"><Skeleton className="h-7 w-20 rounded-md" /><Skeleton className="h-7 w-16 rounded-md" /><Skeleton className="h-7 w-16 rounded-md" /></div>
         </div>
-        <ol className="flex-1">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <li key={i} className="px-4 md:px-5 py-3.5 border-b border-border" style={{ opacity: 1 - i * 0.1 }}>
-              <div className="flex items-center gap-3 mb-2"><Skeleton className="w-9 h-9 rounded-full" /><Skeleton className="h-3.5 w-1/3" /><Skeleton className="h-3 w-8 ml-auto" /></div>
-              <div className="pl-12 space-y-1.5"><Skeleton className="h-3 w-1/4" /><Skeleton className="h-3 w-5/6" /></div>
-            </li>
+        <div className="divide-y divide-border">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="flex items-start gap-3 pl-4 pr-3 md:pl-5 md:pr-4 py-2.5">
+              <Skeleton className="mt-0.5 w-8 h-8 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2 pt-0.5">
+                <div className="flex justify-between"><Skeleton className="h-3.5" style={{ width: `${30 + ((i * 13) % 25)}%` }} /><Skeleton className="h-3 w-7" /></div>
+                <Skeleton className="h-3" style={{ width: `${55 + ((i * 17) % 35)}%` }} />
+              </div>
+            </div>
           ))}
-        </ol>
+        </div>
       </div>
-      <div className="hidden lg:flex flex-1" />
+      <div className="hidden lg:block flex-1 bg-paper/40" />
     </div>
   );
 }

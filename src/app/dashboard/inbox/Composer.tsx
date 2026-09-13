@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Sparkles, RotateCcw, ArrowUp } from "lucide-react";
+import { PenLine, RotateCcw, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui";
 import { generateDraftAction, sendReplyAction } from "@/app/actions/inbox";
 import { DRAFT_MODES, isDraftMode, type DraftMode } from "@/lib/draftModes";
@@ -104,8 +104,8 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
           {windowNotice.text}
         </p>
       )}
-      {windowNotice?.open && <p className="mb-2 text-[11px] text-ink/65">WhatsApp reply window closes in {windowNotice.endsIn}.</p>}
-      <div className={cn("rounded-[20px] border bg-white transition-[border-color,box-shadow] duration-150 focus-within:border-ink/30 focus-within:shadow-[0_0_0_4px_rgba(16,17,20,0.05)]", error ? "border-danger/40" : "border-ink/[0.14]", sentPulse && "dt-confirm")}>
+      {windowNotice?.open && <p className="mb-2 text-2xs text-ink/65">WhatsApp reply window closes in {windowNotice.endsIn}.</p>}
+      <div className={cn("rounded-xl border bg-white transition-[border-color,box-shadow] duration-150 focus-within:border-ink/30 focus-within:shadow-[0_0_0_4px_rgba(16,17,20,0.05)]", error ? "border-danger/40" : "border-ink/[0.14]", sentPulse && "dt-confirm")}>
         <textarea
           ref={ref}
           value={body}
@@ -129,24 +129,24 @@ export function Composer({ conversationId, windowNotice = null, channelLabel = "
               disabled={drafting || pending}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-[13px] font-semibold text-signal-text hover:bg-signal-soft transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-13 font-semibold text-ink/75 hover:bg-black/[0.03] transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
             >
-              {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> : <Sparkles className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />}
+              {wasAiDrafted ? <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} aria-hidden /> : <PenLine className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />}
               {drafting ? "Drafting…" : wasAiDrafted ? "Regenerate" : "Draft with AI"}
             </button>
             {menuOpen && !wasAiDrafted && (
-              <div role="menu" aria-label="What should the draft do?" className="absolute bottom-11 left-0 z-20 w-64 rounded-2xl border border-border bg-white shadow-popover p-1.5 dt-swap">
+              <div role="menu" aria-label="What should the draft do?" className="absolute bottom-11 left-0 z-20 w-64 rounded-xl border border-border bg-white shadow-overlay p-1.5 dt-swap">
                 {DRAFT_MODES.map(([key, label, hint]) => (
                   <button key={key} role="menuitem" type="button" onClick={() => draft(key)} className="w-full text-left rounded-xl px-3 py-2 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.05]">
-                    <span className="block text-[13px] font-semibold text-ink">{label}</span>
-                    <span className="block text-[11px] text-ink/65 leading-snug">{hint}</span>
+                    <span className="block text-13 font-semibold text-ink">{label}</span>
+                    <span className="block text-2xs text-ink/65 leading-snug">{hint}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden md:inline text-[11px] text-ink/65" aria-hidden>⌘↵</span>
+            <span className="hidden md:inline text-2xs text-ink/65" aria-hidden>⌘↵</span>
             <Button size="sm" onClick={send} disabled={!canSend} loading={pending && !drafting} loadingLabel={closed ? "Saving" : "Sending"} aria-label={closed ? "Save to thread" : "Send"} className={cn("min-w-[2.25rem] px-3", !canSend && "bg-ink/25")}>
               {closed ? "Save" : <><span className="hidden sm:inline">Send</span><ArrowUp className="w-4 h-4 sm:ml-0.5" strokeWidth={2.5} aria-hidden /></>}
             </Button>

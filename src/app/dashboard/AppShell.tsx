@@ -10,7 +10,7 @@ import {
   ClipboardCheck,
   Users,
   Zap,
-  Sparkles,
+  ListChecks,
   Settings as SettingsIcon,
   ExternalLink,
   LogOut,
@@ -33,21 +33,23 @@ import { DaythreadLogo, DaythreadMark } from "@/components/brand/DaythreadLogo";
 import { CommandPalette } from "./CommandPalette";
 import { Search } from "lucide-react";
 
-// Icon tone shows only in the item's resting state (active state is always solid ink/white
-// for clear legibility) — the same terracotta/signal/semantic language used on the
-// marketing site's module showcase, so the two feel like one product.
-const BASE_NAV: { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[]; group: "work" | "automate" | "workspace"; lower?: boolean }[] = [
-  { href: "/dashboard", label: "Today", icon: Home, tone: "text-ink/70", group: "work" },
-  { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-signal-text/70", group: "work" },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-success/70", group: "work" },
-  { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-info/70", group: "work" },
-  { href: "/dashboard/clients", label: "People", icon: Users, tone: "text-accent/70", group: "work" },
-  { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-success/70", group: "work" },
-  { href: "/dashboard/agent", label: "Assistant", icon: Sparkles, tone: "text-signal-text/70", group: "automate" },
-  { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-signal-text/70", group: "automate" },
-  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/70", group: "workspace", roles: ["OWNER", "ADMIN"], lower: true },
+// One ink for every navigation icon. Color in the sidebar is noise: the only thing that
+// should draw the eye there is where you are, and the active pill already says it.
+type NavItem = { href: string; label: string; icon: LucideIcon; tone: string; roles?: Role[]; group: "work" | "automate" | "workspace"; lower?: boolean; requires?: "payments" };
+const BASE_NAV: NavItem[] = [
+  { href: "/dashboard", label: "Today", icon: Home, tone: "text-ink/60", group: "work" },
+  { href: "/dashboard/inbox", label: "Inbox", icon: InboxIcon, tone: "text-ink/60", group: "work" },
+  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays, tone: "text-ink/60", group: "work" },
+  { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardCheck, tone: "text-ink/60", group: "work" },
+  { href: "/dashboard/clients", label: "People", icon: Users, tone: "text-ink/60", group: "work" },
+  // Only for a workspace whose Stripe account is connected: an empty ledger is not a destination.
+  { href: "/dashboard/payments", label: "Payments", icon: CreditCard, tone: "text-ink/60", group: "work", requires: "payments" },
+  { href: "/dashboard/agent", label: "Assistant", icon: ListChecks, tone: "text-ink/60", group: "automate" },
+  { href: "/dashboard/automations", label: "Automations", icon: Zap, tone: "text-ink/60", group: "automate" },
+  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon, tone: "text-ink/60", group: "workspace", roles: ["OWNER", "ADMIN"], lower: true },
 ];
 const GROUP_LABEL: Record<"work" | "automate" | "workspace", string> = { work: "", automate: "Runs for you", workspace: "" };
+const navFor = (role: Role, showPayments: boolean) => BASE_NAV.filter((item) => (!item.roles || item.roles.includes(role)) && (item.requires !== "payments" || showPayments));
 const TAB_HREFS = ["/dashboard", "/dashboard/inbox", "/dashboard/calendar", "/dashboard/bookings"];
 
 function isActive(pathname: string, href: string, search = "") {
@@ -59,8 +61,8 @@ function isActive(pathname: string, href: string, search = "") {
   return pathname.startsWith(href);
 }
 
-function NavLinks({ pathname, search, role, onNavigate }: { pathname: string; search: string; role: Role; onNavigate?: () => void }) {
-  const items = BASE_NAV.filter((item) => !item.roles || item.roles.includes(role));
+function NavLinks({ pathname, search, role, showPayments, onNavigate }: { pathname: string; search: string; role: Role; showPayments: boolean; onNavigate?: () => void }) {
+  const items = navFor(role, showPayments);
   const groups = (["work", "automate", "workspace"] as const).map((g) => ({ g, items: items.filter((i) => i.group === g && !i.lower) })).filter((x) => x.items.length > 0);
   const lower = items.filter((i) => i.lower);
   // The active pill is one element that slides between links (transform only), so moving
@@ -83,11 +85,11 @@ function NavLinks({ pathname, search, role, onNavigate }: { pathname: string; se
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "dt-nav-link flex items-center gap-2.5 rounded-[10px] px-3 h-[34px] text-[13.5px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-          active ? "text-white font-semibold" : "text-ink/70 font-medium hover:text-ink hover:bg-black/[0.04]"
+          "dt-nav-link flex items-center gap-2.5 rounded-lg px-2.5 h-8 text-13 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70",
+          active ? "text-ink font-semibold" : "text-ink/70 font-medium hover:text-ink hover:bg-black/[0.035]"
         )}
       >
-        <item.icon className={cn("w-4 h-4 shrink-0", !active && item.tone)} strokeWidth={2} aria-hidden />
+        <item.icon className={cn("w-4 h-4 shrink-0", active ? "text-ink" : item.tone)} strokeWidth={1.9} aria-hidden />
         {item.label}
       </Link>
     );
@@ -97,7 +99,7 @@ function NavLinks({ pathname, search, role, onNavigate }: { pathname: string; se
       <div aria-hidden className="dt-nav-indicator" style={{ transform: `translateY(${indicator.y}px)`, opacity: indicator.visible ? 1 : 0 }} />
       {groups.map(({ g, items }, gi) => (
         <div key={g} className={cn(gi > 0 && "mt-5")}>
-          {GROUP_LABEL[g] && <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-ink/65">{GROUP_LABEL[g]}</div>}
+          {GROUP_LABEL[g] && <div className="px-2.5 pb-1 text-xs font-medium text-ink/60">{GROUP_LABEL[g]}</div>}
           <div className="space-y-0.5">{items.map(link)}</div>
         </div>
       ))}
@@ -110,11 +112,10 @@ function PlanPill({ plan, role, compact }: { plan: PlanLabel; role: Role; compac
   const canBill = role === "OWNER" || role === "ADMIN";
   const next = plan === "Free" ? "Pro" : plan === "Pro" ? "Business" : null;
   return (
-    <div className={cn("rounded-xl border px-3 py-2.5 flex items-center gap-2", plan === "Business" ? "border-signal/25 bg-signal-soft/50" : "border-border bg-paper/70")}>
-      <span className={cn("text-[10px] font-extrabold uppercase tracking-[0.14em] rounded-full px-2 py-0.5", plan === "Business" ? "bg-signal text-white" : plan === "Pro" ? "bg-ink text-white" : "bg-black/[0.06] text-ink/65")}>{plan}</span>
-      <span className="text-[11px] text-ink/70 flex-1 min-w-0 truncate">{plan === "Free" ? "One inbox, on your own" : plan === "Pro" ? "Every channel, AI, assistant" : "Your whole team"}</span>
+    <div className="flex items-center gap-2 px-2.5 h-8 text-xs">
+      <span className="font-semibold text-ink">{plan} plan</span>
       {next && canBill && !compact && (
-        <Link href="/dashboard/settings?tab=subscription" className="text-[11px] font-bold text-signal-text hover:underline inline-flex items-center gap-0.5 shrink-0">{next} <ArrowUpRight className="w-3 h-3" strokeWidth={2.5} aria-hidden /></Link>
+        <Link href="/dashboard/settings?tab=subscription" className="ml-auto font-medium text-ink/60 hover:text-ink inline-flex items-center gap-0.5 shrink-0">Upgrade <ArrowUpRight className="w-3 h-3" strokeWidth={2} aria-hidden /></Link>
       )}
     </div>
   );
@@ -134,20 +135,19 @@ function AccountFooter({
   role: Role;
 }) {
   return (
-    <div className="px-3 py-4 border-t border-border space-y-3">
-      <div className="px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-ink/65">Account</div>
+    <div className="px-3 py-3 border-t border-border space-y-1">
       <PlanPill plan={plan} role={role} />
       <Link
         href={`/book/${handle}`}
         target="_blank"
-        className="flex items-center gap-1.5 text-xs text-accent-text font-medium px-3 hover:underline"
+        className="flex items-center gap-1.5 h-8 text-xs text-ink/60 font-medium px-2.5 rounded-lg hover:text-ink hover:bg-black/[0.035]"
       >
         View booking page
         <ExternalLink className="w-3 h-3" strokeWidth={2} aria-hidden />
       </Link>
       {workspaces.length > 1 && <WorkspaceSwitcher current={businessName} workspaces={workspaces} />}
-      <div className="flex items-center gap-2 px-3">
-        <div className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-xs font-semibold shrink-0">
+      <div className="flex items-center gap-2 px-2.5 pt-2">
+        <div className="w-7 h-7 rounded-full bg-ink/[0.06] text-ink/70 flex items-center justify-center text-2xs font-semibold shrink-0">
           {initials(businessName)}
         </div>
         <div className="flex-1 min-w-0">
@@ -173,6 +173,7 @@ export function AppShell({
   plan = "Free",
   workspaces = [],
   wantedIntegrations = [],
+  showPayments = false,
   children,
 }: {
   businessName: string;
@@ -183,6 +184,8 @@ export function AppShell({
   workspaces?: WorkspaceOption[];
   /** Names of tools chosen during onboarding that aren't connected yet. */
   wantedIntegrations?: string[];
+  /** Whether the workspace has a connected Stripe account, the only source of the Payments ledger. */
+  showPayments?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -190,7 +193,7 @@ export function AppShell({
   const search = searchParams?.toString() ?? "";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const visibleNav = BASE_NAV.filter((item) => !item.roles || item.roles.includes(role));
+  const visibleNav = navFor(role, showPayments);
   const current = visibleNav.find((item) => isActive(pathname, item.href, search));
   const drawerRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -241,25 +244,25 @@ export function AppShell({
     // from md the sidebar becomes the first column and keeps its own full height, so a long
     // settings page or inbox thread can never push Settings or Log out off the screen.
     <div className="h-[100dvh] overflow-hidden bg-paper flex flex-col md:flex-row">
-      <a href="#dt-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-full focus:bg-ink focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold">Skip to content</a>
+      <a href="#dt-main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-lg focus:bg-ink focus:text-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold">Skip to content</a>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-white flex-col">
-        <div className="px-5 py-5 border-b border-border">
-          <Link href="/dashboard" className="inline-flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 rounded-md">
+      <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-[#FCFCFB] flex-col">
+        <div className="px-5 pt-5 pb-3">
+          <Link href="/dashboard" className="inline-flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 rounded-md">
             <DaythreadLogo />
           </Link>
           <div className="text-xs text-ink/70 mt-1 truncate">{businessName}</div>
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event("dt-open-palette"))}
-            className="mt-3 w-full flex items-center gap-2 rounded-lg border border-border bg-paper/70 px-2.5 py-1.5 text-xs text-ink/70 hover:text-ink hover:border-ink/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            className="mt-3.5 w-full flex items-center gap-2 rounded-lg border border-ink/[0.1] bg-white px-2.5 h-8 text-xs text-ink/60 hover:text-ink hover:border-ink/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
           >
             <Search className="w-3.5 h-3.5" strokeWidth={2} aria-hidden />
             <span className="flex-1 text-left">Find anything</span>
-            <kbd className="text-[10px] font-semibold text-ink/65">⌘K</kbd>
+            <kbd className="text-2xs font-semibold text-ink/65">⌘K</kbd>
           </button>
         </div>
-        <NavLinks pathname={pathname} search={search} role={role} />
+        <NavLinks pathname={pathname} search={search} role={role} showPayments={showPayments} />
         <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} plan={plan} role={role} />
       </aside>
 
@@ -269,17 +272,17 @@ export function AppShell({
           ref={menuButtonRef}
           aria-label="Open navigation"
           onClick={() => setMobileOpen(true)}
-          className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+          className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
         >
           <Menu className="w-5 h-5" strokeWidth={2} />
         </button>
         <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-ink"><DaythreadMark className="w-[18px] h-[18px] text-ink" />{current?.label ?? "Daythread"}</span>
         <div className="flex items-center">
-          <button type="button" aria-label="Find anything" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+          <button type="button" aria-label="Find anything" onClick={() => window.dispatchEvent(new Event("dt-open-palette"))} className="w-11 h-11 flex items-center justify-center rounded-lg text-ink/65 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
             <Search className="w-5 h-5" strokeWidth={2} />
           </button>
-          <button type="button" aria-label="Account and more" onClick={() => setMoreOpen(true)} className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
-            <span className="w-8 h-8 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-[11px] font-semibold">{initials(businessName)}</span>
+          <button type="button" aria-label="Account and more" onClick={() => setMoreOpen(true)} className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
+            <span className="w-8 h-8 rounded-full bg-ink/[0.06] text-ink/70 flex items-center justify-center text-2xs font-semibold">{initials(businessName)}</span>
           </button>
         </div>
       </header>
@@ -293,29 +296,30 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Navigation"
-            className="absolute inset-y-0 left-0 w-64 bg-white flex flex-col shadow-popover"
+            className="absolute inset-y-0 left-0 w-64 bg-white flex flex-col shadow-overlay"
           >
             <div className="flex items-center justify-between px-5 py-5 border-b border-border">
               <DaythreadLogo />
               <button
                 aria-label="Close navigation"
                 onClick={() => setMobileOpen(false)}
-                className="w-11 h-11 flex items-center justify-center rounded-md text-ink/70 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                className="w-11 h-11 flex items-center justify-center rounded-md text-ink/70 hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
               >
                 <X className="w-[18px] h-[18px]" strokeWidth={2} />
               </button>
             </div>
-            <NavLinks pathname={pathname} search={search} role={role} onNavigate={() => setMobileOpen(false)} />
+            <NavLinks pathname={pathname} search={search} role={role} showPayments={showPayments} onNavigate={() => setMobileOpen(false)} />
             <AccountFooter businessName={businessName} handle={handle} workspaces={workspaces} plan={plan} role={role} />
           </div>
         </div>
       )}
 
       <main id="dt-main" tabIndex={-1} className="flex-1 min-w-0 min-h-0 overflow-y-auto overscroll-contain focus:outline-none">
-        {wantedIntegrations.length > 0 && !pathname.startsWith("/dashboard/settings") && (
-          <Link href="/dashboard/settings?tab=channels" className="mx-4 md:mx-8 mt-3 md:mt-4 rounded-2xl border border-signal/25 bg-signal-soft/40 px-3.5 md:px-4 py-2.5 md:py-3 flex items-center gap-3 text-sm text-ink/80 hover:bg-signal-soft/60 transition-colors">
+        {/* Today has the setup checklist, which already leads with this. */}
+        {wantedIntegrations.length > 0 && !pathname.startsWith("/dashboard/settings") && pathname !== "/dashboard" && (
+          <Link href="/dashboard/settings?tab=channels" className="mx-4 md:mx-8 mt-3 md:mt-4 rounded-xl border border-border bg-white shadow-surface px-3.5 md:px-4 py-2.5 flex items-center gap-3 text-13 text-ink/75 hover:border-ink/20 transition-colors">
             <span className="min-w-0 flex-1 truncate md:whitespace-normal"><span className="font-semibold text-ink">Connect {wantedIntegrations.join(", ")}</span><span className="hidden md:inline"> and your first real conversations arrive here.</span></span>
-            <span className="text-signal-text font-semibold shrink-0">Connect →</span>
+            <span className="text-ink font-semibold shrink-0">Connect →</span>
           </Link>
         )}
         {children}
@@ -333,16 +337,16 @@ export function AppShell({
             const active = isActive(pathname, item.href);
             return (
               <li key={item.href}>
-                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", active ? "text-ink" : "text-ink/65 active:text-ink")}>
-                  <span className={cn("w-10 h-7 rounded-full flex items-center justify-center transition-colors", active && "bg-ink text-white")}><item.icon className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
+                <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink/70", active ? "text-ink" : "text-ink/65 active:text-ink")}>
+                  <span className={cn("w-10 h-7 rounded-lg flex items-center justify-center transition-colors", active && "bg-ink/[0.07]")}><item.icon className="w-[19px] h-[19px]" strokeWidth={active ? 2.2 : 1.9} aria-hidden /></span>
                   {item.label}
                 </Link>
               </li>
             );
           })}
           <li>
-            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "text-ink" : "text-ink/65")}>
-              <span className={cn("w-10 h-7 rounded-full flex items-center justify-center transition-colors", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "bg-ink text-white" : "")}><LayoutGrid className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
+            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" aria-expanded={moreOpen} className={cn("w-full flex flex-col items-center gap-1 pt-2 pb-1.5 min-h-[3.75rem] text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ink/70", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "text-ink" : "text-ink/65")}>
+              <span className={cn("w-10 h-7 rounded-lg flex items-center justify-center transition-colors", moreOpen || (current && !TAB_HREFS.includes(current.href)) ? "bg-ink/[0.07]" : "")}><LayoutGrid className="w-[18px] h-[18px]" strokeWidth={2} aria-hidden /></span>
               More
             </button>
           </li>
@@ -359,15 +363,15 @@ export function AppShell({
               const active = isActive(pathname, item.href, search);
               return (
                 <li key={item.href}>
-                  <Link href={item.href} onClick={() => setMoreOpen(false)} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50", active ? "border-ink bg-ink text-white" : "border-border bg-white text-ink/80 hover:bg-black/[0.03] active:bg-black/[0.05]")}>
-                    <item.icon className={cn("w-5 h-5", !active && item.tone)} strokeWidth={2} aria-hidden />
+                  <Link href={item.href} onClick={() => setMoreOpen(false)} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70", active ? "border-ink/20 bg-ink/[0.05] text-ink" : "border-border bg-white text-ink/80 hover:bg-black/[0.03] active:bg-black/[0.05]")}>
+                    <item.icon className="w-5 h-5 text-ink/70" strokeWidth={1.9} aria-hidden />
                     <span className="text-center leading-tight">{item.label}</span>
                   </Link>
                 </li>
               );
             })}
         </ul>
-        <div className="mt-4 rounded-2xl border border-border divide-y divide-border overflow-hidden">
+        <div className="mt-4 rounded-xl border border-border divide-y divide-border overflow-hidden">
           <button type="button" onClick={() => { setMoreOpen(false); window.dispatchEvent(new Event("dt-open-palette")); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-black/[0.03]">
             <Search className="w-4 h-4 text-ink/65" strokeWidth={2} aria-hidden /><span className="flex-1 text-left">Find anything</span><ChevronRight className="w-4 h-4 text-ink/30" aria-hidden />
           </button>

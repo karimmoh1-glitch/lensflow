@@ -11,8 +11,8 @@ const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "sw
 const display = Manrope({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
-const TITLE = "Daythread — Every message. One inbox.";
-const DESCRIPTION = "Instagram, Gmail, WhatsApp and texts in one inbox, sorted so the people waiting on you come first. Free to start.";
+const TITLE = "Daythread — The inbox that books your clients";
+const DESCRIPTION = "Instagram DMs, texts, WhatsApp and email in one place, sorted by who is waiting, with booking in the conversation. Free to start.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),

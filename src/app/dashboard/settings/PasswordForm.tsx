@@ -13,7 +13,7 @@ export function PasswordForm({ email }: { email: string }) {
   const [pending, start] = useTransition();
   const { toast } = useToast();
   return (
-    <section aria-label="Password" className="mt-8 rounded-[22px] border border-border bg-white px-5 py-5">
+    <section aria-label="Password" className="mt-8 rounded-xl border border-border bg-white px-5 py-5">
       <h2 className="text-sm font-semibold text-ink">Password</h2>
       <p className="mt-1 text-xs text-ink/70">For {email}. Changing it signs out every other device.</p>
       <form

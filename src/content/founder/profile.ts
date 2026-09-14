@@ -1,20 +1,15 @@
 /**
- * Every visible sentence on the founder profile lives here, written in the third person.
+ * Every visible sentence on Karim Mohamed's profile lives here, written in the third person.
  *
- * Sources, in order of authority:
- *  1. The biography Karim supplied (identity, projects, EdAI, activities, coursework).
- *  2. docs/karim-founder-biography-brief.md in this repository.
- *  3. Public, checkable evidence: github.com/karimmoh1-glitch, therushd.com, daythread.org,
- *     and this repository itself (commit and test counts, dated below).
+ * The page is about identity and trajectory, not credentials: no coursework, scores, clubs,
+ * activity lists, skills lists or awards section. Sources: the biography Karim supplied,
+ * docs/karim-founder-biography-brief.md, and public evidence (github.com/karimmoh1-glitch,
+ * therushd.com, daythread.org, and this repository's own history, counted 13 September 2026).
  *
- * `founder.test.ts` enforces the rules: no first-person words in prose, no status adjectives,
- * no email addresses, GitHub as the only sameAs. Add a fact only when it has a source above.
+ * `founder.test.ts` enforces the rules. Add a fact only when it has a source above.
  */
 
 export type Link = { label: string; href: string };
-
-/** A chapter diagram node: a label, and an optional short note under it. */
-export type Node = { label: string; note?: string };
 
 export const person = {
   name: "Karim Mohamed",
@@ -25,247 +20,179 @@ export const person = {
   jobTitle: "Founder, Daythread",
   github: "https://github.com/karimmoh1-glitch",
   description:
-    "Karim Mohamed is a young entrepreneur and software builder from the Seattle area. He founded Daythread, created Rushd and built InternOps, and his work is moving toward computer engineering, robotics and intelligent machines.",
-  knowsAbout: [
-    "Software engineering",
-    "Artificial intelligence",
-    "Automation",
-    "Computer engineering",
-    "Embedded systems",
-    "Computer architecture",
-    "Computer vision",
-    "Robotics",
-  ],
+    "Karim Mohamed is a young entrepreneur and software builder from the Seattle area who likes turning ideas into working systems. He founded Daythread, and his work is moving toward computer engineering, hardware, artificial intelligence and robotics.",
+  knowsAbout: ["Software engineering", "Product design", "Automation", "Artificial intelligence", "Computer engineering", "Robotics"],
 } as const;
 
 export const hero = {
   kicker: "A profile",
-  line: ["From software", "to machines."],
-  lede: "Karim Mohamed is a young entrepreneur and software builder from the Seattle area. He founded Daythread, created Rushd and built InternOps: working systems for small businesses, high-school students and internship programs.",
-  follow: "His direction runs deeper than the products. It points toward computer engineering, robotics and machines that act on what they understand.",
-  /** The trajectory rail. `state` is what the evidence supports, not what sounds best. */
-  trajectory: [
-    { label: "Software", state: "built", note: "Three systems deployed" },
-    { label: "Computing", state: "studying", note: "Foundations in progress" },
-    { label: "Hardware", state: "next", note: "Direction" },
-    { label: "AI", state: "applied", note: "Applied inside products" },
-    { label: "Robotics", state: "next", note: "Direction" },
-    { label: "Intelligent machines", state: "next", note: "Long-term aim" },
-  ] as Array<{ label: string; state: "built" | "studying" | "applied" | "next"; note: string }>,
+  line: ["A builder,", "moving toward engineering."],
+  lede: "Karim Mohamed is a young entrepreneur and software builder from the Seattle area who likes turning ideas into working systems.",
+  paragraphs: [
+    "Most of his work so far has happened in software: building products, experimenting with AI, untangling operational problems and learning by shipping. The deeper pull has always been underneath the interface — how computation works, how software reaches the physical world, and how a machine might perceive, decide and act.",
+    "That curiosity is steering him toward computer engineering, hardware, artificial intelligence and robotics.",
+  ],
 };
 
-export const who = {
+export const origin = {
   index: "01",
-  label: "The builder",
-  lede: "Karim turns messy, everyday problems into working systems.",
+  label: "Beginnings",
+  title: "It starts with wanting the idea to exist.",
   paragraphs: [
-    "He started with software because it was the fastest way to turn an idea into something real. That choice has already produced a business platform, an academic planner and an internship-management system, each with its own data, workflows and failure modes to reason about.",
-    "Karim is still early in his career, and the work does not hide that. What stands out is the direction of travel: each project has pulled him further from individual features and toward whole systems — how information arrives, how it is understood, and what should happen next.",
+    "Karim has always been drawn to building things. The appeal was never a particular language or framework. It is the moment an idea that existed only in his head becomes something that runs, responds, and can be handed to someone else.",
+    "Software was the first place that could happen quickly. A problem noticed in the afternoon could be sketched by evening and running, imperfectly, the next day. Some of those experiments became products he still works on. All of them changed the way he approaches a problem.",
   ],
-  /** What the three systems cover between them, by project. Scope, not seniority. */
-  ledger: [
-    { area: "Product architecture", in: ["Daythread"] },
-    { area: "Frontend and backend engineering", in: ["Daythread"] },
-    { area: "Authentication and authorization", in: ["Daythread"] },
-    { area: "Database-backed workflows", in: ["Daythread"] },
-    { area: "Integrations and automation", in: ["Daythread"] },
-    { area: "Security and testing", in: ["Daythread"] },
-    { area: "Infrastructure and deployment", in: ["Daythread", "Rushd", "InternOps"] },
-    { area: "Planning and prioritization", in: ["Rushd"] },
-    { area: "Program operations and administration", in: ["InternOps"] },
+};
+
+export const method = {
+  index: "02",
+  label: "Method",
+  title: "The way he builds.",
+  paragraphs: [
+    "Karim learns by making. He runs into a problem, gets curious about why it exists, and starts building before every answer is known.",
+    "The first version is never right. He tests it, something breaks, and the fix exposes a better question. The product changes, then the architecture underneath it. The idea only becomes clear in the act of implementing it.",
   ],
+  close: "That loop is not the cost of the work. For Karim, it is most of the attraction.",
+  loop: ["Notice a problem", "Get curious", "Build a first version", "Test it", "Watch it break", "Fix and rethink", "Ship", "Learn what was wrong"],
 };
 
 export const daythread = {
-  index: "02",
+  index: "03",
   label: "Daythread",
-  role: "Founder and builder",
+  role: "Founder",
   url: "https://daythread.org",
   repository: "https://github.com/karimmoh1-glitch/lensflow",
-  title: "Communication becomes action.",
-  lede: "Daythread is a business operating system for freelancers and small businesses. It begins where their work actually begins: in conversations with clients.",
+  title: "Turning conversations into action.",
+  lede: "Karim founded Daythread to rethink how freelancers and small businesses manage the conversations — and all the operational work — that surround their customers.",
   paragraphs: [
-    "A client writes, “Are you free Saturday afternoon?” Normally the owner reads the message, opens a calendar, checks for conflicts, writes back, and later creates the booking by hand. Daythread is designed so the software understands the intent, gathers the context and prepares the next step.",
-    "The owner stays in control. Nothing is sent or booked on a guess; the prepared action waits for a person to approve it.",
+    "For a photographer, a coach or a small studio, the business runs through messages: a question on Instagram, a text about rescheduling, an email asking about a date. Around those messages sit calendars, bookings, follow-ups and a scattering of disconnected tools. Daythread brings them into one workspace.",
+    "Take a client who writes, “Are you free Saturday afternoon?” Displaying that message is the easy part. The interesting problem is understanding what is being asked, connecting it to the calendar and the business’s workflows, and helping turn the conversation into an action — while the owner still decides what happens.",
   ],
-  example: {
-    caption: "How a message moves through Daythread. Illustrative example.",
+  flow: {
+    caption: "The idea at the center of Daythread. Illustrative example.",
     message: "Are you free Saturday afternoon?",
     steps: [
-      { label: "Intent", note: "A request for availability" },
-      { label: "Context", note: "Saturday afternoon on the calendar" },
-      { label: "Decision", note: "Offer the times that are open" },
-      { label: "Action", note: "A reply, prepared and waiting for approval" },
-    ] as Node[],
+      { label: "Conversation", note: "A client asks about availability" },
+      { label: "Understanding", note: "The intent, the day, the calendar, the service" },
+      { label: "Action", note: "A reply with open times, prepared for the owner to approve" },
+    ],
   },
-  principle: "AI proposes. The human approves.",
-  principleNote: "The rule the product is built around.",
-  workflowCaption: "The client journey Daythread is organized around",
-  workflow: ["Lead", "Contact", "Booking", "Payment", "Project", "Files", "Delivery", "Follow-up"],
-  scopeIntro: "Karim’s work on Daythread spans the whole stack of a production application:",
-  scope: [
-    "Product architecture",
-    "Frontend engineering",
-    "Backend engineering",
-    "Authentication",
-    "Authorization",
-    "Database-backed workflows",
-    "Integrations",
-    "Automation",
-    "Interface design",
-    "Security",
-    "Testing",
-    "Infrastructure and deployment",
-    "Product strategy",
+  principle: ["AI proposes.", "The owner decides."],
+  building: [
+    "Building Daythread has meant working across the whole system at once. Karim shaped the product architecture and the interface, wrote the frontend and the backend, and connected the integrations and automation that let messages from different channels land in one place.",
+    "Much of the work is the part nobody sees: authentication and security, testing, infrastructure and deployment. The product strategy moves with the code; each version clarifies what Daythread should become, and what it should refuse to do.",
   ],
-  /** Counted from the Daythread repository on 13 September 2026 (280 commits, 894 tests). */
-  evidence: [
-    { figure: "280+", label: "commits since the first one on 30 August 2026" },
-    { figure: "890+", label: "automated tests in the suite" },
-  ],
-  evidenceNote: "Counted from the public repository, September 2026.",
+  evidence: "Developed in public: more than 280 commits and more than 890 automated tests since the first commit on 30 August 2026.",
   screenshot: {
     src: "/founder/daythread-inbox.jpg",
     width: 1600,
     height: 1000,
-    alt: "Daythread’s inbox on a demo workspace: client conversations from email, Instagram and text messages on the left, one conversation open in the middle, and on the right the intent Daythread read in the message and the next action it suggests.",
-    caption: "Daythread’s inbox on a demo workspace with sample clients. The right-hand panel shows what the software read in the latest message and the action it suggests.",
+    alt: "Daythread’s inbox on a demo workspace: client conversations from email, Instagram and text messages on the left, one conversation open in the middle, and on the right the intent Daythread read in the message and the action it suggests.",
+    caption: "Daythread’s inbox on a demo workspace with sample clients. On the right: what the software read in the message, and what it suggests doing next.",
   },
 };
 
-export const rushd = {
-  index: "03",
-  label: "Rushd",
-  role: "Creator and builder",
-  url: "https://therushd.com",
-  title: "Academics are fragmented.",
-  lede: "Rushd is an academic planning platform for high-school students.",
-  paragraphs: [
-    "A student’s week is scattered across classes, assignments, exams, deadlines and whatever time is actually free. Rushd takes those pieces and turns them into a prioritized plan — one that can adapt when the week changes.",
-    "It reflects a habit that runs through Karim’s work: begin with a problem he understands closely, then build the system that makes it easier.",
-  ],
-  inputs: ["Classes", "Assignments", "Exams", "Deadlines", "Available time"],
-  output: { label: "A prioritized plan", note: "What to work on next, re-ordered as things change" },
-};
-
-export const internops = {
+export const pattern = {
   index: "04",
-  label: "InternOps",
-  role: "Builder",
-  repository: "https://github.com/karimmoh1-glitch/internops-refined",
-  title: "Operations are a system too.",
-  lede: "InternOps is an internship-management platform Karim built for programs associated with EdAI.",
-  paragraphs: [
-    "An internship program has more moving parts than it first appears: who the interns are, what they are assigned, when they worked, what they proposed, how they are reached, and what they leave with. InternOps brings those parts into one administered system.",
-    "The platform has been deployed, and Karim is preparing it for broader public use by organizations that run structured internship programs.",
+  label: "Rushd and InternOps",
+  title: "A pattern, not a coincidence.",
+  projects: [
+    {
+      name: "Rushd",
+      what: "Academic planning for high-school students",
+      link: { label: "therushd.com", href: "https://therushd.com" },
+      text: "Rushd started from a problem close to home. A student’s week is scattered across classes, assignments, exams, deadlines and whatever time is actually free. Rushd gathers those pieces and turns them into a prioritized plan: take something messy, build a system around it, make it easier to act on.",
+    },
+    {
+      name: "InternOps",
+      what: "Internship management, associated with EdAI",
+      link: { label: "GitHub", href: "https://github.com/karimmoh1-glitch/internops-refined" },
+      text: "InternOps applies the same instinct to a whole program. It coordinates interns, task assignments, work sessions, proposals, communication, alumni and certificates, with the administrative workflows that hold them together.",
+    },
   ],
-  modules: ["Interns", "Task assignment", "Work sessions", "Proposals", "Communication", "Admin dashboards", "Progress tracking", "Alumni", "Certificates"],
-  output: "An operating system for an internship program",
+  close:
+    "Looked at together, the projects share a shape. Again and again, Karim has ended up building software that coordinates people, information and work — and each time, the valuable part is less the screen than the system behind it.",
+  edai: "His time with EdAI also included a hackathon, where his team placed second and received $1,000 in group prize earnings.",
 };
 
-export const edai = {
+export const whySoftware = {
   index: "05",
-  label: "EdAI",
-  result: "2nd",
-  resultLabel: "Place, EdAI hackathon",
-  prize: "$1,000",
-  prizeLabel: "Group prize, shared by the team",
+  label: "Why software",
+  title: "Why software came first.",
+  ladder: ["A thought", "an interface", "a system", "a product", "something another person can use."],
   paragraphs: [
-    "Karim’s work in AI and education runs through EdAI, including an internship spent on software and AI projects as part of a team.",
-    "At an EdAI hackathon, his team placed second and received a $1,000 group prize.",
+    "Software was the fastest route from an idea to something real. That immediacy is what drew Karim in.",
+    "But building kept exposing the layers underneath: how data moves through a system, why something slows down, what the processor is actually doing, where the software ends and the machine begins. The more he built, the more those layers became the interesting part.",
   ],
 };
 
-export const bigIdea = {
-  label: "Direction",
-  lines: [
-    "Software was the beginning.",
-    "Computing is the foundation.",
-    "Hardware changes the boundary.",
-    "Intelligence changes what machines can do.",
-    "Robotics brings it into the physical world.",
-  ],
-  note: "A statement of direction, not a list of accomplishments.",
-};
-
-export const systems = {
+export const trajectory = {
   index: "06",
-  label: "Systems",
-  from: "How do you build an app?",
-  to: "How do you build a system that understands, decides and acts?",
+  label: "Direction",
+  title: "From software to computer engineering.",
   paragraphs: [
-    "Daythread already works on a small version of that question. A message comes in, the software reads it, and an action is prepared.",
-    "Karim’s interest is in what happens when the same loop leaves the screen: when the input comes from sensors instead of a conversation, and the action moves something in the physical world.",
+    "Software was the entry point. Computing became the deeper question: not only what a program does, but how computation happens at all.",
+    "From there, hardware became interesting — computer architecture, embedded systems, the physical constraints software usually hides. Artificial intelligence added perception and decision-making. Robotics connects all of it to the physical world.",
+    "These are directions of curiosity, not claims of expertise. His long-term direction is computer engineering, with interests reaching into computer vision, autonomous systems and intelligent machines.",
   ],
-  stages: ["Input", "Computation", "Perception", "Decision", "Action"],
-  rows: [
-    { label: "On a screen", state: "built", cells: ["A client message", "Software", "Reading intent", "Choosing a reply", "A prepared reply"] },
-    { label: "In the world", state: "direction", cells: ["Sensors", "Embedded hardware", "Vision and models", "Planning", "Motion"] },
-  ] as Array<{ label: string; state: "built" | "direction"; cells: string[] }>,
-  rowNotes: { built: "Built, in Daythread", direction: "Direction" },
+  path: [
+    { label: "Idea", note: "Where every project starts", state: "now" },
+    { label: "Software", note: "What he builds with today", state: "now" },
+    { label: "Computation", note: "The deeper question", state: "exploring" },
+    { label: "Intelligence", note: "Applied in products, still being explored", state: "exploring" },
+    { label: "Perception", note: "Direction", state: "next" },
+    { label: "Action", note: "Direction", state: "next" },
+    { label: "Machines", note: "Where the curiosity leads", state: "next" },
+  ] as Array<{ label: string; note: string; state: "now" | "exploring" | "next" }>,
+  legend: [
+    { state: "now", label: "Building today" },
+    { state: "exploring", label: "Exploring" },
+    { state: "next", label: "Direction" },
+  ] as Array<{ state: "now" | "exploring" | "next"; label: string }>,
 };
 
-export const foundation = {
+export const physical = {
+  label: "The physical world",
+  statement: ["Software was the beginning.", "The physical world is next."],
+  capabilities: [
+    { subject: "A software system", verb: "can process information." },
+    { subject: "A machine", verb: "can perceive its environment." },
+    { subject: "An intelligent system", verb: "can make decisions." },
+    { subject: "A robot", verb: "can turn those decisions into physical action." },
+  ],
+  close: "The intersection of computation, perception, intelligence and physical systems is where Karim ultimately wants to go deeper.",
+};
+
+export const thread = {
   index: "07",
-  label: "Foundation",
-  title: "Building the foundation.",
-  subjects: ["Mathematics", "Physics", "Chemistry", "Computer science", "Economics", "Writing"],
-  paragraph:
-    "Karim is a high-school student on a deliberately technical path, taking college courses at Bellevue College alongside advanced high-school coursework. The mathematics, science and computing underneath engineering are being built on purpose, not in passing.",
-  current: [
-    { course: "AP Calculus AB", where: "" },
-    { course: "Intro to Physics 1", where: "Bellevue College" },
-    { course: "AP Chemistry", where: "" },
-    { course: "AP Microeconomics and Macroeconomics", where: "" },
-    { course: "AP U.S. History", where: "" },
-    { course: "English 101", where: "Bellevue College" },
-    { course: "AP Computer Science A", where: "Independent study" },
-  ],
-  results: [
-    { exam: "AP Computer Science Principles", score: "5" },
-    { exam: "AP World History", score: "5" },
-  ],
+  label: "The thread",
+  question: "How do ideas become systems that actually work?",
+  intro: "One question runs through everything so far, and through what comes next.",
+  rows: [
+    { name: "Daythread", system: "Business systems", state: "built" },
+    { name: "Rushd", system: "Planning systems", state: "built" },
+    { name: "InternOps", system: "Operational systems", state: "built" },
+    { name: "Computer engineering", system: "Computational systems", state: "next" },
+    { name: "Artificial intelligence", system: "Intelligent systems", state: "next" },
+    { name: "Robotics", system: "Physical systems", state: "next" },
+  ] as Array<{ name: string; system: string; state: "built" | "next" }>,
+  stateLabel: { built: "Built", next: "Next" },
 };
 
-export const next = {
+export const current = {
   index: "08",
-  label: "Next",
-  title: "The next system.",
-  paragraph:
-    "The products Karim has built are a foundation rather than a destination. His next chapter is aimed at the layers beneath software and beyond the screen.",
-  fields: [
-    "Computer engineering",
-    "Electrical and computer engineering",
-    "Computer architecture",
-    "Embedded systems",
-    "Artificial intelligence",
-    "Computer vision",
-    "Autonomous systems",
-    "Robotic manipulation",
-    "Human–robot interaction",
-  ],
-  close: "Robotics is where those fields meet, and it is the direction Karim is now pursuing.",
-};
-
-export const background = {
-  index: "09",
-  label: "Background",
-  entries: [
-    { name: "Daythread", role: "Founder and builder", detail: "Business operating system for freelancers and small businesses." },
-    { name: "Rushd", role: "Creator and builder", detail: "Academic planning for high-school students." },
-    { name: "InternOps", role: "Builder", detail: "Internship-management platform, deployed." },
-    { name: "EdAI", role: "Internship and hackathon", detail: "Hackathon team placed second; $1,000 group prize." },
-    { name: "Research exploration", role: "Through PathIvy", detail: "Exploring computer vision, graphics, interaction and robotics." },
-    { name: "Robotics", role: "Emerging direction", detail: "Pursuing hands-on robotics involvement." },
-    { name: "Soccer referee", role: "Officiating", detail: "Real-time decisions that have to be made clearly and explained calmly." },
-    { name: "School", role: "Selected activities", detail: "Chemistry Club, the Technology Student Association, Yearbook and community service." },
+  label: "Now",
+  title: ["The work is still early.", "The direction is becoming clearer."],
+  paragraphs: [
+    "Karim is at the beginning of this path, and being early is part of the story.",
+    "Software remains the medium he builds with today — Daythread first, and whatever problem turns up next. Computer engineering, hardware, artificial intelligence and robotics are the deeper systems he wants to understand, and eventually to build.",
   ],
 };
 
 export const contact = {
-  index: "10",
+  index: "09",
   label: "Contact",
-  focus: ["Software", "AI", "Computer engineering", "Robotics"],
+  focus: ["Software", "Computer engineering", "AI", "Robotics"],
   links: [
     { label: "GitHub", href: "https://github.com/karimmoh1-glitch" },
     { label: "Daythread", href: "https://daythread.org" },
@@ -274,13 +201,13 @@ export const contact = {
 };
 
 export const nav: Link[] = [
-  { label: "Work", href: "#work" },
+  { label: "Story", href: "#beginnings" },
+  { label: "Work", href: "#daythread" },
   { label: "Direction", href: "#direction" },
-  { label: "Background", href: "#background" },
   { label: "Contact", href: "#contact" },
 ];
 
-/** Every string above that a visitor reads as prose. Used by the tests. */
+/** Every string above that a visitor reads. Used by the tests. */
 export function allProse(): string[] {
   const out: string[] = [];
   const walk = (v: unknown) => {
@@ -288,6 +215,6 @@ export function allProse(): string[] {
     else if (Array.isArray(v)) v.forEach(walk);
     else if (v && typeof v === "object") Object.values(v).forEach(walk);
   };
-  [person.description, hero, who, daythread, rushd, internops, edai, bigIdea, systems, foundation, next, background, contact].forEach(walk);
+  [person.description, hero, origin, method, daythread, pattern, whySoftware, trajectory, physical, thread, current, contact].forEach(walk);
   return out;
 }

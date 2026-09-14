@@ -22,6 +22,16 @@ describe("founder profile copy", () => {
     expect(prose.filter((s) => banned.test(s))).toEqual([]);
   });
 
+  it("reads as a profile, not a résumé: no grades, coursework, clubs or activity lists", () => {
+    const resume = /\bGPA\b|\bSAT\b|\bPSAT\b|\bAP\s|Bellevue College|coursework|transcript|referee|Chemistry Club|Technology Student Association|Yearbook|extracurricular|\bskills?\b|qualifications/i;
+    expect(prose.filter((s) => resume.test(s))).toEqual([]);
+  });
+
+  it("stays within the reading budget", () => {
+    const words = prose.join(" ").split(/\s+/).filter(Boolean).length;
+    expect(words).toBeLessThanOrEqual(1800);
+  });
+
   it("publishes no email address and no invented profile", () => {
     expect(prose.filter((s) => /[\w.+-]+@[\w-]+\.[\w.]+/.test(s))).toEqual([]);
     expect(contact.links.every((l) => /^https:\/\/(github\.com\/karimmoh1-glitch|daythread\.org|therushd\.com)$/.test(l.href))).toBe(true);

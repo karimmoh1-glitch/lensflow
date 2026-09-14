@@ -4,7 +4,7 @@
  * the Person @id exactly https://daythread.org/founder#person — the id the landing page's
  * Organization points at as its founder.
  */
-import { person, rushd } from "@/content/founder/profile";
+import { person, pattern } from "@/content/founder/profile";
 
 type Node = Record<string, unknown>;
 export type JsonLd = { "@context": "https://schema.org"; "@graph": Node[] };
@@ -46,7 +46,7 @@ export function founderProfileGraph(base = siteBase()): JsonLd {
         knowsAbout: [...person.knowsAbout],
         sameAs: [person.github],
       },
-      { "@type": "SoftwareApplication", "@id": ids.rushd, name: "Rushd", url: rushd.url, applicationCategory: "EducationalApplication", creator: { "@id": ids.person } },
+      { "@type": "SoftwareApplication", "@id": ids.rushd, name: "Rushd", url: pattern.projects[0].link.href, applicationCategory: "EducationalApplication", creator: { "@id": ids.person } },
       { "@type": "ProfilePage", "@id": ids.profile, url, name: `${person.name} — Profile`, mainEntity: { "@id": ids.person }, isPartOf: { "@id": ids.website }, breadcrumb: { "@id": ids.breadcrumb } },
       {
         "@type": "BreadcrumbList",

@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { person, hero } from "@/content/founder/profile";
+import { person, hero, trajectory } from "@/content/founder/profile";
 
 export const alt = `${person.name} — ${hero.line.join(" ")}`;
 export const size = { width: 1200, height: 630 };
@@ -15,13 +15,14 @@ export default function Image() {
           <span>{person.location}</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", fontSize: 128, lineHeight: 0.92, letterSpacing: "-0.04em" }}>{hero.line[0]}</div>
-          <div style={{ display: "flex", fontSize: 128, lineHeight: 0.92, letterSpacing: "-0.04em", paddingLeft: 88 }}>{hero.line[1]}</div>
+          <div style={{ display: "flex", fontSize: 116, lineHeight: 0.95, letterSpacing: "-0.04em" }}>{hero.line[0]}</div>
+          <div style={{ display: "flex", fontSize: 76, lineHeight: 1.05, letterSpacing: "-0.03em", color: "#36332F", paddingLeft: 88 }}>{hero.line[1]}</div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 24, color: "#36332F" }}>
-          {hero.trajectory.map((t, i) => (
-            <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 18 }}>
-              <div style={{ display: "flex", width: 12, height: 12, borderRadius: 12, backgroundColor: i === 0 ? "#B23C1C" : t.state === "next" ? "#F2F0EB" : "#161513", border: "1.5px solid #161513" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 22, color: "#36332F" }}>
+          {trajectory.path.map((t, i) => (
+            <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              {i > 0 && <div style={{ display: "flex", width: 22, height: 1.5, backgroundColor: t.state === "next" ? "#A39E94" : "#161513" }} />}
+              <div style={{ display: "flex", width: 11, height: 11, borderRadius: 11, backgroundColor: t.state === "now" ? "#B23C1C" : t.state === "exploring" ? "#161513" : "#F2F0EB", border: `1.5px solid ${t.state === "now" ? "#B23C1C" : "#161513"}` }} />
               <span>{t.label}</span>
             </div>
           ))}

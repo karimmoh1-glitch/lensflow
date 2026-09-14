@@ -44,7 +44,7 @@ function structuredData() {
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "WebSite", "@id": `${SITE}/#website`, name: "Daythread", url: SITE, publisher: { "@id": `${SITE}/#org` } },
-      { "@type": "Organization", "@id": `${SITE}/#org`, name: "Daythread", url: SITE, logo: `${SITE}/icon`, email: "support@daythread.org", founder: { "@id": `${SITE}/karim-mohamed#person` } },
+      { "@type": "Organization", "@id": `${SITE}/#org`, name: "Daythread", url: SITE, logo: `${SITE}/icon`, email: "support@daythread.org", founder: { "@id": `${SITE}/founder#person` } },
       {
         "@type": "SoftwareApplication",
         name: "Daythread",

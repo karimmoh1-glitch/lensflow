@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
-import { projects } from "@/content/founder/projects";
-import { posts } from "@/content/founder/writing";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
 
@@ -22,14 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  // The founder page and everything under it (not /founder, which only redirects here).
-  const founderRoutes: MetadataRoute.Sitemap = [
-    { url: `${BASE_URL}/karim-mohamed`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE_URL}/karim-mohamed/projects`, changeFrequency: "monthly", priority: 0.5 },
-    ...projects.map((p) => ({ url: `${BASE_URL}/karim-mohamed/projects/${p.slug}`, changeFrequency: "monthly" as const, priority: 0.5 })),
-    { url: `${BASE_URL}/karim-mohamed/writing`, changeFrequency: "weekly", priority: 0.4 },
-    ...posts.map((p) => ({ url: `${BASE_URL}/karim-mohamed/writing/${p.slug}`, lastModified: p.dateModified, changeFrequency: "monthly" as const, priority: 0.5 })),
-  ];
+  // Karim Mohamed's profile. /karim-mohamed only redirects here, so it is not listed.
+  const founderRoutes: MetadataRoute.Sitemap = [{ url: `${BASE_URL}/founder`, changeFrequency: "monthly", priority: 0.6 }];
 
   // Each completed-onboarding business has a real public booking page — that's Daythread's
   // actual public storefront per customer, and worth being discoverable on its own.

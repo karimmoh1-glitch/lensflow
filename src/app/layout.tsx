@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Instrument_Sans, Instrument_Serif } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 
-// Two faces from one family. Instrument Sans does all the work in the product: neutral,
-// compact, legible at 12–14px, with a real medium weight. Instrument Serif is the editorial
-// voice for the few places that should read like a publication, not an app — landing
-// headlines, the founder page, a Today greeting. It has one weight on purpose: it is never
-// bolded, so it can never turn into a shouting headline.
-const sans = Instrument_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif", display: "swap" });
+// One type family, deliberately. Inter is the most generic SaaS body font there is, and
+// Playfair Display as the wordmark read as a wedding-photography studio — exactly the
+// vertical the product is NOT limited to. Manrope is geometric but warm, and carries
+// weights 500–800 well enough to do both the body and the display job; both CSS
+// variables point at it so every existing font-display/font-sans site moves together.
+const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const display = Manrope({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
-const TITLE = "Daythread — The inbox that books your clients";
-const DESCRIPTION = "Instagram DMs, texts, WhatsApp and email in one place, sorted by who is waiting, with booking in the conversation. Free to start.";
+const TITLE = "Daythread — Every message. One inbox.";
+const DESCRIPTION = "Instagram, Gmail, WhatsApp and texts in one inbox, sorted so the people waiting on you come first. Free to start.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
+    <html lang="en" className={`${sans.variable} ${display.variable}`}>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );

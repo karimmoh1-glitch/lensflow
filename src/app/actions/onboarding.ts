@@ -2,12 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireRole, type SessionPayload } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { track } from "@/lib/analytics";
 import { answersSchema, planSchema, type Personalization } from "@/lib/personalization";
 import { savePersonalization } from "@/server/personalization";
-import { AUTOMATION_RECIPES, STARTER_RECIPES } from "@/lib/automationRecipes";
-import { createAutomation } from "@/app/actions/automations";
 
 function validTimezone(tz: string | undefined): string | undefined {
   if (!tz) return undefined;
@@ -24,49 +22,24 @@ function validTimezone(tz: string | undefined): string | undefined {
  * times read right from the first thread. Idempotent; no redirect, so the caller can go
  * on to Stripe or to the inbox as it likes.
  */
-export async function markOnboardingDone(input: { timezone?: string; connected?: number; via?: "today" | "connect" | "checkout" } = {}, session?: SessionPayload | null): Promise<{ ok: boolean }> {
-  const ctx = await requireRole(["OWNER", "ADMIN"], session);
+export async function markOnboardingDone(input: { timezone?: string; connected?: number; via?: "inbox" | "checkout" } = {}): Promise<{ ok: boolean }> {
+  const ctx = await requireRole(["OWNER", "ADMIN"]);
   if (!ctx) return { ok: false };
   const { business } = ctx;
   const timezone = validTimezone(input.timezone);
   if (!business.onboardingComplete) {
     await prisma.business.update({ where: { id: business.id }, data: { onboardingComplete: true, onboardingStep: 2, ...(timezone ? { timezone } : {}) } });
-    await track("onboarding_completed", { businessId: business.id, properties: { connected: input.connected ?? 0, via: input.via ?? "today" } });
-    await track("onboarding_to_product", { businessId: business.id, properties: { via: input.via ?? "today" } });
+    await track("onboarding_completed", { businessId: business.id, properties: { connected: input.connected ?? 0, via: input.via ?? "inbox" } });
+    await track("onboarding_to_product", { businessId: business.id, properties: { via: input.via ?? "inbox" } });
   }
   return { ok: true };
 }
 
-/** Onboarding's last click: the workspace is ready, open Today, where the setup continues. */
-export async function completeOnboarding(input: { timezone?: string; connected?: number } = {}, session?: SessionPayload | null) {
-  const res = await markOnboardingDone({ ...input, via: "today" }, session);
+/** Onboarding's last click: the workspace is ready, open the inbox. */
+export async function completeOnboarding(input: { timezone?: string; connected?: number } = {}) {
+  const res = await markOnboardingDone({ ...input, via: "inbox" });
   if (!res.ok) redirect("/login");
-  redirect("/dashboard");
-}
-
-/**
- * Onboarding's automation step: switches on the chosen starter recipes through the same
- * `createAutomation` the Automations page uses, so plan limits, duplicate checks and
- * tenant scoping are the ones already tested. A recipe the workspace already has is
- * counted as on, not copied.
- */
-export async function turnOnStarterAutomations(keys: unknown, session?: SessionPayload | null): Promise<{ ok: true; created: number; existing: number; paused: string | null } | { ok: false; error: string }> {
-  const ctx = await requireRole(["OWNER", "ADMIN"], session);
-  if (!ctx) return { ok: false, error: "Only an owner or admin can set this up." };
-  const wanted = Array.isArray(keys) ? STARTER_RECIPES.filter((k) => keys.includes(k)) : [];
-  let created = 0;
-  let existing = 0;
-  let paused: string | null = null;
-  for (const key of wanted) {
-    const recipe = AUTOMATION_RECIPES.find((r) => r.key === key)!;
-    const twin = await prisma.automation.findFirst({ where: { businessId: ctx.business.id, trigger: recipe.input.trigger, action: recipe.input.action, offsetHours: recipe.input.offsetHours }, select: { id: true } });
-    if (twin) { existing++; continue; }
-    const result = await createAutomation(recipe.input, session);
-    if (result.error) return { ok: false, error: result.error };
-    created++;
-    if (result.paused) paused = result.paused;
-  }
-  return { ok: true, created, existing, paused };
+  redirect("/dashboard/inbox");
 }
 
 /**

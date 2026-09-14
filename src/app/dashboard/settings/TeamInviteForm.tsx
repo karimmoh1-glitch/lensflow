@@ -53,7 +53,7 @@ export function TeamInviteForm() {
                 setTimeout(() => setCopied(false), 1500);
               }}
             >
-              {copied ? <Check className="w-3.5 h-3.5" strokeWidth={1.75} /> : <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />}
+              {copied ? <Check className="w-3.5 h-3.5" strokeWidth={2} /> : <Copy className="w-3.5 h-3.5" strokeWidth={2} />}
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>

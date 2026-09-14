@@ -17,11 +17,11 @@ import type {
 // ── Surfaces ────────────────────────────────────────────────────────────────
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-lg border border-border bg-white", className)} {...props} />;
+  return <div className={cn("rounded-2xl border border-border bg-white shadow-popover", className)} {...props} />;
 }
 
 export function CardBody({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-4 sm:p-5", className)} {...props} />;
+  return <div className={cn("p-5", className)} {...props} />;
 }
 
 export function Divider({ className }: { className?: string }) {
@@ -30,31 +30,26 @@ export function Divider({ className }: { className?: string }) {
 
 // ── Buttons ─────────────────────────────────────────────────────────────────
 
-/**
- * Button hierarchy. One primary per view (ink). Secondary is a quiet neutral for the second
- * action. Outline and ghost for everything else. `brand` (coral) is reserved for the single
- * conversion action on marketing and upgrade surfaces — never a row action, because coral
- * also means "someone is waiting", and a screen of coral buttons reads as a screen of alarms.
- */
-type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "brand";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-ink text-white hover:bg-[#2A2B30] active:bg-black",
-  secondary: "bg-ink/[0.05] text-ink hover:bg-ink/[0.08] active:bg-ink/[0.11]",
-  outline: "bg-white text-ink border border-border-strong shadow-xs hover:bg-paper active:bg-ink/[0.06]",
-  ghost: "bg-transparent text-ink/70 hover:bg-ink/[0.05] hover:text-ink active:bg-ink/[0.08]",
-  danger: "bg-danger text-white hover:bg-danger-text",
-  brand: "bg-accent-strong text-white hover:bg-accent-deep",
+  primary: "bg-ink text-white hover:bg-black",
+  secondary: "bg-accent-strong text-white hover:bg-accent/90",
+  outline: "bg-white text-ink border border-border hover:bg-black/[0.03]",
+  ghost: "bg-transparent text-ink/70 hover:bg-black/[0.05] hover:text-ink",
+  danger: "bg-danger text-white hover:bg-danger/90",
 };
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "text-13 h-8 px-2.5 rounded gap-1.5",
-  md: "text-13 h-9 px-3 rounded gap-1.5",
-  lg: "text-sm h-10 px-4 rounded gap-2",
+  sm: "text-[13px] h-8 px-3.5 rounded-full gap-1.5",
+  md: "text-sm h-9 px-4 rounded-full gap-1.5",
+  lg: "text-sm h-11 px-5 rounded-full gap-2",
 };
 
-/** Color feedback only. Controls that move when you look at them feel like a demo, not a tool. */
-const PHYSICAL_FEEL = "transition-[background-color,border-color,color,box-shadow] duration-fast";
+/** The same physical hover-lift/press feel as every button on the marketing site — the
+ * app should feel like the same product a visitor just saw, not a flatter internal tool. */
+const PHYSICAL_FEEL =
+  "transition-transform duration-150 hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0";
 
 /** The product's own "working" signal inside buttons: a short thread travelling its path
  * (see components/brand/DaythreadLoader). Inherits the button's text color. */
@@ -72,7 +67,7 @@ export const Button = forwardRef<
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        "relative inline-flex items-center justify-center font-medium whitespace-nowrap shrink-0 disabled:opacity-45 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2",
+        "relative inline-flex items-center justify-center font-semibold transition-colors whitespace-nowrap shrink-0 disabled:opacity-45 disabled:pointer-events-none disabled:hover:scale-100 disabled:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2",
         PHYSICAL_FEEL,
         variantClasses[variant],
         sizeClasses[size],
@@ -113,7 +108,7 @@ export function LinkButton({
       href={href}
       target={target}
       className={cn(
-        "inline-flex items-center justify-center font-medium whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2",
+        "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
         PHYSICAL_FEEL,
         variantClasses[variant],
         sizeClasses[size],
@@ -139,7 +134,7 @@ export function SaveButton({
 }) {
   return (
     <Button size="sm" disabled={pending} onClick={onClick}>
-      {saved && <Check className="w-3.5 h-3.5" strokeWidth={1.75} />}
+      {saved && <Check className="w-3.5 h-3.5" strokeWidth={2} />}
       {pending ? "Saving…" : saved ? "Saved" : children}
     </Button>
   );
@@ -150,7 +145,7 @@ export function IconButton({ className, "aria-label": ariaLabel, ...props }: But
     <button
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex items-center justify-center w-8 h-8 rounded text-ink/65 hover:text-ink hover:bg-ink/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70",
+        "inline-flex items-center justify-center w-8 h-8 rounded-md text-ink/70 hover:text-ink hover:bg-black/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
         className
       )}
       {...props}
@@ -160,11 +155,11 @@ export function IconButton({ className, "aria-label": ariaLabel, ...props }: But
 
 // ── Form controls ─────────────────────────────────────────────────────────
 
-// One control surface for the whole product. Rest: a hairline. Hover: one step darker.
-// Focus: a darker border and a soft neutral ring — visible without introducing a color.
-// Invalid (aria-invalid): the danger border, same ring language in red.
+// One control surface for the whole product. Rest: hairline border. Hover: the border
+// darkens a step. Focus: a soft accent ring plus a solid accent border — visible without
+// being loud. Invalid (aria-invalid): the danger border, same ring language in red.
 export const controlBase =
-  "w-full rounded border border-border-strong bg-white px-3 h-9 text-sm text-ink placeholder:text-ink/50 transition-[border-color,box-shadow] duration-fast hover:border-ink/25 focus:outline-none focus:border-ink/45 focus:ring-[3px] focus:ring-ink/[0.07] aria-[invalid=true]:border-danger aria-[invalid=true]:focus:ring-danger/15 disabled:opacity-50 disabled:bg-paper disabled:hover:border-border-strong";
+  "w-full rounded-lg border border-ink/[0.14] bg-white px-3.5 h-10 text-sm text-ink placeholder:text-ink/65 transition-[border-color,box-shadow] duration-150 hover:border-ink/25 focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 aria-[invalid=true]:border-danger aria-[invalid=true]:focus:ring-danger/20 disabled:opacity-50 disabled:bg-black/[0.02] disabled:hover:border-ink/[0.14]";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
   return <input ref={ref} className={cn(controlBase, className)} {...props} />;
@@ -190,7 +185,7 @@ export function Field({
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label htmlFor={id} className="block text-13 font-medium text-ink">
+        <label htmlFor={id} className="block text-[13px] font-semibold text-ink/80">
           {label}
         </label>
         {trailing}
@@ -212,9 +207,9 @@ export function Field({
 /** A form-level problem, stated like a person would: what happened, and where to go. */
 export function FormError({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div role="alert" className="rounded-lg border border-danger/20 bg-danger-soft px-3.5 py-3 text-13 text-danger-text">
+    <div role="alert" className="rounded-xl border border-danger/25 bg-danger-soft/60 px-3.5 py-3 text-sm text-danger-text dt-swap">
       <p>{children}</p>
-      {action && <div className="mt-1.5 flex gap-4 text-13 font-medium">{action}</div>}
+      {action && <div className="mt-1.5 flex gap-4 text-[13px] font-semibold">{action}</div>}
     </div>
   );
 }
@@ -231,28 +226,26 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
 });
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn("block text-13 font-medium text-ink mb-1.5", className)} {...props} />;
+  return <label className={cn("block text-xs font-medium text-ink/75 mb-1.5", className)} {...props} />;
 }
 
 // ── Status ──────────────────────────────────────────────────────────────────
 
-type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info" | "accent" | "signal" | "booking";
+type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info" | "accent";
 const badgeTones: Record<BadgeTone, string> = {
-  neutral: "bg-ink/[0.05] text-ink/70",
+  neutral: "bg-black/[0.05] text-ink/65",
   success: "bg-success-soft text-success-text",
   warning: "bg-warning-soft text-warning-text",
   danger: "bg-danger-soft text-danger-text",
   info: "bg-info-soft text-info-text",
   accent: "bg-accent-soft text-accent-text",
-  signal: "bg-signal-soft text-signal-text",
-  booking: "bg-booking-soft text-booking-text",
 };
 
 export function Badge({ tone = "neutral", className, children }: { tone?: BadgeTone; className?: string; children: ReactNode }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-sm px-1.5 h-5 text-2xs font-medium whitespace-nowrap shrink-0",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium leading-5 whitespace-nowrap shrink-0",
         badgeTones[tone],
         className
       )}
@@ -265,17 +258,15 @@ export function Badge({ tone = "neutral", className, children }: { tone?: BadgeT
 /** A quieter alternative to a badge for signal that doesn't need a pill — a colored dot plus label. */
 export function StatusDot({ tone = "neutral", label }: { tone?: BadgeTone; label: string }) {
   const dotColor: Record<BadgeTone, string> = {
-    neutral: "bg-ink/25",
+    neutral: "bg-black/25",
     success: "bg-success",
     warning: "bg-warning",
     danger: "bg-danger",
     info: "bg-info",
     accent: "bg-accent",
-    signal: "bg-signal",
-    booking: "bg-booking",
   };
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-ink/70">
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink/65">
       <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotColor[tone])} />
       {label}
     </span>
@@ -294,20 +285,20 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 mb-6">
-      <div className="min-w-0">
-        <h1 className="font-sans font-semibold text-page-title text-ink">{title}</h1>
-        {description && <p className="mt-1 text-sm text-ink/65">{description}</p>}
+    <div className="flex items-start justify-between gap-4 mb-7">
+      <div>
+        <h1 className="font-sans font-black text-page-title text-ink tracking-tight">{title}</h1>
+        {description && <p className="mt-1 text-sm text-ink/70">{description}</p>}
       </div>
-      {action && <div className="sm:shrink-0 max-w-full">{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
 
 /**
- * The beginning of something, not a hole in the page: what belongs here, why it matters or
- * what to do, and the action when there is one. Quiet on purpose — a tinted panel, no icon
- * tile, no illustration.
+ * The beginning of something, not a hole in the page. A short run of the thread with an
+ * unlit node says "this will fill in"; the title says what belongs here; the description
+ * says why it matters or what to do; the action (when there is one) does it.
  */
 export function EmptyState({
   title,
@@ -320,18 +311,21 @@ export function EmptyState({
   action?: ReactNode;
   tone?: "neutral" | "success" | "accent";
 }) {
+  const markColor = tone === "success" ? "text-success" : tone === "accent" ? "text-accent" : "text-ink/30";
   return (
-    <div className="flex flex-col items-center justify-center text-center py-10 px-6 rounded-lg bg-paper">
-      <DaythreadMark className="w-5 h-5 mb-3 text-ink/40" node={tone === "neutral" ? "rgba(22,23,26,0.3)" : tone === "success" ? "#1F8A58" : "#E8504A"} />
-      <p className="text-sm font-medium text-ink">{title}</p>
-      {description && <p className="mt-1 text-13 text-ink/65 max-w-sm">{description}</p>}
+    <div className="flex flex-col items-center justify-center text-center py-12 px-6 rounded-3xl border border-dashed border-border bg-white/50">
+      <div aria-hidden className={cn("mb-4 w-10 h-10 rounded-2xl bg-paper border border-border flex items-center justify-center", markColor)}>
+        <DaythreadMark className="w-5 h-5" node={tone === "neutral" ? "rgba(16,17,20,0.25)" : "#F0524D"} />
+      </div>
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      {description && <p className="mt-1 text-sm text-ink/65 max-w-sm leading-relaxed">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }
 
-export function Skeleton({ className, style }: { className?: string; style?: React.CSSProperties }) {
-  return <div className={cn("animate-pulse rounded bg-ink/[0.05]", className)} style={style} aria-hidden />;
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("animate-pulse rounded-md bg-black/[0.06]", className)} aria-hidden />;
 }
 
 /** A generic page-loading skeleton for route-level loading.tsx files — a header bar plus
@@ -342,7 +336,7 @@ export function PageSkeleton({ rows = 5 }: { rows?: number }) {
     <div className="max-w-4xl mx-auto px-6 md:px-8 py-8 md:py-10">
       <div className="flex items-center justify-between mb-7">
         <Skeleton className="h-7 w-40" />
-        <Skeleton className="h-9 w-28" />
+        <Skeleton className="h-9 w-28 rounded-md" />
       </div>
       <Card>
         <div className="divide-y divide-border">
@@ -366,51 +360,26 @@ export function PageSkeleton({ rows = 5 }: { rows?: number }) {
 /** One number that means something, with the words that make it mean it. Tone colors the
  * number only, so a row of tiles reads as a sentence, not a scoreboard. */
 export function StatTile({ label, value, sub, tone = "neutral", href }: { label: string; value: string; sub?: string; tone?: "neutral" | "accent" | "success" | "warning" | "signal" | "danger"; href?: string }) {
-  const color = { neutral: "text-ink", accent: "text-accent-text", success: "text-success-text", warning: "text-warning-text", signal: "text-ink/75", danger: "text-danger-text" }[tone];
+  const color = { neutral: "text-ink", accent: "text-accent-text", success: "text-success-text", warning: "text-warning-text", signal: "text-signal-text", danger: "text-danger-text" }[tone];
   const body = (
     <>
-      <div className={cn("font-sans font-semibold text-[22px] leading-none tracking-[-0.015em] tabular-nums", color)}>{value}</div>
-      <div className="mt-2 text-13 text-ink/80">{label}</div>
-      {sub && <div className="mt-0.5 text-xs text-ink/65 leading-snug">{sub}</div>}
+      <div className={cn("font-sans font-extrabold text-[1.6rem] leading-none tracking-[-0.03em] tabular-nums", color)}>{value}</div>
+      <div className="mt-1.5 text-sm font-medium text-ink">{label}</div>
+      {sub && <div className="mt-0.5 text-[11px] text-ink/65 leading-snug">{sub}</div>}
     </>
   );
   const cls = "block bg-white px-5 py-4 min-w-0";
-  return href ? <Link href={href} className={cn(cls, "hover:bg-paper transition-colors")}>{body}</Link> : <div className={cls}>{body}</div>;
+  return href ? <Link href={href} className={cn(cls, "hover:bg-black/[0.02] transition-colors")}>{body}</Link> : <div className={cls}>{body}</div>;
 }
 
 /** A section's eyebrow: small caps, optional hint, optional action on the right. */
 export function SectionLabel({ children, hint, action, tone = "neutral" }: { children: ReactNode; hint?: string; action?: ReactNode; tone?: "neutral" | "accent" | "signal" | "success" }) {
-  const color = { neutral: "text-ink", accent: "text-accent-text", signal: "text-signal-text", success: "text-success-text" }[tone];
+  const color = { neutral: "text-ink/65", accent: "text-accent-text", signal: "text-signal-text", success: "text-success-text" }[tone];
   return (
-    <div className="flex items-baseline gap-3 mb-2">
-      <h2 className={cn("text-13 font-semibold", color)}>{children}</h2>
-      {hint && <span className="text-xs text-ink/65">{hint}</span>}
+    <div className="flex items-baseline gap-3 mb-2.5 px-1">
+      <h2 className={cn("text-[11px] font-bold uppercase tracking-[0.14em]", color)}>{children}</h2>
+      {hint && <span className="text-[11px] text-ink/65">{hint}</span>}
       {action && <span className="ml-auto text-xs">{action}</span>}
     </div>
-  );
-}
-
-// ── Navigation within a page ────────────────────────────────────────────────
-
-/** A segmented switch between views of the same list (Upcoming / Past, Day / Week). Links,
- * so the view lives in the URL; the current one is marked for assistive tech. */
-export function SegmentedLinks({ label, items, className }: { label: string; items: Array<{ href: string; label: ReactNode; count?: number; active: boolean }>; className?: string }) {
-  return (
-    <nav aria-label={label} className={cn("inline-flex items-center rounded bg-ink/[0.05] p-0.5 max-w-full overflow-x-auto", className)}>
-      {items.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          aria-current={item.active ? "page" : undefined}
-          className={cn(
-            "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-sm text-13 font-medium whitespace-nowrap transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70",
-            item.active ? "bg-white text-ink shadow-xs" : "text-ink/65 hover:text-ink"
-          )}
-        >
-          {item.label}
-          {typeof item.count === "number" && <span className="text-xs tabular-nums text-ink/65">{item.count}</span>}
-        </Link>
-      ))}
-    </nav>
   );
 }

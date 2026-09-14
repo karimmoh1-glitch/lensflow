@@ -11,7 +11,7 @@ export function NoteForm({ clientId }: { clientId: string }) {
 
   return (
     <div className="flex gap-2">
-      <Textarea ref={ref} rows={1} aria-label="Note about this client" placeholder="Add a note about this client…" />
+      <Textarea ref={ref} rows={1} placeholder="Add a note about this client…" />
       <Button
         size="sm"
         disabled={pending}

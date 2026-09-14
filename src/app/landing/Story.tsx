@@ -1,382 +1,281 @@
-import type { CSSProperties, ReactNode } from "react";
-import { Check } from "lucide-react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChannelIcon } from "./ChannelIcon";
-import { ScrollScene } from "./Scroll";
-import { Reveal } from "./Reveal";
+import { ChannelIcon, CHANNEL, type ChannelKey } from "./ChannelIcon";
 
 /**
- * One client, start to finish, told by the product's own pieces and driven by the scroll:
+ * The film. One pinned stage, driven entirely by scroll position — scroll fast and it
+ * moves fast, scroll back and it rewinds, stop and it holds. Nothing waits for a timer.
  *
- *   inquiry       the message lands in the thread
- *   conversation  Daythread reads it — who, what, when — and writes the next step
- *   booking       you pick a time from your real availability and book it
- *   confirmed     the confirmation goes back out where they wrote, by your automation
- *   client        the follow-through runs itself; they're a client now
+ * One object travels the whole story: Sarah's WhatsApp message.
  *
- * On a wide screen the stage is pinned and the scroll plays the sequence forward and back.
- * The first beat is fully drawn at rest, so arriving at the section (from "See how it works")
- * always shows the message and its headline, never an empty stage waiting for a scroll;
- * on a phone, and under reduced motion, the same five beats stack and read top to bottom.
- * Nothing here is a capability the product doesn't have, and nothing is sent without you
- * or an automation you switched on. The person is fiction.
+ *   CHAOS      six conversations from five places, scattered
+ *   THREAD     they pull into one line — the thread — and their colors give way to it
+ *   CONTEXT    Sarah's message steps forward; Daythread reads it: a booking request,
+ *              from a returning client, and Friday 2:30 is open
+ *   ACTION     the same card becomes the booking to send
+ *   OUTCOME    booked, confirmed, on the calendar
+ *   PRODUCT    the thread widens into the application itself — inbox, client, booking,
+ *              calendar, automation — and Sarah's message is a row in it
+ *
+ * Illustrative, not a claim: Daythread does extract intent, dates and client context from
+ * messages and lets you send a booking from the conversation; the person here is fiction.
  */
+type Card = { k: ChannelKey; who: string; msg: string; when: string; from: { x: number; y: number; r: number }; line: number };
+
+const CARDS: Card[] = [
+  { k: "whatsapp", who: "Sarah Kim", msg: "Do you have anything Friday afternoon?", when: "now", from: { x: 44, y: 38, r: -4 }, line: 3 },
+  { k: "instagram", who: "Maya Chen", msg: "Loved the last shoot — can we do another?", when: "2h", from: { x: 2, y: 4, r: -7 }, line: 1 },
+  { k: "gmail", who: "Jordan Lee", msg: "Re: a September date?", when: "1d", from: { x: 50, y: 6, r: 5 }, line: 2 },
+  { k: "sms", who: "(512) 555-0148", msg: "Anything open next week?", when: "3h", from: { x: 0, y: 46, r: 6 }, line: 4 },
+  { k: "website", who: "Priya Patel", msg: "Booked the Full package · Sep 18", when: "1d", from: { x: 8, y: 74, r: -5 }, line: 5 },
+  { k: "instagram", who: "Leo Studio", msg: "What do you charge for a half day?", when: "5h", from: { x: 52, y: 70, r: 8 }, line: 6 },
+];
+const FOCUS = 0;
+const LINE_X = 11; // % of stage width — where the thread runs
+const lineY = (i: number) => 12 + (i - 1) * 11; // % — node positions along the thread
+
+const clamp = (v: number) => Math.max(0, Math.min(1, v));
+const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+const seg = (p: number, a: number, b: number) => ease(clamp((p - a) / (b - a)));
+const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+
 const BEATS = [
-  { key: "inquiry", label: "Inquiry", title: "A message arrives.", body: "On whatever channel they use. It lands in one list, sorted by who has waited longest.", at: [-1, 0, 0.17, 0.21] },
-  { key: "read", label: "Conversation", title: "Daythread reads it.", body: "Who this is, what they want, when. The next step is written for you.", at: [0.19, 0.24, 0.37, 0.41] },
-  { key: "book", label: "Booking", title: "You pick the time.", body: "From your real availability, checked against your calendar. One click books it.", at: [0.39, 0.44, 0.57, 0.61] },
-  { key: "confirm", label: "Confirmed", title: "They're told where they wrote.", body: "Your confirmation goes out on the same channel, sent by the automation you switched on.", at: [0.59, 0.64, 0.77, 0.81] },
-  { key: "client", label: "Client", title: "The follow-through runs itself.", body: "A reminder the day before, a thank-you after. Switched on once, written into the thread every time.", at: [0.79, 0.84] },
-] as const;
+  { at: 0.0, eyebrow: "Right now", tone: "text-ink/65", title: <>Your customers are everywhere.</>, sub: "Instagram. WhatsApp. Texts. Gmail. Your booking page." },
+  { at: 0.16, eyebrow: "Daythread", tone: "text-signal-text", title: <>Your work shouldn&rsquo;t be.</>, sub: "One inbox. Every conversation, in the order it happened." },
+  { at: 0.34, eyebrow: "Context", tone: "text-signal-text", title: <>It reads it.</>, sub: "Who this is. What they want. What's open." },
+  { at: 0.52, eyebrow: "Action", tone: "text-accent-text", title: <>It knows what&rsquo;s next.</>, sub: "The booking, ready to send." },
+  { at: 0.66, eyebrow: "Outcome", tone: "text-success-text", title: <>Done.</>, sub: "Booked. Confirmed. On the calendar." },
+  { at: 0.8, eyebrow: "The product", tone: "text-ink/65", title: <>This is Daythread.</>, sub: "Six conversations became one thing to do. The thread is the interface." },
+];
 
 export function Story() {
+  const ref = useRef<HTMLElement>(null);
+  const [p, setP] = useState(0);
+  const [pinned, setPinned] = useState(true);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPinned(false);
+      setP(1);
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect();
+        const range = r.height - window.innerHeight;
+        setP(clamp(-r.top / Math.max(range, 1)));
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  // Phase progress
+  const gather = seg(p, 0.08, 0.28);
+  const thread = seg(p, 0.14, 0.3);
+  const focus = seg(p, 0.32, 0.46);
+  const chip1 = seg(p, 0.38, 0.43);
+  const chip2 = seg(p, 0.43, 0.48);
+  const chip3 = seg(p, 0.48, 0.53);
+  const action = seg(p, 0.54, 0.62);
+  const outcome = seg(p, 0.68, 0.76);
+  const product = seg(p, 0.8, 0.92);
+  const settle = seg(p, 0.9, 1.0);
+
+  const beat = p < 0.14 ? 0 : p < 0.33 ? 1 : p < 0.53 ? 2 : p < 0.67 ? 3 : p < 0.8 ? 4 : 5;
+
+  // Atmosphere: channel colors → violet → paper
+  const chaosTint = 1 - gather;
+  const violetTint = mix(0, 1, thread) * (1 - product);
+
   return (
-    <>
-      {/* Wide screens: pinned, scroll-driven. Hidden under reduced motion (see globals.css). */}
-      <ScrollScene as="div" span="pin" className="dt-pinned hidden lg:block relative h-[400vh]" aria-hidden>
-        <div className="sticky top-0 h-[100svh] flex items-center overflow-hidden">
-          <div className="w-full max-w-[1200px] mx-auto px-6 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-16 items-center">
-            <div>
-              <ol className="flex items-center gap-x-4 gap-y-1 flex-wrap text-13 font-medium text-ink/60 mb-8">
-                {BEATS.map((b) => (
-                  <li key={b.key} className="relative">
-                    {b.label}
-                    <Step a={b.at[0]} b={b.at[1]} c={b.at[2]} d={b.at[3]} dy="0px" className="absolute inset-0 text-ink font-semibold">
-                      {b.label}
-                    </Step>
-                  </li>
-                ))}
-              </ol>
-              <div className="relative h-[260px]">
-                {BEATS.map((b) => (
-                  <Step key={b.key} a={b.at[0]} b={b.at[1]} c={b.at[2]} d={b.at[3]} dy="18px" className="absolute inset-0">
-                    <h2 className="font-serif font-normal text-[clamp(2.4rem,4vw,3.6rem)] leading-[1.02] tracking-[-0.012em] text-ink text-balance">{b.title}</h2>
-                    <p className="mt-4 text-[1.0625rem] text-ink/60 leading-relaxed max-w-sm">{b.body}</p>
-                  </Step>
-                ))}
+    <section id="story" ref={ref} className={cn("relative scroll-mt-0", pinned ? "h-[520vh]" : "py-16")} aria-label="One message, from chaos to booked, and the product it lives in">
+      <div className={cn("w-full", pinned && "sticky top-0 h-[100svh] flex items-center overflow-hidden")}>
+        {/* atmosphere */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none transition-opacity duration-300" style={{ opacity: chaosTint * 0.9, background: "radial-gradient(40% 40% at 20% 30%, rgba(214,41,118,0.10), transparent 70%), radial-gradient(40% 40% at 80% 25%, rgba(234,67,53,0.10), transparent 70%), radial-gradient(45% 45% at 70% 80%, rgba(37,211,102,0.12), transparent 70%)" }} />
+        <div aria-hidden className="absolute inset-0 pointer-events-none" style={{ opacity: violetTint * 0.8, background: "radial-gradient(50% 50% at 60% 50%, rgba(109,90,230,0.14), transparent 70%)" }} />
+
+        <div className="relative max-w-[1200px] mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] gap-6 lg:gap-16 items-center">
+          {/* Beats */}
+          <div className="relative h-[120px] sm:h-[150px] lg:h-[260px]">
+            {BEATS.map((b, i) => {
+              const on = beat === i;
+              return (
+                <div key={i} className="absolute inset-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ opacity: on ? 1 : 0, transform: `translateY(${on ? 0 : beat > i ? -10 : 10}px)` }} aria-hidden={!on}>
+                  <p className={cn("text-[11px] font-bold uppercase tracking-[0.16em] mb-2 lg:mb-4", b.tone)}>{b.eyebrow}</p>
+                  <h2 className="font-sans font-extrabold text-[clamp(2rem,4.6vw,4rem)] leading-[0.94] tracking-[-0.045em] text-ink">{b.title}</h2>
+                  <p className="mt-2 lg:mt-4 text-sm lg:text-base text-ink/70 max-w-xs">{b.sub}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Stage */}
+          <div className="relative w-full max-w-[600px] mx-auto lg:mx-0 aspect-[600/520] select-none">
+            {/* the thread */}
+            <div aria-hidden className="absolute top-[6%] bottom-[8%] w-px bg-ink/10" style={{ left: `${LINE_X}%` }} />
+            <div aria-hidden className="absolute top-[6%] w-px bg-gradient-to-b from-accent via-signal to-success origin-top" style={{ left: `${LINE_X}%`, height: "86%", transform: `scaleY(${thread})`, opacity: 1 - product }} />
+
+            {/* the product frame, growing out of the thread */}
+            <div
+              aria-hidden={product === 0}
+              className="absolute inset-0 rounded-[22px] border border-border bg-white shadow-[0_40px_100px_-40px_rgba(16,17,20,0.4)] overflow-hidden"
+              style={{ transformOrigin: `${LINE_X}% 50%`, transform: `scaleX(${mix(0.004, 1, product)})`, opacity: product > 0.02 ? 1 : 0 }}
+            >
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-paper/70" style={{ opacity: settle }}>
+                <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink" fill="none"><path d="M4 18C9 18 9 6 15 6C17 6 18.5 7.5 20 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" /></svg>
+                <span className="text-[13px] font-extrabold tracking-tight text-ink">Daythread</span>
+                <span className="text-[11px] text-ink/65">Inbox</span>
+                <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold rounded-full px-2 py-0.5 bg-success-soft text-success-text"><span className="text-ink/65 font-semibold">6 conversations</span><span aria-hidden>→</span>1 thing to do</span>
+              </div>
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] h-[calc(100%-42px)]">
+                {/* Inbox */}
+                <Panel k={0} t={settle} className="border-r border-border">
+                  <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65">Inbox · sorted by what needs you</div>
+                  <Row k="whatsapp" who="Sarah Kim" msg="Do you have anything Friday afternoon?" tag="Booked" tagTone="text-success-text" active />
+                  <Row k="instagram" who="Maya Chen" msg="Loved the last shoot — can we do another?" tag="Needs reply" tagTone="text-accent-text" />
+                  <Row k="gmail" who="Jordan Lee" msg="Re: a September date?" tag="Going cold" tagTone="text-warning-text" />
+                  <Row k="sms" who="(512) 555-0148" msg="Anything open next week?" tag="Link sent" tagTone="text-signal-text" />
+                  <Row k="website" who="Priya Patel" msg="Booked the Full package · Sep 18" tag="Confirmed" tagTone="text-success-text" />
+                  <Row k="instagram" who="Leo Studio" msg="What do you charge for a half day?" tag="Needs reply" tagTone="text-accent-text" />
+                </Panel>
+                {/* Client / booking / calendar / automation */}
+                <div className="flex flex-col divide-y divide-border bg-paper/40">
+                  <Panel k={1} t={settle} className="px-3 py-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Client</div>
+                    <div className="flex items-center gap-2"><span className="w-7 h-7 rounded-full bg-success-soft text-success-text text-[10px] font-extrabold flex items-center justify-center">SK</span><div className="min-w-0"><div className="text-xs font-semibold text-ink truncate">Sarah Kim</div><div className="text-[10px] text-ink/70">Returning · 2 bookings</div></div></div>
+                  </Panel>
+                  <Panel k={2} t={settle} className="px-3 py-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Booking</div>
+                    <div className="text-xs font-semibold text-ink">Brand session · Fri 2:30 PM</div>
+                    <div className="text-[10px] text-ink/70">$350 · questionnaire sent</div>
+                  </Panel>
+                  <Panel k={3} t={settle} className="px-3 py-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Calendar</div>
+                    <div className="flex items-center justify-between text-xs"><span className="font-semibold text-ink">Fri 2:30 – 4:00 PM</span><span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-success-soft text-success-text">On Google</span></div>
+                  </Panel>
+                  <Panel k={4} t={settle} className="px-3 py-2.5 flex-1">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1">Automation</div>
+                    <div className="text-[11px] text-ink/75 leading-snug"><span className="text-accent-text font-bold">When</span> a booking is coming up · <span className="text-signal-text font-bold">if</span> 1 day before · <span className="text-success-text font-bold">then</span> send a reminder</div>
+                  </Panel>
+                </div>
               </div>
             </div>
-            <Stage />
-          </div>
-        </div>
-      </ScrollScene>
 
-      {/* Phones, and reduced motion: the same beats, stacked. */}
-      <div className="dt-stacked lg:hidden max-w-[1200px] mx-auto px-6">
-        <ol className="space-y-14">
-          {BEATS.map((b, i) => (
-            <li key={b.key}>
-              <Reveal>
-                <p className="text-13 font-medium text-ink/60">
-                  {i + 1} · {b.label}
-                </p>
-                <h2 className="mt-2 font-serif font-normal text-[2.2rem] leading-[1.04] tracking-[-0.012em] text-ink text-balance">{b.title}</h2>
-                <p className="mt-3 text-[15px] text-ink/60 leading-relaxed">{b.body}</p>
-                <div className="mt-6">
-                  <Still beat={b.key} />
+            {/* the conversations — positioned in % of the stage so the same geometry works at every width */}
+            {CARDS.map((c, i) => {
+              const isFocus = i === FOCUS;
+              const brand = CHANNEL[c.k].brand;
+              // chaos → the thread
+              let x = mix(c.from.x, LINE_X + 3.5, gather);
+              let y = mix(c.from.y, lineY(c.line) - 3, gather);
+              const r = c.from.r * (1 - gather);
+              let w = mix(46, 58, gather);
+              let scale = 1;
+              let op = 1;
+              if (isFocus) {
+                // step forward and grow; hand off to the inbox row when the product arrives
+                x = mix(x, 24, focus);
+                y = mix(y, 16, focus);
+                w = mix(w, 66, focus);
+                scale = mix(1, 1.02, focus);
+                op = 1 - seg(p, 0.8, 0.86);
+              } else {
+                // recede into the thread as its nodes
+                x = mix(x, LINE_X - 1.5, focus);
+                scale = mix(1, 0.22, focus);
+                op = mix(1, 0.4, focus) * (1 - product);
+              }
+              // channel color on the border while scattered; the thread's neutral once gathered
+              const alpha = Math.round(mix(0x88, 0x1a, gather)).toString(16).padStart(2, "0");
+              const cardTone = isFocus ? (outcome > 0.5 ? "rgba(30,142,90,0.45)" : action > 0.5 ? "rgba(16,17,20,0.35)" : focus > 0.5 ? "rgba(109,90,230,0.45)" : `${brand}${alpha}`) : `${brand}${alpha}`;
+              return (
+                <div
+                  key={i}
+                  className={cn("absolute will-change-transform", p < 0.06 && "dt-drift")}
+                  style={{ left: `${x}%`, top: `${y}%`, width: `${w}%`, transform: `rotate(${r}deg) scale(${scale})`, transformOrigin: isFocus ? "top left" : "left center", opacity: op, animationDelay: `${i * 0.45}s`, zIndex: isFocus ? 3 : 2 }}
+                >
+                  <div className="rounded-2xl border bg-white shadow-popover overflow-hidden transition-[border-color] duration-300" style={{ borderColor: cardTone }}>
+                    <div className="flex items-center gap-2.5 px-3 py-2.5">
+                      <ChannelIcon k={c.k} size={30} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-1.5"><span className="text-xs font-semibold text-ink truncate">{c.who}</span><span className="text-[10px] text-ink/65 shrink-0">{c.when}</span></div>
+                        <div className="text-[11px] text-ink/70 truncate">{c.msg}</div>
+                      </div>
+                    </div>
+                    {isFocus && (
+                      <div className="relative">
+                        {/* CONTEXT: what Daythread read — the card grows one line at a time */}
+                        <div className="px-3 space-y-1.5 overflow-hidden" style={{ opacity: 1 - clamp(action * 2.5), maxHeight: (chip1 * 24 + chip2 * 24 + chip3 * 24 + (chip1 > 0 ? 12 : 0)) * (1 - action) }}>
+                          <Chip t={chip1} dot="bg-signal" label="Intent" value="Booking request" />
+                          <Chip t={chip2} dot="bg-signal" label="Client" value="Sarah Kim · returning · 2 bookings" />
+                          <Chip t={chip3} dot="bg-signal" label="Open" value="Friday 2:30 PM" />
+                        </div>
+                        {/* ACTION → OUTCOME: the same card, now the booking */}
+                        <div className="px-3 overflow-hidden" style={{ opacity: action, maxHeight: action * 132, paddingBottom: action * 12, transform: `translateY(${(1 - action) * 6}px)` }}>
+                          <div className={cn("rounded-xl border px-3 py-2.5 transition-colors duration-500", outcome > 0.5 ? "border-success/30 bg-success-soft/40" : "border-accent/30 bg-gradient-to-br from-accent-soft/70 to-white")}>
+                            <div className={cn("text-[10px] font-bold uppercase tracking-[0.12em] mb-0.5 transition-colors", outcome > 0.5 ? "text-success-text" : "text-accent-text")}>{outcome > 0.5 ? "Booked" : "Send booking"}</div>
+                            <div className="text-sm font-extrabold text-ink tracking-tight">Brand session · Fri 2:30 PM</div>
+                            <div className="flex items-center justify-between mt-1.5">
+                              <span className="text-[11px] text-ink/65">$350 · 60 min</span>
+                              <span className={cn("inline-flex items-center h-7 px-3 rounded-full text-[11px] font-extrabold transition-colors duration-500", outcome > 0.5 ? "bg-success text-white" : "bg-accent-strong text-white")}>{outcome > 0.5 ? "Confirmed" : "Send →"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </Reveal>
-            </li>
-          ))}
-        </ol>
+              );
+            })}
+          </div>
+        </div>
       </div>
-    </>
+    </section>
   );
 }
 
-/** An element that appears between --a and --b of the scene and, if given, leaves between --c and --d. */
-function Step({ as: Tag = "div", a, b, c, d, dy, ds, className, style, children }: { as?: "div" | "span"; a: number; b: number; c?: number; d?: number; dy?: string; ds?: number; className?: string; style?: CSSProperties; children?: ReactNode }) {
-  const vars: Record<string, string | number> = { "--a": a, "--b": b };
-  if (c !== undefined && d !== undefined) {
-    vars["--c"] = c;
-    vars["--d"] = d;
-  }
-  if (dy) vars["--dy"] = dy;
-  if (ds) vars["--ds"] = ds;
+function Chip({ t, dot, label, value }: { t: number; dot: string; label: string; value: string }) {
   return (
-    <Tag className={cn("dt-step", Tag === "span" && "block", className)} style={{ ...vars, ...style } as CSSProperties}>
+    <div className="flex items-center gap-2 text-[11px]" style={{ opacity: t, transform: `translateX(${(1 - t) * -6}px)` }}>
+      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dot)} />
+      <span className="text-ink/65 font-bold uppercase tracking-[0.1em] text-[9px] w-10 shrink-0">{label}</span>
+      <span className="font-semibold text-ink truncate">{value}</span>
+    </div>
+  );
+}
+
+function Panel({ k, t, className, children }: { k: number; t: number; className?: string; children: React.ReactNode }) {
+  const local = clamp((t - k * 0.12) / 0.5);
+  return (
+    <div className={cn("min-w-0", className)} style={{ opacity: local, transform: `translateX(${(1 - local) * -10}px)` }}>
       {children}
-    </Tag>
-  );
-}
-
-const frame = "rounded-xl border border-border bg-white shadow-elev-2";
-
-/** The pinned stage: the product window, thread on the left, the rail on the right. */
-function Stage() {
-  return (
-    <div className={cn(frame, "relative overflow-hidden grid grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] h-[560px]")}>
-      <div className="min-w-0 flex flex-col border-r border-border">
-        <ThreadHeader live />
-        <div className="flex-1 px-4 py-4 space-y-3">
-          <Step a={-1} b={0} dy="14px">
-            <Inbound highlightAt={0.2} />
-          </Step>
-          <Step a={0.22} b={0.3} c={0.83} d={0.88} dy="8px">
-            <ReadChips />
-          </Step>
-          <Step a={0.61} b={0.69} dy="14px">
-            <Outbound />
-          </Step>
-          <Step a={0.85} b={0.92} dy="14px">
-            <ThankYou />
-          </Step>
-        </div>
-      </div>
-      <div className="relative min-w-0 bg-paper/60 p-4">
-        <Step a={-1} b={0} c={0.23} d={0.27} dy="0px" className="absolute inset-4">
-          <p className="text-xs font-medium text-ink/60">Next step</p>
-          <p className="mt-1 text-[15px] font-semibold text-ink/60">Reading the message…</p>
-        </Step>
-        <Step a={0.25} b={0.32} c={0.41} d={0.46} dy="16px" className="absolute inset-4">
-          <NextStep />
-        </Step>
-        <Step a={0.43} b={0.5} c={0.61} d={0.66} dy="16px" className="absolute inset-4">
-          <Slots />
-        </Step>
-        <Step a={0.63} b={0.7} c={0.81} d={0.86} dy="16px" className="absolute inset-4">
-          <Booked />
-        </Step>
-        <Step a={0.83} b={0.9} dy="16px" className="absolute inset-4">
-          <ClientCard />
-        </Step>
-      </div>
     </div>
   );
 }
 
-/** The stacked version: each beat's piece, at rest. */
-function Still({ beat }: { beat: (typeof BEATS)[number]["key"] }) {
-  if (beat === "inquiry") {
-    return (
-      <div className={cn(frame, "overflow-hidden")}>
-        <ThreadHeader />
-        <div className="px-4 py-4">
-          <Inbound />
-        </div>
-      </div>
-    );
-  }
-  if (beat === "read") {
-    return (
-      <div className="space-y-3">
-        <div className={cn(frame, "px-4 py-4")}>
-          <Inbound highlightAt={0} />
-          <div className="mt-3">
-            <ReadChips />
-          </div>
-        </div>
-        <div className={cn(frame, "p-4")}>
-          <NextStep />
-        </div>
-      </div>
-    );
-  }
-  if (beat === "book") {
-    return (
-      <div className={cn(frame, "p-4")}>
-        <Slots />
-      </div>
-    );
-  }
-  if (beat === "confirm") {
-    return (
-      <div className="space-y-3">
-        <div className={cn(frame, "px-4 py-4")}>
-          <Outbound />
-        </div>
-        <div className={cn(frame, "p-4")}>
-          <Booked />
-        </div>
-      </div>
-    );
-  }
+function Row({ k, who, msg, tag, tagTone, active }: { k: ChannelKey; who: string; msg: string; tag: string; tagTone: string; active?: boolean }) {
   return (
-    <div className="space-y-3">
-      <div className={cn(frame, "px-4 py-4")}>
-        <ThankYou />
+    <div className={cn("flex items-center gap-2.5 px-3 py-2 border-t border-border", active && "bg-success-soft/30")}>
+      <ChannelIcon k={k} size={26} />
+      <div className="min-w-0 flex-1">
+        <div className="text-xs font-semibold text-ink truncate">{who}</div>
+        <div className="text-[10px] text-ink/65 truncate">{msg}</div>
       </div>
-      <div className={cn(frame, "p-4")}>
-        <ClientCard />
-      </div>
-    </div>
-  );
-}
-
-// ── The pieces, drawn as the product draws them ─────────────────────────────
-
-function ThreadHeader({ live }: { live?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
-      <span className="w-8 h-8 rounded-full bg-ink/[0.06] text-ink/75 text-2xs font-semibold flex items-center justify-center">MC</span>
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink leading-5">Maya Chen</p>
-        <p className="text-xs text-ink/60 flex items-center gap-1.5">
-          <ChannelIcon k="instagram" size={14} /> Instagram · @maya.makes
-        </p>
-      </div>
-      {live ? (
-        <Step as="span" a={0} b={0.01} c={0.6} d={0.66} dy="0px" className="ml-auto w-2.5 h-2.5 rounded-full bg-accent" />
-      ) : (
-        <span aria-hidden className="ml-auto w-2.5 h-2.5 rounded-full bg-accent" />
-      )}
-    </div>
-  );
-}
-
-function Inbound({ highlightAt }: { highlightAt?: number }) {
-  const phrase = <>Friday at 2</>;
-  return (
-    <div>
-      <p className="inline-block max-w-[88%] rounded-2xl rounded-tl-md bg-ink/[0.045] px-3.5 py-2.5 text-13 text-ink leading-relaxed">
-        Hi! Can you do{" "}
-        {highlightAt === undefined ? (
-          phrase
-        ) : (
-          <span className="relative">
-            <span className="relative z-10">{phrase}</span>
-            <Step as="span" a={highlightAt} b={highlightAt + 0.05} dy="0px" className="absolute -inset-x-0.5 -inset-y-px rounded bg-accent-soft" />
-          </span>
-        )}{" "}
-        for a portrait session?
-      </p>
-      <p className="mt-1 text-2xs text-ink/60">Just now</p>
-    </div>
-  );
-}
-
-function ReadChips() {
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-2xs font-medium text-ink/60 mr-1">Daythread read</span>
-      {[["Intent", "Wants to book"], ["Date", "Friday"], ["Time", "2:00 PM"], ["Service", "Portrait session"], ["Context", "Returning client"]].map(([k, v]) => (
-        <span key={k} className="inline-flex items-center gap-1 rounded-md bg-ink/[0.045] px-1.5 py-0.5 text-2xs font-medium text-ink/75">
-          <span className="text-ink/60">{k}</span>
-          {v}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function NextStep() {
-  return (
-    <div>
-      <p className="text-xs font-medium text-ink/60">Next step</p>
-      <p className="mt-1 text-[15px] font-semibold text-ink leading-snug">Book them on Friday at 2:00 PM</p>
-      <p className="mt-1 text-13 text-ink/60">Asked about Portrait session.</p>
-      <span className="mt-3 flex items-center justify-center h-9 rounded-lg bg-ink text-white text-13 font-semibold">Pick a time</span>
-      <dl className="mt-4 grid grid-cols-[84px_1fr] gap-x-3 gap-y-1.5 text-13">
-        {[["Intent", "Wants to book"], ["Date", "Friday"], ["Time", "2:00 PM"], ["Service", "Portrait session"], ["Context", "Returning client"]].map(([a, b]) => (
-          <div key={a} className="contents">
-            <dt className="text-ink/60">{a}</dt>
-            <dd className="font-medium text-ink">{b}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-function Slots() {
-  return (
-    <div>
-      <p className="text-xs font-medium text-ink/60">Open times · Fri, Sep 18</p>
-      <div className="mt-2.5 flex flex-wrap gap-1.5">
-        {["10:00 AM", "11:30 AM", "2:00 PM", "4:30 PM"].map((t) => (
-          <span key={t} className={t === "2:00 PM" ? "h-8 px-2.5 inline-flex items-center rounded-md border border-ink bg-ink text-white text-xs font-medium" : "h-8 px-2.5 inline-flex items-center rounded-md border border-ink/[0.12] bg-white text-ink text-xs font-medium"}>
-            {t}
-          </span>
-        ))}
-      </div>
-      <div className="mt-3 rounded-lg border border-border bg-white p-3">
-        <p className="text-13 text-ink">
-          <span className="font-semibold">Portrait session</span> · Fri, Sep 18 at 2:00 PM
-        </p>
-        <p className="mt-0.5 text-xs text-ink/60">60 min · checked against your Google Calendar</p>
-        <span className="mt-2.5 inline-flex items-center h-8 px-3 rounded-lg bg-ink text-white text-13 font-semibold">Book it</span>
-      </div>
-    </div>
-  );
-}
-
-function Outbound() {
-  return (
-    <div>
-      <div className="flex justify-end">
-        <p className="max-w-[88%] rounded-2xl rounded-tr-md bg-ink text-white px-3.5 py-2.5 text-13 leading-relaxed">
-          Hi Maya — you&rsquo;re booked for Portrait session on Friday, Sep 18 at 2:00 PM with Alex Rivera Photography. Reply here if anything changes. See you then!
-        </p>
-      </div>
-      <p className="mt-1.5 text-right text-2xs text-ink/60 flex items-center justify-end gap-1.5">
-        <Check className="w-3 h-3 text-success" strokeWidth={2.5} aria-hidden />
-        Sent on Instagram by your confirmation automation
-      </p>
-    </div>
-  );
-}
-
-function ThankYou() {
-  return (
-    <div>
-      <div className="flex justify-end">
-        <p className="max-w-[88%] rounded-2xl rounded-tr-md bg-ink text-white px-3.5 py-2.5 text-13 leading-relaxed">Thank you, Maya — it was a pleasure. I&rsquo;ll be in touch as soon as everything is ready.</p>
-      </div>
-      <p className="mt-1.5 text-right text-2xs text-ink/60 flex items-center justify-end gap-1.5">
-        <Check className="w-3 h-3 text-success" strokeWidth={2.5} aria-hidden />
-        Sent a day after the session by your thank-you automation
-      </p>
-    </div>
-  );
-}
-
-function Booked() {
-  return (
-    <div>
-      <p className="text-xs font-medium text-ink/60">Booking</p>
-      <p className="mt-1 text-[15px] font-semibold text-ink leading-snug">Portrait session · Fri, Sep 18 · 2:00 PM</p>
-      <p className="mt-1 text-13 text-ink/60">60 min · $250</p>
-      <ul className="mt-3 space-y-1.5 text-13">
-        {["Confirmed on Instagram", "On your Google Calendar", "Reminder set for the day before"].map((t) => (
-          <li key={t} className="flex items-center gap-2 text-ink">
-            <Check className="w-3.5 h-3.5 text-success shrink-0" strokeWidth={2.5} aria-hidden />
-            {t}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function ClientCard() {
-  return (
-    <div>
-      <div className="flex items-center gap-3">
-        <span className="w-10 h-10 rounded-full bg-ink/[0.06] text-ink/75 text-xs font-semibold flex items-center justify-center">MC</span>
-        <div className="min-w-0">
-          <p className="text-[15px] font-semibold text-ink leading-tight">Maya Chen</p>
-          <p className="text-13 text-ink/60">Client · 1 booking · Instagram</p>
-        </div>
-      </div>
-      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-13">
-        <div>
-          <dt className="text-ink/60">Upcoming</dt>
-          <dd className="font-medium text-ink">Portrait session · Sep 18</dd>
-        </div>
-        <div>
-          <dt className="text-ink/60">Came in via</dt>
-          <dd className="font-medium text-ink">Instagram · Sep</dd>
-        </div>
-      </dl>
-      <div className="mt-4 rounded-lg border border-border bg-white px-3 py-2.5 flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-13 font-semibold text-ink">Thank them afterwards</p>
-          <p className="text-2xs text-ink/60 leading-snug">A day after the session, on the channel they wrote from</p>
-        </div>
-        <span aria-hidden className="w-9 h-5 rounded-full bg-ink relative shrink-0">
-          <span className="absolute right-0.5 top-0.5 w-4 h-4 rounded-full bg-white" />
-        </span>
-      </div>
+      <span className={cn("text-[9px] font-bold shrink-0", tagTone)}>{tag}</span>
     </div>
   );
 }

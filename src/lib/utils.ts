@@ -10,8 +10,8 @@ export function firstName(name: string | null | undefined, fallback = "there"): 
   return n.split(/\s+/)[0] || fallback;
 }
 
-/** Daythread's own type sizes must merge as font sizes; otherwise `text-13` beside
- * `text-ink` is read as two colors and the size is silently dropped. */
+/** Daythread's own type sizes must merge as font sizes; otherwise `text-13` beside `text-ink`
+ * is read as two colors and the size is silently dropped. */
 const twMerge = extendTailwindMerge({ extend: { classGroups: { "font-size": [{ text: ["2xs", "13", "page-title", "section-title", "display-sm", "display-md", "display-lg", "display-xl"] }] } } });
 
 export function cn(...inputs: ClassValue[]) {

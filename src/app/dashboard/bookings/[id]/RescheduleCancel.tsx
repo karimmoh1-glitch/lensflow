@@ -58,14 +58,14 @@ export function RescheduleCancel({ bookingId, canCancel, canReschedule, timezone
 
   return (
     <div className="flex flex-col gap-2">
-      {canReschedule && <Button size="sm" variant="outline" className="w-full" onClick={() => setOpen("move")}><CalendarClock className="w-3.5 h-3.5 mr-1.5" strokeWidth={1.75} aria-hidden />Reschedule</Button>}
-      {canCancel && <Button size="sm" variant="ghost" className="w-full text-danger-text hover:bg-danger-soft" onClick={() => setOpen("cancel")}><XCircle className="w-3.5 h-3.5 mr-1.5" strokeWidth={1.75} aria-hidden />Cancel booking</Button>}
+      {canReschedule && <Button size="sm" variant="outline" className="w-full" onClick={() => setOpen("move")}><CalendarClock className="w-3.5 h-3.5 mr-1.5" strokeWidth={2} aria-hidden />Reschedule</Button>}
+      {canCancel && <Button size="sm" variant="ghost" className="w-full text-danger-text hover:bg-danger-soft" onClick={() => setOpen("cancel")}><XCircle className="w-3.5 h-3.5 mr-1.5" strokeWidth={2} aria-hidden />Cancel booking</Button>}
 
-      <BottomSheet open={open === "move"} onClose={() => setOpen(null)} title="Reschedule" subtitle="Pick a day, then a free time" icon={<CalendarClock className="w-4 h-4 text-ink" strokeWidth={1.75} aria-hidden />}>
+      <BottomSheet open={open === "move"} onClose={() => setOpen(null)} title="Reschedule" subtitle="Pick a day, then a free time" icon={<CalendarClock className="w-4 h-4 text-ink" strokeWidth={2} aria-hidden />}>
         <div className="space-y-4">
           <Field id="resched-date" label="Day"><Input id="resched-date" type="date" value={date} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className="text-[16px] md:text-sm" /></Field>
           <div>
-            <div className="text-13 font-semibold text-ink/80 mb-1.5">Free times</div>
+            <div className="text-[13px] font-semibold text-ink/80 mb-1.5">Free times</div>
             {slots === null ? (
               <p className="text-sm text-ink/65">Checking your calendar…</p>
             ) : slots.length === 0 ? (
@@ -73,23 +73,23 @@ export function RescheduleCancel({ bookingId, canCancel, canReschedule, timezone
             ) : (
               <ul className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                 {slots.map((s) => (
-                  <li key={s.start}><button type="button" onClick={() => setPicked(s.start)} className={cn("w-full h-10 rounded border text-sm font-medium tabular-nums transition-colors", picked === s.start ? "bg-ink text-white border-ink" : "bg-white border-border text-ink hover:bg-ink/[0.03]")}>{fmt.format(new Date(s.start))}</button></li>
+                  <li key={s.start}><button type="button" onClick={() => setPicked(s.start)} className={cn("w-full h-10 rounded-xl border text-sm font-semibold tabular-nums transition-colors", picked === s.start ? "bg-ink text-white border-ink" : "bg-white border-border text-ink hover:bg-black/[0.03]")}>{fmt.format(new Date(s.start))}</button></li>
                 ))}
               </ul>
             )}
           </div>
           <label className="flex items-center gap-2 text-sm text-ink/75"><input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="w-4 h-4" /> Tell the customer on their thread</label>
           {error && <p role="alert" className="text-xs font-medium text-danger-text">{error}</p>}
-          <div className="flex items-center gap-2"><Button onClick={move} disabled={!picked} loading={pending} loadingLabel="Moving">Move booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-medium text-ink/70 px-2 py-1">Cancel</button></div>
+          <div className="flex items-center gap-2"><Button onClick={move} disabled={!picked} loading={pending} loadingLabel="Moving">Move booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-semibold text-ink/70 px-2 py-1">Cancel</button></div>
         </div>
       </BottomSheet>
 
-      <BottomSheet open={open === "cancel"} onClose={() => setOpen(null)} title="Cancel this booking?" subtitle="It comes off your calendars. Nothing else changes." icon={<XCircle className="w-4 h-4 text-danger-text" strokeWidth={1.75} aria-hidden />}>
+      <BottomSheet open={open === "cancel"} onClose={() => setOpen(null)} title="Cancel this booking?" subtitle="It comes off your calendars. Nothing else changes." icon={<XCircle className="w-4 h-4 text-danger-text" strokeWidth={2} aria-hidden />}>
         <p className="text-sm text-ink/70 leading-relaxed">The time becomes bookable again and the conversation is kept. Let the customer know yourself — no message is sent automatically.</p>
         {error && <p role="alert" className="mt-3 text-xs font-medium text-danger-text">{error}</p>}
-        <div className="mt-4 flex items-center gap-2"><Button variant="danger" onClick={cancel} loading={pending} loadingLabel="Canceling">Cancel booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-medium text-ink/70 px-2 py-1">Keep it</button></div>
+        <div className="mt-4 flex items-center gap-2"><Button variant="danger" onClick={cancel} loading={pending} loadingLabel="Canceling">Cancel booking</Button><button type="button" onClick={() => setOpen(null)} className="text-xs font-semibold text-ink/70 px-2 py-1">Keep it</button></div>
       </BottomSheet>
-      <p className="text-xs text-ink/65 mt-1">Current: {new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(currentStartISO))}</p>
+      <p className="text-[10px] text-ink/65 mt-1">Current: {new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(currentStartISO))}</p>
     </div>
   );
 }

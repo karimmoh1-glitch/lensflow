@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { derivePersonalization, answersSchema, asksTeamSize, personalPaywallCopy, completeAnswers, answersSchema as schema, PRIORITY_COPY, type OnboardingAnswers } from "./personalization";
+import { derivePersonalization, answersSchema, asksTeamSize, personalPaywallCopy, buildSteps, PRIORITY_COPY, type OnboardingAnswers } from "./personalization";
 
 const base: OnboardingAnswers = {
   userType: "freelancer", workCategory: "design", businessStatus: "solo", channels: ["email"], painPoints: ["customer_info"],
@@ -111,22 +111,11 @@ describe("personalization engine", () => {
     expect(only?.lede).toBe("You want automations. Pro unlocks the tools you selected during setup.");
   });
 
-  it("fills what /start no longer asks from what it does, and never overrides an answer", () => {
-    const solo = completeAnswers({ workCategory: "photography", painPoints: ["bookings", "follow_ups"], channels: ["instagram"], teamUsage: "no" });
-    expect(schema.safeParse(solo).success).toBe(true);
-    expect(solo).toMatchObject({ userType: "freelancer", businessStatus: "solo", bookings: "yes", currentTools: [] });
-    expect(solo.desiredFeatures).toEqual(["inbox", "bookings", "automations"]);
-    const p = derivePersonalization(schema.parse(solo));
-    expect(p.priorities).toContain("bookings");
-    expect(p.connectProviders).toEqual(["INSTAGRAM"]);
-
-    const team = completeAnswers({ workCategory: "consulting", painPoints: ["delivery"], channels: ["email"], teamUsage: "regularly", teamSize: "2_5" });
-    expect(team).toMatchObject({ userType: "business_owner", businessStatus: "team", bookings: "sometimes" });
-    expect(team.desiredFeatures).toEqual(["inbox", "files", "team"]);
-    expect(derivePersonalization(schema.parse(team)).recommendedPlan).toBe("PRO");
-
-    const older = completeAnswers({ ...base, bookings: "no", desiredFeatures: ["agent"] });
-    expect(older).toMatchObject({ userType: "freelancer", bookings: "no", desiredFeatures: ["agent"], currentTools: ["gmail"] });
+  it("build steps describe real writes only", () => {
+    const steps = buildSteps(derivePersonalization({ ...base, channels: ["instagram"], currentTools: [] }));
+    expect(steps).toEqual(["Saving how you work", "Ordering your workspace: Inbox and People", "Marking Instagram to connect", "Noting the plan that fits: Free"]);
+    const none = buildSteps(derivePersonalization({ ...base, channels: ["website"], currentTools: ["nothing"] }));
+    expect(none.some((s) => s.startsWith("Marking"))).toBe(false);
   });
 
   it("the schema refuses unknown options and free text beyond the work detail", () => {
@@ -173,5 +162,6 @@ describe("personalization engine", () => {
       expect(PRIORITY_COPY[f]?.title, f).toBeTruthy();
       expect(PRIORITY_COPY[f]?.href.startsWith("/dashboard"), f).toBe(true);
     }
+    expect(buildSteps(everything).join(" ")).not.toContain("undefined");
   });
 });

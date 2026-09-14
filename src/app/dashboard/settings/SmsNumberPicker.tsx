@@ -37,7 +37,7 @@ export function SmsNumberPicker({ current }: { current: string | null }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <Input value={areaCode} onChange={(e) => setAreaCode(e.target.value)} aria-label="Area code (optional)" placeholder="Area code (optional)" inputMode="numeric" className="h-8 w-40 text-xs" />
+        <Input value={areaCode} onChange={(e) => setAreaCode(e.target.value)} placeholder="Area code (optional)" inputMode="numeric" className="h-8 w-40 text-xs" />
         <Button size="sm" variant="outline" loading={pending && numbers === null} loadingLabel="Searching" onClick={() => start(async () => { setError(null); const r = await searchSmsNumbers(areaCode); if (r.error) setError(r.error); setNumbers(r.numbers); })}>Find a number</Button>
       </div>
       {error && <p className="text-xs text-warning-text">{error}</p>}

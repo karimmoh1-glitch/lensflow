@@ -26,7 +26,7 @@ export function ProfileForm({ name, email, workspaceName, timezone }: { name: st
 
   return (
     <form
-      className="rounded-lg border border-border bg-white px-5 py-5 space-y-4"
+      className="rounded-[22px] border border-border bg-white px-5 py-5 space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);

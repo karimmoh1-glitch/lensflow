@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --font-sans (Instrument Sans) and --font-serif (Instrument Serif) are set by next/font in
-   layout.tsx. Do not redeclare them here: a :root fallback ties on specificity with next/font's
-   class and wins by source order. */
+/* --font-sans and --font-display are set by next/font in layout.tsx (both Manrope). Do not
+   redeclare them here: a :root fallback ties on specificity with next/font's class and, by
+   source order, won — which is why Inter and Playfair kept rendering after the swap. */
 
 html {
   scroll-behavior: smooth;
@@ -30,44 +30,30 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px #fff inset;
-  -webkit-text-fill-color: #16171A;
-  caret-color: #16171A;
+  -webkit-text-fill-color: #101114;
+  caret-color: #101114;
   transition: background-color 9999s ease-in-out 0s;
 }
 
-/* font-display is the sans at a heavier weight with tighter tracking — the product's
-   headline voice. The serif (font-serif) is editorial and is never bolded. Both live in the
-   components layer so a site's own weight utility still wins. */
+/* The "display voice" is now the same family as body (Manrope) — what distinguishes it
+   is weight and tracking, so give every font-display site that in one place. This lives
+   in the components layer so Tailwind's utilities layer (font-black, font-semibold, etc.)
+   still wins wherever a site sets its own weight. */
 @layer components {
   .font-display {
-    font-weight: 600;
+    font-weight: 800;
     letter-spacing: -0.02em;
-  }
-  .font-serif {
-    font-weight: 400;
-    letter-spacing: -0.01em;
   }
 }
 
-@layer base {
-  body {
-    background-color: #FFFFFF;
-    color: #16171A;
-    font-feature-settings: "cv11", "ss01";
-    text-rendering: optimizeLegibility;
-  }
-  :focus-visible {
-    outline: 2px solid rgba(22, 23, 26, 0.75);
-    outline-offset: 2px;
-  }
-  :focus:not(:focus-visible) {
-    outline: none;
-  }
+body {
+  background-color: #FAFAF8;
+  color: #0B0D12;
 }
 
 ::selection {
-  background-color: #E4E6FB;
-  color: #16171A;
+  background-color: #FBE4D8;
+  color: #0B0D12;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -156,19 +142,35 @@ input:-webkit-autofill:focus {
  *   1620ms the sheet lifts (460ms); the hero rises to meet it
  *   2080ms done
  */
+.dt-opening { animation: dtSheetLift 460ms cubic-bezier(0.7, 0, 0.2, 1) 1620ms forwards; }
+.dt-opening__signal { transform-box: fill-box; transform-origin: center; transform: scale(0); animation: dtSignalIn 320ms cubic-bezier(0.22, 1.2, 0.36, 1) 80ms forwards; }
+.dt-opening__ring { transform-box: fill-box; transform-origin: center; opacity: 0; animation: dtRing 700ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards; }
+.dt-opening__thread { stroke-dasharray: 1; stroke-dashoffset: 1; animation: dtThreadDraw 760ms cubic-bezier(0.4, 0, 0.2, 1) 200ms forwards; }
+.dt-opening__chip { offset-path: path("M 40 620 C 260 620, 320 300, 540 300 S 800 620, 1010 620 S 1300 300, 1500 300"); offset-distance: 0%; offset-rotate: 0deg; opacity: 0; animation: dtOpenTravel 760ms cubic-bezier(0.4, 0, 0.2, 1) 220ms forwards; }
+.dt-opening__node { transform-box: fill-box; transform-origin: center; transform: scale(0); animation: dtSignalIn 360ms cubic-bezier(0.22, 1.2, 0.36, 1) 940ms forwards; }
+.dt-opening__node-ring { transform-box: fill-box; transform-origin: center; opacity: 0; animation: dtRing 700ms cubic-bezier(0.16, 1, 0.3, 1) 980ms forwards; }
+.dt-opening__word { clip-path: inset(0 100% 0 0); animation: dtWipe 520ms cubic-bezier(0.4, 0, 0.2, 1) 1080ms forwards; }
 @keyframes dtOpenTravel {
   0% { offset-distance: 0%; opacity: 0; }
   6% { opacity: 1; }
   94% { opacity: 1; }
   100% { offset-distance: 97.5%; opacity: 0; }
 }
-/* The hero is readable on the first paint: a short settle, no waiting behind an intro. */
-.dt-hero-copy > * { animation: dtHeroRise 520ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-.dt-hero-copy > :nth-child(2) { animation-delay: 40ms; }
-.dt-hero-copy > :nth-child(3) { animation-delay: 80ms; }
-.dt-hero-copy > :nth-child(4) { animation-delay: 120ms; }
-.dt-hero-copy > :nth-child(5) { animation-delay: 150ms; }
-.dt-hero-visual { animation: dtHeroRise 640ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both; }
+.dt-opening--short { animation-delay: 0ms; animation-duration: 350ms; }
+.dt-opening--short .dt-opening__thread,
+.dt-opening--short .dt-opening__signal,
+.dt-opening--short .dt-opening__ring,
+.dt-opening--short .dt-opening__chip,
+.dt-opening--short .dt-opening__node,
+.dt-opening--short .dt-opening__node-ring,
+.dt-opening--short .dt-opening__word { animation: none; opacity: 0; }
+.dt-hero-copy > * { opacity: 0; animation: dtHeroRise 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.dt-hero-copy > :nth-child(1) { animation-delay: 1720ms; }
+.dt-hero-copy > :nth-child(2) { animation-delay: 1790ms; }
+.dt-hero-copy > :nth-child(3) { animation-delay: 1890ms; }
+.dt-hero-copy > :nth-child(4) { animation-delay: 1970ms; }
+.dt-hero-copy > :nth-child(5) { animation-delay: 2040ms; }
+.dt-hero-visual { opacity: 0; animation: dtHeroRise 800ms cubic-bezier(0.16, 1, 0.3, 1) 1920ms forwards; }
 
 /* ── Landing: motion vocabulary ────────────────────────────────────────────── */
 /* A message chip travelling a connector (offset-path is set inline per channel). */
@@ -187,10 +189,10 @@ input:-webkit-autofill:focus {
 .dt-pulse { animation: dtPulseRing 900ms ease-out; }
 /* Content swapping inside one application frame — a settle, not a cut. */
 @keyframes dtSwap {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translateY(10px) scale(0.992); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-.dt-swap { animation: dtSwap 200ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dt-swap { animation: dtSwap 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 /* Scraps drifting before they're gathered — tension. */
 @keyframes dtDrift {
   0%, 100% { translate: 0 0; }
@@ -208,10 +210,11 @@ input:-webkit-autofill:focus {
 .dt-rise { animation: dtRise 14s linear infinite; }
 /* The one thing, arriving. */
 @keyframes dtLand {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
+  0% { opacity: 0; transform: translateY(22px) scale(0.96); }
+  60% { opacity: 1; transform: translateY(-3px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-.dt-land { animation: dtLand 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dt-land { animation: dtLand 700ms cubic-bezier(0.22, 1.2, 0.36, 1) both; }
 /* Thinking: the violet node breathes while the system reads. */
 @keyframes dtBreathe {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(109, 90, 230, 0.45); }
@@ -228,6 +231,7 @@ input:-webkit-autofill:focus {
 .dt-returning .dt-hero-visual { animation-delay: 120ms; animation-duration: 500ms; }
 
 @media (prefers-reduced-motion: reduce) {
+  .dt-opening { display: none; }
   .dt-hero-copy > *, .dt-hero-visual { opacity: 1; animation: none; }
   .dt-travel, .dt-drift, .dt-rise, .dt-beat, .dt-pulse { animation: none; }
   .dt-draw, .dt-draw.is-in { stroke-dashoffset: 0; animation: none; }
@@ -240,37 +244,6 @@ input:-webkit-autofill:focus {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ── Landing: scroll-linked scenes ───────────────────────────────────────────
-   A scene root carries --p (0→1, written by Scroll.tsx as the scene travels the viewport).
-   A .dt-step inside it appears between --a and --b of that travel and, when --c/--d are
-   set, leaves between those. Opacity and transform only, and no transitions: the picture is
-   wherever the scroll is. Reduced motion: every step at rest, the pinned stage swapped for
-   the stacked one. */
-.dt-step {
-  --t: clamp(0, calc((var(--p, 1) - var(--a, 0)) / (var(--b, 1) - var(--a, 0))), 1);
-  --u: clamp(0, calc((var(--p, 1) - var(--c, 5)) / (var(--d, 6) - var(--c, 5))), 1);
-  opacity: calc(var(--t) * (1 - var(--u)));
-  transform: translate3d(0, calc(var(--dy, 20px) * (1 - var(--t)) - var(--dy, 20px) * 0.5 * var(--u)), 0) scale(calc(1 - var(--ds, 0) * (1 - var(--t))));
-}
-/* A line drawn by the scroll. */
-.dt-draw-x { transform-origin: 0 50%; transform: scaleX(var(--p, 1)); }
-.dt-draw-y { transform-origin: 50% 0; transform: scaleY(var(--p, 1)); }
-/* Channels gathering into one row: each item slides toward the centre column, down to the
-   row, and shrinks; --i is its column, --n the count. */
-.dt-converge-stage { container-type: inline-size; }
-.dt-converge {
-  --t: clamp(0, calc((var(--p, 1) - 0.1) / 0.5), 1);
-  transform: translate3d(calc(var(--t) * ((var(--n) - 1) / 2 - var(--i)) * (100cqw / var(--n)) * 0.82), calc(var(--t) * 58px), 0) scale(calc(1 - var(--t) * 0.5));
-}
-.dt-converge-label { opacity: calc(1 - var(--t)); }
-@media (prefers-reduced-motion: reduce) {
-  .dt-step { opacity: 1; transform: none; }
-  .dt-draw-x, .dt-draw-y, .dt-converge { transform: none; opacity: 1; }
-  .dt-converge-label { opacity: 1; }
-  .dt-pinned { display: none !important; }
-  .dt-stacked { display: block !important; }
 }
 
 /* Scene copy rising into place as it comes into view (landing). The Reveal component flips

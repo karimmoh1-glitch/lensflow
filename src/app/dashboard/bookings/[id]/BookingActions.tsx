@@ -25,6 +25,7 @@ export function BookingActions({ bookingId, status }: { bookingId: string; statu
       }
     });
   }
+
   const next: Array<{ show: boolean; label: string; to: BookingStatus; done: string }> = [
     { show: status === "INQUIRY", label: "Mark as booked", to: "BOOKED", done: "Marked as booked" },
     { show: status === "BOOKED", label: "Confirm booking", to: "CONFIRMED", done: "Booking confirmed" },
@@ -36,7 +37,7 @@ export function BookingActions({ bookingId, status }: { bookingId: string; statu
   return (
     <Card>
       <CardBody className="space-y-3">
-        <div className="text-13 font-semibold text-ink">Actions</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-ink/65">Actions</div>
         {next.filter((n) => n.show).map((n) => (
           <Button key={n.to} size="sm" className="w-full" onClick={() => doAdvance(n.to, n.done)} loading={pending} loadingLabel="Saving">{n.label}</Button>
         ))}

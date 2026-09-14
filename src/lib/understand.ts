@@ -110,15 +110,12 @@ export function understand(input: UnderstandInput): Understanding {
       ? { label: "Nothing needed — they're booked and confirmed", kind: "none" }
       : { label: "Confirm the booking", kind: "confirm" }
     : null;
-  // A day as it reads mid-sentence: "Friday" stays, "This month" becomes "this month".
-  const when = day ? (/^(this|next|tomorrow|today|tonight)\b/i.test(day) ? day.charAt(0).toLowerCase() + day.slice(1) : day) : null;
-  const on = when ? (/^(this|next|tomorrow|today|tonight)\b/i.test(when) ? when : `on ${when}`) : null;
   let nextAction: Understanding["nextAction"];
   switch (intent) {
     case "CONFIRM":
       nextAction = input.hasUpcomingBooking
         ? { label: time ? `Confirm ${day ?? "the booking"} at ${time}` : "Confirm the booking", kind: "confirm" }
-        : { label: on ? `Book them ${on}${time ? ` at ${time}` : ""}` : "Book them", kind: "book" };
+        : { label: day ? `Book them for ${day}${time ? ` at ${time}` : ""}` : "Book them", kind: "book" };
       break;
     case "RESCHEDULE":
       nextAction = { label: day || time ? `Move it to ${[day, time].filter(Boolean).join(" at ")}` : "Offer a new time", kind: "reschedule" };
@@ -130,10 +127,10 @@ export function understand(input: UnderstandInput): Understanding {
       nextAction = bookedAction ?? { label: "Send pricing and propose a date", kind: "reply" };
       break;
     case "AVAILABILITY":
-      nextAction = bookedAction ?? { label: on ? `Send times ${on} and your booking link` : "Send your availability", kind: "send_link" };
+      nextAction = bookedAction ?? { label: day ? `Answer for ${day} and send the booking link` : "Send your availability", kind: "send_link" };
       break;
     case "BOOK":
-      nextAction = bookedAction ?? { label: on ? `Book them ${on}${time ? ` at ${time}` : ""}` : "Send the booking link", kind: day ? "book" : "send_link" };
+      nextAction = bookedAction ?? { label: day ? `Book ${day}${time ? ` at ${time}` : ""}` : "Send the booking link", kind: day ? "book" : "send_link" };
       break;
     case "PAYMENT":
       nextAction = { label: "Reply about payment", kind: "reply" };

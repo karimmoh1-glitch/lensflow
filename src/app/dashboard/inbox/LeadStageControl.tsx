@@ -18,14 +18,14 @@ export function LeadStageControl({ leadId, status, stageLabel, stageWhy }: { lea
   });
   return (
     <div>
-      <h3 className="text-xs font-medium text-ink/65 mb-1.5">Stage</h3>
-      <p className="text-13 font-medium text-ink">{stageLabel}</p>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/65 mb-1.5">Stage</div>
+      <p className="text-sm font-semibold text-ink">{stageLabel}</p>
       <p className="text-xs text-ink/65 leading-snug">{stageWhy}</p>
       {status !== "BOOKED" && status !== "LOST" && (
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {status !== "QUALIFIED" && <button type="button" disabled={pending} onClick={() => set("QUALIFIED")} className="h-7 px-2.5 rounded border border-border-strong bg-white shadow-xs text-xs font-medium text-ink hover:bg-paper disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Mark qualified</button>}
-          {status !== "COLD" && <button type="button" disabled={pending} onClick={() => set("COLD")} className="h-7 px-2.5 rounded border border-border-strong bg-white shadow-xs text-xs font-medium text-ink hover:bg-paper disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Set aside</button>}
-          <button type="button" disabled={pending} onClick={() => set("LOST")} className="h-7 px-2.5 rounded border border-border-strong bg-white shadow-xs text-xs font-medium text-ink/70 hover:text-danger-text hover:bg-paper disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">Mark lost</button>
+          {status !== "QUALIFIED" && <button type="button" disabled={pending} onClick={() => set("QUALIFIED")} className="h-7 px-2.5 rounded-full border border-border bg-white text-[11px] font-semibold text-ink hover:border-ink/30 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Mark qualified</button>}
+          {status !== "COLD" && <button type="button" disabled={pending} onClick={() => set("COLD")} className="h-7 px-2.5 rounded-full border border-border bg-white text-[11px] font-semibold text-ink hover:border-ink/30 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Set aside</button>}
+          <button type="button" disabled={pending} onClick={() => set("LOST")} className="h-7 px-2.5 rounded-full border border-border bg-white text-[11px] font-semibold text-ink/65 hover:text-danger-text hover:border-danger/40 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">Mark lost</button>
         </div>
       )}
     </div>

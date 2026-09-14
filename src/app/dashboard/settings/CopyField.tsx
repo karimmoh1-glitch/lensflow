@@ -17,18 +17,18 @@ export function CopyField({ label, value }: { label: string; value: string }) {
     }
   }
   return (
-    <div className="rounded-lg border border-border bg-paper px-3 py-2">
-      <div className="text-xs font-medium text-ink/65">{label}</div>
+    <div className="rounded-xl border border-border bg-paper/60 px-3 py-2">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink/65">{label}</div>
       <div className="mt-1 flex items-center gap-2">
-        <code className="min-w-0 flex-1 text-xs font-mono text-ink/80 break-all">{value || "— set NEXT_PUBLIC_APP_URL —"}</code>
+        <code className="min-w-0 flex-1 text-[11px] font-mono text-ink/80 break-all">{value || "— set NEXT_PUBLIC_APP_URL —"}</code>
         <button
           type="button"
           onClick={copy}
           disabled={!value}
           aria-label={`Copy ${label}`}
-          className="shrink-0 inline-flex items-center gap-1 h-7 px-2 rounded-lg border border-border text-xs font-medium text-ink/70 hover:text-ink hover:border-ink/25 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
+          className="shrink-0 inline-flex items-center gap-1 h-7 px-2 rounded-lg border border-border text-[11px] font-semibold text-ink/70 hover:text-ink hover:border-ink/25 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
         >
-          {copied ? <Check className="w-3 h-3" strokeWidth={3} aria-hidden /> : <Copy className="w-3 h-3" strokeWidth={1.75} aria-hidden />}
+          {copied ? <Check className="w-3 h-3" strokeWidth={3} aria-hidden /> : <Copy className="w-3 h-3" strokeWidth={2} aria-hidden />}
           {copied ? "Copied" : "Copy"}
         </button>
       </div>

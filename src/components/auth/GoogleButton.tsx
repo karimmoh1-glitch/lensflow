@@ -16,7 +16,7 @@ export function GoogleButton({ intent, className, personalization, divider = "or
         type="button"
         onClick={() => startTransition(() => startGoogleSignIn(intent, personalization))}
         disabled={pending}
-        className="w-full inline-flex items-center justify-center gap-2.5 h-11 rounded border border-border-strong bg-white shadow-xs text-sm font-medium text-ink hover:bg-paper transition-[background-color,transform] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70"
+        className="w-full inline-flex items-center justify-center gap-2.5 h-12 rounded-full border border-border bg-white text-[15px] font-semibold text-ink hover:bg-black/[0.03] active:scale-[0.99] transition-[background-color,transform] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
         aria-busy={pending}
       >
         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
@@ -28,7 +28,7 @@ export function GoogleButton({ intent, className, personalization, divider = "or
         {pending ? "Opening Google…" : "Continue with Google"}
       </button>
       {divider && (
-        <div className="flex items-center gap-3 text-xs font-medium text-ink/65" aria-hidden>
+        <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65" aria-hidden>
           <span className="h-px flex-1 bg-border" />
           {divider}
           <span className="h-px flex-1 bg-border" />

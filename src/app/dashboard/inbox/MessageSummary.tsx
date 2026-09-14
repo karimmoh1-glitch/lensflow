@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AlignLeft, X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { summarizeMessage } from "@/app/actions/messages";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
     });
   };
 
-  const tone = outbound ? "text-white/70 hover:text-white hover:bg-white/10" : "text-ink/65 hover:text-ink hover:bg-ink/[0.06]";
+  const tone = outbound ? "text-white/70 hover:text-white hover:bg-white/10" : "text-ink/65 hover:text-ink hover:bg-black/[0.06]";
   return (
     <div className="mt-1.5">
       <button
@@ -40,25 +40,25 @@ export function MessageSummary({ messageId, outbound, initial, initialSource }: 
         aria-expanded={summary ? open : undefined}
         aria-label={summary ? (open ? "Hide summary" : "Show summary") : "Summarize this message"}
         className={cn(
-          "inline-flex items-center gap-1 h-6 px-1.5 -ml-1.5 rounded-md text-2xs font-semibold transition-opacity duration-150 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:px-2.5 [@media(pointer:coarse)]:text-[12px]",
+          "inline-flex items-center gap-1 h-6 px-1.5 -ml-1.5 rounded-md text-[11px] font-semibold transition-opacity duration-150 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:px-2.5 [@media(pointer:coarse)]:text-[12px]",
           // Always present for touch; on a hover-capable device it fades in with the message.
           "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/msg:opacity-100 [@media(hover:hover)]:group-focus-within/msg:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100",
           summary && open && "[@media(hover:hover)]:opacity-100",
           tone,
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 disabled:opacity-60"
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-60"
         )}
       >
-        <AlignLeft className="w-3 h-3" strokeWidth={2} aria-hidden />
+        <Sparkles className="w-3 h-3" strokeWidth={2.5} aria-hidden />
         {pending ? "Summarizing…" : summary ? (open ? "Hide summary" : "Summary") : "Summarize"}
       </button>
       {error && <p role="alert" className={cn("mt-1 text-[12px]", outbound ? "text-white/80" : "text-ink/70")}>{error}</p>}
       {summary && open && (
-        <div role="status" className={cn("mt-1 rounded-xl px-3 py-2 text-13 leading-snug", outbound ? "bg-white/10 text-white" : "bg-white border border-border text-ink")}>
+        <div role="status" className={cn("mt-1 rounded-xl px-3 py-2 text-[13px] leading-snug", outbound ? "bg-white/10 text-white" : "bg-white border border-border text-ink")}>
           <div className="flex items-start gap-2">
             <p className="flex-1">{summary}</p>
             <button type="button" onClick={() => setOpen(false)} aria-label="Hide summary" className={cn("shrink-0 w-5 h-5 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-md inline-flex items-center justify-center", tone)}><X className="w-3 h-3" strokeWidth={2.5} aria-hidden /></button>
           </div>
-          <p className={cn("mt-1 text-xs font-medium", outbound ? "text-white/70" : "text-ink/65")}>{source === "ai" ? "Written by the model from this message" : "From the message, by rules"}</p>
+          <p className={cn("mt-1 text-[10px] font-bold uppercase tracking-[0.12em]", outbound ? "text-white/70" : "text-ink/65")}>{source === "ai" ? "Written by the model from this message" : "From the message, by rules"}</p>
         </div>
       )}
     </div>

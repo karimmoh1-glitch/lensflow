@@ -45,6 +45,21 @@ const nextConfig = {
   // Nothing uses next/image. Leaving the optimizer unconfigured-but-reachable only adds
   // attack surface (several Next.js 14 advisories live in it), so it is switched off.
   images: { unoptimized: true },
+  // The founder profile lives at /founder. Its first home, /karim-mohamed (and the project and
+  // writing pages under it), now point there permanently.
+  async redirects() {
+    return [
+      { source: "/karim-mohamed", destination: "/founder", permanent: true },
+      { source: "/karim-mohamed/:path*", destination: "/founder", permanent: true },
+    ];
+  },
+  // founder.daythread.org serves the same profile once that domain is attached to this project.
+  // Host-scoped: requests to any other host never match.
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: "/", has: [{ type: "host", value: "founder.daythread.org" }], destination: "/founder" }],
+    };
+  },
   async headers() {
     // The embeddable lead form (/embed/:handle) is meant to live inside a customer's own
     // website, so it alone may be framed; everything else refuses framing entirely.

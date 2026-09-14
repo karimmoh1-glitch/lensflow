@@ -15,7 +15,7 @@ export function Footer() {
           <Link href="/support" className="hover:text-paper transition-colors">Support</Link>
           <Link href="/status" className="hover:text-paper transition-colors">Status</Link>
           <Link href="/privacy" className="hover:text-paper transition-colors">Privacy</Link>
-          <Link href="/karim-mohamed" className="hover:text-paper transition-colors">Founder</Link>
+          <Link href="/founder" className="hover:text-paper transition-colors">Founder</Link>
           <Link href="/terms" className="hover:text-paper transition-colors">Terms</Link>
           <Link href="/login" className="hover:text-paper transition-colors">Log in</Link>
         </nav>

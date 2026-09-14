@@ -15,7 +15,6 @@ import { inviteTeammate, invitePartner, revokeInvitation } from "@/app/actions/i
 import { disconnectIntegration, connectAppleCalendar } from "@/app/actions/connect";
 import { deleteWorkspace, updateBusinessProfile, saveServices, saveAvailability, updateProfile } from "@/app/actions/settings";
 import { deleteAutomation } from "@/app/actions/automations";
-import { turnOnStarterAutomations } from "@/app/actions/onboarding";
 import { mergeClients } from "@/app/actions/clients";
 
 /**
@@ -115,7 +114,6 @@ describe("owner and admin decisions are refused to everyone else in the workspac
         ["saveAvailability", () => saveAvailability([], s())],
         ["updateProfile", () => updateProfile({ name: "X", workspaceName: "Hijacked", timezone: "UTC" }, s())],
         ["deleteAutomation", () => deleteAutomation(automationId, s())],
-        ["turnOnStarterAutomations", () => turnOnStarterAutomations(["remind"], s())],
         ["mergeClients", () => mergeClients(clientA, clientB, s())],
         ["deleteWorkspace", () => deleteWorkspace(`Roles`, s())],
       ];

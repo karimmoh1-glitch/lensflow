@@ -2,24 +2,22 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import Link from "next/link";
 import { cn, firstName } from "@/lib/utils";
 import { useToast } from "@/components/Toaster";
 import { advanceBookingStatus } from "@/app/actions/bookings";
 import type { Understanding } from "@/lib/understand";
 
 /**
- * The one next step for this conversation, shown as the path it came from: the client's
- * words, what Daythread read in them, and the step it suggests — which you approve with one
- * button. Every field is traceable: intent and day/time come from the message, the rest from
- * the records. Relationship lives in the rail header, so it is not repeated here.
+ * Message → context → action. Every field here is traceable: the intent and the day/time
+ * were read from the message, the relationship and context from the records, and the
+ * action is the one that follows. The button does the thing — it doesn't animate it.
  */
 export function UnderstandingCard({
   u,
   who,
-  why,
+  relationshipLabel,
   quote,
-  facts,
   bookingId,
   bookingHref,
   bookingPageUrl,
@@ -27,13 +25,8 @@ export function UnderstandingCard({
 }: {
   u: Understanding;
   who: string;
-  /** Kept for callers; the rail header already shows it. */
-  relationshipLabel?: string;
-  /** Why this conversation matters, in a sentence, when the opportunity rules have one. */
-  why?: string | null;
+  relationshipLabel: string;
   quote: string;
-  /** What the lead record already holds (service, date, location, budget). */
-  facts?: Array<{ label: string; value: string }>;
   bookingId: string | null;
   bookingHref: string | null;
   bookingPageUrl: string;
@@ -58,7 +51,7 @@ export function UnderstandingCard({
         return;
       case "send_link":
         navigator.clipboard?.writeText(bookingPageUrl).then(
-          () => toast({ tone: "neutral", title: "Booking link copied", body: "Paste it into your reply." }),
+          () => toast({ tone: "thinking", title: "Booking link copied", body: "Paste it into your reply." }),
           () => toast({ tone: "neutral", title: bookingPageUrl })
         );
         focusComposer();
@@ -72,93 +65,53 @@ export function UnderstandingCard({
     }
   }
 
-  const read: Array<[string, string | null]> = [
+  const rows: Array<[string, string | null]> = [
+    ["Who", who],
+    ["Relationship", relationshipLabel],
     ["Intent", u.intentLabel],
     ["Date", u.day],
     ["Time", u.time],
     ["Amount", u.amountCents ? `$${(u.amountCents / 100).toLocaleString()}` : null],
     ["Context", u.context],
   ];
-  const known = (facts ?? []).filter((f) => !read.some(([k, v]) => k === f.label && v));
-  const fields = [...read.filter(([, v]) => v).map(([k, v]) => ({ label: k, value: v as string })), ...known];
+
   const disabled = (u.nextAction.kind === "confirm" && !bookingId) || (u.nextAction.kind === "book" && !hasService);
-  const none = u.nextAction.kind === "none";
 
-  // Three beats, drawn as one path: what they wrote → what Daythread understood → the step
-  // it suggests, which waits for you. Nothing is sent from here without your click.
   return (
-    <section aria-labelledby="next-step-title" className="relative">
-      <ol className="relative">
-        <li className="relative pl-6 pb-4 before:absolute before:left-[5px] before:top-[18px] before:bottom-0 before:w-px before:bg-signal-line">
-          <span aria-hidden className="absolute left-0 top-[5px] w-[11px] h-[11px] rounded-full border border-ink/25 bg-white" />
-          <p className="text-xs text-ink/65">{firstName(who)} wrote</p>
-          <p className="mt-1 text-13 text-ink/80 line-clamp-3">&ldquo;{quote}&rdquo;</p>
-        </li>
-        <li className="relative pl-6 pb-4 before:absolute before:left-[5px] before:top-[18px] before:bottom-0 before:w-px before:bg-signal-line">
-          <span aria-hidden className="absolute left-0 top-[5px] w-[11px] h-[11px] rounded-full bg-signal-soft border border-signal/50" />
-          <p className="text-xs text-signal-text">Daythread understood</p>
-          {fields.length > 0 ? (
-            <dl className="mt-1.5 grid grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-1 text-13">
-              {fields.slice(0, 4).map((f) => (
-                <div key={f.label} className="contents">
-                  <dt className="text-ink/65">{f.label}</dt>
-                  <dd className="text-ink truncate">{f.value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <p className="mt-1 text-13 text-ink/65">Nothing specific to act on in this message.</p>
+    <div className="rounded-2xl border border-border bg-white overflow-hidden">
+      <div className="px-4 pt-3.5 pb-3 border-b border-border bg-paper/60">
+        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Daythread read this</div>
+        <p className="mt-1 text-sm text-ink/80 leading-snug">“{quote}”</p>
+      </div>
+      <dl className="px-4 py-3 grid grid-cols-[92px_1fr] gap-x-3 gap-y-1.5 text-sm">
+        {rows.filter(([, v]) => v).map(([k, v], i) => (
+          <div key={k} className="contents">
+            <dt className="text-ink/65 text-xs pt-0.5">{k}</dt>
+            <dd className={cn("font-medium text-ink", k === "Intent" && "text-signal-text", i === 0 && "font-semibold")}>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="px-4 pb-4">
+        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink/65 mb-1.5">Next action</div>
+        <button
+          type="button"
+          onClick={act}
+          disabled={pending || disabled || u.nextAction.kind === "none"}
+          className={cn(
+            "w-full inline-flex items-center justify-center gap-2 h-10 rounded-full text-sm font-extrabold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50",
+            u.nextAction.kind === "confirm" || u.nextAction.kind === "book" ? "bg-accent-strong text-white hover:brightness-95 active:scale-[0.98]" : "bg-ink text-white hover:bg-graphite active:scale-[0.98]"
           )}
-          {u.confidence === "low" && <p className="mt-1.5 text-xs text-warning-text">Unclear message. Check it before acting.</p>}
-        </li>
-        <li className="relative pl-6">
-          <span aria-hidden className={cn("absolute left-0 top-[5px] w-[11px] h-[11px] rounded-full", none ? "border border-ink/25 bg-white" : "bg-signal")} />
-          <h2 id="next-step-title" className="text-xs text-ink/65">Suggested next step</h2>
-          <p className={cn("mt-1 text-sm font-semibold leading-snug", none ? "text-ink/65" : "text-ink")}>{u.nextAction.label}</p>
-          {why && !none && <p className="mt-1 text-13 text-ink/65">{why}</p>}
-          {!none && (
-            <button
-              type="button"
-              onClick={act}
-              disabled={pending || disabled}
-              className="mt-3 w-full inline-flex items-center justify-center h-9 rounded bg-ink text-white text-13 font-medium transition-colors duration-fast hover:bg-[#2A2B30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2 disabled:opacity-45"
-            >
-              {actionVerb(u.nextAction.kind)}
-            </button>
-          )}
-          {u.ifNot && !none && <p className="mt-2 text-xs text-ink/65">{u.ifNot}</p>}
-          {disabled && u.nextAction.kind === "book" && <p className="mt-1.5 text-xs text-ink/65">Match a service to this inquiry first, below.</p>}
-        </li>
-      </ol>
-      {fields.length > 4 && (
-        <details className="group mt-3 pl-6">
-          <summary className="inline-flex items-center gap-1 min-h-[28px] text-xs text-ink/65 hover:text-ink cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-            {fields.length - 4} more details
-            <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" strokeWidth={1.75} aria-hidden />
-          </summary>
-          <dl className="mt-1 grid grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-1 text-13">
-            {fields.slice(4).map((f) => (
-              <div key={f.label} className="contents">
-                <dt className="text-ink/65">{f.label}</dt>
-                <dd className="text-ink">{f.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </details>
-      )}
-    </section>
+        >
+          {u.nextAction.label}
+        </button>
+        {u.ifNot && u.nextAction.kind !== "none" && (
+          <p className="mt-2 text-[11px] text-ink/70 leading-snug"><span className="font-semibold text-ink/70">If you don&rsquo;t:</span> {u.ifNot}</p>
+        )}
+        {disabled && u.nextAction.kind === "book" && <p className="mt-1.5 text-[11px] text-ink/65">Match a service to this lead first, below.</p>}
+        {u.confidence === "low" && <p className="mt-1.5 text-[11px] text-ink/65">Read from the message — check it before acting.</p>}
+      </div>
+    </div>
   );
-}
-
-/** The button says what it does; the heading above says what the step is. */
-function actionVerb(kind: Understanding["nextAction"]["kind"]): string {
-  switch (kind) {
-    case "confirm": return "Confirm booking";
-    case "book": return "Pick a time";
-    case "send_link": return "Copy booking link and reply";
-    case "reschedule": return "Open the booking";
-    default: return "Write a reply";
-  }
 }
 
 function focusComposer() {

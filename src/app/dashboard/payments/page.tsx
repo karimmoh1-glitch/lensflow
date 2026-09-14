@@ -49,9 +49,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   // would tell a workspace its money is being recorded from Stripe when nothing is.
   const connected = Boolean(stripe && stripe.status !== "NOT_CONNECTED" && stripe.status !== "DEMO");
   const { rows, totals, count } = view;
-  // The ledger is fed by the business's own connected Stripe account and nothing else.
-  // Without that connection and without history there is nothing true to show, and the
-  // product does not collect client payments, so the page is not somewhere to land.
+  // The ledger is fed by the business's own connected Stripe account and nothing else. Without
+  // that connection and without history there is nothing true to show, and the product does
+  // not collect client payments, so the page is not somewhere to land.
   if (!connected && count === 0) redirect("/dashboard");
   // Only the statuses this workspace actually has: a filter that can only ever be empty is
   // not a filter, it is a dead end.
@@ -87,7 +87,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
               key={key}
               href={key === "all" ? "/dashboard/payments" : `/dashboard/payments?status=${key}`}
               aria-current={status === key ? "page" : undefined}
-              className={cn("h-8 px-3.5 rounded-lg text-13 font-medium inline-flex items-center whitespace-nowrap transition-colors", status === key ? "bg-ink text-white" : "text-ink/70 hover:text-ink hover:bg-ink/[0.04]")}
+              className={cn("h-8 px-3.5 rounded-full text-[13px] font-semibold inline-flex items-center whitespace-nowrap transition-colors", status === key ? "bg-ink text-white" : "text-ink/70 hover:text-ink hover:bg-black/[0.04]")}
             >
               {key === "all" ? "All" : LABEL[key]}
             </Link>
@@ -107,7 +107,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
           }
           action={
             count === 0 && !connected ? (
-              <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-4 rounded-lg bg-ink text-white text-sm font-semibold">
+              <Link href="/dashboard/settings?tab=channels" className="inline-flex items-center h-9 px-4 rounded-full bg-ink text-white text-sm font-semibold">
                 Connect Stripe
               </Link>
             ) : undefined
@@ -120,9 +120,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
             const when = p.paidAt ?? p.createdAt;
             return (
               <li key={p.id}>
-                <div className="rounded-lg border border-border bg-white px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                  <span className="shrink-0 w-9 h-9 rounded-lg border border-border bg-paper hidden sm:flex items-center justify-center">
-                    <CreditCard className="w-4 h-4 text-ink/60" strokeWidth={1.75} aria-hidden />
+                <div className="rounded-2xl border border-border bg-white px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <span className="shrink-0 w-9 h-9 rounded-xl border border-border bg-paper hidden sm:flex items-center justify-center">
+                    <CreditCard className="w-4 h-4 text-ink/60" strokeWidth={2} aria-hidden />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -131,7 +131,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                       </Link>
                       <Badge tone={s.tone}>{s.label}</Badge>
                     </div>
-                    <p className="mt-0.5 text-13 text-ink/65 truncate">
+                    <p className="mt-0.5 text-[13px] text-ink/65 truncate">
                       {p.booking ? (
                         <>
                           {p.booking.service} · {format(p.booking.startAt, "MMM d, yyyy")}
@@ -143,12 +143,12 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                     </p>
                   </div>
                   <div className="sm:text-right shrink-0">
-                    <div className={cn("text-[15px] font-semibold tabular-nums", p.status === "REFUNDED" ? "text-ink/60 line-through" : "text-ink")}>{formatMoneyExact(p.amountCents, p.currency)}</div>
-                    <div className="text-xs text-ink/60">{format(when, "MMM d, yyyy")}</div>
+                    <div className={cn("text-[15px] font-semibold tabular-nums", p.status === "REFUNDED" ? "text-ink/50 line-through" : "text-ink")}>{formatMoneyExact(p.amountCents, p.currency)}</div>
+                    <div className="text-[11px] text-ink/60">{format(when, "MMM d, yyyy")}</div>
                   </div>
                   {p.booking && (
-                    <Link href={`/dashboard/bookings/${p.booking.id}`} aria-label="Open booking" className="hidden sm:inline-flex text-ink/60 hover:text-ink">
-                      <ChevronRight className="w-4 h-4" strokeWidth={1.75} />
+                    <Link href={`/dashboard/bookings/${p.booking.id}`} aria-label="Open booking" className="hidden sm:inline-flex text-ink/40 hover:text-ink">
+                      <ChevronRight className="w-4 h-4" strokeWidth={2} />
                     </Link>
                   )}
                 </div>
@@ -165,9 +165,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
 
 function Tile({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="rounded-lg border border-border bg-white px-4 py-3">
-      <div className="text-xs font-medium text-ink/65">{label}</div>
-      <div className={cn("mt-1 text-[1.35rem] font-semibold tracking-[-0.02em] tabular-nums", tone)}>{value}</div>
+    <div className="rounded-2xl border border-border bg-white px-4 py-3">
+      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/60">{label}</div>
+      <div className={cn("mt-1 text-[1.35rem] font-extrabold tracking-[-0.02em] tabular-nums", tone)}>{value}</div>
     </div>
   );
 }

@@ -50,13 +50,13 @@ export function ThreadNode({
 }) {
   const body = (
     <>
-      <span aria-hidden className={cn("absolute -left-[25px] top-[9px] w-[11px] h-[11px] rounded-full border-2 border-white", NODE[kind])} />
+      <span aria-hidden className={cn("absolute -left-7 top-[7px] w-[15px] h-[15px] rounded-full border-[3px] border-paper", NODE[kind])} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-medium text-ink truncate">{title}</div>
           {meta && <div className="text-xs text-ink/70 mt-0.5 truncate">{meta}</div>}
         </div>
-        {when && <div className="text-xs text-ink/65 tabular-nums shrink-0 mt-0.5">{when}</div>}
+        {when && <div className="text-[11px] text-ink/65 tabular-nums shrink-0 mt-0.5">{when}</div>}
       </div>
       {children}
     </>
@@ -64,7 +64,7 @@ export function ThreadNode({
   return (
     <li className="relative py-2.5">
       {href ? (
-        <Link href={href} className="block -mx-2 px-2 rounded hover:bg-paper transition-colors">
+        <Link href={href} className="block -mx-2 px-2 rounded-lg hover:bg-black/[0.03] transition-colors">
           {body}
         </Link>
       ) : (
@@ -79,14 +79,14 @@ export function NextAction({ title, why, href, cta }: { title: string; why?: str
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 rounded-lg border border-border px-4 py-3 transition-colors hover:bg-paper"
+      className="group flex items-center gap-3 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent-soft/60 to-transparent px-4 py-3.5 transition-colors hover:border-accent/40"
     >
       <span aria-hidden className="w-2 h-2 rounded-full bg-accent shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-ink">{title}</div>
         {why && <div className="text-xs text-ink/70 mt-0.5">{why}</div>}
       </div>
-      <span className="text-13 font-medium text-ink shrink-0">{cta}</span>
+      <span className="text-xs font-bold text-accent-text shrink-0 group-hover:translate-x-0.5 transition-transform">{cta} →</span>
     </Link>
   );
 }

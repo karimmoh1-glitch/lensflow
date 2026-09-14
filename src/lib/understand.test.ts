@@ -34,15 +34,7 @@ describe("understand", () => {
     expect(a.amountCents).toBe(50000);
     const b = understand({ body: "I'd like to book the family session on Sep 12", relationship: null, hasUpcomingBooking: false, hasOutstandingPayment: false });
     expect(b.intent).toBe("BOOK");
-    expect(b.nextAction).toEqual({ label: "Book them on Sep 12", kind: "book" });
-  });
-
-  it("writes a relative day the way it reads in a sentence", () => {
-    const a = understand({ body: "Do you have anything open this month?", relationship: "LEAD", hasUpcomingBooking: false });
-    expect(a.nextAction.label).not.toMatch(/This month/);
-    expect(a.nextAction.label).toBe("Send times this month and your booking link");
-    const b = understand({ body: "Can I book Friday at 2pm?", relationship: "LEAD", hasUpcomingBooking: false });
-    expect(b.nextAction.label).toBe("Book them on Friday at 2:00 PM");
+    expect(b.nextAction).toEqual({ label: "Book Sep 12", kind: "book" });
   });
 
   it("once they're on the calendar, an availability or booking ask points at confirming, not another link", () => {

@@ -1,10 +1,16 @@
 import { Navbar } from "./Navbar";
+import { Opening } from "./landing/Opening";
 import { Hero } from "./landing/Hero";
 import { Story } from "./landing/Story";
-import { Automations } from "./landing/Automations";
+import { OneThing } from "./landing/OneThing";
 import { ProductDemo } from "./landing/ProductDemo";
-import { Channels } from "./landing/Channels";
+import { Workflow } from "./landing/Workflow";
+import { CalendarBeat } from "./landing/CalendarBeat";
+import { AssistantBeat } from "./landing/AssistantBeat";
+import { Spine } from "./landing/Spine";
+import { Proof } from "./landing/Proof";
 import { Faq, FAQ } from "./landing/Faq";
+import { Why } from "./landing/Why";
 import { Trust } from "./landing/Trust";
 import { LandingBeacon } from "./landing/LandingBeacon";
 import { PLANS, betaOfferOpen, planPurchasable } from "@/lib/billing";
@@ -14,11 +20,21 @@ import { FinalCta } from "./landing/FinalCta";
 import { Footer } from "./landing/Footer";
 
 /**
- * The page in order: what it is (hero), one client from inquiry to booked to client (the
- * story, driven by the scroll), try the inbox (demo), where it works (channels drawn into
- * one list, with this deployment's real status), what runs by itself (automations), trust,
- * pricing, questions, and one closing line. Everything is visible on the first paint and
- * readable without motion; the scroll only plays what is already on the page.
+ * One film, in this order:
+ *
+ *   open → hero (the channels flowing into the product, alive)
+ *   the story — one pinned, scroll-driven stage: chaos → one thread → context → action →
+ *     outcome → the thread widens into the product itself
+ *   the business gets quiet — one thing to do (midnight)
+ *   click around — the product, interactive
+ *   the calendar — a message moves a booking, the confirmation goes back out
+ *   it runs itself — an automation firing
+ *   the assistant — it proposes, you approve, it lands in done
+ *   pricing — the natural conclusion
+ *   the end — the thread returns, organized, and one line
+ *
+ * Every transformation is tied to scroll position; nothing waits on a timer except the
+ * opening (~1.4s) and the ambient loops that don't block anything.
  */
 const SITE = process.env.NEXT_PUBLIC_APP_URL ?? "https://daythread.org";
 
@@ -35,7 +51,7 @@ function structuredData() {
         url: SITE,
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
-        description: "The inbox that books your clients: Instagram DMs, texts, WhatsApp, Gmail, Outlook and Zoom chat in one place, with booking in the conversation.",
+        description: "One inbox for every customer conversation — Instagram, Gmail, WhatsApp, SMS and your contact form — with the calendar, bookings, automations and an assistant built around it.",
         publisher: { "@id": `${SITE}/#org` },
         offers: (["FREE", "PRO", "BUSINESS"] as const).map((k) => ({ "@type": "Offer", name: `Daythread ${PLANS[k].name}`, price: (PLANS[k].priceCents / 100).toFixed(0), priceCurrency: "USD", url: `${SITE}/#pricing`, availability: k === "FREE" || planPurchasable(k) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" })),
       },
@@ -45,40 +61,56 @@ function structuredData() {
 }
 
 export default function LandingPage() {
-  // overflow-x-clip, not hidden: hidden would make <main> the scroll container and break sticky children.
+  // overflow-x-clip, not hidden: hidden would make <main> the scroll container and break the
+  // pinned story's position: sticky.
   return (
     <main className="bg-paper overflow-x-clip">
+      <Opening />
       <LandingBeacon />
       <Navbar />
+      <Spine />
       <div id="top" className="scroll-mt-16">
         <Hero />
       </div>
+      <Story />
 
-      <section id="flow" aria-label="From message to booked" className="relative bg-white border-y border-border scroll-mt-16 py-20 lg:py-0">
-        <Story />
+      <section className="relative py-24 md:py-32 bg-midnight overflow-hidden">
+        <OneThing />
       </section>
 
-      <section id="demo" aria-label="Try the inbox" className="relative py-20 md:py-28 bg-paper overflow-hidden scroll-mt-16">
+      <section id="demo" className="relative py-20 md:py-28 bg-white border-b border-border overflow-hidden scroll-mt-16">
         <ProductDemo />
       </section>
 
-      <section id="channels" aria-label="Channels" className="relative py-20 md:py-28 bg-white border-y border-border scroll-mt-16">
-        <Channels />
+      <section id="calendar" className="relative py-20 md:py-28 bg-paper border-b border-border overflow-hidden scroll-mt-16">
+        <CalendarBeat />
       </section>
 
-      <section id="automations" aria-label="What runs by itself" className="relative py-20 md:py-28 bg-paper scroll-mt-16">
-        <Automations />
+      <section id="how" className="relative py-20 md:py-28 bg-[linear-gradient(180deg,#FAFAF9_0%,#EEEBFC_55%,#FAFAF9_100%)] scroll-mt-16">
+        <Workflow />
       </section>
 
-      <section id="trust" aria-label="Trust" className="relative py-20 md:py-24 bg-white border-y border-border scroll-mt-16">
+      <section id="assistant" className="relative py-20 md:py-28 bg-white border-t border-border overflow-hidden scroll-mt-16">
+        <AssistantBeat />
+      </section>
+
+      <section id="why" className="relative py-20 md:py-28 bg-white border-t border-border overflow-hidden scroll-mt-16">
+        <Why />
+      </section>
+
+      <section id="proof" className="relative py-20 md:py-24 bg-paper border-t border-border scroll-mt-16">
+        <Proof />
+      </section>
+
+      <section id="trust" className="relative py-20 md:py-24 bg-white border-t border-border scroll-mt-16">
         <Trust />
       </section>
 
-      <div id="pricing" className="bg-paper scroll-mt-16">
+      <div id="pricing" className="bg-white border-t border-border scroll-mt-16">
         <PricingSection trial={subscriptionBillingIsLive} beta={betaOfferOpen()} />
       </div>
 
-      <section id="faq" aria-label="Questions" className="relative py-20 md:py-24 bg-paper scroll-mt-16">
+      <section id="faq" className="relative py-20 md:py-24 bg-paper border-t border-border scroll-mt-16">
         <Faq />
       </section>
 

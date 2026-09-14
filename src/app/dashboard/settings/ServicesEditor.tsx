@@ -42,13 +42,13 @@ export function ServicesEditor({ initialServices }: { initialServices: Svc[] }) 
               />
             </div>
             <IconButton aria-label="Remove service" onClick={() => setServices((prev) => prev.filter((_, idx) => idx !== i))}>
-              <X className="w-4 h-4" strokeWidth={1.75} />
+              <X className="w-4 h-4" strokeWidth={2} />
             </IconButton>
           </div>
         ))}
         <div className="flex items-center gap-2 pt-1">
           <Button variant="outline" size="sm" onClick={() => setServices((prev) => [...prev, { name: "New Service", priceCents: 20000, durationMins: 60 }])}>
-            <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <Plus className="w-3.5 h-3.5" strokeWidth={2} />
             Add service
           </Button>
           <SaveButton

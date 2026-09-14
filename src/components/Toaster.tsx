@@ -19,7 +19,7 @@ export function useToast(): Ctx {
   return ctx ?? { toast: () => {} };
 }
 
-const DOT: Record<ToastTone, string> = { outcome: "bg-success", thinking: "bg-ink", signal: "bg-accent", neutral: "bg-ink/40" };
+const DOT: Record<ToastTone, string> = { outcome: "bg-success", thinking: "bg-signal", signal: "bg-accent", neutral: "bg-ink/40" };
 
 export function Toaster({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -68,7 +68,7 @@ function ToastItem({ toast, onDone }: { toast: Toast; onDone: () => void }) {
       onMouseEnter={() => (paused.current = true)}
       onMouseLeave={() => (paused.current = false)}
       className={cn(
-        "pointer-events-auto w-full md:w-auto md:min-w-[280px] md:max-w-[420px] flex items-start gap-3 rounded-xl border border-ink/10 bg-white px-4 py-3 shadow-popover transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
+        "pointer-events-auto w-full md:w-auto md:min-w-[280px] md:max-w-[420px] flex items-start gap-3 rounded-2xl border border-ink/10 bg-white/95 backdrop-blur px-4 py-3 shadow-[0_18px_44px_-20px_rgba(16,17,20,0.35)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
         leaving ? "opacity-0 translate-y-2 scale-[0.98]" : "dt-land"
       )}
     >
@@ -87,7 +87,7 @@ function ToastItem({ toast, onDone }: { toast: Toast; onDone: () => void }) {
             setLeaving(true);
             setTimeout(onDone, 260);
           }}
-          className="text-xs font-medium text-ink/70 hover:text-ink px-2 py-1 -mr-1 rounded-md hover:bg-ink/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 shrink-0"
+          className="text-xs font-bold text-ink/70 hover:text-ink px-2 py-1 -mr-1 rounded-md hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 shrink-0"
         >
           {toast.action.label}
         </button>

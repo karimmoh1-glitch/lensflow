@@ -62,10 +62,10 @@ export default async function PartnerInboxPage({ searchParams }: { searchParams:
               <Link
                 key={conv.id}
                 href={`/partner/inbox?c=${conv.id}`}
-                className={cn("block px-5 py-3.5 border-b border-border hover:bg-ink/[0.02]", isActive && "bg-accent-soft/50")}
+                className={cn("block px-5 py-3.5 border-b border-border hover:bg-black/[0.02]", isActive && "bg-accent-soft/50")}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="w-7 h-7 rounded-full bg-ink/[0.05] flex items-center justify-center text-2xs font-semibold shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-black/[0.05] flex items-center justify-center text-[10px] font-semibold shrink-0">
                     {initials(conv.client?.name ?? conv.externalHandle ?? "?")}
                   </div>
                   <span className="text-sm font-medium truncate flex-1">{conv.client?.name ?? conv.externalHandle ?? "Unknown"}</span>
@@ -104,13 +104,13 @@ export default async function PartnerInboxPage({ searchParams }: { searchParams:
                 <div key={m.id} className={cn("max-w-md", m.direction === "OUTBOUND" ? "ml-auto" : "")}>
                   <div
                     className={cn(
-                      "rounded-xl px-4 py-2.5 text-sm",
-                      m.direction === "OUTBOUND" ? "bg-ink text-white rounded-br-sm" : "bg-ink/[0.05] text-ink rounded-bl-sm"
+                      "rounded-2xl px-4 py-2.5 text-sm",
+                      m.direction === "OUTBOUND" ? "bg-ink text-white rounded-br-sm" : "bg-black/[0.05] text-ink rounded-bl-sm"
                     )}
                   >
                     {m.body}
                   </div>
-                  <div className={cn("text-xs text-ink/65 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
+                  <div className={cn("text-[11px] text-ink/65 mt-1", m.direction === "OUTBOUND" ? "text-right" : "")}>
                     {format(m.createdAt, "MMM d, h:mm a")}
                   </div>
                 </div>

@@ -1,5 +1,5 @@
-import { ListSkeleton } from "@/components/skeletons";
+import { RouteLoading } from "@/components/brand/RouteLoading";
 
 export default function Loading() {
-  return <ListSkeleton label="Loading automations" rows={4} />;
+  return <RouteLoading label="Loading automations" />;
 }

@@ -11,8 +11,8 @@ export default function SupportPage() {
   return (
     <main className="min-h-screen bg-paper">
       <div className="max-w-2xl mx-auto px-6 py-14 md:py-20">
-        <Link href="/" className="inline-flex items-center gap-2 text-ink"><LogoMark className="w-5 h-5" /><span className="font-sans font-semibold text-[17px] tracking-tight">Daythread</span></Link>
-        <h1 className="mt-8 font-sans font-semibold text-[2rem] md:text-[2.5rem] leading-[1.05] tracking-[-0.03em] text-ink">Support</h1>
+        <Link href="/" className="inline-flex items-center gap-2 text-ink"><LogoMark className="w-5 h-5" /><span className="font-sans font-extrabold text-[17px] tracking-tight">Daythread</span></Link>
+        <h1 className="mt-8 font-sans font-black text-[2rem] md:text-[2.5rem] leading-[1.05] tracking-[-0.03em] text-ink">Support</h1>
         <p className="mt-3 text-base text-ink/70 leading-relaxed">Write to <a href={`mailto:${email}`} className="font-semibold text-ink underline decoration-ink/30 underline-offset-4">{email}</a>. A person reads every message; most get an answer within one business day.</p>
 
         <section className="mt-10 space-y-6">

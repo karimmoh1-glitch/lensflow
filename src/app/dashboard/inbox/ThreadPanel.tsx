@@ -1,10 +1,9 @@
 import { requireBusiness } from "@/lib/auth";
-import { rowLine } from "@/components/inbox/ConversationRow";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { format, formatDistanceToNowStrict, differenceInMinutes } from "date-fns";
-import { ChevronLeft, ChevronDown, Mail, Phone, AtSign } from "lucide-react";
+import { ChevronLeft, Mail, Phone, AtSign, CalendarDays } from "lucide-react";
 import { cn, initials, toZonedDisplayDate } from "@/lib/utils";
 import { Composer, type WindowNotice } from "./Composer";
 import { ChannelBadge, CHANNEL_META } from "@/lib/channelIcons";
@@ -136,146 +135,147 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
 
   const rail = (
     <>
-      <div className="px-5 pt-4 pb-4 border-b border-border">
+      <div className="px-5 pt-5 pb-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div aria-hidden className={cn("w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0", isPerson ? "bg-ink/[0.07] text-ink/75" : "bg-ink/[0.04] text-ink/65")}>{initials(displayName)}</div>
+          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shrink-0", isPerson ? "bg-accent-soft text-accent-text" : "bg-black/[0.05] text-ink/65")}>{initials(displayName)}</div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold text-ink truncate">{displayName}</div>
-            <div className="text-xs text-ink/65 truncate">{relationshipLabel}{relationship ? ` · ${relationship.label}` : ""}</div>
+            <div className="text-sm font-semibold truncate">{displayName}</div>
+            <div className="text-xs text-ink/70 truncate">{relationshipLabel}{relationship ? ` · ${relationship.label}` : ""}</div>
           </div>
         </div>
         {relationship && (
-          <p className="mt-3 flex items-start gap-2 text-13 text-ink/75">
-            <span aria-hidden className={cn("mt-[7px] w-1.5 h-1.5 rounded-full shrink-0", relationship.tone === "signal" ? "bg-accent" : relationship.tone === "outcome" ? "bg-success" : relationship.tone === "warning" ? "bg-warning" : relationship.tone === "thinking" ? "bg-signal" : "bg-ink/30")} />
+          <p className="mt-2.5 text-xs text-ink/70 leading-snug">
+            <span className={cn("inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle", relationship.tone === "signal" ? "bg-accent" : relationship.tone === "outcome" ? "bg-success" : relationship.tone === "warning" ? "bg-warning" : relationship.tone === "thinking" ? "bg-signal" : "bg-ink/30")} />
             {relationship.standing}
           </p>
         )}
         {contact.length > 0 && (
-          <ul className="mt-3 space-y-0.5">
+          <ul className="mt-3 space-y-1">
             {contact.map((c) => (
               <li key={c.value}>
-                <a href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="inline-flex items-center gap-2 min-h-[28px] text-13 text-ink/70 hover:text-ink max-w-full">
-                  <c.icon className="w-3.5 h-3.5 text-ink/55 shrink-0" strokeWidth={1.75} aria-hidden />
+                <a href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="inline-flex items-center gap-2 text-xs text-ink/70 hover:text-ink max-w-full">
+                  <c.icon className="w-3.5 h-3.5 text-ink/65 shrink-0" strokeWidth={2} aria-hidden />
                   <span className="truncate">{c.value}</span>
                 </a>
               </li>
             ))}
           </ul>
         )}
-        {!isPerson && conversation.categoryReason && <p className="mt-2.5 text-13 text-ink/65">{conversation.categoryReason}</p>}
+        {!isPerson && conversation.categoryReason && <p className="mt-2.5 text-xs text-ink/65">{conversation.categoryReason}</p>}
         {client && (
-          <Link href={`/dashboard/clients/${client.id}`} className="inline-flex items-center min-h-[32px] mt-1 text-13 font-medium text-ink hover:underline underline-offset-2">Open profile</Link>
+          <Link href={`/dashboard/clients/${client.id}`} className="inline-block mt-3 text-xs font-medium text-accent-text hover:underline">Open their history →</Link>
         )}
       </div>
 
-      {understanding && (
-        <div className="px-5 py-5 border-b border-border">
+      <div className="px-5 py-4 space-y-4">
+        {opportunity.rank > 0 && (
+          <section aria-labelledby="why-title" className="rounded-2xl border border-accent/25 bg-accent-soft/30 px-3.5 py-3">
+            <h2 id="why-title" className="text-[10px] font-bold uppercase tracking-[0.14em] text-accent-text">Why this matters</h2>
+            <p className="mt-1 text-sm text-ink leading-snug"><span className="font-extrabold">{opportunity.label}.</span> {opportunity.reason}</p>
+            {opportunity.nextAction && opportunity.nextAction.kind !== "view" && <p className="mt-1.5 text-xs text-ink/70">Next: <span className="font-semibold text-ink">{opportunity.nextAction.label}</span></p>}
+          </section>
+        )}
+        {understanding && (
           <UnderstandingCard
             u={understanding}
             who={displayName}
             relationshipLabel={relationshipLabel}
-            why={opportunity.rank > 0 ? rowLine(opportunity.reason, waitingOnYou) : null}
-            facts={facts}
             quote={latestText.replace(/\s+/g, " ").slice(0, 160)}
             bookingId={upcoming?.id ?? null}
             bookingHref={upcoming ? `/dashboard/bookings/${upcoming.id}` : null}
             bookingPageUrl={`${appUrl}/book/${business.handle}`}
             hasService={Boolean(lead?.service)}
           />
-        </div>
-      )}
-
-      <div className="divide-y divide-border">
-        {upcoming && (
-          <RailSection title="On the calendar">
-            <Link href={`/dashboard/bookings/${upcoming.id}`} className="flex items-stretch gap-3 rounded-lg border border-border px-3 py-2.5 hover:bg-paper transition-colors">
-              <span aria-hidden className={cn("w-[3px] rounded-full shrink-0", upcoming.status === "BOOKED" ? "bg-warning" : "bg-booking")} />
-              <span className="min-w-0 flex-1">
-                <span className="block text-13 font-medium text-ink truncate">{upcoming.service.name}</span>
-                <span className="block text-xs text-ink/65">{format(toZonedDisplayDate(upcoming.startAt, tz), "EEE, MMM d · h:mm a")}</span>
-                {upcoming.status === "BOOKED" && <span className="block text-xs text-warning-text">Not confirmed yet</span>}
-              </span>
-            </Link>
-          </RailSection>
         )}
 
-        {isPerson && (
-          <div className="px-5 py-4">
-            <SummaryCard conversationId={conversation.id} initial={cachedSummary} autoRun={autoSummarize} />
+        {upcoming && (
+          <Link href={`/dashboard/bookings/${upcoming.id}`} className="flex items-center gap-3 rounded-2xl border border-success/25 bg-success-soft/40 px-3.5 py-3 hover:bg-success-soft/70 transition-colors">
+            <span className="w-8 h-8 rounded-xl bg-white text-success-text flex items-center justify-center shrink-0"><CalendarDays className="w-4 h-4" strokeWidth={2} aria-hidden /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-success-text">On the calendar</span>
+              <span className="block text-sm font-semibold text-ink truncate">{upcomingLabel}</span>
+              {upcoming.status === "BOOKED" && <span className="block text-[11px] text-warning-text font-semibold">Not confirmed yet</span>}
+            </span>
+          </Link>
+        )}
+
+        {isPerson && <SummaryCard conversationId={conversation.id} initial={cachedSummary} autoRun={autoSummarize} />}
+
+        {facts.length > 0 && (
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/65 mb-2">They mentioned</div>
+            <dl className="space-y-1.5 text-sm">{facts.map((f) => <Row key={f.label} label={f.label} value={f.value} />)}</dl>
           </div>
         )}
 
-        {facts.length > 0 && !understanding && (
-          <RailSection title="They mentioned">
-            <dl className="space-y-1.5 text-13">{facts.map((f) => <Row key={f.label} label={f.label} value={f.value} />)}</dl>
-          </RailSection>
-        )}
-
         {lead && lead.status !== "BOOKED" && lead.status !== "LOST" && (
-          <div className="px-5 py-4 space-y-5">
+          <div className="pt-4 border-t border-border space-y-3">
             <FollowUpControl leadId={lead.id} followUpAt={lead.followUpAt ? lead.followUpAt.toISOString() : null} />
             {relationship && <LeadStageControl leadId={lead.id} status={lead.status} stageLabel={relationship.label} stageWhy={relationship.standing} />}
           </div>
         )}
 
         {canBook && lead && (
-          <div id="book-from-here" className="px-5 py-4 space-y-3">
-            <h3 className="text-xs font-medium text-ink/65">Book from here</h3>
-            {waitingOnYou && lastInboundMsg && <p className="text-13 text-ink/70" suppressHydrationWarning>Waiting {formatDistanceToNowStrict(lastInboundMsg.createdAt)}. Reply, or put a time on the calendar.</p>}
+          <div id="book-from-here" className="pt-4 border-t border-border space-y-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/65">Book them from here</div>
+            {waitingOnYou && lastInboundMsg && <p className="text-xs text-ink/70" suppressHydrationWarning>Waiting {formatDistanceToNowStrict(lastInboundMsg.createdAt)}. Reply below, or put a time on the calendar.</p>}
             <LeadBooking leadId={lead.id} serviceId={lead.service?.id ?? null} services={services} timezone={tz} />
             <MarkLostButton leadId={lead.id} />
           </div>
         )}
 
         {client && client.bookings.length > 0 && (
-          <RailSection title="Bookings">
-            <ul className="-mx-2">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/65 mb-2">Bookings</div>
+            <ul className="space-y-1.5">
               {client.bookings.slice(0, 4).map((b) => (
                 <li key={b.id}>
-                  <Link href={`/dashboard/bookings/${b.id}`} className="flex items-center gap-2.5 rounded px-2 py-1.5 hover:bg-paper">
-                    <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", b.status === "CANCELED" ? "bg-ink/25" : b.status === "COMPLETED" || b.status === "FOLLOWED_UP" ? "bg-success" : b.status === "BOOKED" ? "bg-warning" : "bg-booking")} aria-hidden />
+                  <Link href={`/dashboard/bookings/${b.id}`} className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 -mx-2 hover:bg-black/[0.03]">
+                    <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", b.status === "CANCELED" ? "bg-ink/25" : b.status === "COMPLETED" || b.status === "FOLLOWED_UP" ? "bg-success" : b.status === "BOOKED" ? "bg-warning" : "bg-accent")} aria-hidden />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-13 text-ink truncate">{b.service.name}</span>
-                      <span className="block text-xs text-ink/65 first-letter:uppercase">{b.status.replaceAll("_", " ").toLowerCase()}</span>
+                      <span className="block text-xs font-semibold text-ink truncate">{b.service.name}</span>
+                      <span className="block text-[11px] text-ink/70">{b.status.replaceAll("_", " ").toLowerCase()}</span>
                     </span>
-                    <span className="text-xs text-ink/65 tabular-nums shrink-0">{format(toZonedDisplayDate(b.startAt, tz), "MMM d")}</span>
+                    <span className="text-[11px] text-ink/65 shrink-0">{format(toZonedDisplayDate(b.startAt, tz), "MMM d")}</span>
                   </Link>
                 </li>
               ))}
             </ul>
-          </RailSection>
+          </div>
         )}
 
         {handled.length > 0 && (
-          <RailSection title="Daythread sent for you">
-            <ul className="space-y-1.5 text-13 text-ink/75">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/65 mb-1.5">Daythread sent for you</div>
+            <ul className="space-y-1 text-xs text-ink/70">
               {handled.map((h) => (
                 <li key={h.id} className="flex items-start gap-2">
-                  <span aria-hidden className={cn("mt-[7px] w-1.5 h-1.5 rounded-full shrink-0", h.result === "sent" ? "bg-success" : h.result === "failed" ? "bg-danger" : "bg-ink/30")} />
+                  <span className={cn("mt-[5px] w-1.5 h-1.5 rounded-full shrink-0", h.result === "sent" ? "bg-success" : h.result === "failed" ? "bg-accent" : "bg-ink/30")} />
                   <span>{h.result === "sent" ? "Sent" : h.result === "not_configured" ? "Tried to send" : h.result === "failed" ? "Failed to send" : h.result === "pending" ? "Sending" : "Skipped"} {h.automation.name.toLowerCase()} · {format(h.ranAt, "MMM d")}{h.result === "not_configured" && <span className="text-warning-text"> — channel not connected</span>}</span>
                 </li>
               ))}
             </ul>
-          </RailSection>
+          </div>
         )}
 
         {client && client.conversations.length > 0 && (
-          <RailSection title="Other conversations">
-            <ul className="-mx-2">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/65 mb-2">Previous conversations</div>
+            <ul className="space-y-1.5">
               {client.conversations.map((c) => (
                 <li key={c.id}>
-                  <Link href={`/dashboard/inbox?c=${c.id}`} className="flex items-start gap-2.5 rounded px-2 py-1.5 hover:bg-paper">
+                  <Link href={`/dashboard/inbox?c=${c.id}`} className="flex items-start gap-2 rounded-xl px-2 py-1.5 -mx-2 hover:bg-black/[0.03]">
                     <ChannelBadge channel={c.channel} className="mt-0.5" />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-13 text-ink truncate">{c.subject ?? CHANNEL_META[c.channel].label}</span>
-                      <span className="block text-xs text-ink/65 truncate">{splitMessage(c.messages[0]?.body ?? "").text.slice(0, 80)}</span>
+                      <span className="block text-xs font-semibold text-ink truncate">{c.subject ?? CHANNEL_META[c.channel].label}</span>
+                      <span className="block text-[11px] text-ink/70 truncate">{splitMessage(c.messages[0]?.body ?? "").text.slice(0, 80)}</span>
                     </span>
-                    <span className="text-xs text-ink/65 tabular-nums shrink-0">{format(toZonedDisplayDate(c.lastMessageAt, tz), "MMM d")}</span>
+                    <span className="text-[11px] text-ink/65 shrink-0">{format(toZonedDisplayDate(c.lastMessageAt, tz), "MMM d")}</span>
                   </Link>
                 </li>
               ))}
             </ul>
-          </RailSection>
+          </div>
         )}
       </div>
     </>
@@ -285,13 +285,14 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
     <div className="flex-1 flex min-w-0 min-h-0 h-full">
       <MarkReadOnOpen conversationId={conversation.id} unread={unread} />
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <div className="h-14 px-2 md:px-5 border-b border-border bg-white flex items-center gap-2 md:gap-3 shrink-0">
-          <Link href={backHref} className="lg:hidden w-10 h-10 flex items-center justify-center rounded hover:bg-ink/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70" aria-label="Back to inbox">
-            <ChevronLeft className="w-5 h-5 text-ink/65" strokeWidth={1.75} />
+        <div className="px-3 md:px-6 py-2.5 md:py-3 border-b border-border bg-white flex items-center gap-2 md:gap-3 pt-[max(0.625rem,env(safe-area-inset-top))] md:pt-3">
+          <Link href={backHref} className="lg:hidden -ml-1 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50" aria-label="Back to inbox">
+            <ChevronLeft className="w-5 h-5 text-ink/65" strokeWidth={2} />
           </Link>
           <div className="flex-1 min-w-0">
-            <h2 className="font-semibold text-sm text-ink truncate"><span className="sr-only">Conversation with </span>{displayName}</h2>
-            <div className="flex items-center gap-1.5 text-xs text-ink/65 truncate">
+            <h2 className="font-semibold text-sm truncate">{displayName}</h2>
+            <h1 className="sr-only">Conversation with {displayName}</h1>
+            <div className="flex items-center gap-1.5 text-xs text-ink/70 truncate">
               <ChannelBadge channel={conversation.channel} />
               {CHANNEL_META[conversation.channel].label}
               {conversation.externalHandle ? ` · ${conversation.externalHandle}` : ""}
@@ -299,31 +300,32 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
             </div>
           </div>
           {waitingOnYou && (
-            <span className="hidden 2xl:inline-flex items-center gap-1.5 text-xs text-accent-text shrink-0"><span aria-hidden className="w-1.5 h-1.5 rounded-full bg-accent" />Waiting on you</span>
+            <span className="hidden 2xl:inline-flex items-center gap-1.5 text-xs font-medium text-accent-text shrink-0"><span className="w-1.5 h-1.5 rounded-full bg-accent" />Waiting on you</span>
           )}
           {team && <AssignMenu conversationId={conversation.id} members={members.map((m) => ({ membershipId: m.id, name: m.user.name, role: m.role }))} current={conversation.assigneeMembershipId} />}
           <ConversationTools conversationId={conversation.id} unread={unread} category={conversation.category} clientId={client?.id ?? null} relationship={client?.relationship ?? null} variant="header" />
         </div>
 
-        <details className="xl:hidden border-b border-border bg-paper group/ctx">
-          <summary className="flex items-center gap-2 px-4 min-h-[44px] text-13 text-ink/75 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-            <span aria-hidden className={cn("w-1.5 h-1.5 rounded-full shrink-0", understanding && understanding.nextAction.kind !== "none" ? "bg-signal" : "bg-ink/30")} />
-            <span className="min-w-0 truncate">{understanding && understanding.nextAction.kind !== "none" ? <><span className="text-ink/65">Next: </span><span className="font-medium text-ink">{understanding.nextAction.label}</span></> : <>About {displayName}</>}</span>
-            <ChevronDown className="ml-auto w-4 h-4 text-ink/55 shrink-0 transition-transform group-open/ctx:rotate-180" strokeWidth={1.75} aria-hidden />
+        <details className="xl:hidden border-b border-border bg-paper/60 group/ctx">
+          <summary className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-ink/70 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden min-h-[44px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-signal" />
+            About {displayName}
+            {understanding && <span className="ml-1 text-ink/65 font-medium truncate">· {understanding.nextAction.label}</span>}
+            <span className="ml-auto text-ink/65 transition-transform group-open/ctx:rotate-180" aria-hidden>▾</span>
           </summary>
           <div className="max-h-[60vh] overflow-y-auto scrollbar-thin bg-white border-t border-border">{rail}</div>
         </details>
 
-        <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-8 py-6 space-y-3 overscroll-contain bg-white">
+        <div className="flex-1 overflow-y-auto scrollbar-thin px-4 md:px-6 py-6 space-y-3 overscroll-contain bg-[linear-gradient(180deg,rgba(250,250,249,0.6),#fff_120px)]">
           {conversation.messages.map((m, i) => {
             const prev = conversation.messages[i - 1];
             const newDay = !prev || toZonedDisplayDate(prev.createdAt, tz).toDateString() !== toZonedDisplayDate(m.createdAt, tz).toDateString();
             return (
               <div key={m.id} className="space-y-3">
                 {newDay && (
-                  <div className="flex items-center gap-3 pt-2 pb-1" aria-hidden>
+                  <div className="flex items-center gap-3 py-1" aria-hidden>
                     <span className="flex-1 h-px bg-border" />
-                    <span className="text-xs text-ink/65">{format(toZonedDisplayDate(m.createdAt, tz), "EEEE, MMMM d")}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink/65">{format(toZonedDisplayDate(m.createdAt, tz), "EEE, MMM d")}</span>
                     <span className="flex-1 h-px bg-border" />
                   </div>
                 )}
@@ -337,9 +339,9 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
                       {m.status === "FAILED" && <span className="text-danger-text">Failed to send · </span>}
                       {m.status === "NOT_DELIVERED" && <span className="text-warning-text">Not delivered — {m.statusDetail === "too_long" ? "too long for Zoom Chat" : m.statusDetail === "scope_missing" ? "reconnect Zoom to allow chat replies" : <>{CHANNEL_META[conversation.channel].label} isn&rsquo;t connected</>} · </span>}
                       {m.status === "DELIVERED" && m.direction === "OUTBOUND" && <span className="text-success-text">Delivered · </span>}
-                      {m.aiDrafted && <span className="text-ink/75">AI drafted · </span>}
+                      {m.aiDrafted && <span className="text-signal-text">AI drafted · </span>}
                       {m.direction === "OUTBOUND" && m.statusDetail === "sent_in_zoom" && <span>Sent in Zoom · </span>}
-                      {m.direction === "OUTBOUND" && !m.sentByUserId && !m.aiDrafted && m.statusDetail !== "sent_in_zoom" && <span className="text-ink/75">Sent by Daythread · </span>}
+                      {m.direction === "OUTBOUND" && !m.sentByUserId && !m.aiDrafted && m.statusDetail !== "sent_in_zoom" && <span className="text-signal-text">Sent by Daythread · </span>}
                       {m.editedAt && !m.deletedAt && <span>Edited · </span>}
                       <time dateTime={m.createdAt.toISOString()}>{format(toZonedDisplayDate(m.createdAt, tz), "h:mm a")}</time>
                     </>
@@ -356,17 +358,8 @@ export async function ThreadPanel({ conversationId, autoSummarize = false, backH
         <Composer conversationId={conversation.id} windowNotice={windowNotice} channelLabel={CHANNEL_META[conversation.channel].label} />
       </div>
 
-      <aside className="hidden xl:flex w-[320px] 2xl:w-[352px] shrink-0 border-l border-border bg-white flex-col overflow-y-auto scrollbar-thin" aria-label={`About ${displayName}`}>{rail}</aside>
+      <aside className="hidden xl:flex w-80 2xl:w-[22rem] shrink-0 border-l border-border bg-white flex-col overflow-y-auto scrollbar-thin" aria-label={`About ${displayName}`}>{rail}</aside>
     </div>
-  );
-}
-
-function RailSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="px-5 py-4">
-      <h3 className="text-xs font-medium text-ink/65 mb-2">{title}</h3>
-      {children}
-    </section>
   );
 }
 
@@ -374,7 +367,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-3">
       <dt className="text-ink/70 shrink-0">{label}</dt>
-      <dd className="text-ink text-right truncate">{value}</dd>
+      <dd className="font-medium text-right truncate">{value}</dd>
     </div>
   );
 }

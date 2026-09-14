@@ -8,7 +8,7 @@ export default function TermsPage() {
     <main className="min-h-screen bg-paper">
       <div className="max-w-2xl mx-auto px-6 py-16">
         <Link href="/" className="text-xs font-semibold text-ink/65 hover:text-ink">← Daythread</Link>
-        <h1 className="mt-4 font-sans font-semibold text-3xl tracking-[-0.03em] text-ink">Terms of service</h1>
+        <h1 className="mt-4 font-sans font-extrabold text-3xl tracking-[-0.03em] text-ink">Terms of service</h1>
         <p className="mt-2 text-sm text-ink/70">Last updated September 6, 2026</p>
         {[
           ["The service", "Daythread is a workspace for customer communication: it connects the messaging and calendar accounts you choose and organizes what arrives into conversations, bookings and automations, with an assistant that proposes work for you to approve. You keep ownership of your data and your customers' data; you grant Daythread the right to process it to provide the service."],

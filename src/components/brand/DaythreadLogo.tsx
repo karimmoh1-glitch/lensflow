@@ -27,7 +27,7 @@ export function DaythreadLogo({ className, markClassName, wordClassName }: { cla
   return (
     <span className={cn("inline-flex items-center gap-2 text-ink", className)}>
       <DaythreadMark className={cn("w-6 h-6 shrink-0", markClassName)} title="Daythread" />
-      <span className={cn("font-sans font-semibold text-[17px] tracking-[-0.025em] leading-none", wordClassName)}>Daythread</span>
+      <span className={cn("font-sans font-extrabold text-[17px] tracking-[-0.02em] leading-none", wordClassName)}>Daythread</span>
     </span>
   );
 }

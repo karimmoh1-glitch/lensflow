@@ -1,6 +1,5 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 import { requireBusiness, homeRouteFor, STAFF_ROLES } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardBody, Badge, EmptyState } from "@/components/ui";
@@ -108,44 +107,43 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   ].sort((a, b) => b.when.getTime() - a.when.getTime());
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
-      <Link href="/dashboard/clients" className="inline-flex items-center gap-1 min-h-[32px] -mt-2 mb-3 text-13 text-ink/65 hover:text-ink"><ChevronLeft className="w-4 h-4" strokeWidth={1.75} aria-hidden />People</Link>
-      <div className="flex items-center gap-3 md:gap-4 mb-6">
-        <div aria-hidden className="w-12 h-12 rounded-full bg-ink/[0.07] text-ink/75 flex items-center justify-center text-base font-semibold shrink-0">
+    <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-14 h-14 rounded-full bg-accent-soft text-accent-text flex items-center justify-center text-lg font-semibold shrink-0">
           {initials(client.name)}
         </div>
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-            <h1 className="font-sans font-semibold text-page-title text-ink truncate max-w-full">{client.name}</h1>
-            <Badge tone={client.relationship === "CUSTOMER" ? "success" : "neutral"}>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="font-display text-2xl truncate">{client.name}</h1>
+            <span className={cn("text-[10px] font-bold rounded-full px-2 py-0.5 shrink-0", client.relationship === "CUSTOMER" ? "bg-success-soft text-success-text" : client.relationship === "CONTACT" ? "bg-black/[0.05] text-ink/65" : "bg-signal-soft text-signal-text")}>
               {client.relationship === "CUSTOMER" ? "Customer" : client.relationship === "CONTACT" ? "Contact" : "Potential client"}
-            </Badge>
+            </span>
           </div>
-          <p className="text-13 text-ink/65 truncate">{[client.email, client.phone, client.instagram].filter(Boolean).join(" · ") || "No contact info yet"}</p>
+          <p className="text-sm text-ink/70 truncate">{[client.email, client.phone, client.instagram].filter(Boolean).join(" · ") || "No contact info yet"}</p>
 
         </div>
-        <div className="ml-auto text-right shrink-0 hidden sm:block">
+        <div className="ml-auto text-right shrink-0">
           <div className="text-xs text-ink/65">Bookings</div>
-          <div className="font-sans font-semibold text-[22px] tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</div>
+          <div className="font-display text-2xl tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</div>
         </div>
       </div>
 
       {mergeCandidates.length > 0 && <MergeSuggestion clientId={client.id} name={client.name} candidates={mergeCandidates} />}
 
       {/* WHO IS THIS — the relationship, first. */}
-      <section aria-label="Where we stand" className="mb-8 rounded-lg border border-border bg-white overflow-hidden">
+      <section aria-label="Where we stand" className="mb-8 rounded-[22px] border border-border bg-white overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] divide-y md:divide-y-0 md:divide-x divide-border">
           <div className="px-5 md:px-6 py-5">
             <div className="flex items-center gap-2">
-              <span aria-hidden className={cn("w-1.5 h-1.5 rounded-full", standing.tone === "signal" ? "bg-accent" : standing.tone === "outcome" ? "bg-success" : standing.tone === "warning" ? "bg-warning" : standing.tone === "thinking" ? "bg-signal" : "bg-ink/30")} />
-              <span className="text-xs font-medium text-ink/65">Where we stand</span>
-              <span className={cn("ml-auto text-xs font-medium rounded-sm px-1.5 h-5 inline-flex items-center", standing.tone === "signal" ? "bg-ink/[0.04] text-ink/80" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-ink/[0.03] text-ink/75" : "bg-ink/[0.05] text-ink/65")}>{standing.label}</span>
+              <span className={cn("w-2 h-2 rounded-full", standing.tone === "signal" ? "bg-accent" : standing.tone === "outcome" ? "bg-success" : standing.tone === "warning" ? "bg-warning" : standing.tone === "thinking" ? "bg-signal" : "bg-ink/30")} />
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink/65">Where we stand</span>
+              <span className={cn("ml-auto text-[10px] font-bold rounded-full px-2 py-0.5", standing.tone === "signal" ? "bg-accent-soft text-accent-text" : standing.tone === "outcome" ? "bg-success-soft text-success-text" : standing.tone === "warning" ? "bg-warning-soft text-warning-text" : standing.tone === "thinking" ? "bg-signal-soft text-signal-text" : "bg-black/[0.05] text-ink/65")}>{standing.label}</span>
             </div>
-            <p className="mt-2 text-lg font-semibold leading-snug tracking-[-0.01em] text-ink">{standing.standing}</p>
+            <p className="mt-2 font-sans font-extrabold text-[1.35rem] leading-tight tracking-[-0.02em] text-ink">{standing.standing}</p>
             {(standing.theyWaitFor || standing.youWaitFor) && (
               <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-                {standing.theyWaitFor && <div><dt className="inline text-ink/65">They&rsquo;re waiting for </dt><dd className="inline font-medium text-ink">{standing.theyWaitFor.charAt(0).toLowerCase() + standing.theyWaitFor.slice(1)}</dd></div>}
-                {standing.youWaitFor && <div><dt className="inline text-ink/65">You&rsquo;re waiting for </dt><dd className="inline font-medium text-ink">{standing.youWaitFor.charAt(0).toLowerCase() + standing.youWaitFor.slice(1)}</dd></div>}
+                {standing.theyWaitFor && <div><dt className="inline text-ink/65">They&rsquo;re waiting for </dt><dd className="inline font-semibold text-accent-text">{standing.theyWaitFor.charAt(0).toLowerCase() + standing.theyWaitFor.slice(1)}</dd></div>}
+                {standing.youWaitFor && <div><dt className="inline text-ink/65">You&rsquo;re waiting for </dt><dd className="inline font-semibold text-ink">{standing.youWaitFor.charAt(0).toLowerCase() + standing.youWaitFor.slice(1)}</dd></div>}
               </dl>
             )}
             {lastInteraction && (
@@ -155,30 +153,28 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </p>
             )}
             {standing.nextAction && standingHref && (
-              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <Link href={standingHref} className="inline-flex items-center h-9 px-3.5 rounded bg-ink text-white text-13 font-medium transition-colors hover:bg-[#2A2B30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-2">
-                  {standing.nextAction.label}
-                </Link>
-                <span className="text-xs text-ink/65">{standing.nextAction.why}</span>
-              </div>
+              <Link href={standingHref} className="mt-4 inline-flex items-center gap-2 h-10 px-4 rounded-full bg-accent-strong text-white text-sm font-extrabold transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
+                {standing.nextAction.label}
+                <span className="text-white/60 font-medium text-xs">· {standing.nextAction.why}</span>
+              </Link>
             )}
           </div>
           <dl className="px-5 md:px-6 py-5 grid grid-cols-2 gap-x-4 gap-y-4 content-start">
             <div>
-              <dt className="text-xs font-medium text-ink/65">Upcoming</dt>
-              <dd className="mt-1 text-sm font-medium text-ink">{nextBooking ? <Link href={`/dashboard/bookings/${nextBooking.id}`} className="hover:underline">{nextBooking.service.name} · {format(toZonedDisplayDate(nextBooking.startAt, tz), "MMM d")}</Link> : <span className="text-ink/65 font-medium">Nothing booked</span>}</dd>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Upcoming</dt>
+              <dd className="mt-1 text-sm font-semibold text-ink">{nextBooking ? <Link href={`/dashboard/bookings/${nextBooking.id}`} className="hover:underline">{nextBooking.service.name} · {format(toZonedDisplayDate(nextBooking.startAt, tz), "MMM d")}</Link> : <span className="text-ink/65 font-medium">Nothing booked</span>}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium text-ink/65">Conversations</dt>
-              <dd className="mt-1 text-sm font-medium text-ink tabular-nums">{client.conversations.length}</dd>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Conversations</dt>
+              <dd className="mt-1 text-sm font-semibold text-ink tabular-nums">{client.conversations.length}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium text-ink/65">Bookings</dt>
-              <dd className="mt-1 text-sm font-medium text-ink tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</dd>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Bookings</dt>
+              <dd className="mt-1 text-sm font-semibold text-ink tabular-nums">{client.bookings.filter((b) => b.status !== "CANCELED").length}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium text-ink/65">Came in via</dt>
-              <dd className="mt-1 text-sm font-medium text-ink">{firstConversation ? `${CHANNEL_META[firstConversation.channel].label} · ${format(firstConversation.createdAt, "MMM yyyy")}` : <span className="text-ink/65 font-medium">Added by you</span>}</dd>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink/65">Came in via</dt>
+              <dd className="mt-1 text-sm font-semibold text-ink">{firstConversation ? `${CHANNEL_META[firstConversation.channel].label} · ${format(firstConversation.createdAt, "MMM yyyy")}` : <span className="text-ink/65 font-medium">Added by you</span>}</dd>
             </div>
           </dl>
           <div className="px-5 md:px-6 pb-5 md:col-start-2">
@@ -189,7 +185,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
       <div className="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
         <section className="min-w-0">
-          <h2 className="text-13 font-semibold text-ink mb-3">History</h2>
+          <h2 className="text-sm font-medium text-ink mb-3">Relationship</h2>
           {events.length === 0 ? (
             <EmptyState
               title="Nothing on the thread yet"
@@ -217,7 +213,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           {client.subscriptions.length > 0 && (
             <Card>
               <CardBody>
-                <div className="text-13 font-semibold text-ink mb-2">Membership</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">Membership</div>
                 {client.subscriptions.map((s) => (
                   <div key={s.id} className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
@@ -234,18 +230,18 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           )}
           <Card>
             <CardBody>
-              <div className="text-13 font-semibold text-ink mb-2">At a glance</div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">At a glance</div>
               <dl className="space-y-1.5 text-sm">
-                <div className="flex justify-between"><dt className="text-ink/70">Bookings</dt><dd className="text-ink tabular-nums">{client.bookings.length}</dd></div>
-                <div className="flex justify-between"><dt className="text-ink/70">Conversations</dt><dd className="text-ink tabular-nums">{client.conversations.length}</dd></div>
-                <div className="flex justify-between"><dt className="text-ink/70">Client since</dt><dd className="text-ink">{format(client.createdAt, "MMM yyyy")}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink/70">Bookings</dt><dd className="font-medium tabular-nums">{client.bookings.length}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink/70">Conversations</dt><dd className="font-medium tabular-nums">{client.conversations.length}</dd></div>
+                <div className="flex justify-between"><dt className="text-ink/70">Client since</dt><dd className="font-medium">{format(client.createdAt, "MMM yyyy")}</dd></div>
               </dl>
             </CardBody>
           </Card>
           {client.referrals.length > 0 && (
             <Card>
               <CardBody>
-                <div className="text-13 font-semibold text-ink mb-2">Referred</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink/65 mb-2">Referred</div>
                 {client.referrals.map((r) => (
                   <div key={r.id} className="text-sm">{r.name}</div>
                 ))}

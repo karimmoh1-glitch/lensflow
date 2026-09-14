@@ -87,7 +87,7 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
     <div>
       <div className="flex items-center gap-1.5 mb-4">
         {[0, 1, 2].map((i) => (
-          <div key={i} className={cn("h-1 flex-1 rounded-full", i <= step ? "bg-accent" : "bg-ink/[0.08]")} />
+          <div key={i} className={cn("h-1 flex-1 rounded-full", i <= step ? "bg-accent" : "bg-black/[0.08]")} />
         ))}
       </div>
       <Card>
@@ -122,23 +122,21 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
             </button>
             <h2 className="font-display text-xl">Pick a date & time</h2>
             <div>
-              <Label htmlFor="bf-date">Date</Label>
-              <Input id="bf-date" type="date" value={date} min={format(new Date(), "yyyy-MM-dd")} onChange={(e) => setDate(e.target.value)} />
+              <Label>Date</Label>
+              <Input type="date" value={date} min={format(new Date(), "yyyy-MM-dd")} onChange={(e) => setDate(e.target.value)} />
             </div>
             {date && (
               <div>
-                <p id="bf-times" className="block text-xs font-medium text-ink/75 mb-1.5">Available times</p>
+                <Label>Available times</Label>
                 {pending && !slots && <p className="text-sm text-ink/65">Checking availability…</p>}
                 {slots && slots.length === 0 && <p className="text-sm text-ink/65">No openings this day — try another date.</p>}
-                <div role="group" aria-labelledby="bf-times" className="grid grid-cols-3 gap-2 mt-1">
+                <div className="grid grid-cols-3 gap-2 mt-1">
                   {slots?.map((s) => (
                     <button
                       key={s.start}
-                      type="button"
-                      aria-pressed={slot?.start === s.start}
                       onClick={() => setSlot(s)}
                       className={cn(
-                        "text-sm rounded-lg border px-2 py-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70 focus-visible:ring-offset-1",
+                        "text-sm rounded-lg border px-2 py-2",
                         slot?.start === s.start ? "bg-ink text-white border-ink" : "border-border hover:border-ink/20"
                       )}
                     >
@@ -162,27 +160,27 @@ export function BookingFlow({ handle, services, timezone }: { handle: string; se
             </button>
             <h2 className="font-display text-xl">Your details</h2>
             <div>
-              <Label htmlFor="bf-name">Full name</Label>
-              <Input id="bf-name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <Label>Full name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div>
-              <Label htmlFor="bf-email">Email</Label>
-              <Input id="bf-email" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div>
-              <Label htmlFor="bf-phone">Phone</Label>
-              <Input id="bf-phone" type="tel" autoComplete="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Label>Phone</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="bf-location">Location (optional)</Label>
-              <Input id="bf-location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Studio, park, your home…" />
+              <Label>Location (optional)</Label>
+              <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Studio, park, your home…" />
             </div>
             <div>
-              <Label htmlFor="bf-notes">Anything we should know?</Label>
-              <Textarea id="bf-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+              <Label>Anything we should know?</Label>
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
             </div>
 
-            <div className="rounded-lg bg-ink/[0.03] p-3 text-sm flex justify-between">
+            <div className="rounded-lg bg-black/[0.03] p-3 text-sm flex justify-between">
               <span className="text-ink/75">Total</span>
               <span className="font-medium">{formatMoney(service.priceCents)}</span>
             </div>

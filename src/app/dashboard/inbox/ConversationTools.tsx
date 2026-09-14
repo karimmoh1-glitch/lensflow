@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlignLeft, EyeOff, Eye, Trash2, MoreHorizontal, Check } from "lucide-react";
+import { Sparkles, EyeOff, Eye, Trash2, MoreHorizontal, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/Toaster";
 import { markConversationRead, reclassifyConversation, removeConversationForMe, setClientRelationship, summarizeConversation } from "@/app/actions/conversations";
@@ -126,10 +126,7 @@ export function ConversationTools({ conversationId, unread, category, clientId, 
     });
   }
 
-  // In a phone-width thread header the name needs the room: the three direct actions move
-  // into More, where they're listed first.
-  const narrowHide = variant === "header" ? "hidden sm:flex" : undefined;
-  const btn = (label: string, onClick: (e: React.SyntheticEvent) => void, Icon: typeof AlignLeft, tone?: "accent" | "signal", extra?: string) => (
+  const btn = (label: string, onClick: (e: React.SyntheticEvent) => void, Icon: typeof Sparkles, tone?: "accent" | "signal") => (
     <button
       type="button"
       onClick={onClick}
@@ -138,37 +135,28 @@ export function ConversationTools({ conversationId, unread, category, clientId, 
       aria-label={label}
       title={label}
       className={cn(
-        "w-7 h-7 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-md flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70",
-        variant === "header" ? "text-ink/70 hover:text-ink hover:bg-ink/[0.05]" : "text-ink/65 hover:text-ink hover:bg-white shadow-none hover:shadow-xs",
-        tone === "signal" && "hover:text-ink/75",
-        extra
+        "w-7 h-7 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-md flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+        variant === "header" ? "text-ink/70 hover:text-ink hover:bg-black/[0.05]" : "text-ink/65 hover:text-ink hover:bg-white shadow-none hover:shadow-xs",
+        tone === "signal" && "hover:text-signal-text"
       )}
     >
-      <Icon className="w-[15px] h-[15px]" strokeWidth={1.75} aria-hidden />
+      <Icon className="w-[15px] h-[15px]" strokeWidth={2} aria-hidden />
     </button>
   );
 
   return (
     <div
       ref={menuRef}
-      className={cn("relative flex items-center", variant === "row" ? "gap-0.5 rounded-lg bg-paper/95 px-0.5 py-0.5 border border-border" : "gap-1")}
+      className={cn("relative flex items-center", variant === "row" ? "gap-0.5 rounded-lg bg-paper/95 backdrop-blur px-0.5 py-0.5 border border-border/70" : "gap-1")}
       onClick={stop}
     >
-      {btn("Summarize", summarize, AlignLeft, undefined, narrowHide)}
-      {btn(unread ? "Mark as read" : "Mark as unread", toggleRead, unread ? Eye : EyeOff, undefined, narrowHide)}
-      {btn("Delete for me", remove, Trash2, undefined, narrowHide)}
+      {btn("Summarize", summarize, Sparkles, "signal")}
+      {btn(unread ? "Mark as read" : "Mark as unread", toggleRead, unread ? Eye : EyeOff)}
+      {btn("Delete for me", remove, Trash2)}
       {btn("More", (e) => { stop(e); setMenu((m) => !m); }, MoreHorizontal)}
       {menu && (
-        <div role="menu" className="absolute right-0 top-full mt-1 z-40 w-60 rounded-lg bg-white shadow-popover p-1 text-sm dt-land">
-          {variant === "header" && (
-            <div className="sm:hidden">
-              <Item onClick={(e) => { setMenu(false); summarize(e); }} title="Summarize" />
-              <Item onClick={(e) => { setMenu(false); toggleRead(e); }} title={unread ? "Mark as read" : "Mark as unread"} />
-              <Item onClick={(e) => { setMenu(false); remove(e); }} title="Delete for me" hint="Your email or messages are untouched" />
-              <div className="my-1 border-t border-border" />
-            </div>
-          )}
-          <div className="px-2.5 pt-1.5 pb-1 text-xs font-medium text-ink/60">Daythread put this in {label(category)}</div>
+        <div role="menu" className="absolute right-0 top-full mt-1 z-40 w-60 rounded-xl border border-border bg-white shadow-[0_18px_44px_-20px_rgba(16,17,20,0.35)] p-1 text-sm dt-land">
+          <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-ink/65">Daythread put this in {label(category)}</div>
           {category !== "PRIORITY" ? (
             <Item onClick={(e) => reclassify(e, "PRIORITY")} title="Mark as priority" hint="A real person — show them in Priority" />
           ) : (
@@ -193,12 +181,12 @@ export function ConversationTools({ conversationId, unread, category, clientId, 
 
 function Item({ onClick, title, hint, check }: { onClick: (e: React.SyntheticEvent) => void; title: string; hint?: string; check?: boolean }) {
   return (
-    <button type="button" role="menuitem" onClick={onClick} className="w-full text-left rounded-lg px-2.5 py-2 min-h-[40px] hover:bg-ink/[0.04] focus-visible:outline-none focus-visible:bg-ink/[0.04]">
+    <button type="button" role="menuitem" onClick={onClick} className="w-full text-left rounded-lg px-2.5 py-2 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:bg-black/[0.04]">
       <span className="flex items-center gap-2 text-sm font-semibold text-ink">
         {check && <Check className="w-3.5 h-3.5 text-success" strokeWidth={2.5} aria-hidden />}
         {title}
       </span>
-      {hint && <span className="block text-xs text-ink/70">{hint}</span>}
+      {hint && <span className="block text-[11px] text-ink/70">{hint}</span>}
     </button>
   );
 }

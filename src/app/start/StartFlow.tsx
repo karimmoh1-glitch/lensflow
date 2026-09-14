@@ -13,32 +13,35 @@ import { signup } from "@/app/actions/auth";
 import { recordOnboardingEvent } from "@/app/actions/onboardingEvents";
 import { GOOGLE_SIGN_IN_MESSAGES } from "@/lib/googleSignInMessages";
 import {
-  WORK_CATEGORIES, TEAM_SIZES, CHANNELS, HELP_OPTIONS, TEAM_USAGE,
-  answersSchema, asksTeamSize, completeAnswers, derivePersonalization, labelOf, list, type AnswersDraft, type PlanKey, type Personalization,
+  USER_TYPES, WORK_CATEGORIES, BUSINESS_STATUSES, TEAM_SIZES, CHANNELS, PAIN_POINTS, FEATURES, TOOLS, BOOKINGS_ANSWERS, TEAM_USAGE,
+  answersSchema, asksTeamSize, derivePersonalization, labelOf, PRIORITY_COPY, type AnswersDraft, type PlanKey, type Personalization,
 } from "@/lib/personalization";
 import { cn } from "@/lib/utils";
 
 /**
- * Four questions, then the plan, then the account. Only what changes the workspace is asked:
- * the work (copy and priorities), what to take off their plate (what Today sets up first),
- * where clients write (which channels to connect) and whether anyone else is involved
- * (seats, and the team-size question only then). Everything else the engine needs is
- * inferred by `completeAnswers` and can be changed under Settings → Profile. The draft lives
- * in localStorage and the position in the URL, so a refresh, Back and a closed tab all land
- * the person where they were.
+ * The questions, in order. One idea per screen. A step with `when` only appears when the
+ * answers so far make it relevant (team size only once someone else is involved). The
+ * draft lives in localStorage and the position in the URL, so a refresh, the browser's
+ * Back button and a closed tab all land the person where they were.
  */
 type Draft = AnswersDraft & { selectedPlan?: PlanKey | null; startedAt?: number; skipped?: boolean };
-type Field = Exclude<keyof AnswersDraft, "workDetail" | "displayName">;
-type Step = { key: string; kind: "single" | "multi" | "summary" | "account"; title: string; hint?: string; field?: Field; options?: readonly (readonly [string, string])[]; columns?: 1 | 2 | 3; when?: (d: Draft) => boolean };
+type Field = Exclude<keyof AnswersDraft, "workDetail">;
+type Step = { key: string; kind: "text" | "single" | "multi" | "summary" | "account"; eyebrow: string; title: string; hint?: string; field?: Field; options?: readonly (readonly [string, string])[]; columns?: 1 | 2 | 3; when?: (d: Draft) => boolean };
 
 const STEPS: Step[] = [
-  { key: "work", kind: "single", title: "What kind of business do you run?", hint: "Pick the closest, or choose Other and say it in a few words.", field: "workCategory", options: WORK_CATEGORIES },
-  { key: "help", kind: "multi", title: "What should Daythread take off your plate?", hint: "Choose any. This decides what Today sets up first.", field: "painPoints", options: HELP_OPTIONS, columns: 1 },
-  { key: "channels", kind: "multi", title: "Where do clients message you?", hint: "Choose everything that applies. You'll connect them next.", field: "channels", options: CHANNELS },
-  { key: "team", kind: "single", title: "Does anyone else answer clients with you?", field: "teamUsage", options: TEAM_USAGE, columns: 3 },
-  { key: "team_size", kind: "single", title: "How many people, including you?", field: "teamSize", options: TEAM_SIZES, columns: 2, when: (d) => asksTeamSize(completeAnswers(d)) },
-  { key: "summary", kind: "summary", title: "Here's your setup." },
-  { key: "account", kind: "account", title: "Create your account." },
+  { key: "name", kind: "text", eyebrow: "First things first", title: "What should we call you?", field: "displayName" },
+  { key: "user_type", kind: "single", eyebrow: "About you", title: "What do you do?", field: "userType", options: USER_TYPES },
+  { key: "work", kind: "single", eyebrow: "About you", title: "What kind of work do you do?", hint: "Pick the closest. Or choose Other and tell us in a few words.", field: "workCategory", options: WORK_CATEGORIES },
+  { key: "business_status", kind: "single", eyebrow: "Your setup", title: "Are you using Daythread for a business?", field: "businessStatus", options: BUSINESS_STATUSES, columns: 1 },
+  { key: "channels", kind: "multi", eyebrow: "Your customers", title: "Where do your customers usually reach you?", hint: "Choose everything that applies.", field: "channels", options: CHANNELS },
+  { key: "pain", kind: "multi", eyebrow: "Your day", title: "What takes the most time or causes the most stress?", hint: "Choose everything that applies.", field: "painPoints", options: PAIN_POINTS },
+  { key: "features", kind: "multi", eyebrow: "Daythread", title: "What would you like Daythread to help you with?", hint: "Choose everything that applies. The rest stays a click away.", field: "desiredFeatures", options: FEATURES },
+  { key: "tools", kind: "multi", eyebrow: "Today", title: "What are you using today?", hint: "Choose everything that applies.", field: "currentTools", options: TOOLS },
+  { key: "bookings", kind: "single", eyebrow: "Bookings", title: "Do customers book appointments or services with you?", field: "bookings", options: BOOKINGS_ANSWERS, columns: 3 },
+  { key: "team", kind: "single", eyebrow: "People", title: "Do you work with other people?", field: "teamUsage", options: TEAM_USAGE, columns: 3 },
+  { key: "team_size", kind: "single", eyebrow: "People", title: "How many people are involved?", hint: "Including you.", field: "teamSize", options: TEAM_SIZES, columns: 2, when: (d) => asksTeamSize(d) },
+  { key: "summary", kind: "summary", eyebrow: "Your Daythread", title: "Here's what we heard." },
+  { key: "account", kind: "account", eyebrow: "Last step", title: "Create your account." },
 ];
 
 const DRAFT_KEY = "dt-start:draft";
@@ -70,6 +73,7 @@ function anonymousId(): string | null {
   }
 }
 function complete(step: Step, d: Draft): boolean {
+  if (step.kind === "text") return Boolean(d.displayName?.trim());
   if (step.kind === "single") return Boolean(d[step.field as Field]);
   if (step.kind === "multi") return Array.isArray(d[step.field as Field]) && (d[step.field as Field] as string[]).length > 0;
   if (step.kind === "summary") return d.selectedPlan !== undefined;
@@ -181,8 +185,12 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
 
   const continueFrom = (d: Draft, single?: string) => {
     if (!complete(step, d)) return;
-    const values = step.kind === "multi" ? ((d[step.field as Field] as string[]) ?? []) : [single ?? String(d[step.field as Field])];
-    event("onboarding_question_answered", { step: step.key, values, count: values.length });
+    if (step.kind !== "text") {
+      const values = step.kind === "multi" ? ((d[step.field as Field] as string[]) ?? []) : [single ?? String(d[step.field as Field])];
+      event("onboarding_question_answered", { step: step.key, values, count: values.length });
+    } else {
+      event("onboarding_question_answered", { step: step.key, count: 1 });
+    }
     go(Math.min(idx + 1, visibleSteps(d).length - 1));
   };
 
@@ -201,11 +209,11 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
     go(steps.length - 1);
   };
 
-  const parsedAnswers = useMemo(() => answersSchema.safeParse(completeAnswers(draft)), [draft]);
+  const parsedAnswers = useMemo(() => answersSchema.safeParse(draft), [draft]);
   const personalization = parsedAnswers.success ? derivePersonalization(parsedAnswers.data) : null;
   const questionCount = steps.filter((s) => s.kind !== "summary" && s.kind !== "account").length;
   const questionNumber = steps.slice(0, idx + 1).filter((s) => s.kind !== "summary" && s.kind !== "account").length;
-  const counter = step.kind === "summary" ? "Almost done" : step.kind === "account" ? "Last step" : `${questionNumber} of ${questionCount}`;
+  const counter = step.kind === "summary" ? "Your Daythread" : step.kind === "account" ? "Last step" : `${questionNumber} of ${questionCount}`;
 
   if (!ready) return <main className="min-h-screen bg-paper" />;
 
@@ -213,7 +221,7 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
     <main className="min-h-screen bg-paper flex flex-col">
       <header className="w-full max-w-2xl mx-auto px-5 md:px-8 pt-5 md:pt-7">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="inline-flex rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70" aria-label="Daythread home"><DaythreadLogo /></Link>
+          <Link href="/" className="inline-flex rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50" aria-label="Daythread home"><DaythreadLogo /></Link>
           <span className="text-xs font-semibold text-ink/65 tabular-nums">{counter}</span>
         </div>
         <div className="mt-4 h-1 rounded-full bg-ink/10 overflow-hidden" role="progressbar" aria-label="Setup progress" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={idx + 1}>
@@ -223,10 +231,20 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
 
       <div className="flex-1 w-full max-w-2xl mx-auto px-5 md:px-8 pt-8 md:pt-12 pb-6">
         <section key={step.key} className="dt-swap" aria-labelledby="start-title">
-          <h1 id="start-title" ref={titleRef} tabIndex={-1} className="font-serif font-normal text-[2.125rem] md:text-[2.75rem] leading-[1.04] tracking-[-0.012em] text-ink text-balance focus:outline-none">{step.title}</h1>
-          {step.hint && <p className="mt-2.5 text-[15px] text-ink/65 leading-relaxed max-w-lg">{step.hint}</p>}
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">{step.eyebrow}</p>
+          <h1 id="start-title" ref={titleRef} tabIndex={-1} className="mt-3 font-sans font-extrabold text-[1.9rem] md:text-[2.5rem] leading-[1.02] tracking-[-0.04em] text-ink text-balance focus:outline-none">{step.title}</h1>
+          {step.hint && <p className="mt-3 text-[15px] text-ink/70 leading-relaxed max-w-lg">{step.hint}</p>}
 
           <div className="mt-7">
+            {step.kind === "text" && (
+              <form onSubmit={(e) => { e.preventDefault(); continueFrom(draft); }} className="max-w-sm">
+                <Field id="displayName" label="Your first name, or what people call you">
+                  <Input id="displayName" name="displayName" autoComplete="given-name" autoFocus placeholder="Alex" maxLength={80} required value={draft.displayName ?? ""} onChange={(e) => setDraft({ ...draft, displayName: e.target.value })} />
+                </Field>
+                <p className="mt-2 text-xs text-ink/65">We use it to greet you and to name your workspace. That&rsquo;s all.</p>
+              </form>
+            )}
+
             {(step.kind === "single" || step.kind === "multi") && step.field && step.options && (
               <>
                 <OptionGrid label={step.title} options={step.options} value={draft[step.field] as string | string[] | undefined} onChange={(k) => answer(step.field as Field, k)} multi={step.kind === "multi"} columns={step.columns ?? 2} />
@@ -240,24 +258,24 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
               </>
             )}
 
-            {step.kind === "summary" && (personalization ? <Summary p={personalization} billingLive={billingLive} prices={prices} beta={beta} businessUnavailable={businessUnavailable} onChoose={(plan) => choosePlan(personalization, plan)} onShown={() => event("recommended_plan_shown", { recommendedPlan: personalization.recommendedPlan })} /> : <p className="text-sm text-ink/70">Answer the questions above and we&rsquo;ll set Daythread up around them.</p>)}
+            {step.kind === "summary" && (personalization ? <Summary p={personalization} name={draft.displayName ?? ""} billingLive={billingLive} prices={prices} beta={beta} businessUnavailable={businessUnavailable} onChoose={(plan) => choosePlan(personalization, plan)} onShown={() => event("recommended_plan_shown", { recommendedPlan: personalization.recommendedPlan })} /> : <p className="text-sm text-ink/70">Answer the questions above and we&rsquo;ll set Daythread up around them.</p>)}
 
             {step.kind === "account" && <Account google={google} draft={draft} answersJson={parsedAnswers.success ? JSON.stringify(parsedAnswers.data) : null} anonymousId={anon.current} googleError={googleError} referral={ref} />}
           </div>
         </section>
       </div>
 
-      <div className="sticky bottom-0 z-10 border-t border-border bg-paper/90 pb-[env(safe-area-inset-bottom)]">
+      <div className="sticky bottom-0 z-10 border-t border-border bg-paper/90 backdrop-blur pb-[env(safe-area-inset-bottom)]">
         <div className="w-full max-w-2xl mx-auto px-5 md:px-8 py-3 flex items-center justify-between gap-3">
-          <button type="button" onClick={back} disabled={idx === 0} className="inline-flex items-center gap-1.5 h-11 px-3 -ml-3 rounded-lg text-sm font-semibold text-ink/70 hover:text-ink disabled:opacity-0 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/70">
+          <button type="button" onClick={back} disabled={idx === 0} className="inline-flex items-center gap-1.5 h-11 px-3 -ml-3 rounded-full text-sm font-semibold text-ink/70 hover:text-ink disabled:opacity-0 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
             <ArrowLeft className="w-4 h-4" strokeWidth={2.5} aria-hidden />Back
           </button>
-          {step.kind === "single" || step.kind === "multi" ? (
+          {step.kind === "text" || step.kind === "single" || step.kind === "multi" ? (
             <Button size="lg" onClick={() => continueFrom(draft)} disabled={!complete(step, draft)} className="min-w-[9rem]">
               Continue <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden />
             </Button>
           ) : (
-            <span className="text-xs text-ink/60">{step.kind === "account" ? "Free to start. No card." : ""}</span>
+            <span className="text-xs text-ink/65">{step.kind === "summary" ? "Nothing is charged today." : "Free to start. No card."}</span>
           )}
         </div>
       </div>
@@ -265,86 +283,80 @@ function Flow({ google, billingLive, prices, beta = false, businessUnavailable =
       <footer className="w-full max-w-2xl mx-auto px-5 md:px-8 py-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-ink/65">
         <span>Already on Daythread? <Link href="/login" className="font-semibold text-ink hover:text-accent-text">Log in</Link></span>
         {step.kind !== "account" && step.kind !== "summary" && (
-          <button type="button" onClick={skip} className="inline-flex items-center min-h-[32px] font-semibold text-ink/65 hover:text-ink underline-offset-2 hover:underline">Skip the questions</button>
+          <button type="button" onClick={skip} className="font-semibold text-ink/65 hover:text-ink underline-offset-2 hover:underline">Skip setup, just create an account</button>
         )}
       </footer>
     </main>
   );
 }
 
-function Summary({ p, billingLive, prices, beta, businessUnavailable, onChoose, onShown }: { p: Personalization; billingLive: boolean; prices: { PRO: number; BUSINESS: number }; beta: boolean; businessUnavailable: boolean; onChoose: (plan: PlanKey) => void; onShown: () => void }) {
+function Summary({ p, name, billingLive, prices, beta, businessUnavailable, onChoose, onShown }: { p: Personalization; name: string; billingLive: boolean; prices: { PRO: number; BUSINESS: number }; beta: boolean; businessUnavailable: boolean; onChoose: (plan: PlanKey) => void; onShown: () => void }) {
   useEffect(() => {
     onShown();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.recommendedPlan]);
   // A plan that is not on sale is never recommended; Pro is the nearest one that is.
   const rec: PlanKey = p.recommendedPlan === "BUSINESS" && businessUnavailable ? "PRO" : p.recommendedPlan;
-  const setup = setupPlan(p);
+  const channelNames = p.answers.channels.filter((c) => c !== "other").map((c) => labelOf(CHANNELS, c));
+  const first = name.trim().split(/\s+/)[0];
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-white px-5 py-5">
-        <h2 className="text-13 font-semibold text-ink/70">What Today will walk you through</h2>
-        <ol className="mt-3 space-y-3">
-          {setup.map((item, i) => (
-            <li key={item.title} className="flex items-start gap-3">
-              <span aria-hidden className="mt-px w-6 h-6 rounded-full border border-ink/15 text-2xs font-semibold text-ink/70 flex items-center justify-center shrink-0 tabular-nums">{i + 1}</span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-ink">{item.title}</span>
-                <span className="block text-13 text-ink/60 leading-snug">{item.detail}</span>
-              </span>
+    <div className="space-y-5">
+      <div className="rounded-[22px] border border-border bg-white px-5 py-5">
+        <p className="text-[15px] text-ink/80 leading-relaxed">
+          {p.channelCount >= 2
+            ? <>{first ? `${first}, you` : "You"} currently manage customers across <span className="font-extrabold text-ink">{p.channelCount} channels</span>{channelNames.length ? ` — ${channelNames.join(", ")}${p.answers.channels.includes("other") ? " and more" : ""}` : ""}. Daythread brings those conversations together on one thread.</>
+            : <>{first ? `${first}, your` : "Your"} customers reach you on {channelNames[0] ?? "one channel"}. Daythread keeps that in one inbox, with the calendar, bookings and follow-ups beside it.</>}
+        </p>
+        <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.16em] text-ink/65">Your priorities</p>
+        <ul className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {p.priorities.map((f, i) => (
+            <li key={f} className={cn("rounded-2xl border px-4 py-3", i === 0 ? "border-accent/40 bg-accent-soft/40" : "border-border bg-paper")}>
+              <div className="text-sm font-extrabold text-ink">{PRIORITY_COPY[f].title}</div>
+              <div className="mt-0.5 text-xs text-ink/70 leading-relaxed">{PRIORITY_COPY[f].blurb}</div>
             </li>
           ))}
-        </ol>
+        </ul>
       </div>
 
-      <div className="rounded-xl border border-border bg-white px-5 py-5">
-        <h2 className="text-13 font-semibold text-ink/70">Plan</h2>
-        <p className="mt-1.5 font-sans font-semibold text-[1.35rem] leading-tight tracking-[-0.025em] text-ink">{rec === "FREE" ? "Start on Free." : `${planName(rec)} is the better fit.`}</p>
-        <ul className="mt-3 space-y-1.5">
+      <div className="rounded-[22px] border border-ink/15 bg-white px-5 py-5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-signal-text">Our recommendation</p>
+        <h2 className="mt-2 font-sans font-extrabold text-[1.5rem] md:text-[1.8rem] leading-[1.05] tracking-[-0.035em] text-ink text-balance">Based on what you told us, we&rsquo;d recommend Daythread {planName(rec)}.</h2>
+        <ul className="mt-4 space-y-2">
           {p.reasons.map((r) => (
-            <li key={r} className="flex items-start gap-2.5 text-sm text-ink/75 leading-snug">
-              <Check className="mt-0.5 w-4 h-4 text-success shrink-0" strokeWidth={2.5} aria-hidden />
+            <li key={r} className="flex items-start gap-2.5 text-sm text-ink/80 leading-snug">
+              <span aria-hidden className="mt-0.5 w-5 h-5 rounded-full bg-success text-white flex items-center justify-center shrink-0"><Check className="w-3 h-3" strokeWidth={3} /></span>
               <span>{r}</span>
             </li>
           ))}
         </ul>
-        <p className="mt-4 text-sm text-ink/65">
-          {beta ? (rec === "FREE" ? "Free stays free. While Daythread is in beta, new accounts also get Pro free for the first month — no card." : "While Daythread is in beta, your account starts with Pro free for a month — no card. After that you're on Free unless you choose Pro.") : rec === "FREE" ? "Free is $0, no card, and stays free." : rec === "PRO" ? `Pro is ${fmt(prices.PRO)} a month${billingLive ? ", with 7 days free" : ""}. Free is always there too.` : `Business is ${fmt(prices.BUSINESS)} a month. Free and Pro are always there too.`}
+        <p className="mt-4 text-sm text-ink/70">
+          {beta ? (rec === "FREE" ? "Free is $0 and stays free. While Daythread is in beta, every new account also gets Pro free for its first month — no card." : "While Daythread is in beta, your account starts with Pro free for a month — no card. After that you stay on Free unless you choose Pro.") : rec === "FREE" ? "Free is $0, no card, and stays free. Pro is there when you need it." : rec === "PRO" ? `Pro is ${fmt(prices.PRO)} a month${billingLive ? ", and starts with 7 days free" : ""}. Free is always there too.` : `Business is ${fmt(prices.BUSINESS)} a month. Free and Pro are always there too.`}
         </p>
+
         <div className="mt-5 flex flex-col sm:flex-row sm:flex-wrap gap-2.5">
-          {rec !== "FREE" && billingLive && !beta ? (
+          {rec !== "FREE" && billingLive ? (
             <>
-              <Button size="lg" onClick={() => onChoose(rec)}>Continue with {planName(rec)} <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden /></Button>
+              <Button size="lg" onClick={() => onChoose(rec)}>Continue, and start with {planName(rec)} <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden /></Button>
               <Button size="lg" variant="outline" onClick={() => onChoose("FREE")}>Continue with Free</Button>
             </>
           ) : (
-            <Button size="lg" onClick={() => onChoose(beta && rec !== "FREE" ? rec : "FREE")}>Continue <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden /></Button>
+            <Button size="lg" onClick={() => onChoose("FREE")}>Continue with Free <ArrowRight className="w-4 h-4 ml-1" strokeWidth={2.5} aria-hidden /></Button>
           )}
         </div>
-        <p className="mt-3 text-xs text-ink/60 leading-relaxed">
+        <p className="mt-3 text-xs text-ink/65 leading-relaxed">
           {beta
             ? "Nothing is charged today, and nothing is charged when the free month ends."
             : rec !== "FREE" && !billingLive
-              ? "Upgrades aren't open on this deployment yet, so everyone starts on Free."
-              : rec === "PRO" && billingLive
-                ? "Nothing is charged today. The 7-day trial starts once your account exists — a card is asked for then, and cancelling before day 8 costs nothing."
-                : "You can change plans at any time. Daythread only bills its own subscription — never your clients."}
+            ? `Upgrades aren't open on this deployment yet, so everyone starts on Free. We'll keep this recommendation under Settings → Subscription.`
+            : rec === "PRO" && billingLive
+              ? "Nothing is charged today. Pro begins as a 7-day free trial once your account exists — a card is asked for then, and cancelling before day 8 costs nothing."
+              : rec === "BUSINESS" && billingLive
+                ? "Nothing is charged today. Business can be started right after your account exists, from Settings → Subscription."
+                : "You can change plans at any time. Daythread only ever bills its own subscription — never your customers."}
         </p>
       </div>
     </div>
   );
-}
-
-/** The setup Today's checklist will show, in the same order, from the same answers. */
-function setupPlan(p: Personalization): Array<{ title: string; detail: string }> {
-  const names = p.answers.channels.filter((c) => c !== "other" && c !== "website").map((c) => labelOf(CHANNELS, c));
-  const items = [
-    { title: names.length ? `Connect ${list(names)}` : "Connect where clients write", detail: "Their messages arrive in one inbox, and you reply from the same account." },
-    { title: "Add your services and hours", detail: "So open times are real and a booking takes one click from the conversation." },
-    { title: "Turn on booking confirmations", detail: "Each booking is confirmed on the channel the client wrote from." },
-  ];
-  if (p.usesTeam) items.push({ title: "Invite the people you work with", detail: "Everyone answers from one inbox, with each conversation assigned." });
-  return items;
 }
 
 function Account({ google, draft, answersJson, anonymousId, googleError, referral }: { google: boolean; draft: Draft; answersJson: string | null; anonymousId: string | null; googleError: string | null; referral: string | null }) {
